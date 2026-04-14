@@ -22,7 +22,7 @@ struct TabRootView: View {
             .tag(1)
 
             NavigationStack {
-                MatchingPlaceholderView()
+                MatchingView()
             }
             .tabItem {
                 Label("Match", systemImage: "arrow.triangle.branch")
@@ -42,13 +42,6 @@ struct TabRootView: View {
 }
 
 // MARK: - Placeholder views (replaced in later sprints)
-
-private struct MatchingPlaceholderView: View {
-    var body: some View {
-        PlaceholderScreen(title: "What Goes With This?", subtitle: "Select an item to find matches")
-            .navigationTitle("Match")
-    }
-}
 
 private struct PlaceholderScreen: View {
     let title: String
