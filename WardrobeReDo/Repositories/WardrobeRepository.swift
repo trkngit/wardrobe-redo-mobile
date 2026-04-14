@@ -22,6 +22,16 @@ final class WardrobeRepository {
             .value
     }
 
+    func fetchItems(ids: [UUID]) async throws -> [WardrobeItem] {
+        guard !ids.isEmpty else { return [] }
+        return try await supabase
+            .from("wardrobe_items")
+            .select()
+            .in("id", values: ids)
+            .execute()
+            .value
+    }
+
     func fetchItem(id: UUID) async throws -> WardrobeItem {
         try await supabase
             .from("wardrobe_items")

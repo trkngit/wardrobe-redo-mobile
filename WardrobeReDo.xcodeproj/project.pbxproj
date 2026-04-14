@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		00E112D643C2163F48A03559 /* AuthenticationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7FED51D475689315991283B7 /* AuthenticationServices.framework */; };
 		097E7B034A058A9E66AE1B56 /* WardrobeReDoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264BBB2F3E55F63315C0E1C1 /* WardrobeReDoApp.swift */; };
+		1017A796AB915D49DFE1DDDD /* OutfitDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 165E8F07B133D103EA536F99 /* OutfitDetailView.swift */; };
+		14FC5E3E883885716AFFA303 /* OutfitViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B41E402ED7710F0F5E2305EB /* OutfitViewModel.swift */; };
 		1F27F2B18310E43F4841B9B8 /* EditorialTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = E544B2D3387E5D36FD2E6921 /* EditorialTextField.swift */; };
 		2BBCC2BEEB3DDFFC29B4DCA0 /* ItemCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF82CDF068E318725A1D2C02 /* ItemCardView.swift */; };
 		2D769A1055801BDB82682DCB /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99886AD57254CF10F04ABFD5 /* ProfileView.swift */; };
@@ -21,6 +23,7 @@
 		5C275C3F390CF67AAEB39B40 /* GoldButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1BBE9F2C0E97A7C98F08604 /* GoldButton.swift */; };
 		5C658370E3AD99EFA975E2AC /* StyleRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25DC5CD683DD962BA802B6BA /* StyleRule.swift */; };
 		5DF6700A54CB012EBECEB48B /* Outfit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20E53015EE1619CAC70EF513 /* Outfit.swift */; };
+		5ECCCBAF4D9B5F06C5EB9D99 /* DailyOutfitsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8403C7EFCCAF992F66A81681 /* DailyOutfitsView.swift */; };
 		5F635A5141566AB41B119F4A /* OccasionContextScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E477D0C7D4CDAE664051D3 /* OccasionContextScorer.swift */; };
 		60A713A486EE2CDCDD87A844 /* VersatilityScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22EB5C9E082453163BA9F45C /* VersatilityScorer.swift */; };
 		6396ACD55502AB8499985E44 /* ItemDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4ADF6DCCAD94A6DE061B3CE1 /* ItemDetailView.swift */; };
@@ -59,6 +62,7 @@
 		F4E64BEF27571417C53E5C9D /* ColorHarmonyScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666F4C71E6D91FF7DED0FFEA /* ColorHarmonyScorer.swift */; };
 		F590265490EED777D6B21FC3 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B41193683C38AC2B597BAFB3 /* LoginView.swift */; };
 		FBA86764A0F1CF832762779F /* StyleEngineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6E465734D0F4208AE7FBB42 /* StyleEngineService.swift */; };
+		FDD9ED140A3AC2577BD560B9 /* OutfitCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B7BF5813E651F8CDB8CD164 /* OutfitCardView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -74,8 +78,10 @@
 /* Begin PBXFileReference section */
 		063B6D8EB12F97EC8FB4C8E3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0688E82B35A527869065DFD9 /* OutfitGenerationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitGenerationService.swift; sourceTree = "<group>"; };
+		0B7BF5813E651F8CDB8CD164 /* OutfitCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitCardView.swift; sourceTree = "<group>"; };
 		0FF50F1B4F362AEC103CEF90 /* OutfitRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitRepository.swift; sourceTree = "<group>"; };
 		1187ED645956910F8C96393A /* ImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageService.swift; sourceTree = "<group>"; };
+		165E8F07B133D103EA536F99 /* OutfitDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitDetailView.swift; sourceTree = "<group>"; };
 		18165792F146D914FFB57C1E /* WardrobeReDoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeReDoTests.swift; sourceTree = "<group>"; };
 		20E53015EE1619CAC70EF513 /* Outfit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Outfit.swift; sourceTree = "<group>"; };
 		22EB5C9E082453163BA9F45C /* VersatilityScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersatilityScorer.swift; sourceTree = "<group>"; };
@@ -96,6 +102,7 @@
 		666F4C71E6D91FF7DED0FFEA /* ColorHarmonyScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorHarmonyScorer.swift; sourceTree = "<group>"; };
 		6DFC3D5E99EB9FDB13D567FB /* ColorSwatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorSwatchView.swift; sourceTree = "<group>"; };
 		7FED51D475689315991283B7 /* AuthenticationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AuthenticationServices.framework; path = System/Library/Frameworks/AuthenticationServices.framework; sourceTree = SDKROOT; };
+		8403C7EFCCAF992F66A81681 /* DailyOutfitsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyOutfitsView.swift; sourceTree = "<group>"; };
 		8436F78ED9DED40EAF50036F /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		872FA30CF42237A09D781C77 /* WardrobeReDo.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = WardrobeReDo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		88813DB0A2B4250B8334B7F8 /* AuthViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthViewModel.swift; sourceTree = "<group>"; };
@@ -111,6 +118,7 @@
 		B2C9571A55D9A18682F09E9F /* TabRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabRootView.swift; sourceTree = "<group>"; };
 		B3B70133845A41609D59A5FF /* WardrobeGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeGridView.swift; sourceTree = "<group>"; };
 		B41193683C38AC2B597BAFB3 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		B41E402ED7710F0F5E2305EB /* OutfitViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitViewModel.swift; sourceTree = "<group>"; };
 		B758DE2E6A51366CEE73B921 /* UserRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRepository.swift; sourceTree = "<group>"; };
 		B99F96027E9C62E61C3A9B8A /* WardrobeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeViewModel.swift; sourceTree = "<group>"; };
 		C6E465734D0F4208AE7FBB42 /* StyleEngineService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleEngineService.swift; sourceTree = "<group>"; };
@@ -234,6 +242,9 @@
 		7049E11A9BE2806B3B22B901 /* Outfits */ = {
 			isa = PBXGroup;
 			children = (
+				8403C7EFCCAF992F66A81681 /* DailyOutfitsView.swift */,
+				0B7BF5813E651F8CDB8CD164 /* OutfitCardView.swift */,
+				165E8F07B133D103EA536F99 /* OutfitDetailView.swift */,
 			);
 			path = Outfits;
 			sourceTree = "<group>";
@@ -356,6 +367,7 @@
 			children = (
 				CF53994B4FD8C70C8B64D1B8 /* AddItemViewModel.swift */,
 				88813DB0A2B4250B8334B7F8 /* AuthViewModel.swift */,
+				B41E402ED7710F0F5E2305EB /* OutfitViewModel.swift */,
 				B99F96027E9C62E61C3A9B8A /* WardrobeViewModel.swift */,
 			);
 			path = ViewModels;
@@ -502,6 +514,7 @@
 				F4E64BEF27571417C53E5C9D /* ColorHarmonyScorer.swift in Sources */,
 				6CF811B1C9D80286997E7EED /* ColorSwatchView.swift in Sources */,
 				B51E3ABDA470A1B8252A3997 /* ContentView.swift in Sources */,
+				5ECCCBAF4D9B5F06C5EB9D99 /* DailyOutfitsView.swift in Sources */,
 				1F27F2B18310E43F4841B9B8 /* EditorialTextField.swift in Sources */,
 				6C3E3E0ED0852C70D5A28AC5 /* FormalityCoherenceScorer.swift in Sources */,
 				5C275C3F390CF67AAEB39B40 /* GoldButton.swift in Sources */,
@@ -512,10 +525,13 @@
 				F590265490EED777D6B21FC3 /* LoginView.swift in Sources */,
 				5F635A5141566AB41B119F4A /* OccasionContextScorer.swift in Sources */,
 				5DF6700A54CB012EBECEB48B /* Outfit.swift in Sources */,
+				FDD9ED140A3AC2577BD560B9 /* OutfitCardView.swift in Sources */,
+				1017A796AB915D49DFE1DDDD /* OutfitDetailView.swift in Sources */,
 				372CAC772F1EB862D27A606C /* OutfitFormulaScorer.swift in Sources */,
 				3A7134AC738990875901186E /* OutfitGenerationService.swift in Sources */,
 				65DE2677B456AFC8872B3D0F /* OutfitRepository.swift in Sources */,
 				4DAB88B82A0C075337918B5D /* OutfitScorer.swift in Sources */,
+				14FC5E3E883885716AFFA303 /* OutfitViewModel.swift in Sources */,
 				C71D027971FCFA01E73C7CF2 /* Profile.swift in Sources */,
 				2D769A1055801BDB82682DCB /* ProfileView.swift in Sources */,
 				9081D833C8B2B9406806F8A6 /* ProportionBalanceScorer.swift in Sources */,

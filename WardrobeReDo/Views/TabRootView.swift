@@ -14,7 +14,7 @@ struct TabRootView: View {
             .tag(0)
 
             NavigationStack {
-                OutfitsPlaceholderView()
+                DailyOutfitsView()
             }
             .tabItem {
                 Label("Outfits", systemImage: "sparkles")
@@ -42,13 +42,6 @@ struct TabRootView: View {
 }
 
 // MARK: - Placeholder views (replaced in later sprints)
-
-private struct OutfitsPlaceholderView: View {
-    var body: some View {
-        PlaceholderScreen(title: "Daily Outfits", subtitle: "Your styled suggestions appear here")
-            .navigationTitle("Outfits")
-    }
-}
 
 private struct MatchingPlaceholderView: View {
     var body: some View {
