@@ -180,13 +180,23 @@ struct WardrobeGridView: View {
     // MARK: - Loading State
 
     private var loadingState: some View {
-        VStack(spacing: Theme.Spacing.md) {
-            ProgressView()
-                .tint(Color(Theme.Colors.primary))
-                .scaleEffect(1.2)
-            Text("Loading wardrobe...")
-                .font(Theme.Fonts.body)
-                .foregroundStyle(Color(Theme.Colors.textSecondary))
+        ScrollView {
+            VStack(spacing: Theme.Spacing.md) {
+                // Fake filter chips shimmer
+                HStack(spacing: Theme.Spacing.sm) {
+                    ForEach(0..<4, id: \.self) { _ in
+                        RoundedRectangle(cornerRadius: Theme.Radius.chip)
+                            .fill(Color(Theme.Colors.muted).opacity(0.15))
+                            .frame(width: 70, height: 32)
+                            .shimmer()
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, Theme.Spacing.md)
+
+                WardrobeGridShimmer(count: 6)
+            }
+            .padding(.top, Theme.Spacing.sm)
         }
     }
 
