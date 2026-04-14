@@ -115,7 +115,9 @@ struct WardrobeGridView: View {
                 RoundedRectangle(cornerRadius: Theme.Radius.chip)
                     .stroke(isSelected ? Color.clear : Color(Theme.Colors.border), lineWidth: 1)
             )
+            .scaleEffect(isSelected ? 1.05 : 1.0)
         }
+        .animation(Theme.Animation.spring, value: isSelected)
     }
 
     // MARK: - Item Count
