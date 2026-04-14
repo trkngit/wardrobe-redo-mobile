@@ -39,6 +39,7 @@ targets:
         product: Supabase
       - package: Kingfisher
       - sdk: AuthenticationServices.framework
+      - target: WardrobeReDoWidget
     info:
       path: WardrobeReDo/Info.plist
       properties:
@@ -53,6 +54,30 @@ targets:
           - CormorantGaramond-Medium.ttf
           - CormorantGaramond-Regular.ttf
         ITSAppUsesNonExemptEncryption: false
+
+  WardrobeReDoWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - WardrobeReDoWidget
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.digitalatelier.wardroberedo.widget
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "6.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Wardrobe Widget
+        INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: WardrobeReDoWidget/WardrobeReDoWidget.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.digitalatelier.wardroberedo
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
 
   WardrobeReDoTests:
     type: bundle.unit-test

@@ -80,6 +80,15 @@ final class OutfitViewModel {
 
             // Pre-load thumbnails
             await loadThumbnails()
+
+            // Update widget with top outfit
+            if let top = dailyOutfits.first {
+                WidgetDataService.updateWidget(
+                    outfitName: top.outfit.editorialName,
+                    score: Int(top.outfit.score * 100),
+                    itemCount: top.items.count
+                )
+            }
         } catch {
             errorMessage = "Couldn't load today's outfits."
         }
