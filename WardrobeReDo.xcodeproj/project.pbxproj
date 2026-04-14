@@ -18,12 +18,17 @@
 		5C658370E3AD99EFA975E2AC /* StyleRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25DC5CD683DD962BA802B6BA /* StyleRule.swift */; };
 		5DF6700A54CB012EBECEB48B /* Outfit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20E53015EE1619CAC70EF513 /* Outfit.swift */; };
 		6A8D1D1930FBA7A07CF0F44E /* StyleArchetype.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25C01BB3FED8903F9F539095 /* StyleArchetype.swift */; };
+		6CF811B1C9D80286997E7EED /* ColorSwatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DFC3D5E99EB9FDB13D567FB /* ColorSwatchView.swift */; };
 		6E6D4845CCE627D16F3F579F /* WardrobeReDoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18165792F146D914FFB57C1E /* WardrobeReDoTests.swift */; };
+		8AB657AF6173BEC1CA766D6B /* ImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1187ED645956910F8C96393A /* ImageService.swift */; };
+		8E18997C3E2536948CA1B789 /* ColorExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77AC489FED071A22EFD1085 /* ColorExtractionService.swift */; };
 		92261BEB9B0BE8693D05F512 /* AuthViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88813DB0A2B4250B8334B7F8 /* AuthViewModel.swift */; };
 		990E6E6606ECE862F7803C8F /* ClothingCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30CEFA6A7B5A6DA1D58FA150 /* ClothingCategory.swift */; };
+		9A6559BAC55291A82A3A6AF9 /* AddItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2869F1610C0A845EE9693D4B /* AddItemView.swift */; };
 		9F858C833F6A1FB55E723AD3 /* UserRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = B758DE2E6A51366CEE73B921 /* UserRepository.swift */; };
 		A5A9620585FACAE9C5AE1DF1 /* SupabaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FECD392912E83419B91CAE5C /* SupabaseManager.swift */; };
 		B51E3ABDA470A1B8252A3997 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A15DEF04B2C2859C4A5DBF9 /* ContentView.swift */; };
+		BBC20C655A418EC320416035 /* WardrobeRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6227E043096FCC04C8921342 /* WardrobeRepository.swift */; };
 		C71D027971FCFA01E73C7CF2 /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = F538CC03182800F2F302A091 /* Profile.swift */; };
 		D41933CF9F004AE38286F6A0 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8436F78ED9DED40EAF50036F /* AuthService.swift */; };
 		DB9F4816E8DCC1A73D4D6F4C /* ItemStyleTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA4AF5446D85F237FCB56924 /* ItemStyleTag.swift */; };
@@ -33,6 +38,7 @@
 		E98E461F27CF4C10116DD4C9 /* StyleEnums.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB979D72C8E717BB5F9F8228 /* StyleEnums.swift */; };
 		EAAD3E4944421FFCC887C6D9 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EDFD4B09F5FAFC39A70E7F8 /* Theme.swift */; };
 		F12B501F67EF77EACEFBEABC /* ClothingSubcategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B521875890F6DE5C89E19 /* ClothingSubcategory.swift */; };
+		F15448B700D5AFD2ECEA817A /* AddItemViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF53994B4FD8C70C8B64D1B8 /* AddItemViewModel.swift */; };
 		F4A673965684EB0D9A4DEA6B /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25E662C139AA32A35D83AD43 /* Color+Hex.swift */; };
 		F590265490EED777D6B21FC3 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B41193683C38AC2B597BAFB3 /* LoginView.swift */; };
 /* End PBXBuildFile section */
@@ -49,16 +55,20 @@
 
 /* Begin PBXFileReference section */
 		063B6D8EB12F97EC8FB4C8E3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		1187ED645956910F8C96393A /* ImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageService.swift; sourceTree = "<group>"; };
 		18165792F146D914FFB57C1E /* WardrobeReDoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeReDoTests.swift; sourceTree = "<group>"; };
 		20E53015EE1619CAC70EF513 /* Outfit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Outfit.swift; sourceTree = "<group>"; };
 		25C01BB3FED8903F9F539095 /* StyleArchetype.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleArchetype.swift; sourceTree = "<group>"; };
 		25DC5CD683DD962BA802B6BA /* StyleRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleRule.swift; sourceTree = "<group>"; };
 		25E662C139AA32A35D83AD43 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 		264BBB2F3E55F63315C0E1C1 /* WardrobeReDoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeReDoApp.swift; sourceTree = "<group>"; };
+		2869F1610C0A845EE9693D4B /* AddItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddItemView.swift; sourceTree = "<group>"; };
 		30CEFA6A7B5A6DA1D58FA150 /* ClothingCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingCategory.swift; sourceTree = "<group>"; };
 		371B521875890F6DE5C89E19 /* ClothingSubcategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingSubcategory.swift; sourceTree = "<group>"; };
 		447D38BBFB20DE3D11B5CEE5 /* WardrobeReDoTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = WardrobeReDoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		6227E043096FCC04C8921342 /* WardrobeRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeRepository.swift; sourceTree = "<group>"; };
 		663352C0EAED405CDDB92744 /* WardrobeItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeItem.swift; sourceTree = "<group>"; };
+		6DFC3D5E99EB9FDB13D567FB /* ColorSwatchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorSwatchView.swift; sourceTree = "<group>"; };
 		7FED51D475689315991283B7 /* AuthenticationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AuthenticationServices.framework; path = System/Library/Frameworks/AuthenticationServices.framework; sourceTree = SDKROOT; };
 		8436F78ED9DED40EAF50036F /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
 		872FA30CF42237A09D781C77 /* WardrobeReDo.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = WardrobeReDo.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -69,10 +79,12 @@
 		99886AD57254CF10F04ABFD5 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		9CC14240AC1EDC654F3266FB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1BBE9F2C0E97A7C98F08604 /* GoldButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldButton.swift; sourceTree = "<group>"; };
+		A77AC489FED071A22EFD1085 /* ColorExtractionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorExtractionService.swift; sourceTree = "<group>"; };
 		B2C9571A55D9A18682F09E9F /* TabRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabRootView.swift; sourceTree = "<group>"; };
 		B41193683C38AC2B597BAFB3 /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
 		B758DE2E6A51366CEE73B921 /* UserRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRepository.swift; sourceTree = "<group>"; };
 		CA4AF5446D85F237FCB56924 /* ItemStyleTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemStyleTag.swift; sourceTree = "<group>"; };
+		CF53994B4FD8C70C8B64D1B8 /* AddItemViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddItemViewModel.swift; sourceTree = "<group>"; };
 		DB979D72C8E717BB5F9F8228 /* StyleEnums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleEnums.swift; sourceTree = "<group>"; };
 		E544B2D3387E5D36FD2E6921 /* EditorialTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorialTextField.swift; sourceTree = "<group>"; };
 		F538CC03182800F2F302A091 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
@@ -165,6 +177,7 @@
 			isa = PBXGroup;
 			children = (
 				B758DE2E6A51366CEE73B921 /* UserRepository.swift */,
+				6227E043096FCC04C8921342 /* WardrobeRepository.swift */,
 			);
 			path = Repositories;
 			sourceTree = "<group>";
@@ -172,6 +185,7 @@
 		6DC4AF8347CA14452A34AF82 /* Wardrobe */ = {
 			isa = PBXGroup;
 			children = (
+				2869F1610C0A845EE9693D4B /* AddItemView.swift */,
 			);
 			path = Wardrobe;
 			sourceTree = "<group>";
@@ -195,6 +209,8 @@
 			isa = PBXGroup;
 			children = (
 				8436F78ED9DED40EAF50036F /* AuthService.swift */,
+				A77AC489FED071A22EFD1085 /* ColorExtractionService.swift */,
+				1187ED645956910F8C96393A /* ImageService.swift */,
 				A3C25A59929F288BE15908E5 /* StyleEngine */,
 			);
 			path = Services;
@@ -285,6 +301,7 @@
 		EC02A8CE7B421DE48C40BDCA /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				CF53994B4FD8C70C8B64D1B8 /* AddItemViewModel.swift */,
 				88813DB0A2B4250B8334B7F8 /* AuthViewModel.swift */,
 			);
 			path = ViewModels;
@@ -293,6 +310,7 @@
 		ECEA690E5F1A2D9BEEC935E4 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				6DFC3D5E99EB9FDB13D567FB /* ColorSwatchView.swift */,
 				E544B2D3387E5D36FD2E6921 /* EditorialTextField.swift */,
 				A1BBE9F2C0E97A7C98F08604 /* GoldButton.swift */,
 			);
@@ -416,15 +434,20 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9A6559BAC55291A82A3A6AF9 /* AddItemView.swift in Sources */,
+				F15448B700D5AFD2ECEA817A /* AddItemViewModel.swift in Sources */,
 				481401688CA1B3731549F756 /* AppState.swift in Sources */,
 				D41933CF9F004AE38286F6A0 /* AuthService.swift in Sources */,
 				92261BEB9B0BE8693D05F512 /* AuthViewModel.swift in Sources */,
 				990E6E6606ECE862F7803C8F /* ClothingCategory.swift in Sources */,
 				F12B501F67EF77EACEFBEABC /* ClothingSubcategory.swift in Sources */,
 				F4A673965684EB0D9A4DEA6B /* Color+Hex.swift in Sources */,
+				8E18997C3E2536948CA1B789 /* ColorExtractionService.swift in Sources */,
+				6CF811B1C9D80286997E7EED /* ColorSwatchView.swift in Sources */,
 				B51E3ABDA470A1B8252A3997 /* ContentView.swift in Sources */,
 				1F27F2B18310E43F4841B9B8 /* EditorialTextField.swift in Sources */,
 				5C275C3F390CF67AAEB39B40 /* GoldButton.swift in Sources */,
+				8AB657AF6173BEC1CA766D6B /* ImageService.swift in Sources */,
 				DB9F4816E8DCC1A73D4D6F4C /* ItemStyleTag.swift in Sources */,
 				F590265490EED777D6B21FC3 /* LoginView.swift in Sources */,
 				5DF6700A54CB012EBECEB48B /* Outfit.swift in Sources */,
@@ -439,6 +462,7 @@
 				9F858C833F6A1FB55E723AD3 /* UserRepository.swift in Sources */,
 				E4014DF209EF9BEEB202C489 /* WardrobeItem.swift in Sources */,
 				097E7B034A058A9E66AE1B56 /* WardrobeReDoApp.swift in Sources */,
+				BBC20C655A418EC320416035 /* WardrobeRepository.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
