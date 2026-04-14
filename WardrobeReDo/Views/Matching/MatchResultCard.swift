@@ -115,7 +115,7 @@ struct MatchResultCard: View {
 
     private var saveButton: some View {
         Button {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            HapticManager.light()
             onSave()
         } label: {
             HStack(spacing: Theme.Spacing.xs) {

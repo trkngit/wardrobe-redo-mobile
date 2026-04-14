@@ -21,6 +21,7 @@
 		3BD6FFAC9936178F9A3A6CAB /* TabRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C9571A55D9A18682F09E9F /* TabRootView.swift */; };
 		481401688CA1B3731549F756 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8FCFE03D1304A46202395E3F /* AppState.swift */; };
 		4DAB88B82A0C075337918B5D /* OutfitScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2E419D226826217136FE80 /* OutfitScorer.swift */; };
+		582AABE87441DF63D710753C /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 918DC82615BA389443CFF61E /* SwiftUI.framework */; };
 		5C275C3F390CF67AAEB39B40 /* GoldButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1BBE9F2C0E97A7C98F08604 /* GoldButton.swift */; };
 		5C658370E3AD99EFA975E2AC /* StyleRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25DC5CD683DD962BA802B6BA /* StyleRule.swift */; };
 		5DF6700A54CB012EBECEB48B /* Outfit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20E53015EE1619CAC70EF513 /* Outfit.swift */; };
@@ -34,6 +35,9 @@
 		6C3E3E0ED0852C70D5A28AC5 /* FormalityCoherenceScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FB218A3E5982759A27575EF /* FormalityCoherenceScorer.swift */; };
 		6CF811B1C9D80286997E7EED /* ColorSwatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DFC3D5E99EB9FDB13D567FB /* ColorSwatchView.swift */; };
 		6E6D4845CCE627D16F3F579F /* WardrobeReDoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18165792F146D914FFB57C1E /* WardrobeReDoTests.swift */; };
+		7CA48C2BB6591A47130F10B2 /* AnimationModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F08E100E4D24438011D36A4D /* AnimationModifiers.swift */; };
+		82B139FEDA1B0C6D0B72518A /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90334A1885AC99F617DF15A3 /* HapticManager.swift */; };
+		8845E98A397A0C1AC48B617F /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 179B1F5339C20DB9F142E8BB /* WidgetKit.framework */; };
 		8AB657AF6173BEC1CA766D6B /* ImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1187ED645956910F8C96393A /* ImageService.swift */; };
 		8B945787989F72743EBA3AB5 /* archetypes.json in Resources */ = {isa = PBXBuildFile; fileRef = 8DF3B0AF85BC98DC8DA7A52A /* archetypes.json */; };
 		8E18997C3E2536948CA1B789 /* ColorExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77AC489FED071A22EFD1085 /* ColorExtractionService.swift */; };
@@ -48,18 +52,21 @@
 		B51E3ABDA470A1B8252A3997 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A15DEF04B2C2859C4A5DBF9 /* ContentView.swift */; };
 		BBC20C655A418EC320416035 /* WardrobeRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6227E043096FCC04C8921342 /* WardrobeRepository.swift */; };
 		C71D027971FCFA01E73C7CF2 /* Profile.swift in Sources */ = {isa = PBXBuildFile; fileRef = F538CC03182800F2F302A091 /* Profile.swift */; };
+		CB2CAC5E420DA6A2B0B5B563 /* WidgetDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C592BAD5B2ABC33292A5FD4C /* WidgetDataService.swift */; };
 		D1D30A113E77B2BCBABA3B07 /* WardrobeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B99F96027E9C62E61C3A9B8A /* WardrobeViewModel.swift */; };
 		D2378DFC394CF515AD188E5C /* StyleDataRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1D2EC01B9B367FB518263F5 /* StyleDataRepository.swift */; };
 		D41933CF9F004AE38286F6A0 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8436F78ED9DED40EAF50036F /* AuthService.swift */; };
 		D95FCD511EF60476DCEA9308 /* WardrobeGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B70133845A41609D59A5FF /* WardrobeGridView.swift */; };
 		D9FDA3CD67BA6AE2ED3D60D4 /* rules.json in Resources */ = {isa = PBXBuildFile; fileRef = 3A99C02E5CAF71235061614E /* rules.json */; };
 		DB9F4816E8DCC1A73D4D6F4C /* ItemStyleTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA4AF5446D85F237FCB56924 /* ItemStyleTag.swift */; };
+		E021E3B04734338D33EB8011 /* WardrobeReDoWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 52712911A70A4E2ED40AF9B6 /* WardrobeReDoWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		E04766420FAB362E4F1443CD /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 91B6C4013341D357B417E93A /* Kingfisher */; };
 		E12376D6CDE7C568976128EC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9CC14240AC1EDC654F3266FB /* Assets.xcassets */; };
 		E4014DF209EF9BEEB202C489 /* WardrobeItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 663352C0EAED405CDDB92744 /* WardrobeItem.swift */; };
 		E8272EB15A599D6B65F01F98 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D123122D77B0FC8202D1335F /* NotificationService.swift */; };
 		E98E461F27CF4C10116DD4C9 /* StyleEnums.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB979D72C8E717BB5F9F8228 /* StyleEnums.swift */; };
 		EAAD3E4944421FFCC887C6D9 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EDFD4B09F5FAFC39A70E7F8 /* Theme.swift */; };
+		F08D32389A0DF42FA59453AF /* WardrobeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8B93ACED5FE7CC1E74AA56 /* WardrobeWidget.swift */; };
 		F12B501F67EF77EACEFBEABC /* ClothingSubcategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371B521875890F6DE5C89E19 /* ClothingSubcategory.swift */; };
 		F15448B700D5AFD2ECEA817A /* AddItemViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF53994B4FD8C70C8B64D1B8 /* AddItemViewModel.swift */; };
 		F4A673965684EB0D9A4DEA6B /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25E662C139AA32A35D83AD43 /* Color+Hex.swift */; };
@@ -71,6 +78,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		67FBFDE2BC139DE9180DC096 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0C73BD22BD158D65AE32CABC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2567EE05430C835A8AE16822;
+			remoteInfo = WardrobeReDoWidget;
+		};
 		FE1CCA85D3F1F519846367C7 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 0C73BD22BD158D65AE32CABC /* Project object */;
@@ -80,6 +94,20 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		EAAB43F6EBCF71B526491A7F /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				E021E3B04734338D33EB8011 /* WardrobeReDoWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		063B6D8EB12F97EC8FB4C8E3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0688E82B35A527869065DFD9 /* OutfitGenerationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitGenerationService.swift; sourceTree = "<group>"; };
@@ -87,6 +115,7 @@
 		0FF50F1B4F362AEC103CEF90 /* OutfitRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitRepository.swift; sourceTree = "<group>"; };
 		1187ED645956910F8C96393A /* ImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageService.swift; sourceTree = "<group>"; };
 		165E8F07B133D103EA536F99 /* OutfitDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitDetailView.swift; sourceTree = "<group>"; };
+		179B1F5339C20DB9F142E8BB /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		18165792F146D914FFB57C1E /* WardrobeReDoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeReDoTests.swift; sourceTree = "<group>"; };
 		20E53015EE1619CAC70EF513 /* Outfit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Outfit.swift; sourceTree = "<group>"; };
 		22EB5C9E082453163BA9F45C /* VersatilityScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersatilityScorer.swift; sourceTree = "<group>"; };
@@ -101,7 +130,9 @@
 		3A99C02E5CAF71235061614E /* rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = rules.json; sourceTree = "<group>"; };
 		447D38BBFB20DE3D11B5CEE5 /* WardrobeReDoTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = WardrobeReDoTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4ADF6DCCAD94A6DE061B3CE1 /* ItemDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailView.swift; sourceTree = "<group>"; };
+		52712911A70A4E2ED40AF9B6 /* WardrobeReDoWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = WardrobeReDoWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		57E477D0C7D4CDAE664051D3 /* OccasionContextScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OccasionContextScorer.swift; sourceTree = "<group>"; };
+		5D07FF6B66631CD212F73EFF /* WardrobeReDoWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WardrobeReDoWidget.entitlements; sourceTree = "<group>"; };
 		60AE0B5951035C08C305DD2E /* MatchingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingViewModel.swift; sourceTree = "<group>"; };
 		6227E043096FCC04C8921342 /* WardrobeRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeRepository.swift; sourceTree = "<group>"; };
 		663352C0EAED405CDDB92744 /* WardrobeItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeItem.swift; sourceTree = "<group>"; };
@@ -118,8 +149,11 @@
 		8DF3B0AF85BC98DC8DA7A52A /* archetypes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = archetypes.json; sourceTree = "<group>"; };
 		8EDFD4B09F5FAFC39A70E7F8 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		8FCFE03D1304A46202395E3F /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		90334A1885AC99F617DF15A3 /* HapticManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticManager.swift; sourceTree = "<group>"; };
+		918DC82615BA389443CFF61E /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		99886AD57254CF10F04ABFD5 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		9CC14240AC1EDC654F3266FB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		9F8B93ACED5FE7CC1E74AA56 /* WardrobeWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeWidget.swift; sourceTree = "<group>"; };
 		A1BBE9F2C0E97A7C98F08604 /* GoldButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldButton.swift; sourceTree = "<group>"; };
 		A77AC489FED071A22EFD1085 /* ColorExtractionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorExtractionService.swift; sourceTree = "<group>"; };
 		AC645AB6B790E88FED618CD7 /* MatchingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingView.swift; sourceTree = "<group>"; };
@@ -129,6 +163,7 @@
 		B41E402ED7710F0F5E2305EB /* OutfitViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitViewModel.swift; sourceTree = "<group>"; };
 		B758DE2E6A51366CEE73B921 /* UserRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRepository.swift; sourceTree = "<group>"; };
 		B99F96027E9C62E61C3A9B8A /* WardrobeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeViewModel.swift; sourceTree = "<group>"; };
+		C592BAD5B2ABC33292A5FD4C /* WidgetDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataService.swift; sourceTree = "<group>"; };
 		C6E465734D0F4208AE7FBB42 /* StyleEngineService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleEngineService.swift; sourceTree = "<group>"; };
 		CA4AF5446D85F237FCB56924 /* ItemStyleTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemStyleTag.swift; sourceTree = "<group>"; };
 		CF53994B4FD8C70C8B64D1B8 /* AddItemViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddItemViewModel.swift; sourceTree = "<group>"; };
@@ -140,6 +175,7 @@
 		E2278C97AC59114AF18355C8 /* OutfitFormulaScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitFormulaScorer.swift; sourceTree = "<group>"; };
 		E544B2D3387E5D36FD2E6921 /* EditorialTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorialTextField.swift; sourceTree = "<group>"; };
 		EF82CDF068E318725A1D2C02 /* ItemCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemCardView.swift; sourceTree = "<group>"; };
+		F08E100E4D24438011D36A4D /* AnimationModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationModifiers.swift; sourceTree = "<group>"; };
 		F538CC03182800F2F302A091 /* Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Profile.swift; sourceTree = "<group>"; };
 		FDEC6953279FE5130C2A8F4E /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		FECD392912E83419B91CAE5C /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
@@ -153,6 +189,15 @@
 				329871DEA9CA10EADC01652E /* Supabase in Frameworks */,
 				E04766420FAB362E4F1443CD /* Kingfisher in Frameworks */,
 				00E112D643C2163F48A03559 /* AuthenticationServices.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5A366798F85696D7831A2EBC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8845E98A397A0C1AC48B617F /* WidgetKit.framework in Frameworks */,
+				582AABE87441DF63D710753C /* SwiftUI.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -182,6 +227,15 @@
 				18165792F146D914FFB57C1E /* WardrobeReDoTests.swift */,
 			);
 			path = WardrobeReDoTests;
+			sourceTree = "<group>";
+		};
+		16DB440EA93FF9744964904D /* WardrobeReDoWidget */ = {
+			isa = PBXGroup;
+			children = (
+				5D07FF6B66631CD212F73EFF /* WardrobeReDoWidget.entitlements */,
+				9F8B93ACED5FE7CC1E74AA56 /* WardrobeWidget.swift */,
+			);
+			path = WardrobeReDoWidget;
 			sourceTree = "<group>";
 		};
 		260131920231FB7FB73A9ED4 /* Views */ = {
@@ -223,6 +277,8 @@
 			isa = PBXGroup;
 			children = (
 				7FED51D475689315991283B7 /* AuthenticationServices.framework */,
+				918DC82615BA389443CFF61E /* SwiftUI.framework */,
+				179B1F5339C20DB9F142E8BB /* WidgetKit.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -272,9 +328,11 @@
 			children = (
 				8436F78ED9DED40EAF50036F /* AuthService.swift */,
 				A77AC489FED071A22EFD1085 /* ColorExtractionService.swift */,
+				90334A1885AC99F617DF15A3 /* HapticManager.swift */,
 				1187ED645956910F8C96393A /* ImageService.swift */,
 				D123122D77B0FC8202D1335F /* NotificationService.swift */,
 				0688E82B35A527869065DFD9 /* OutfitGenerationService.swift */,
+				C592BAD5B2ABC33292A5FD4C /* WidgetDataService.swift */,
 				A3C25A59929F288BE15908E5 /* StyleEngine */,
 			);
 			path = Services;
@@ -285,6 +343,7 @@
 			children = (
 				872FA30CF42237A09D781C77 /* WardrobeReDo.app */,
 				447D38BBFB20DE3D11B5CEE5 /* WardrobeReDoTests.xctest */,
+				52712911A70A4E2ED40AF9B6 /* WardrobeReDoWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -304,6 +363,7 @@
 			children = (
 				03C3E8635717D02E498F08B1 /* WardrobeReDo */,
 				0D969AE7C8162D65995DFE57 /* WardrobeReDoTests */,
+				16DB440EA93FF9744964904D /* WardrobeReDoWidget */,
 				2E18974A2E616CD5B4B5FC8A /* Frameworks */,
 				8BE2F28C1F8E4357CFFAA986 /* Products */,
 			);
@@ -390,6 +450,7 @@
 		ECEA690E5F1A2D9BEEC935E4 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				F08E100E4D24438011D36A4D /* AnimationModifiers.swift */,
 				6DFC3D5E99EB9FDB13D567FB /* ColorSwatchView.swift */,
 				E544B2D3387E5D36FD2E6921 /* EditorialTextField.swift */,
 				A1BBE9F2C0E97A7C98F08604 /* GoldButton.swift */,
@@ -422,6 +483,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		2567EE05430C835A8AE16822 /* WardrobeReDoWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DF37D4D46D1A36A59CCBC32B /* Build configuration list for PBXNativeTarget "WardrobeReDoWidget" */;
+			buildPhases = (
+				7C9CEC0BDCBA49CDC0BAE4DC /* Sources */,
+				5A366798F85696D7831A2EBC /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = WardrobeReDoWidget;
+			packageProductDependencies = (
+			);
+			productName = WardrobeReDoWidget;
+			productReference = 52712911A70A4E2ED40AF9B6 /* WardrobeReDoWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		3A7299374FFBDB0666DC59C9 /* WardrobeReDoTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = C7E511DCE345FC06EB6D2B6B /* Build configuration list for PBXNativeTarget "WardrobeReDoTests" */;
@@ -447,10 +526,12 @@
 				285CC7F351E4BD897F260910 /* Sources */,
 				EACC5C7A1F2F63D82E4CC9B2 /* Resources */,
 				16536F8F1CF218EE3B0D6B8F /* Frameworks */,
+				EAAB43F6EBCF71B526491A7F /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				BC0DE4411913CC26336F3138 /* PBXTargetDependency */,
 			);
 			name = WardrobeReDo;
 			packageProductDependencies = (
@@ -495,6 +576,7 @@
 			targets = (
 				F5EDDA5CEB4501A88B3E9790 /* WardrobeReDo */,
 				3A7299374FFBDB0666DC59C9 /* WardrobeReDoTests */,
+				2567EE05430C835A8AE16822 /* WardrobeReDoWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -519,6 +601,7 @@
 			files = (
 				9A6559BAC55291A82A3A6AF9 /* AddItemView.swift in Sources */,
 				F15448B700D5AFD2ECEA817A /* AddItemViewModel.swift in Sources */,
+				7CA48C2BB6591A47130F10B2 /* AnimationModifiers.swift in Sources */,
 				481401688CA1B3731549F756 /* AppState.swift in Sources */,
 				D41933CF9F004AE38286F6A0 /* AuthService.swift in Sources */,
 				92261BEB9B0BE8693D05F512 /* AuthViewModel.swift in Sources */,
@@ -533,6 +616,7 @@
 				1F27F2B18310E43F4841B9B8 /* EditorialTextField.swift in Sources */,
 				6C3E3E0ED0852C70D5A28AC5 /* FormalityCoherenceScorer.swift in Sources */,
 				5C275C3F390CF67AAEB39B40 /* GoldButton.swift in Sources */,
+				82B139FEDA1B0C6D0B72518A /* HapticManager.swift in Sources */,
 				8AB657AF6173BEC1CA766D6B /* ImageService.swift in Sources */,
 				2BBCC2BEEB3DDFFC29B4DCA0 /* ItemCardView.swift in Sources */,
 				6396ACD55502AB8499985E44 /* ItemDetailView.swift in Sources */,
@@ -571,6 +655,15 @@
 				097E7B034A058A9E66AE1B56 /* WardrobeReDoApp.swift in Sources */,
 				BBC20C655A418EC320416035 /* WardrobeRepository.swift in Sources */,
 				D1D30A113E77B2BCBABA3B07 /* WardrobeViewModel.swift in Sources */,
+				CB2CAC5E420DA6A2B0B5B563 /* WidgetDataService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7C9CEC0BDCBA49CDC0BAE4DC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F08D32389A0DF42FA59453AF /* WardrobeWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -589,6 +682,11 @@
 			isa = PBXTargetDependency;
 			target = F5EDDA5CEB4501A88B3E9790 /* WardrobeReDo */;
 			targetProxy = FE1CCA85D3F1F519846367C7 /* PBXContainerItemProxy */;
+		};
+		BC0DE4411913CC26336F3138 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 2567EE05430C835A8AE16822 /* WardrobeReDoWidget */;
+			targetProxy = 67FBFDE2BC139DE9180DC096 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -693,6 +791,27 @@
 			};
 			name = Release;
 		};
+		AEF706B61C7C77774910838C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = WardrobeReDoWidget/WardrobeReDoWidget.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Wardrobe Widget";
+				INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.digitalatelier.wardroberedo.widget;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
 		C0036F440CAA1385F117AA50 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -766,6 +885,27 @@
 			};
 			name = Debug;
 		};
+		F119CD23E5A82BE69207262B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = WardrobeReDoWidget/WardrobeReDoWidget.entitlements;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Wardrobe Widget";
+				INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.digitalatelier.wardroberedo.widget;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
 		F37B92A6802186B7FDAC23D1 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -812,6 +952,15 @@
 			buildConfigurations = (
 				DF34B26CC34B97E178ED98DF /* Debug */,
 				52E305134A70A41A9C45C99D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		DF37D4D46D1A36A59CCBC32B /* Build configuration list for PBXNativeTarget "WardrobeReDoWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F119CD23E5A82BE69207262B /* Debug */,
+				AEF706B61C7C77774910838C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

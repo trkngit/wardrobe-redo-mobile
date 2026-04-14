@@ -133,12 +133,13 @@ struct WardrobeGridView: View {
 
     private var itemGrid: some View {
         LazyVGrid(columns: columns, spacing: Theme.Spacing.md) {
-            ForEach(viewModel.filteredItems) { item in
+            ForEach(Array(viewModel.filteredItems.enumerated()), id: \.element.id) { index, item in
                 NavigationLink(value: item.id) {
                     ItemCardView(
                         item: item,
                         thumbnailURL: thumbnailURLs[item.id]
                     )
+                    .staggeredFadeIn(index: index)
                 }
                 .buttonStyle(.plain)
             }

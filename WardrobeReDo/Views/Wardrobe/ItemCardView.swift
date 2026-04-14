@@ -38,13 +38,14 @@ struct ItemCardView: View {
             // Color dots + metadata
             VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
                 HStack(spacing: 4) {
-                    ForEach(Array(item.dominantColors.prefix(3).enumerated()), id: \.offset) { _, color in
+                    ForEach(Array(item.dominantColors.prefix(3).enumerated()), id: \.offset) { index, color in
                         Circle()
                             .fill(Color(hex: color.hex))
                             .frame(width: 10, height: 10)
                             .overlay(
                                 Circle().stroke(.white, lineWidth: 1)
                             )
+                            .scalePopIn(delay: Double(index) * 0.1)
                     }
 
                     Spacer()

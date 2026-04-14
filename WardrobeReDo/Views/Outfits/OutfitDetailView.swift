@@ -232,7 +232,7 @@ struct OutfitDetailView: View {
         let isActive = outfit.reaction == reaction
 
         return Button {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            HapticManager.light()
             Task { await viewModel.react(outfitId: outfit.id, reaction: reaction) }
         } label: {
             VStack(spacing: Theme.Spacing.xs) {
@@ -264,7 +264,7 @@ struct OutfitDetailView: View {
 
     private var wornToggle: some View {
         Button {
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            HapticManager.medium()
             Task { await viewModel.toggleWorn(outfitId: outfit.id) }
         } label: {
             HStack(spacing: Theme.Spacing.sm) {
