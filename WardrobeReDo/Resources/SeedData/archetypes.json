@@ -1,0 +1,1302 @@
+[
+  {
+    "id": "A0000001-0000-0000-0000-000000000001",
+    "name": "timeless_tailored",
+    "family": "classic",
+    "editorial_name": "The Tailored Line",
+    "description": "Crisp, structured silhouettes with neutral palettes and clean proportions. The foundation of a curated wardrobe.",
+    "formality_min": 0.5,
+    "formality_max": 0.85,
+    "seasons": ["spring", "fall", "winter"],
+    "occasions": ["work", "date", "formal"],
+    "mood_keywords": ["polished", "confident", "refined"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic", "analogous"],
+      "avoid_combinations": [["red", "orange"], ["pink", "red"]],
+      "neutral_bias": 0.7
+    },
+    "texture_preferences": {
+      "preferred": ["wool", "cotton", "silk"],
+      "avoided": ["denim", "nylon"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "slim"], ["structured", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000001-0000-0000-0000-000000000002",
+    "name": "navy_blazer",
+    "family": "classic",
+    "editorial_name": "Navy Standard",
+    "description": "Built around the navy blazer as hero piece. Versatile anchor for both casual and dressy occasions.",
+    "formality_min": 0.45,
+    "formality_max": 0.8,
+    "seasons": ["spring", "fall", "winter"],
+    "occasions": ["work", "date", "casual"],
+    "mood_keywords": ["dependable", "smart", "versatile"],
+    "color_preferences": {
+      "preferred_harmonies": ["complementary", "analogous"],
+      "avoid_combinations": [["navy", "black"]],
+      "neutral_bias": 0.6
+    },
+    "texture_preferences": {
+      "preferred": ["wool", "cotton", "linen"],
+      "avoided": ["velvet", "nylon"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["structured", "slim"], ["regular", "regular"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000001-0000-0000-0000-000000000003",
+    "name": "monochrome_authority",
+    "family": "classic",
+    "editorial_name": "Single Shade",
+    "description": "Head-to-toe tonal dressing in one color family. Elongating, sophisticated, effortlessly put together.",
+    "formality_min": 0.4,
+    "formality_max": 0.9,
+    "seasons": ["spring", "summer", "fall", "winter"],
+    "occasions": ["work", "date", "formal"],
+    "mood_keywords": ["sleek", "intentional", "powerful"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.5
+    },
+    "texture_preferences": {
+      "preferred": ["wool", "silk", "cotton"],
+      "avoided": ["denim"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["slim", "slim"], ["regular", "slim"], ["structured", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000001-0000-0000-0000-000000000004",
+    "name": "weekend_classic",
+    "family": "classic",
+    "editorial_name": "Saturday Refined",
+    "description": "Relaxed classics — chinos, loafers, knit polo. Casual but never sloppy.",
+    "formality_min": 0.3,
+    "formality_max": 0.55,
+    "seasons": ["spring", "summer", "fall"],
+    "occasions": ["casual", "date"],
+    "mood_keywords": ["relaxed", "approachable", "clean"],
+    "color_preferences": {
+      "preferred_harmonies": ["analogous", "neutral"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.6
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "linen", "knit"],
+      "avoided": ["velvet", "satin"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "regular"], ["relaxed", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000001-0000-0000-0000-000000000005",
+    "name": "power_suit",
+    "family": "classic",
+    "editorial_name": "The Authority",
+    "description": "Sharp suiting with intentional color. Boardroom presence with modern edge.",
+    "formality_min": 0.7,
+    "formality_max": 1.0,
+    "seasons": ["fall", "winter", "spring"],
+    "occasions": ["work", "formal"],
+    "mood_keywords": ["commanding", "sharp", "powerful"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic", "complementary"],
+      "avoid_combinations": [["brown", "black"]],
+      "neutral_bias": 0.8
+    },
+    "texture_preferences": {
+      "preferred": ["wool", "silk", "cotton"],
+      "avoided": ["denim", "knit", "corduroy"],
+      "max_count": 2
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["structured", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000001-0000-0000-0000-000000000006",
+    "name": "trench_weather",
+    "family": "classic",
+    "editorial_name": "Trench Season",
+    "description": "Outerwear-forward classic built around the trench coat as the defining piece.",
+    "formality_min": 0.45,
+    "formality_max": 0.75,
+    "seasons": ["spring", "fall"],
+    "occasions": ["work", "casual", "date"],
+    "mood_keywords": ["elegant", "timeless", "cinematic"],
+    "color_preferences": {
+      "preferred_harmonies": ["analogous", "neutral"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.7
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "wool", "leather"],
+      "avoided": ["velvet", "chiffon"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "slim"], ["structured", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000002-0000-0000-0000-000000000001",
+    "name": "quiet_luxury",
+    "family": "minimalist",
+    "editorial_name": "Quiet Luxury",
+    "description": "Understated pieces in premium fabrics. No logos, no noise — just quality that speaks for itself.",
+    "formality_min": 0.4,
+    "formality_max": 0.8,
+    "seasons": ["spring", "summer", "fall", "winter"],
+    "occasions": ["work", "date", "casual"],
+    "mood_keywords": ["understated", "luxurious", "effortless"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic", "neutral"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.85
+    },
+    "texture_preferences": {
+      "preferred": ["wool", "silk", "cotton", "knit"],
+      "avoided": ["nylon", "synthetic"],
+      "max_count": 2
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "regular"], ["relaxed", "slim"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000002-0000-0000-0000-000000000002",
+    "name": "scandinavian_clean",
+    "family": "minimalist",
+    "editorial_name": "Nordic Clean",
+    "description": "Scandinavian simplicity — whites, greys, blacks with clean geometric lines.",
+    "formality_min": 0.3,
+    "formality_max": 0.65,
+    "seasons": ["spring", "summer", "fall", "winter"],
+    "occasions": ["work", "casual"],
+    "mood_keywords": ["clean", "geometric", "serene"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic", "neutral"],
+      "avoid_combinations": [["red", "yellow"], ["orange", "purple"]],
+      "neutral_bias": 0.9
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "wool", "linen"],
+      "avoided": ["velvet", "satin", "chiffon"],
+      "max_count": 2
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "regular"], ["regular", "slim"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000002-0000-0000-0000-000000000003",
+    "name": "capsule_essentials",
+    "family": "minimalist",
+    "editorial_name": "The Capsule",
+    "description": "Interchangeable wardrobe staples. Every piece works with every other piece.",
+    "formality_min": 0.3,
+    "formality_max": 0.6,
+    "seasons": ["spring", "summer", "fall", "winter"],
+    "occasions": ["casual", "work"],
+    "mood_keywords": ["practical", "curated", "intentional"],
+    "color_preferences": {
+      "preferred_harmonies": ["neutral", "monochromatic"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.8
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "denim", "wool"],
+      "avoided": ["velvet", "satin"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "regular"], ["regular", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000002-0000-0000-0000-000000000004",
+    "name": "japanese_minimal",
+    "family": "minimalist",
+    "editorial_name": "Wabi-Sabi",
+    "description": "Japanese-inspired drape and volume. Architectural silhouettes in muted earth tones.",
+    "formality_min": 0.25,
+    "formality_max": 0.6,
+    "seasons": ["spring", "summer", "fall"],
+    "occasions": ["casual", "date"],
+    "mood_keywords": ["architectural", "contemplative", "textured"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic", "analogous"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.75
+    },
+    "texture_preferences": {
+      "preferred": ["linen", "cotton", "wool", "knit"],
+      "avoided": ["synthetic", "nylon"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["oversized", "slim"], ["relaxed", "relaxed"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000002-0000-0000-0000-000000000005",
+    "name": "all_black",
+    "family": "minimalist",
+    "editorial_name": "Ink",
+    "description": "All-black with texture as the only variable. Depth through material contrast, not color.",
+    "formality_min": 0.3,
+    "formality_max": 0.85,
+    "seasons": ["spring", "fall", "winter"],
+    "occasions": ["casual", "work", "date"],
+    "mood_keywords": ["dramatic", "urban", "focused"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic"],
+      "avoid_combinations": [],
+      "neutral_bias": 1.0
+    },
+    "texture_preferences": {
+      "preferred": ["leather", "wool", "cotton", "silk", "knit"],
+      "avoided": [],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["slim", "slim"], ["oversized", "slim"], ["structured", "slim"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000002-0000-0000-0000-000000000006",
+    "name": "linen_ease",
+    "family": "minimalist",
+    "editorial_name": "Linen Days",
+    "description": "Breezy linen-forward minimalism for warm weather. Relaxed structure, breathable layers.",
+    "formality_min": 0.2,
+    "formality_max": 0.5,
+    "seasons": ["spring", "summer"],
+    "occasions": ["casual", "date"],
+    "mood_keywords": ["breezy", "relaxed", "warm"],
+    "color_preferences": {
+      "preferred_harmonies": ["neutral", "analogous"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.7
+    },
+    "texture_preferences": {
+      "preferred": ["linen", "cotton"],
+      "avoided": ["leather", "wool", "velvet"],
+      "max_count": 2
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["relaxed", "relaxed"], ["relaxed", "regular"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000003-0000-0000-0000-000000000001",
+    "name": "soft_feminine",
+    "family": "romantic",
+    "editorial_name": "Petal",
+    "description": "Soft textures, flowing fabrics, and gentle color palettes. Romantic without costume.",
+    "formality_min": 0.3,
+    "formality_max": 0.7,
+    "seasons": ["spring", "summer"],
+    "occasions": ["date", "casual"],
+    "mood_keywords": ["soft", "graceful", "feminine"],
+    "color_preferences": {
+      "preferred_harmonies": ["analogous", "monochromatic"],
+      "avoid_combinations": [["black", "red"]],
+      "neutral_bias": 0.3
+    },
+    "texture_preferences": {
+      "preferred": ["silk", "chiffon", "linen", "cotton"],
+      "avoided": ["leather", "denim"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "regular"], ["relaxed", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000003-0000-0000-0000-000000000002",
+    "name": "garden_party",
+    "family": "romantic",
+    "editorial_name": "Garden Hour",
+    "description": "Floral-ready elegance. Dress-forward with delicate accessories and light layers.",
+    "formality_min": 0.4,
+    "formality_max": 0.7,
+    "seasons": ["spring", "summer"],
+    "occasions": ["date", "casual", "formal"],
+    "mood_keywords": ["fresh", "blooming", "elegant"],
+    "color_preferences": {
+      "preferred_harmonies": ["analogous", "triadic"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.2
+    },
+    "texture_preferences": {
+      "preferred": ["chiffon", "silk", "cotton", "linen"],
+      "avoided": ["leather", "denim", "nylon"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "regular"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000003-0000-0000-0000-000000000003",
+    "name": "velvet_evening",
+    "family": "romantic",
+    "editorial_name": "Velvet Hour",
+    "description": "Rich textures for evening. Velvet, silk, and satin in deep jewel tones.",
+    "formality_min": 0.6,
+    "formality_max": 0.9,
+    "seasons": ["fall", "winter"],
+    "occasions": ["date", "formal"],
+    "mood_keywords": ["luxurious", "dramatic", "evening"],
+    "color_preferences": {
+      "preferred_harmonies": ["complementary", "analogous"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.2
+    },
+    "texture_preferences": {
+      "preferred": ["velvet", "silk", "satin"],
+      "avoided": ["denim", "nylon", "synthetic"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "slim"], ["structured", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000003-0000-0000-0000-000000000004",
+    "name": "modern_romantic",
+    "family": "romantic",
+    "editorial_name": "New Romance",
+    "description": "Contemporary take on romantic dressing — soft meets structured, feminine meets sharp.",
+    "formality_min": 0.35,
+    "formality_max": 0.7,
+    "seasons": ["spring", "summer", "fall"],
+    "occasions": ["date", "work", "casual"],
+    "mood_keywords": ["contemporary", "balanced", "fresh"],
+    "color_preferences": {
+      "preferred_harmonies": ["analogous", "complementary"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.4
+    },
+    "texture_preferences": {
+      "preferred": ["silk", "cotton", "wool", "knit"],
+      "avoided": ["nylon"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["structured", "slim"], ["regular", "regular"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000003-0000-0000-0000-000000000005",
+    "name": "cottagecore",
+    "family": "romantic",
+    "editorial_name": "Meadow",
+    "description": "Pastoral charm — natural fabrics, earth tones and pastels, handcrafted details.",
+    "formality_min": 0.15,
+    "formality_max": 0.45,
+    "seasons": ["spring", "summer"],
+    "occasions": ["casual"],
+    "mood_keywords": ["pastoral", "gentle", "handmade"],
+    "color_preferences": {
+      "preferred_harmonies": ["analogous", "neutral"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.4
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "linen", "knit"],
+      "avoided": ["leather", "synthetic", "nylon"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["relaxed", "relaxed"], ["relaxed", "regular"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000003-0000-0000-0000-000000000006",
+    "name": "blush_hour",
+    "family": "romantic",
+    "editorial_name": "Blush Hour",
+    "description": "Pink-toned sophistication. Blush, rose, and mauve as the color story anchor.",
+    "formality_min": 0.35,
+    "formality_max": 0.7,
+    "seasons": ["spring", "summer"],
+    "occasions": ["date", "casual", "work"],
+    "mood_keywords": ["warm", "approachable", "soft"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic", "analogous"],
+      "avoid_combinations": [["pink", "orange"]],
+      "neutral_bias": 0.3
+    },
+    "texture_preferences": {
+      "preferred": ["silk", "cotton", "knit", "wool"],
+      "avoided": ["denim", "nylon"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "slim"], ["regular", "regular"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000004-0000-0000-0000-000000000001",
+    "name": "desert_wanderer",
+    "family": "bohemian",
+    "editorial_name": "Desert Drift",
+    "description": "Warm earth tones, flowing layers, natural textures. Free-spirited with intention.",
+    "formality_min": 0.1,
+    "formality_max": 0.4,
+    "seasons": ["spring", "summer", "fall"],
+    "occasions": ["casual"],
+    "mood_keywords": ["free", "earthy", "layered"],
+    "color_preferences": {
+      "preferred_harmonies": ["analogous", "triadic"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.35
+    },
+    "texture_preferences": {
+      "preferred": ["linen", "cotton", "leather", "suede"],
+      "avoided": ["synthetic", "nylon"],
+      "max_count": 4
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["relaxed", "relaxed"], ["oversized", "slim"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000004-0000-0000-0000-000000000002",
+    "name": "artisan_layers",
+    "family": "bohemian",
+    "editorial_name": "Studio Layers",
+    "description": "Creative layering with artisanal textures. Mixed patterns united by color story.",
+    "formality_min": 0.15,
+    "formality_max": 0.45,
+    "seasons": ["fall", "winter", "spring"],
+    "occasions": ["casual", "date"],
+    "mood_keywords": ["creative", "layered", "artisanal"],
+    "color_preferences": {
+      "preferred_harmonies": ["analogous", "triadic"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.3
+    },
+    "texture_preferences": {
+      "preferred": ["knit", "wool", "cotton", "corduroy", "linen"],
+      "avoided": ["synthetic"],
+      "max_count": 4
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["relaxed", "slim"], ["oversized", "regular"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000004-0000-0000-0000-000000000003",
+    "name": "festival_eclectic",
+    "family": "bohemian",
+    "editorial_name": "Festival Sun",
+    "description": "Bold color mixing, texture clash by design. Eclectic but cohesive through palette.",
+    "formality_min": 0.05,
+    "formality_max": 0.3,
+    "seasons": ["spring", "summer"],
+    "occasions": ["casual"],
+    "mood_keywords": ["bold", "eclectic", "joyful"],
+    "color_preferences": {
+      "preferred_harmonies": ["triadic", "complementary"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.1
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "linen", "denim", "leather"],
+      "avoided": ["wool"],
+      "max_count": 4
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["relaxed", "relaxed"], ["cropped", "relaxed"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000004-0000-0000-0000-000000000004",
+    "name": "coastal_boho",
+    "family": "bohemian",
+    "editorial_name": "Coastal Free",
+    "description": "Beach-town bohemian — flowy whites, ocean blues, natural textures.",
+    "formality_min": 0.1,
+    "formality_max": 0.35,
+    "seasons": ["spring", "summer"],
+    "occasions": ["casual"],
+    "mood_keywords": ["breezy", "coastal", "natural"],
+    "color_preferences": {
+      "preferred_harmonies": ["analogous", "neutral"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.5
+    },
+    "texture_preferences": {
+      "preferred": ["linen", "cotton", "denim"],
+      "avoided": ["velvet", "wool", "synthetic"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["relaxed", "relaxed"], ["relaxed", "regular"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000004-0000-0000-0000-000000000005",
+    "name": "vintage_bohemian",
+    "family": "bohemian",
+    "editorial_name": "Retro Spirit",
+    "description": "Vintage-inspired bohemian with retro color palettes and throwback silhouettes.",
+    "formality_min": 0.15,
+    "formality_max": 0.45,
+    "seasons": ["spring", "summer", "fall"],
+    "occasions": ["casual", "date"],
+    "mood_keywords": ["nostalgic", "warm", "collected"],
+    "color_preferences": {
+      "preferred_harmonies": ["analogous", "complementary"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.3
+    },
+    "texture_preferences": {
+      "preferred": ["denim", "cotton", "corduroy", "knit", "suede"],
+      "avoided": ["synthetic", "nylon"],
+      "max_count": 4
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["relaxed", "slim"], ["regular", "regular"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000004-0000-0000-0000-000000000006",
+    "name": "nomad_winter",
+    "family": "bohemian",
+    "editorial_name": "Winter Nomad",
+    "description": "Cold-weather bohemian layering — heavy knits, textured wraps, rich earth tones.",
+    "formality_min": 0.15,
+    "formality_max": 0.4,
+    "seasons": ["fall", "winter"],
+    "occasions": ["casual"],
+    "mood_keywords": ["warm", "textured", "cozy"],
+    "color_preferences": {
+      "preferred_harmonies": ["analogous", "neutral"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.45
+    },
+    "texture_preferences": {
+      "preferred": ["wool", "knit", "suede", "leather", "corduroy"],
+      "avoided": ["chiffon", "satin"],
+      "max_count": 4
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["oversized", "slim"], ["relaxed", "regular"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000005-0000-0000-0000-000000000001",
+    "name": "elevated_street",
+    "family": "streetwear",
+    "editorial_name": "Elevated Street",
+    "description": "Streetwear proportions with premium materials. Oversized meets luxury.",
+    "formality_min": 0.1,
+    "formality_max": 0.4,
+    "seasons": ["spring", "summer", "fall", "winter"],
+    "occasions": ["casual"],
+    "mood_keywords": ["urban", "confident", "current"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic", "neutral"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.6
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "denim", "leather", "nylon"],
+      "avoided": ["silk", "chiffon"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["oversized", "slim"], ["oversized", "regular"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000005-0000-0000-0000-000000000002",
+    "name": "sneaker_culture",
+    "family": "streetwear",
+    "editorial_name": "Sole Statement",
+    "description": "Shoe-forward outfits where the sneaker is the hero piece. Everything else supports.",
+    "formality_min": 0.05,
+    "formality_max": 0.35,
+    "seasons": ["spring", "summer", "fall", "winter"],
+    "occasions": ["casual"],
+    "mood_keywords": ["collector", "hype", "fresh"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic", "complementary"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.55
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "denim", "nylon", "synthetic"],
+      "avoided": ["silk", "velvet"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "slim"], ["oversized", "slim"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000005-0000-0000-0000-000000000003",
+    "name": "utilitarian_street",
+    "family": "streetwear",
+    "editorial_name": "Utility Mode",
+    "description": "Cargo pockets, technical fabrics, earthy military palette. Function as fashion.",
+    "formality_min": 0.1,
+    "formality_max": 0.35,
+    "seasons": ["spring", "fall"],
+    "occasions": ["casual"],
+    "mood_keywords": ["functional", "rugged", "tactical"],
+    "color_preferences": {
+      "preferred_harmonies": ["analogous", "neutral"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.65
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "nylon", "denim", "leather"],
+      "avoided": ["silk", "chiffon", "satin"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["relaxed", "relaxed"], ["regular", "relaxed"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000005-0000-0000-0000-000000000004",
+    "name": "denim_on_denim",
+    "family": "streetwear",
+    "editorial_name": "Double Denim",
+    "description": "Canadian tuxedo done right — varied washes and intentional texture contrast.",
+    "formality_min": 0.1,
+    "formality_max": 0.35,
+    "seasons": ["spring", "summer", "fall"],
+    "occasions": ["casual"],
+    "mood_keywords": ["bold", "retro", "confident"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic", "analogous"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.5
+    },
+    "texture_preferences": {
+      "preferred": ["denim", "cotton"],
+      "avoided": ["silk", "chiffon"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "slim"], ["oversized", "slim"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000005-0000-0000-0000-000000000005",
+    "name": "graphic_statement",
+    "family": "streetwear",
+    "editorial_name": "Graphic Voice",
+    "description": "Statement graphic tee or sweatshirt as the outfit's focal point. Let it speak.",
+    "formality_min": 0.05,
+    "formality_max": 0.3,
+    "seasons": ["spring", "summer", "fall"],
+    "occasions": ["casual"],
+    "mood_keywords": ["expressive", "bold", "personal"],
+    "color_preferences": {
+      "preferred_harmonies": ["complementary", "monochromatic"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.45
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "denim", "nylon"],
+      "avoided": ["silk", "wool"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["oversized", "slim"], ["regular", "regular"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000005-0000-0000-0000-000000000006",
+    "name": "techwear",
+    "family": "streetwear",
+    "editorial_name": "Tech Noir",
+    "description": "Performance fabrics and dark palettes. Weather-resistant style with urban edge.",
+    "formality_min": 0.1,
+    "formality_max": 0.35,
+    "seasons": ["fall", "winter"],
+    "occasions": ["casual"],
+    "mood_keywords": ["futuristic", "sleek", "functional"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic", "neutral"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.8
+    },
+    "texture_preferences": {
+      "preferred": ["nylon", "synthetic", "leather"],
+      "avoided": ["silk", "linen", "velvet"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["slim", "slim"], ["regular", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000006-0000-0000-0000-000000000001",
+    "name": "ivy_league",
+    "family": "preppy",
+    "editorial_name": "Ivy Standard",
+    "description": "East Coast collegiate — button-downs, crewneck sweaters, loafers, and chinos.",
+    "formality_min": 0.35,
+    "formality_max": 0.65,
+    "seasons": ["fall", "winter", "spring"],
+    "occasions": ["work", "casual"],
+    "mood_keywords": ["scholarly", "polished", "traditional"],
+    "color_preferences": {
+      "preferred_harmonies": ["complementary", "analogous"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.5
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "wool", "knit", "tweed"],
+      "avoided": ["nylon", "synthetic"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "regular"], ["regular", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000006-0000-0000-0000-000000000002",
+    "name": "country_club",
+    "family": "preppy",
+    "editorial_name": "Country Club",
+    "description": "Tennis whites, pastels, and crisp polo shirts. Sport-influenced prep.",
+    "formality_min": 0.3,
+    "formality_max": 0.55,
+    "seasons": ["spring", "summer"],
+    "occasions": ["casual", "athletic"],
+    "mood_keywords": ["fresh", "sporty", "classic"],
+    "color_preferences": {
+      "preferred_harmonies": ["analogous", "complementary"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.4
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "knit", "linen"],
+      "avoided": ["leather", "velvet", "synthetic"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "regular"], ["regular", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000006-0000-0000-0000-000000000003",
+    "name": "new_england",
+    "family": "preppy",
+    "editorial_name": "Harbor Row",
+    "description": "Coastal New England — navy, white, red. Cable knits and canvas sneakers.",
+    "formality_min": 0.25,
+    "formality_max": 0.5,
+    "seasons": ["spring", "summer", "fall"],
+    "occasions": ["casual"],
+    "mood_keywords": ["nautical", "crisp", "coastal"],
+    "color_preferences": {
+      "preferred_harmonies": ["complementary", "triadic"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.45
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "knit", "linen", "denim"],
+      "avoided": ["velvet", "satin"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "regular"], ["relaxed", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000006-0000-0000-0000-000000000004",
+    "name": "prep_modern",
+    "family": "preppy",
+    "editorial_name": "New Prep",
+    "description": "Modern preppy — slimmer fits, updated colors, less pattern-heavy.",
+    "formality_min": 0.3,
+    "formality_max": 0.6,
+    "seasons": ["spring", "summer", "fall", "winter"],
+    "occasions": ["casual", "work"],
+    "mood_keywords": ["modern", "clean", "youthful"],
+    "color_preferences": {
+      "preferred_harmonies": ["analogous", "neutral"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.5
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "wool", "knit"],
+      "avoided": ["nylon", "synthetic"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "slim"], ["slim", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000006-0000-0000-0000-000000000005",
+    "name": "tweed_academia",
+    "family": "preppy",
+    "editorial_name": "Dark Academia",
+    "description": "Scholarly dark prep — tweed, corduroy, burgundy, and forest green.",
+    "formality_min": 0.4,
+    "formality_max": 0.7,
+    "seasons": ["fall", "winter"],
+    "occasions": ["work", "casual", "date"],
+    "mood_keywords": ["intellectual", "moody", "layered"],
+    "color_preferences": {
+      "preferred_harmonies": ["analogous", "monochromatic"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.45
+    },
+    "texture_preferences": {
+      "preferred": ["tweed", "wool", "corduroy", "cotton", "leather"],
+      "avoided": ["nylon", "synthetic"],
+      "max_count": 4
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "regular"], ["structured", "slim"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000006-0000-0000-0000-000000000006",
+    "name": "rugby_casual",
+    "family": "preppy",
+    "editorial_name": "Field Day",
+    "description": "Athletic prep — rugby shirts, varsity jackets, relaxed chinos.",
+    "formality_min": 0.15,
+    "formality_max": 0.4,
+    "seasons": ["fall", "spring"],
+    "occasions": ["casual", "athletic"],
+    "mood_keywords": ["sporty", "energetic", "collegiate"],
+    "color_preferences": {
+      "preferred_harmonies": ["complementary", "triadic"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.35
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "knit", "denim"],
+      "avoided": ["silk", "satin"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["relaxed", "regular"], ["regular", "regular"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000007-0000-0000-0000-000000000001",
+    "name": "leather_edge",
+    "family": "edgy",
+    "editorial_name": "Leather & Shadow",
+    "description": "Leather jacket as the defining piece. Dark palette, sharp attitude.",
+    "formality_min": 0.15,
+    "formality_max": 0.5,
+    "seasons": ["spring", "fall", "winter"],
+    "occasions": ["casual", "date"],
+    "mood_keywords": ["rebellious", "sharp", "dark"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic", "neutral"],
+      "avoid_combinations": [["pink", "yellow"]],
+      "neutral_bias": 0.75
+    },
+    "texture_preferences": {
+      "preferred": ["leather", "denim", "cotton"],
+      "avoided": ["chiffon", "linen"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "slim"], ["slim", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000007-0000-0000-0000-000000000002",
+    "name": "deconstructed",
+    "family": "edgy",
+    "editorial_name": "Undone",
+    "description": "Deliberately imperfect — asymmetric cuts, raw edges, unexpected proportions.",
+    "formality_min": 0.1,
+    "formality_max": 0.45,
+    "seasons": ["spring", "fall", "winter"],
+    "occasions": ["casual", "date"],
+    "mood_keywords": ["avant-garde", "experimental", "raw"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic", "neutral"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.7
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "leather", "denim", "knit"],
+      "avoided": ["satin"],
+      "max_count": 4
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["oversized", "slim"], ["oversized", "oversized"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000007-0000-0000-0000-000000000003",
+    "name": "punk_refined",
+    "family": "edgy",
+    "editorial_name": "Refined Punk",
+    "description": "Punk attitude with refined materials. Studs on cashmere energy.",
+    "formality_min": 0.2,
+    "formality_max": 0.5,
+    "seasons": ["fall", "winter", "spring"],
+    "occasions": ["casual", "date"],
+    "mood_keywords": ["defiant", "sharp", "contrasting"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic", "complementary"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.65
+    },
+    "texture_preferences": {
+      "preferred": ["leather", "denim", "cotton", "wool"],
+      "avoided": ["chiffon", "linen"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["slim", "slim"], ["regular", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000007-0000-0000-0000-000000000004",
+    "name": "dark_minimalist",
+    "family": "edgy",
+    "editorial_name": "Void",
+    "description": "Dark palette minimalism with architectural structure. Less is more, but darker.",
+    "formality_min": 0.25,
+    "formality_max": 0.6,
+    "seasons": ["fall", "winter"],
+    "occasions": ["casual", "work", "date"],
+    "mood_keywords": ["austere", "architectural", "brooding"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.9
+    },
+    "texture_preferences": {
+      "preferred": ["wool", "cotton", "leather"],
+      "avoided": ["chiffon", "satin"],
+      "max_count": 2
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["oversized", "slim"], ["structured", "slim"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000007-0000-0000-0000-000000000005",
+    "name": "grunge_revival",
+    "family": "edgy",
+    "editorial_name": "Grunge Revived",
+    "description": "90s grunge updated — flannel layering, distressed denim, combat boots.",
+    "formality_min": 0.05,
+    "formality_max": 0.3,
+    "seasons": ["fall", "winter"],
+    "occasions": ["casual"],
+    "mood_keywords": ["nostalgic", "rough", "layered"],
+    "color_preferences": {
+      "preferred_harmonies": ["analogous", "neutral"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.5
+    },
+    "texture_preferences": {
+      "preferred": ["denim", "cotton", "leather", "knit", "corduroy"],
+      "avoided": ["silk", "satin", "chiffon"],
+      "max_count": 4
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["oversized", "slim"], ["relaxed", "relaxed"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000007-0000-0000-0000-000000000006",
+    "name": "moto_luxe",
+    "family": "edgy",
+    "editorial_name": "Chrome",
+    "description": "Motorcycle-inspired with luxury finishes. Moto jacket, slim pants, statement boots.",
+    "formality_min": 0.2,
+    "formality_max": 0.5,
+    "seasons": ["spring", "fall"],
+    "occasions": ["casual", "date"],
+    "mood_keywords": ["bold", "sleek", "dangerous"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic", "neutral"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.7
+    },
+    "texture_preferences": {
+      "preferred": ["leather", "suede", "denim", "cotton"],
+      "avoided": ["chiffon", "linen"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "slim"], ["slim", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000008-0000-0000-0000-000000000001",
+    "name": "sport_luxe",
+    "family": "athleisure",
+    "editorial_name": "Sport Luxe",
+    "description": "Athletic pieces elevated with luxury materials. Performance meets fashion.",
+    "formality_min": 0.1,
+    "formality_max": 0.35,
+    "seasons": ["spring", "summer", "fall", "winter"],
+    "occasions": ["casual", "athletic"],
+    "mood_keywords": ["active", "modern", "sleek"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic", "neutral"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.6
+    },
+    "texture_preferences": {
+      "preferred": ["synthetic", "nylon", "cotton", "knit"],
+      "avoided": ["silk", "velvet", "tweed"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "slim"], ["relaxed", "slim"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000008-0000-0000-0000-000000000002",
+    "name": "yoga_street",
+    "family": "athleisure",
+    "editorial_name": "Studio to Street",
+    "description": "Yoga-studio staples styled for everyday. Leggings, crop tops, oversized layers.",
+    "formality_min": 0.05,
+    "formality_max": 0.25,
+    "seasons": ["spring", "summer", "fall"],
+    "occasions": ["casual", "athletic", "lounge"],
+    "mood_keywords": ["comfortable", "mindful", "flexible"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic", "neutral"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.55
+    },
+    "texture_preferences": {
+      "preferred": ["synthetic", "cotton", "knit"],
+      "avoided": ["leather", "wool", "tweed"],
+      "max_count": 2
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["oversized", "slim"], ["cropped", "slim"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000008-0000-0000-0000-000000000003",
+    "name": "running_casual",
+    "family": "athleisure",
+    "editorial_name": "Pace Maker",
+    "description": "Running-culture inspired — technical jackets, joggers, performance sneakers.",
+    "formality_min": 0.05,
+    "formality_max": 0.25,
+    "seasons": ["spring", "summer", "fall", "winter"],
+    "occasions": ["casual", "athletic"],
+    "mood_keywords": ["energetic", "technical", "light"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic", "complementary"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.5
+    },
+    "texture_preferences": {
+      "preferred": ["nylon", "synthetic", "cotton"],
+      "avoided": ["wool", "silk", "velvet"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "slim"], ["slim", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000008-0000-0000-0000-000000000004",
+    "name": "gorpcore",
+    "family": "athleisure",
+    "editorial_name": "Trail Ready",
+    "description": "Outdoor-adventure aesthetic for the city — hiking boots, fleece, technical layers.",
+    "formality_min": 0.05,
+    "formality_max": 0.25,
+    "seasons": ["fall", "winter"],
+    "occasions": ["casual"],
+    "mood_keywords": ["outdoorsy", "rugged", "practical"],
+    "color_preferences": {
+      "preferred_harmonies": ["analogous", "neutral"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.5
+    },
+    "texture_preferences": {
+      "preferred": ["nylon", "synthetic", "cotton", "wool"],
+      "avoided": ["silk", "satin", "chiffon"],
+      "max_count": 4
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["relaxed", "relaxed"], ["oversized", "regular"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000008-0000-0000-0000-000000000005",
+    "name": "lounge_elevated",
+    "family": "athleisure",
+    "editorial_name": "Sunday Edit",
+    "description": "Elevated loungewear — matching sets, quality knits, presentable comfort.",
+    "formality_min": 0.05,
+    "formality_max": 0.2,
+    "seasons": ["spring", "summer", "fall", "winter"],
+    "occasions": ["lounge", "casual"],
+    "mood_keywords": ["cozy", "effortless", "soft"],
+    "color_preferences": {
+      "preferred_harmonies": ["monochromatic", "neutral"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.65
+    },
+    "texture_preferences": {
+      "preferred": ["knit", "cotton", "synthetic"],
+      "avoided": ["leather", "denim", "tweed"],
+      "max_count": 2
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["relaxed", "relaxed"], ["oversized", "regular"]],
+      "allow_oversized": true
+    }
+  },
+  {
+    "id": "A0000008-0000-0000-0000-000000000006",
+    "name": "tennis_core",
+    "family": "athleisure",
+    "editorial_name": "Match Point",
+    "description": "Tennis-inspired — pleated skirts, polo shirts, clean white sneakers, sporty elegance.",
+    "formality_min": 0.2,
+    "formality_max": 0.4,
+    "seasons": ["spring", "summer"],
+    "occasions": ["casual", "athletic"],
+    "mood_keywords": ["crisp", "sporty", "bright"],
+    "color_preferences": {
+      "preferred_harmonies": ["complementary", "analogous"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.4
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "knit", "synthetic"],
+      "avoided": ["leather", "velvet", "corduroy"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "regular"], ["regular", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000009-0000-0000-0000-000000000001",
+    "name": "smart_casual_bridge",
+    "family": "transitional",
+    "editorial_name": "The Bridge",
+    "description": "The midpoint between casual and dressy. Blazer over tee energy — polished but approachable.",
+    "formality_min": 0.35,
+    "formality_max": 0.6,
+    "seasons": ["spring", "summer", "fall", "winter"],
+    "occasions": ["work", "casual", "date"],
+    "mood_keywords": ["balanced", "smart", "versatile"],
+    "color_preferences": {
+      "preferred_harmonies": ["analogous", "neutral"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.55
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "wool", "knit", "denim"],
+      "avoided": ["nylon"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["structured", "slim"], ["regular", "slim"]],
+      "allow_oversized": false
+    }
+  },
+  {
+    "id": "A0000009-0000-0000-0000-000000000002",
+    "name": "date_night_default",
+    "family": "transitional",
+    "editorial_name": "After Dark",
+    "description": "Reliable date night formula — slightly elevated casual with one statement piece.",
+    "formality_min": 0.35,
+    "formality_max": 0.65,
+    "seasons": ["spring", "summer", "fall", "winter"],
+    "occasions": ["date"],
+    "mood_keywords": ["attractive", "confident", "intentional"],
+    "color_preferences": {
+      "preferred_harmonies": ["complementary", "analogous"],
+      "avoid_combinations": [],
+      "neutral_bias": 0.45
+    },
+    "texture_preferences": {
+      "preferred": ["cotton", "leather", "wool", "silk", "denim"],
+      "avoided": ["nylon", "synthetic"],
+      "max_count": 3
+    },
+    "proportion_preferences": {
+      "preferred_balances": [["regular", "slim"], ["slim", "slim"]],
+      "allow_oversized": false
+    }
+  }
+]
