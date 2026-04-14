@@ -53,6 +53,8 @@ targets:
           - CormorantGaramond-SemiBold.ttf
           - CormorantGaramond-Medium.ttf
           - CormorantGaramond-Regular.ttf
+        NSPhotoLibraryUsageDescription: "Wardrobe needs access to your photos to add clothing items to your wardrobe."
+        NSCameraUsageDescription: "Wardrobe can use your camera to photograph clothing items directly."
         ITSAppUsesNonExemptEncryption: false
 
   WardrobeReDoWidget:

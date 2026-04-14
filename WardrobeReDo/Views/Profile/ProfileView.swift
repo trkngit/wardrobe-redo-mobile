@@ -8,6 +8,8 @@ struct ProfileView: View {
     @State private var notificationsEnabled = NotificationService.shared.isEnabled
     @State private var showPreferencesEditor = false
     @State private var isLoadingStats = false
+    @State private var cacheSize: String = "—"
+    @State private var isClearingCache = false
 
     private let wardrobeRepository = WardrobeRepository()
     private let outfitRepository = OutfitRepository()
@@ -18,12 +20,14 @@ struct ProfileView: View {
             statsSection
             preferencesSection
             notificationsSection
+            cacheSection
             aboutSection
             signOutSection
         }
         .navigationTitle("Profile")
         .task {
             await loadStats()
+            cacheSize = await ImageCacheService.formattedDiskCacheSize()
         }
         .sheet(isPresented: $showPreferencesEditor) {
             NavigationStack {
@@ -164,6 +168,43 @@ struct ProfileView: View {
             .onChange(of: notificationsEnabled) { _, newValue in
                 Task { await NotificationService.shared.toggle(enabled: newValue) }
             }
+        }
+    }
+
+    // MARK: - Cache
+
+    private var cacheSection: some View {
+        Section("Image Cache") {
+            HStack {
+                HStack(spacing: Theme.Spacing.md) {
+                    Image(systemName: "internaldrive")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color(Theme.Colors.primary))
+                        .frame(width: 20)
+                    Text("Disk Usage")
+                        .font(Theme.Fonts.body)
+                }
+                Spacer()
+                Text(cacheSize)
+                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                    .foregroundStyle(Color(Theme.Colors.textSecondary))
+            }
+
+            Button(role: .destructive) {
+                Task {
+                    isClearingCache = true
+                    ImageCacheService.clearCache()
+                    cacheSize = await ImageCacheService.formattedDiskCacheSize()
+                    isClearingCache = false
+                    HapticManager.success()
+                }
+            } label: {
+                HStack {
+                    Image(systemName: "trash")
+                    Text(isClearingCache ? "Clearing..." : "Clear Image Cache")
+                }
+            }
+            .disabled(isClearingCache)
         }
     }
 

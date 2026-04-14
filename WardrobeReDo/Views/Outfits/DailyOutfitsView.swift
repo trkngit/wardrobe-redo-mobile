@@ -134,12 +134,14 @@ struct DailyOutfitsView: View {
     // MARK: - Loading State
 
     private var loadingState: some View {
-        VStack(spacing: Theme.Spacing.md) {
-            ProgressView()
-                .tint(Color(Theme.Colors.primary))
-            Text("Loading outfits...")
-                .font(Theme.Fonts.bodySmall)
-                .foregroundStyle(Color(Theme.Colors.textSecondary))
+        ScrollView {
+            VStack(spacing: Theme.Spacing.md) {
+                OutfitCardShimmer()
+                    .padding(.horizontal, Theme.Spacing.lg)
+                OutfitCardShimmer()
+                    .padding(.horizontal, Theme.Spacing.lg)
+            }
+            .padding(.top, Theme.Spacing.md)
         }
     }
 

@@ -22,6 +22,10 @@
 	<string>1</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Wardrobe can use your camera to photograph clothing items directly.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Wardrobe needs access to your photos to add clothing items to your wardrobe.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>CormorantGaramond-SemiBold.ttf</string>
