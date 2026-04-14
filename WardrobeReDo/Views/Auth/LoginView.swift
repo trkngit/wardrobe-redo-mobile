@@ -1,40 +1,175 @@
 import SwiftUI
 
 struct LoginView: View {
+    @State private var viewModel = AuthViewModel()
+
     var body: some View {
         ZStack {
             Color(Theme.Colors.background)
                 .ignoresSafeArea()
 
-            VStack(spacing: Theme.Spacing.xl) {
-                Spacer()
+            ScrollView {
+                VStack(spacing: 0) {
+                    // Editorial branding
+                    VStack(spacing: Theme.Spacing.sm) {
+                        Text("Wardrobe")
+                            .font(Theme.Fonts.display)
+                            .foregroundStyle(Color(Theme.Colors.primary))
 
-                // Editorial branding
-                VStack(spacing: Theme.Spacing.sm) {
-                    Text("Wardrobe")
-                        .font(Theme.Fonts.display)
-                        .foregroundStyle(Color(Theme.Colors.primary))
-                    Text("Your daily style, curated.")
-                        .font(Theme.Fonts.body)
-                        .foregroundStyle(Color(Theme.Colors.textSecondary))
+                        Text("Your daily style, curated.")
+                            .font(Theme.Fonts.body)
+                            .foregroundStyle(Color(Theme.Colors.textSecondary))
+                    }
+                    .padding(.top, 80)
+                    .padding(.bottom, Theme.Spacing.xxl)
+
+                    if viewModel.showSignUp {
+                        signUpForm
+                    } else {
+                        signInForm
+                    }
                 }
-
-                Spacer()
-
-                // Auth form placeholder — implemented in Sprint 1
-                VStack(spacing: Theme.Spacing.md) {
-                    Text("Sign in to continue")
-                        .font(Theme.Fonts.h3)
-                        .foregroundStyle(Color(Theme.Colors.textPrimary))
-                }
-
-                Spacer()
+                .padding(.horizontal, Theme.Spacing.lg)
             }
-            .padding(.horizontal, Theme.Spacing.lg)
+            .scrollDismissesKeyboard(.interactively)
         }
+        .animation(Theme.Animation.standard, value: viewModel.showSignUp)
+    }
+
+    // MARK: - Sign In Form
+
+    private var signInForm: some View {
+        VStack(spacing: Theme.Spacing.md) {
+            Text("Sign In")
+                .font(Theme.Fonts.h2)
+                .foregroundStyle(Color(Theme.Colors.textPrimary))
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            EditorialTextField(
+                placeholder: "Email",
+                text: $viewModel.email,
+                validationMessage: viewModel.emailValidationMessage,
+                keyboardType: .emailAddress,
+                textContentType: .emailAddress
+            )
+            .textInputAutocapitalization(.never)
+
+            EditorialTextField(
+                placeholder: "Password",
+                text: $viewModel.password,
+                isSecure: true,
+                textContentType: .password
+            )
+
+            if let error = viewModel.errorMessage {
+                errorBanner(error)
+            }
+
+            GoldButton("Sign In", isLoading: viewModel.isLoading) {
+                Task { await viewModel.signIn() }
+            }
+            .disabled(!viewModel.canSignIn)
+            .opacity(viewModel.canSignIn ? 1 : 0.5)
+            .padding(.top, Theme.Spacing.sm)
+
+            divider
+
+            GhostButton("Create Account") {
+                viewModel.toggleMode()
+            }
+        }
+    }
+
+    // MARK: - Sign Up Form
+
+    private var signUpForm: some View {
+        VStack(spacing: Theme.Spacing.md) {
+            Text("Create Account")
+                .font(Theme.Fonts.h2)
+                .foregroundStyle(Color(Theme.Colors.textPrimary))
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            EditorialTextField(
+                placeholder: "Display Name",
+                text: $viewModel.displayName,
+                textContentType: .name
+            )
+
+            EditorialTextField(
+                placeholder: "Email",
+                text: $viewModel.email,
+                validationMessage: viewModel.emailValidationMessage,
+                keyboardType: .emailAddress,
+                textContentType: .emailAddress
+            )
+            .textInputAutocapitalization(.never)
+
+            EditorialTextField(
+                placeholder: "Password",
+                text: $viewModel.password,
+                isSecure: true,
+                validationMessage: viewModel.passwordValidationMessage,
+                textContentType: .newPassword
+            )
+
+            EditorialTextField(
+                placeholder: "Confirm Password",
+                text: $viewModel.confirmPassword,
+                isSecure: true,
+                validationMessage: viewModel.confirmPasswordMessage,
+                textContentType: .newPassword
+            )
+
+            if let error = viewModel.errorMessage {
+                errorBanner(error)
+            }
+
+            GoldButton("Create Account", isLoading: viewModel.isLoading) {
+                Task { await viewModel.signUp() }
+            }
+            .disabled(!viewModel.canSignUp)
+            .opacity(viewModel.canSignUp ? 1 : 0.5)
+            .padding(.top, Theme.Spacing.sm)
+
+            divider
+
+            GhostButton("Already have an account? Sign In") {
+                viewModel.toggleMode()
+            }
+        }
+    }
+
+    // MARK: - Shared Components
+
+    private var divider: some View {
+        HStack {
+            Rectangle()
+                .fill(Color(Theme.Colors.border))
+                .frame(height: 1)
+            Text("or")
+                .font(Theme.Fonts.caption)
+                .foregroundStyle(Color(Theme.Colors.textSecondary))
+            Rectangle()
+                .fill(Color(Theme.Colors.border))
+                .frame(height: 1)
+        }
+        .padding(.vertical, Theme.Spacing.sm)
+    }
+
+    private func errorBanner(_ message: String) -> some View {
+        HStack(spacing: Theme.Spacing.sm) {
+            Image(systemName: "exclamationmark.circle")
+            Text(message)
+                .font(Theme.Fonts.bodySmall)
+        }
+        .foregroundStyle(Color(Theme.Colors.destructive))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Theme.Spacing.md)
+        .background(Color(Theme.Colors.destructive).opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
     }
 }
 
-#Preview {
+#Preview("Sign In") {
     LoginView()
 }

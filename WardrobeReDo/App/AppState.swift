@@ -10,6 +10,7 @@ final class AppState {
     var currentUser: Profile?
 
     private let supabase = SupabaseManager.shared.client
+    private let userRepository = UserRepository()
 
     func initialize() async {
         do {
@@ -39,16 +40,22 @@ final class AppState {
         }
     }
 
+    func signOut() async {
+        do {
+            try await supabase.auth.signOut()
+        } catch {
+            print("Sign out failed: \(error)")
+        }
+    }
+
+    func refreshProfile() async {
+        guard let userId = try? await supabase.auth.session.user.id else { return }
+        await loadProfile(userId: userId)
+    }
+
     private func loadProfile(userId: UUID) async {
         do {
-            let profile: Profile = try await supabase
-                .from("profiles")
-                .select()
-                .eq("id", value: userId)
-                .single()
-                .execute()
-                .value
-            currentUser = profile
+            currentUser = try await userRepository.fetchProfile(userId: userId)
         } catch {
             print("Failed to load profile: \(error)")
         }

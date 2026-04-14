@@ -30,7 +30,7 @@ struct TabRootView: View {
             .tag(2)
 
             NavigationStack {
-                ProfilePlaceholderView()
+                ProfileView()
             }
             .tabItem {
                 Label("Profile", systemImage: "person")
@@ -61,13 +61,6 @@ private struct MatchingPlaceholderView: View {
     var body: some View {
         PlaceholderScreen(title: "What Goes With This?", subtitle: "Select an item to find matches")
             .navigationTitle("Match")
-    }
-}
-
-private struct ProfilePlaceholderView: View {
-    var body: some View {
-        PlaceholderScreen(title: "Profile", subtitle: "Your style preferences and stats")
-            .navigationTitle("Profile")
     }
 }
 
