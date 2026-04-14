@@ -6,7 +6,7 @@ struct TabRootView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             NavigationStack {
-                WardrobePlaceholderView()
+                WardrobeGridView()
             }
             .tabItem {
                 Label("Wardrobe", systemImage: "tshirt")
@@ -42,13 +42,6 @@ struct TabRootView: View {
 }
 
 // MARK: - Placeholder views (replaced in later sprints)
-
-private struct WardrobePlaceholderView: View {
-    var body: some View {
-        PlaceholderScreen(title: "Your Wardrobe", subtitle: "Upload your first item to get started")
-            .navigationTitle("Wardrobe")
-    }
-}
 
 private struct OutfitsPlaceholderView: View {
     var body: some View {
