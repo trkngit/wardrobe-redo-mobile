@@ -8,7 +8,11 @@ struct ContentView: View {
             if appState.isLoading {
                 LaunchView()
             } else if appState.isAuthenticated {
-                TabRootView()
+                if appState.currentUser?.onboardingCompleted == false {
+                    OnboardingView()
+                } else {
+                    TabRootView()
+                }
             } else {
                 LoginView()
             }
