@@ -22,7 +22,7 @@ import Testing
     #expect(ClothingCategory.shoe.iconName == "shoe")
     #expect(ClothingCategory.dress.iconName == "figure.dress.line.vertical.figure")
     #expect(ClothingCategory.outerwear.iconName == "cloud.rain")
-    #expect(ClothingCategory.accessory.iconName == "watch")
+    #expect(ClothingCategory.accessory.iconName == "applewatch")
 }
 
 @Test func clothingCategoryRawValuesAreUnique() {
