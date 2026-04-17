@@ -86,6 +86,7 @@ import UIKit
         thumbnailData: Data([0xFF]),
         maskedData: nil,
         extractionConfidence: nil,
+        extractionMethod: nil,
         dominantColors: []
     )
     #expect(vm.canSave == true)
@@ -117,6 +118,7 @@ import UIKit
         thumbnailData: Data([0xFF]),
         maskedData: nil,
         extractionConfidence: nil,
+        extractionMethod: nil,
         dominantColors: [extractedColor]
     )
     #expect(vm.extractedColors.count == 1)
@@ -137,12 +139,16 @@ private func makePixelImage(color: UIColor = .systemBlue) -> UIImage {
 }
 
 @MainActor
-private func makeProcessedImage(maskedData: Data? = Data([0xFF])) -> ProcessedImage {
+private func makeProcessedImage(
+    maskedData: Data? = Data([0xFF]),
+    extractionMethod: ExtractionMethod? = nil
+) -> ProcessedImage {
     ProcessedImage(
         originalData: Data([0xFF]),
         thumbnailData: Data([0xFF]),
         maskedData: maskedData,
         extractionConfidence: nil,
+        extractionMethod: extractionMethod,
         dominantColors: []
     )
 }
@@ -348,4 +354,106 @@ private func makeProcessedImage(maskedData: Data? = Data([0xFF])) -> ProcessedIm
     #expect(vm.isShowingCamera == false)
     #expect(vm.isShowingTouchup == false)
     #expect(vm.isShowingTutorial == false)
+}
+
+// MARK: - Phase 3: auto-cropped badge + tap-to-select flow
+
+@Test @MainActor func addItemOnCameraPhotoSetsAutoCroppedWhenSam2AutoUsed() async {
+    let mockImage = MockImageService()
+    mockImage.processImageResult = makeProcessedImage(
+        maskedData: Data([0xAB]),
+        extractionMethod: .sam2Auto
+    )
+    let vm = AddItemViewModel(
+        imageService: mockImage,
+        wardrobeRepository: MockWardrobeRepository()
+    )
+    vm.isShowingCamera = true
+
+    await vm.onCameraPhotoCaptured(makePixelImage())
+
+    #expect(vm.isAutoCropped == true)
+    #expect(vm.isShowingTouchup == true)
+}
+
+@Test @MainActor func addItemOnCameraPhotoClearsAutoCroppedWhenVisionUsed() async {
+    let mockImage = MockImageService()
+    mockImage.processImageResult = makeProcessedImage(
+        maskedData: Data([0xAB]),
+        extractionMethod: .vision
+    )
+    let vm = AddItemViewModel(
+        imageService: mockImage,
+        wardrobeRepository: MockWardrobeRepository()
+    )
+    vm.isAutoCropped = true // simulate stale badge from an earlier capture
+    vm.isShowingCamera = true
+
+    await vm.onCameraPhotoCaptured(makePixelImage())
+
+    #expect(vm.isAutoCropped == false)
+}
+
+@Test @MainActor func addItemOnTroubleCroppingSwitchesToTapToSelect() {
+    let vm = AddItemViewModel()
+    vm.isShowingTouchup = true
+
+    vm.onTroubleCropping()
+
+    #expect(vm.isShowingTouchup == false)
+    #expect(vm.isShowingTapToSelect == true)
+}
+
+@Test @MainActor func addItemOnTapToSelectCancelledReturnsToTouchup() {
+    let vm = AddItemViewModel()
+    vm.isShowingTapToSelect = true
+
+    vm.onTapToSelectCancelled()
+
+    #expect(vm.isShowingTapToSelect == false)
+    #expect(vm.isShowingTouchup == true)
+}
+
+@Test @MainActor func addItemOnTapToSelectDoneClearsAutoCroppedAndReopensTouchup() async {
+    let mockImage = MockImageService()
+    mockImage.updateMaskedResult = makeProcessedImage(
+        maskedData: Data([0x03]),
+        extractionMethod: .sam2Manual
+    )
+    let vm = AddItemViewModel(
+        imageService: mockImage,
+        wardrobeRepository: MockWardrobeRepository()
+    )
+    vm.processedImage = makeProcessedImage(
+        maskedData: Data([0x01]),
+        extractionMethod: .sam2Auto
+    )
+    vm.isAutoCropped = true
+    vm.isShowingTapToSelect = true
+
+    let result = ExtractionResult(
+        originalImage: makePixelImage(),
+        maskedImage: makePixelImage(color: .systemGreen),
+        mask: nil,
+        confidence: .medium,
+        method: .sam2Manual
+    )
+    await vm.onTapToSelectDone(result)
+
+    #expect(vm.isShowingTapToSelect == false)
+    #expect(vm.isAutoCropped == false)
+    #expect(vm.isShowingTouchup == true)
+    #expect(vm.processedImage?.maskedData == Data([0x03]))
+    #expect(mockImage.updateMaskedCallCount == 1)
+}
+
+@Test @MainActor func addItemResetClearsPhase3State() {
+    let vm = AddItemViewModel()
+    vm.isShowingTapToSelect = true
+    vm.isAutoCropped = true
+
+    vm.reset()
+
+    #expect(vm.isShowingTapToSelect == false)
+    #expect(vm.isAutoCropped == false)
 }

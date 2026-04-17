@@ -128,6 +128,7 @@ import Testing
         thumbnailData: Data([0xFF]),
         maskedData: nil,
         extractionConfidence: nil,
+        extractionMethod: nil,
         dominantColors: []
     )
 

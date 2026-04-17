@@ -1,0 +1,255 @@
+import SwiftUI
+import UIKit
+
+/// Manual tap-to-select UX for the Phase 3 SAM2 fallback. Shown from
+/// `MaskTouchupView` when the user taps "Trouble cropping?".
+///
+/// The user taps directly on the clothing item to place a positive
+/// point; long-pressing (or using the − button then tapping) places a
+/// negative point on background/skin. SAM2 re-runs on every change, so
+/// the mask preview updates live. When they're happy, "Use this crop"
+/// commits and the edited mask flows back into the view model.
+struct TapToSelectView: View {
+    let sourceImage: UIImage
+    var initialPreview: UIImage?
+    /// Extractor used to re-segment after every tap. Parent supplies the
+    /// same instance the rest of the pipeline uses so prewarmed models
+    /// aren't re-loaded here.
+    let extractor: any ClothingExtracting
+    var onDone: (ExtractionResult) -> Void
+    var onCancel: () -> Void
+
+    @State private var points: [SAM2TapPoint] = []
+    @State private var mode: PointMode = .positive
+    @State private var preview: UIImage?
+    @State private var lastResult: ExtractionResult?
+    @State private var isProcessing = false
+    @State private var hasRunInitial = false
+
+    enum PointMode: String, CaseIterable, Identifiable {
+        case positive, negative
+        var id: String { rawValue }
+        var displayName: String { self == .positive ? "Clothing" : "Background" }
+        var systemImage: String { self == .positive ? "plus.circle.fill" : "minus.circle.fill" }
+        var tint: Color { self == .positive ? .green : .red }
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color(Theme.Colors.background).ignoresSafeArea()
+
+                VStack(spacing: Theme.Spacing.md) {
+                    GeometryReader { geo in
+                        tappableCanvas(in: geo.size)
+                    }
+                    .frame(maxHeight: .infinity)
+
+                    modePicker
+                    actionRow
+                }
+                .padding(Theme.Spacing.md)
+            }
+            .navigationTitle("Tap the clothing")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Back", action: onCancel)
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Use this crop") { commit() }
+                        .disabled(lastResult == nil && preview == nil)
+                }
+            }
+            .task {
+                guard !hasRunInitial else { return }
+                hasRunInitial = true
+                preview = initialPreview
+                // Kick off a center-point segmentation as the starting
+                // proposal — matches the auto-fallback path so the first
+                // frame feels instant.
+                await segment(with: [SAM2TapPoint.positive(CGPoint(x: 0.5, y: 0.5))])
+            }
+        }
+    }
+
+    // MARK: - Canvas
+
+    private func tappableCanvas(in container: CGSize) -> some View {
+        let rect = aspectFitRect(imageSize: sourceImage.size, in: container)
+        return ZStack {
+            CheckerboardBackground()
+                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+
+            if let preview = preview ?? (lastResult?.maskedImage) {
+                Image(uiImage: preview)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: rect.width, height: rect.height)
+                    .position(x: rect.midX, y: rect.midY)
+                    .transition(.opacity)
+            } else {
+                Image(uiImage: sourceImage)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: rect.width, height: rect.height)
+                    .position(x: rect.midX, y: rect.midY)
+                    .opacity(0.35)
+            }
+
+            ForEach(Array(points.enumerated()), id: \.offset) { _, point in
+                let absolute = CGPoint(
+                    x: rect.origin.x + point.normalized.x * rect.width,
+                    y: rect.origin.y + point.normalized.y * rect.height
+                )
+                pointMarker(for: point)
+                    .position(absolute)
+            }
+
+            if isProcessing {
+                ProgressView()
+                    .progressViewStyle(.circular)
+                    .tint(.white)
+                    .padding(Theme.Spacing.md)
+                    .background(
+                        Capsule().fill(.black.opacity(0.5))
+                    )
+                    .position(x: rect.midX, y: rect.origin.y + Theme.Spacing.xl)
+            }
+        }
+        .contentShape(Rectangle())
+        .gesture(
+            SpatialTapGesture()
+                .onEnded { value in
+                    guard rect.contains(value.location) else { return }
+                    let normalized = CGPoint(
+                        x: (value.location.x - rect.origin.x) / rect.width,
+                        y: (value.location.y - rect.origin.y) / rect.height
+                    )
+                    let tap = SAM2TapPoint(
+                        normalized: normalized,
+                        isPositive: mode == .positive
+                    )
+                    let next = points + [tap]
+                    points = next
+                    Task { await segment(with: next) }
+                }
+        )
+    }
+
+    private func pointMarker(for point: SAM2TapPoint) -> some View {
+        Image(systemName: point.isPositive ? "plus.circle.fill" : "minus.circle.fill")
+            .font(.system(size: 20, weight: .semibold))
+            .foregroundStyle(point.isPositive ? Color.green : Color.red)
+            .background(
+                Circle()
+                    .fill(.white)
+                    .padding(4)
+            )
+            .shadow(color: .black.opacity(0.35), radius: 2, x: 0, y: 1)
+    }
+
+    // MARK: - Controls
+
+    private var modePicker: some View {
+        Picker("Tap mode", selection: $mode) {
+            ForEach(PointMode.allCases) { option in
+                Label(option.displayName, systemImage: option.systemImage).tag(option)
+            }
+        }
+        .pickerStyle(.segmented)
+    }
+
+    private var actionRow: some View {
+        HStack(spacing: Theme.Spacing.md) {
+            Button {
+                guard !points.isEmpty else { return }
+                let next = points.dropLast()
+                points = Array(next)
+                Task { await segment(with: Array(next)) }
+            } label: {
+                Label("Undo", systemImage: "arrow.uturn.backward")
+                    .font(Theme.Fonts.bodySmall.weight(.medium))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Theme.Spacing.sm)
+            }
+            .buttonStyle(.bordered)
+            .tint(Color(Theme.Colors.textSecondary))
+            .disabled(points.isEmpty || isProcessing)
+
+            Button {
+                points = []
+                preview = nil
+                lastResult = nil
+                Task { await segment(with: [SAM2TapPoint.positive(CGPoint(x: 0.5, y: 0.5))]) }
+            } label: {
+                Label("Reset", systemImage: "arrow.counterclockwise")
+                    .font(Theme.Fonts.bodySmall.weight(.medium))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Theme.Spacing.sm)
+            }
+            .buttonStyle(.bordered)
+            .tint(Color(Theme.Colors.primary))
+            .disabled(isProcessing)
+        }
+    }
+
+    // MARK: - Segmentation
+
+    private func segment(with taps: [SAM2TapPoint]) async {
+        isProcessing = true
+        defer { isProcessing = false }
+        let result = await extractor.extract(sourceImage, tapPoints: taps)
+        lastResult = result
+        preview = result.maskedImage
+    }
+
+    private func commit() {
+        if let result = lastResult {
+            onDone(result)
+            return
+        }
+        // User tapped commit before any segmentation finished — build a
+        // synthetic result from the source image so the flow still
+        // advances gracefully.
+        onDone(ExtractionResult(
+            originalImage: sourceImage,
+            maskedImage: preview ?? sourceImage,
+            mask: nil,
+            confidence: .low,
+            method: .sam2Manual
+        ))
+    }
+
+    // MARK: - Layout
+
+    private func aspectFitRect(imageSize: CGSize, in container: CGSize) -> CGRect {
+        guard imageSize.width > 0, imageSize.height > 0 else {
+            return CGRect(origin: .zero, size: container)
+        }
+        let widthRatio = container.width / imageSize.width
+        let heightRatio = container.height / imageSize.height
+        let ratio = min(widthRatio, heightRatio)
+        let fittedSize = CGSize(
+            width: imageSize.width * ratio,
+            height: imageSize.height * ratio
+        )
+        let origin = CGPoint(
+            x: (container.width - fittedSize.width) / 2,
+            y: (container.height - fittedSize.height) / 2
+        )
+        return CGRect(origin: origin, size: fittedSize)
+    }
+}
+
+#Preview {
+    if let placeholder = UIImage(systemName: "tshirt.fill")?.withTintColor(.systemBlue, renderingMode: .alwaysOriginal) {
+        TapToSelectView(
+            sourceImage: placeholder,
+            initialPreview: placeholder,
+            extractor: ClothingExtractionService(),
+            onDone: { _ in },
+            onCancel: {}
+        )
+    }
+}

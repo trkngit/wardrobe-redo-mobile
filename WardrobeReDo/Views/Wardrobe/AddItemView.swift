@@ -52,11 +52,19 @@ struct AddItemView: View {
             .fullScreenCover(isPresented: $viewModel.isShowingTouchup) {
                 touchupCover
             }
+            .fullScreenCover(isPresented: $viewModel.isShowingTapToSelect) {
+                tapToSelectCover
+            }
             .sheet(isPresented: $viewModel.isShowingTutorial) {
                 FirstRunTutorialView {
                     viewModel.onTutorialDismissed()
                 }
                 .interactiveDismissDisabled()
+            }
+            .task {
+                // Pre-warm SAM2 so the first tap doesn't eat a model-load
+                // hit. The extractor guards against redundant work.
+                await viewModel.clothingExtractor.prewarm()
             }
         }
     }
@@ -97,18 +105,42 @@ struct AddItemView: View {
             MaskTouchupView(
                 sourceImage: source,
                 initialMaskedImage: masked,
+                isAutoCropped: viewModel.isAutoCropped,
                 onDone: { edited in
                     Task { await viewModel.onTouchupDone(edited) }
                 },
                 onSmartRecrop: {
                     Task { await viewModel.onTouchupSmartRecrop() }
                 },
+                onTapToSelect: { viewModel.onTroubleCropping() },
                 onCancel: viewModel.onTouchupCancelled
             )
         } else {
             // Fallback: no masked data yet; skip touchup.
             Color.clear
                 .onAppear { viewModel.onTouchupCancelled() }
+        }
+    }
+
+    // MARK: - Tap-to-select fullscreen cover (Phase 3)
+
+    @ViewBuilder
+    private var tapToSelectCover: some View {
+        if let source = viewModel.selectedImage {
+            let initialPreview = viewModel.processedImage?.maskedData
+                .flatMap { UIImage(data: $0) }
+            TapToSelectView(
+                sourceImage: source,
+                initialPreview: initialPreview,
+                extractor: viewModel.clothingExtractor,
+                onDone: { result in
+                    Task { await viewModel.onTapToSelectDone(result) }
+                },
+                onCancel: viewModel.onTapToSelectCancelled
+            )
+        } else {
+            Color.clear
+                .onAppear { viewModel.onTapToSelectCancelled() }
         }
     }
 

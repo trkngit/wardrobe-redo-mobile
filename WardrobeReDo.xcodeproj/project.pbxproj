@@ -126,6 +126,10 @@
 		E1E0B2F4000000000000E0A4 /* MaskTouchupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F2F4000000000000E0B4 /* MaskTouchupView.swift */; };
 		E1E0B2F5000000000000E0A5 /* FirstRunTutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F2F5000000000000E0B5 /* FirstRunTutorialView.swift */; };
 		E1E0B2F6000000000000E0A6 /* BackgroundQualityClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F2F6000000000000E0B6 /* BackgroundQualityClassifierTests.swift */; };
+		E1E0B3F1000000000000E0A1 /* SAM2Extractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F3F1000000000000E0B1 /* SAM2Extractor.swift */; };
+		E1E0B3F2000000000000E0A2 /* TapToSelectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F3F2000000000000E0B2 /* TapToSelectView.swift */; };
+		E1E0B3F3000000000000E0A3 /* SAM2ExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F3F3000000000000E0B3 /* SAM2ExtractorTests.swift */; };
+		E1E0B3F4000000000000E0A4 /* ClothingExtractionChainingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F3F4000000000000E0B4 /* ClothingExtractionChainingTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -282,6 +286,10 @@
 		E1E0F2F4000000000000E0B4 /* MaskTouchupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskTouchupView.swift; sourceTree = "<group>"; };
 		E1E0F2F5000000000000E0B5 /* FirstRunTutorialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunTutorialView.swift; sourceTree = "<group>"; };
 		E1E0F2F6000000000000E0B6 /* BackgroundQualityClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundQualityClassifierTests.swift; sourceTree = "<group>"; };
+		E1E0F3F1000000000000E0B1 /* SAM2Extractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAM2Extractor.swift; sourceTree = "<group>"; };
+		E1E0F3F2000000000000E0B2 /* TapToSelectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapToSelectView.swift; sourceTree = "<group>"; };
+		E1E0F3F3000000000000E0B3 /* SAM2ExtractorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAM2ExtractorTests.swift; sourceTree = "<group>"; };
+		E1E0F3F4000000000000E0B4 /* ClothingExtractionChainingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingExtractionChainingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -359,6 +367,8 @@
 			isa = PBXGroup;
 			children = (
 				E1E0F2F6000000000000E0B6 /* BackgroundQualityClassifierTests.swift */,
+				E1E0F3F3000000000000E0B3 /* SAM2ExtractorTests.swift */,
+				E1E0F3F4000000000000E0B4 /* ClothingExtractionChainingTests.swift */,
 				A61409AC1E4D748E2F35EDB3 /* ColorExtractionServiceTests.swift */,
 				F385FCB8D1419E716DE8E394 /* OutfitGenerationServiceTests.swift */,
 				96A1564CD534196B24209DA0 /* OutfitRepositoryDateTests.swift */,
@@ -523,6 +533,7 @@
 			children = (
 				E1E0F1F3000000000000E0B3 /* ClothingExtractionService.swift */,
 				E1E0F1F2000000000000E0B2 /* VisionForegroundExtractor.swift */,
+				E1E0F3F1000000000000E0B1 /* SAM2Extractor.swift */,
 			);
 			path = Extraction;
 			sourceTree = "<group>";
@@ -533,6 +544,7 @@
 				E1E0F2F2000000000000E0B2 /* CameraCaptureView.swift */,
 				E1E0F2F3000000000000E0B3 /* CameraOverlay.swift */,
 				E1E0F2F4000000000000E0B4 /* MaskTouchupView.swift */,
+				E1E0F3F2000000000000E0B2 /* TapToSelectView.swift */,
 			);
 			path = Camera;
 			sourceTree = "<group>";
@@ -911,6 +923,8 @@
 				E1E0B2F3000000000000E0A3 /* CameraOverlay.swift in Sources */,
 				E1E0B2F4000000000000E0A4 /* MaskTouchupView.swift in Sources */,
 				E1E0B2F5000000000000E0A5 /* FirstRunTutorialView.swift in Sources */,
+				E1E0B3F1000000000000E0A1 /* SAM2Extractor.swift in Sources */,
+				E1E0B3F2000000000000E0A2 /* TapToSelectView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -961,6 +975,8 @@
 				33FDF6B7C8F4E04FC121C412 /* RepositoryEdgeCaseTests.swift in Sources */,
 				0CC78BCE2B52A8E5A47298FD /* WardrobeViewModelTests.swift in Sources */,
 				E1E0B2F6000000000000E0A6 /* BackgroundQualityClassifierTests.swift in Sources */,
+				E1E0B3F3000000000000E0A3 /* SAM2ExtractorTests.swift in Sources */,
+				E1E0B3F4000000000000E0A4 /* ClothingExtractionChainingTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

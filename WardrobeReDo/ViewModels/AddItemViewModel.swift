@@ -52,18 +52,31 @@ final class AddItemViewModel {
     var isShowingTouchup = false
     var isShowingTutorial = false
 
+    // Phase 3: SAM2 manual override
+    var isShowingTapToSelect = false
+    /// Set when Vision confidence was low and we fell back to the
+    /// automatic SAM2 mask. Drives the "Auto-cropped" badge in
+    /// `MaskTouchupView` so the user knows to sanity-check.
+    var isAutoCropped = false
+
     // MARK: - Dependencies
 
     private let imageService: any ImageServiceProtocol
     private let wardrobeRepository: any WardrobeRepositoryProtocol
+    /// Exposed so the Phase 3 TapToSelectView can call back into the
+    /// same extractor instance as the rest of the pipeline (no duplicate
+    /// model loads, no cold-starts per tap).
+    let clothingExtractor: any ClothingExtracting
     private let logger = Logger(subsystem: "com.wardroberedo", category: "AddItem")
 
     init(
         imageService: any ImageServiceProtocol = ImageService(),
-        wardrobeRepository: any WardrobeRepositoryProtocol = WardrobeRepository()
+        wardrobeRepository: any WardrobeRepositoryProtocol = WardrobeRepository(),
+        clothingExtractor: any ClothingExtracting = ClothingExtractionService()
     ) {
         self.imageService = imageService
         self.wardrobeRepository = wardrobeRepository
+        self.clothingExtractor = clothingExtractor
     }
 
     // MARK: - Computed
@@ -161,6 +174,7 @@ final class AddItemViewModel {
         }
 
         processedImage = processed
+        isAutoCropped = (processed.extractionMethod == .sam2Auto)
         isProcessing = false
 
         if processed.maskedData != nil {
@@ -194,13 +208,15 @@ final class AddItemViewModel {
     }
 
     /// User tapped "Smart re-crop" in the touch-up sheet — re-run the
-    /// full extraction pipeline on the captured image. Phase 3 will
-    /// extend this to chain SAM2 when Vision confidence is low.
+    /// full extraction pipeline on the captured image. The pipeline
+    /// itself chains Vision → SAM2-auto internally, so this re-runs
+    /// both when appropriate.
     func onTouchupSmartRecrop() async {
         guard let image = selectedImage else { return }
         isProcessing = true
         if let processed = await imageService.processImage(image) {
             processedImage = processed
+            isAutoCropped = (processed.extractionMethod == .sam2Auto)
         }
         isProcessing = false
     }
@@ -210,6 +226,48 @@ final class AddItemViewModel {
     func onTouchupCancelled() {
         isShowingTouchup = false
         currentStep = .details
+    }
+
+    // MARK: - Phase 3 manual tap-to-select
+
+    /// User tapped "Trouble cropping?" inside `MaskTouchupView`. Hide the
+    /// touchup sheet and push the `TapToSelectView` flow.
+    func onTroubleCropping() {
+        isShowingTouchup = false
+        isShowingTapToSelect = true
+    }
+
+    /// User finished `TapToSelectView` and wants to use the SAM2-manual
+    /// result. Rebuild `ProcessedImage` from the new mask so the saved
+    /// palette matches, then re-enter the touch-up sheet so the user can
+    /// still brush refinements on top.
+    func onTapToSelectDone(_ result: ExtractionResult) async {
+        isShowingTapToSelect = false
+        // Re-encode the new mask into storage-ready PNG + re-run color
+        // extraction by funnelling through `imageService.updateMasked`.
+        if let current = processedImage {
+            if let updated = await imageService.updateMasked(
+                processed: current,
+                editedMask: result.maskedImage
+            ) {
+                processedImage = updated
+            }
+        }
+        // Manual tap-to-select is the highest-trust path — clear the
+        // auto-cropped badge and let the user finish in touchup.
+        isAutoCropped = false
+        if processedImage?.maskedData != nil {
+            isShowingTouchup = true
+        } else {
+            currentStep = .details
+        }
+    }
+
+    /// User backed out of `TapToSelectView` — go back to the touch-up
+    /// sheet with the pre-existing mask intact.
+    func onTapToSelectCancelled() {
+        isShowingTapToSelect = false
+        isShowingTouchup = true
     }
 
     func save(userId: UUID) async {
@@ -319,5 +377,7 @@ final class AddItemViewModel {
         isShowingCamera = false
         isShowingTouchup = false
         isShowingTutorial = false
+        isShowingTapToSelect = false
+        isAutoCropped = false
     }
 }

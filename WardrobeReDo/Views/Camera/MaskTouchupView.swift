@@ -11,8 +11,15 @@ import UIKit
 struct MaskTouchupView: View {
     let sourceImage: UIImage
     let initialMaskedImage: UIImage
+    /// When true, the mask came from the auto-SAM2 path (Phase 3). We
+    /// surface a small "auto-cropped" badge so the user knows to
+    /// double-check the result.
+    var isAutoCropped: Bool = false
     var onDone: (UIImage) -> Void
     var onSmartRecrop: () -> Void
+    /// Phase 3: user tapped "Trouble cropping?". Parent opens
+    /// `TapToSelectView`. Nil disables the button entirely.
+    var onTapToSelect: (() -> Void)? = nil
     var onCancel: () -> Void
 
     enum BrushMode: String, CaseIterable, Identifiable {
@@ -33,6 +40,10 @@ struct MaskTouchupView: View {
                 Color(Theme.Colors.background).ignoresSafeArea()
 
                 VStack(spacing: Theme.Spacing.md) {
+                    if isAutoCropped {
+                        autoCroppedBadge
+                    }
+
                     GeometryReader { geo in
                         ZStack {
                             CheckerboardBackground()
@@ -63,6 +74,9 @@ struct MaskTouchupView: View {
 
                     brushPicker
                     actionRow
+                    if onTapToSelect != nil {
+                        troubleCroppingRow
+                    }
                 }
                 .padding(Theme.Spacing.md)
             }
@@ -124,6 +138,46 @@ struct MaskTouchupView: View {
             .buttonStyle(.bordered)
             .tint(Color(Theme.Colors.primary))
         }
+    }
+
+    /// Button shown when the parent wired up a tap-to-select flow. Tapping
+    /// opens `TapToSelectView` where the user can point at the item and
+    /// let SAM2 re-segment. Rendered full-width to read as a fallback,
+    /// not a primary action.
+    private var troubleCroppingRow: some View {
+        Button {
+            onTapToSelect?()
+        } label: {
+            Label("Trouble cropping? Tap to select", systemImage: "hand.tap")
+                .font(Theme.Fonts.bodySmall.weight(.medium))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Theme.Spacing.sm)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(Color(Theme.Colors.primary))
+    }
+
+    /// Pill shown above the canvas when the mask came from the automatic
+    /// SAM2 fallback — gives the user a nudge to sanity-check before
+    /// hitting Done.
+    private var autoCroppedBadge: some View {
+        HStack(spacing: Theme.Spacing.xs) {
+            Image(systemName: "wand.and.stars")
+                .font(.system(size: 12, weight: .semibold))
+            Text("Auto-cropped — double-check the outline")
+                .font(Theme.Fonts.caption.weight(.medium))
+        }
+        .foregroundStyle(Color(Theme.Colors.textSecondary))
+        .padding(.horizontal, Theme.Spacing.md)
+        .padding(.vertical, Theme.Spacing.xs)
+        .background(
+            Capsule()
+                .fill(Color(Theme.Colors.surface))
+        )
+        .overlay(
+            Capsule()
+                .stroke(Color(Theme.Colors.border), lineWidth: 1)
+        )
     }
 
     // MARK: - Commit
@@ -332,8 +386,10 @@ enum MaskBrushComposer {
         MaskTouchupView(
             sourceImage: placeholder,
             initialMaskedImage: placeholder,
+            isAutoCropped: true,
             onDone: { _ in },
             onSmartRecrop: {},
+            onTapToSelect: {},
             onCancel: {}
         )
     }

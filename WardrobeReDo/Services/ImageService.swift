@@ -13,6 +13,10 @@ struct ProcessedImage: Sendable {
     /// Synthetic confidence bucket for the extraction attempt. Nil
     /// when extraction was skipped (e.g. simulator build).
     let extractionConfidence: ExtractionConfidence?
+    /// Which pipeline stage produced the final mask. Drives UI affordances
+    /// (e.g. the "auto-cropped" badge in `MaskTouchupView`) and is logged
+    /// for benchmarking. Nil when extraction was skipped.
+    let extractionMethod: ExtractionMethod?
     let dominantColors: [ExtractedColor]
 }
 
@@ -65,6 +69,7 @@ final class ImageService: ImageServiceProtocol {
             thumbnailData: thumbnailData,
             maskedData: maskedData,
             extractionConfidence: extraction.confidence,
+            extractionMethod: extraction.method,
             dominantColors: colors
         )
     }
@@ -146,6 +151,7 @@ final class ImageService: ImageServiceProtocol {
             thumbnailData: processed.thumbnailData,
             maskedData: data,
             extractionConfidence: processed.extractionConfidence,
+            extractionMethod: processed.extractionMethod,
             dominantColors: colors
         )
     }

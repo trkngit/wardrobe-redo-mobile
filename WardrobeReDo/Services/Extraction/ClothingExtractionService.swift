@@ -20,10 +20,19 @@ enum ExtractionConfidence: String, Codable, Sendable, Equatable {
     case failed
 }
 
-/// Which code path produced the final mask. Phase 1 only has `.vision`
-/// and `.none`. Phase 3 will add `.sam2Auto` and `.sam2Manual`.
+/// Which code path produced the final mask.
+/// - `.vision`: `VNGenerateForegroundInstanceMaskRequest` succeeded outright.
+/// - `.sam2Auto`: Vision was `.low` / `.failed`, so the pipeline auto-ran
+///   the SAM2-tiny Core ML model with a single center-of-frame positive
+///   point. The UI should surface this as an "auto-cropped" badge so the
+///   user knows to double-check.
+/// - `.sam2Manual`: User opened `TapToSelectView` and pointed at the item
+///   themselves. Treated as the highest-trust path.
+/// - `.none`: No mask was produced; the unmasked original is what we saved.
 enum ExtractionMethod: String, Codable, Sendable, Equatable {
     case vision
+    case sam2Auto
+    case sam2Manual
     case none
 }
 
@@ -52,6 +61,27 @@ struct ExtractionResult: @unchecked Sendable {
 /// extractor without spinning up the Vision framework.
 protocol ClothingExtracting: Sendable {
     func extract(_ image: UIImage) async -> ExtractionResult
+
+    /// Phase 3 manual-override entry point. Called from `TapToSelectView`
+    /// when the user taps the clothing directly (and optionally drops
+    /// negative points on skin or background). Skips Vision entirely and
+    /// returns a SAM2-backed mask.
+    func extract(_ image: UIImage, tapPoints: [SAM2TapPoint]) async -> ExtractionResult
+
+    /// Pre-warm heavy resources (e.g. SAM2 model load). Safe to call
+    /// repeatedly — the underlying extractor guards against redundant
+    /// work. Invoked from `AddItemView.onAppear` / `TapToSelectView.onAppear`
+    /// so the user doesn't see a cold-start delay at capture time.
+    func prewarm() async
+}
+
+extension ClothingExtracting {
+    /// Default: manual tap-points not supported (mocks can opt in).
+    func extract(_ image: UIImage, tapPoints: [SAM2TapPoint]) async -> ExtractionResult {
+        await extract(image)
+    }
+
+    func prewarm() async { /* default no-op */ }
 }
 
 /// Orchestrates clothing-from-background isolation for every new
@@ -65,9 +95,14 @@ protocol ClothingExtracting: Sendable {
 final class ClothingExtractionService: ClothingExtracting, @unchecked Sendable {
 
     private let visionExtractor: any VisionForegroundExtracting
+    private let sam2Extractor: any SAM2Extracting
 
-    init(visionExtractor: any VisionForegroundExtracting = VisionForegroundExtractor()) {
+    init(
+        visionExtractor: any VisionForegroundExtracting = VisionForegroundExtractor(),
+        sam2Extractor: any SAM2Extracting = SAM2Extractor()
+    ) {
         self.visionExtractor = visionExtractor
+        self.sam2Extractor = sam2Extractor
     }
 
     func extract(_ image: UIImage) async -> ExtractionResult {
@@ -75,28 +110,107 @@ final class ClothingExtractionService: ClothingExtracting, @unchecked Sendable {
         // and mask share the same pixel orientation.
         let normalized = OrientationUtil.normalized(image)
 
-        guard let result = await visionExtractor.extractForeground(from: normalized) else {
+        let visionResult = await visionExtractor.extractForeground(from: normalized)
+
+        if let vision = visionResult {
+            let confidence = Self.synthesizeConfidence(
+                instanceCount: vision.instanceCount,
+                coverageRatio: vision.coverageRatio
+            )
+
+            // Trust Vision's mask when confidence is high enough —
+            // short-circuiting SAM2 is the fast common path (~80% of
+            // uploads per the benchmark set).
+            if Self.isHighTrust(confidence) {
+                return ExtractionResult(
+                    originalImage: normalized,
+                    maskedImage: vision.maskedImage,
+                    mask: vision.mask,
+                    confidence: confidence,
+                    method: .vision
+                )
+            }
+
+            // Low-confidence Vision: try SAM2 auto. If SAM2 produces a
+            // better mask, swap it in; otherwise stick with Vision.
+            if let sam2 = await sam2Extractor.autoSegment(from: normalized) {
+                let sam2Confidence = Self.synthesizeConfidence(
+                    instanceCount: 1,
+                    coverageRatio: sam2.coverageRatio
+                )
+                return ExtractionResult(
+                    originalImage: normalized,
+                    maskedImage: sam2.maskedImage,
+                    mask: sam2.mask,
+                    confidence: sam2Confidence,
+                    method: .sam2Auto
+                )
+            }
+
+            // Vision returned something usable-ish; keep it as the
+            // best available result rather than falling off the cliff
+            // to the unmasked original.
             return ExtractionResult(
                 originalImage: normalized,
-                maskedImage: normalized,
-                mask: nil,
-                confidence: .failed,
-                method: .none
+                maskedImage: vision.maskedImage,
+                mask: vision.mask,
+                confidence: confidence,
+                method: .vision
             )
         }
 
-        let confidence = Self.synthesizeConfidence(
-            instanceCount: result.instanceCount,
-            coverageRatio: result.coverageRatio
-        )
+        // Vision failed outright (nothing detected, simulator, etc.).
+        // Try SAM2 auto as a second-chance rescue.
+        if let sam2 = await sam2Extractor.autoSegment(from: normalized) {
+            let sam2Confidence = Self.synthesizeConfidence(
+                instanceCount: 1,
+                coverageRatio: sam2.coverageRatio
+            )
+            return ExtractionResult(
+                originalImage: normalized,
+                maskedImage: sam2.maskedImage,
+                mask: sam2.mask,
+                confidence: sam2Confidence,
+                method: .sam2Auto
+            )
+        }
 
+        // Nothing worked. Fall through to the unmasked original.
         return ExtractionResult(
             originalImage: normalized,
-            maskedImage: result.maskedImage,
-            mask: result.mask,
-            confidence: confidence,
-            method: .vision
+            maskedImage: normalized,
+            mask: nil,
+            confidence: .failed,
+            method: .none
         )
+    }
+
+    func extract(_ image: UIImage, tapPoints: [SAM2TapPoint]) async -> ExtractionResult {
+        let normalized = OrientationUtil.normalized(image)
+        guard !tapPoints.isEmpty,
+              let sam2 = await sam2Extractor.segment(image: normalized, points: tapPoints)
+        else {
+            // User opened TapToSelectView but SAM2 was unavailable (model
+            // missing / prediction error). Fall back to whatever the
+            // automatic pipeline can produce, rather than leaving them
+            // stuck on a broken screen.
+            return await extract(normalized)
+        }
+        let confidence = Self.synthesizeConfidence(
+            instanceCount: 1,
+            coverageRatio: sam2.coverageRatio
+        )
+        return ExtractionResult(
+            originalImage: normalized,
+            maskedImage: sam2.maskedImage,
+            mask: sam2.mask,
+            confidence: confidence,
+            method: .sam2Manual
+        )
+    }
+
+    func prewarm() async {
+        await sam2Extractor.prewarm()
     }
 
     // MARK: - Confidence heuristic
@@ -122,7 +236,16 @@ final class ClothingExtractionService: ClothingExtracting, @unchecked Sendable {
         }
 
         // Multiple instances: the mask probably captured clothing + person
-        // or clothing + accessory. Phase 3 will offer tap-to-select to fix.
+        // or clothing + accessory. Phase 3 offers tap-to-select to fix.
         return .low
+    }
+
+    /// `true` when Vision's mask is trustworthy enough to skip SAM2 auto.
+    /// `.high` / `.medium` are kept; `.low` / `.failed` trigger fallback.
+    static func isHighTrust(_ confidence: ExtractionConfidence) -> Bool {
+        switch confidence {
+        case .high, .medium: return true
+        case .low, .failed:  return false
+        }
     }
 }
