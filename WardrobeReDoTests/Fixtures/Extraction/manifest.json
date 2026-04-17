@@ -1,5 +1,306 @@
 {
   "_comment": "Hand-curated ground-truth manifest for ClothingExtractionService. Each entry maps a source photo (in this directory) to its alpha mask (in ground_truth/) and the IoU floor we expect extraction to hit. Thresholds were calibrated by running the current pipeline against the traces once and recording the score minus a 5% safety margin. Future commits must not drop below these numbers. See capture-brief.md for how to add new fixtures.",
   "version": 1,
-  "fixtures": []
+  "fixtures": [
+    {
+      "image": "clean_bg_01.jpg",
+      "mask": "ground_truth/clean_bg_01.png",
+      "category": "top",
+      "scenario": "clean_bg",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "Promotional20White20T-shirt_webp.rf.cf5aee223a2253e4b9d2b0971f0c38f1",
+      "expected_iou_min": 0.82,
+      "notes": "coverage=0.36, bg_edge=0.30, bg_var=7.16"
+    },
+    {
+      "image": "clean_bg_02.jpg",
+      "mask": "ground_truth/clean_bg_02.png",
+      "category": "shoes",
+      "scenario": "clean_bg",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "Amplimove_Trainer_Shoes_Black_IF0953_01_standard_jpg.rf.a128e6847e58aec7a3129cc435c3e7a1",
+      "expected_iou_min": 0.82,
+      "notes": "coverage=0.19, bg_edge=0.45, bg_var=14.11"
+    },
+    {
+      "image": "clean_bg_03.jpg",
+      "mask": "ground_truth/clean_bg_03.png",
+      "category": "shoes",
+      "scenario": "clean_bg",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "SM19000033-04005-001_01_1_grande_jpg.rf.da48666a3ff7d3269815b12e39294464",
+      "expected_iou_min": 0.82,
+      "notes": "coverage=0.24, bg_edge=0.45, bg_var=17.49"
+    },
+    {
+      "image": "clean_bg_04.jpg",
+      "mask": "ground_truth/clean_bg_04.png",
+      "category": "accessory",
+      "scenario": "clean_bg",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "images27_jpg.rf.271fdbfaf230f6a1830cbc2bdf9dc726",
+      "expected_iou_min": 0.82,
+      "notes": "coverage=0.10, bg_edge=0.62, bg_var=10.56"
+    },
+    {
+      "image": "clean_bg_05.jpg",
+      "mask": "ground_truth/clean_bg_05.png",
+      "category": "top",
+      "scenario": "clean_bg",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "Work_shirt_e_s_classic_short_sleeve-8533-3-637987595020763902_png.rf.6f7dd57cbc1a3fced493777350d9c8b3",
+      "expected_iou_min": 0.82,
+      "notes": "coverage=0.46, bg_edge=0.64, bg_var=21.95"
+    },
+    {
+      "image": "clean_bg_06.jpg",
+      "mask": "ground_truth/clean_bg_06.png",
+      "category": "bottom",
+      "scenario": "clean_bg",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "images21_jpg.rf.9c914af7eb9563ddb9acd5a3a4c7cf63",
+      "expected_iou_min": 0.82,
+      "notes": "coverage=0.24, bg_edge=0.67, bg_var=15.19"
+    },
+    {
+      "image": "clean_bg_07.jpg",
+      "mask": "ground_truth/clean_bg_07.png",
+      "category": "bottom",
+      "scenario": "clean_bg",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "images30_jpg.rf.e0c007469c0899deaa78b8b4bc1cedb6",
+      "expected_iou_min": 0.82,
+      "notes": "coverage=0.48, bg_edge=0.98, bg_var=15.49"
+    },
+    {
+      "image": "clean_bg_08.jpg",
+      "mask": "ground_truth/clean_bg_08.png",
+      "category": "accessory",
+      "scenario": "clean_bg",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "muslim_sports_banner_jpg.rf.381d9cda108841c04973bcd453f05a48",
+      "expected_iou_min": 0.82,
+      "notes": "coverage=0.05, bg_edge=1.33, bg_var=52.23"
+    },
+    {
+      "image": "clean_bg_09.jpg",
+      "mask": "ground_truth/clean_bg_09.png",
+      "category": "other",
+      "scenario": "clean_bg",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "1197066_1_jpg.rf.db62fbe27a8bcc45faac0b000f5ad426",
+      "expected_iou_min": 0.82,
+      "notes": "coverage=0.10, bg_edge=2.83, bg_var=49.47"
+    },
+    {
+      "image": "clean_bg_10.jpg",
+      "mask": "ground_truth/clean_bg_10.png",
+      "category": "other",
+      "scenario": "clean_bg",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "girl-headphones-headset-33815-820x538_jpg.rf.62b5eb4f668564282711dd6bbebdcf5b",
+      "expected_iou_min": 0.82,
+      "notes": "coverage=0.06, bg_edge=3.26, bg_var=40.97"
+    },
+    {
+      "image": "cluttered_01.jpg",
+      "mask": "ground_truth/cluttered_01.png",
+      "category": "bottom",
+      "scenario": "cluttered",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "images45_jpg.rf.4a945b9365a68d0e2adc7388eb2c5739",
+      "expected_iou_min": 0.65,
+      "notes": "coverage=0.13, bg_edge=14.64, bg_var=55.98"
+    },
+    {
+      "image": "cluttered_02.jpg",
+      "mask": "ground_truth/cluttered_02.png",
+      "category": "shoes",
+      "scenario": "cluttered",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "1000_F_182075813_yrs5yMJJKwGZUY2bZg9uMvC3xQ4gboVQ_jpg.rf.ba9a6d9c3e4c5d63f2759d3f294969e3",
+      "expected_iou_min": 0.65,
+      "notes": "coverage=0.17, bg_edge=13.29, bg_var=56.49"
+    },
+    {
+      "image": "cluttered_03.jpg",
+      "mask": "ground_truth/cluttered_03.png",
+      "category": "bottom",
+      "scenario": "cluttered",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "images22_jpg.rf.4b53bf5af453be7a7f5e0f2e5c69570e",
+      "expected_iou_min": 0.65,
+      "notes": "coverage=0.31, bg_edge=12.45, bg_var=71.19"
+    },
+    {
+      "image": "cluttered_04.jpg",
+      "mask": "ground_truth/cluttered_04.png",
+      "category": "shoes",
+      "scenario": "cluttered",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "Why_Do_People_Wear_Toe_Spacers_850x_jpg.rf.8625b32a4e26420f9069cf51ed49a1d4",
+      "expected_iou_min": 0.65,
+      "notes": "coverage=0.09, bg_edge=12.25, bg_var=59.34"
+    },
+    {
+      "image": "cluttered_05.jpg",
+      "mask": "ground_truth/cluttered_05.png",
+      "category": "accessory",
+      "scenario": "cluttered",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "images26_jpg.rf.70c79d9940c87f6704edd6262d0bbe9b",
+      "expected_iou_min": 0.65,
+      "notes": "coverage=0.39, bg_edge=10.17, bg_var=61.78"
+    },
+    {
+      "image": "cluttered_06.jpg",
+      "mask": "ground_truth/cluttered_06.png",
+      "category": "top",
+      "scenario": "cluttered",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "images20_jpg.rf.55be18a4b62355578655ed44fae9d950",
+      "expected_iou_min": 0.65,
+      "notes": "coverage=0.26, bg_edge=9.59, bg_var=62.67"
+    },
+    {
+      "image": "cluttered_07.jpg",
+      "mask": "ground_truth/cluttered_07.png",
+      "category": "accessory",
+      "scenario": "cluttered",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "office-pashmina-travel-wrap-2023_png.rf.86976dd159456e80aeb1bbce9356e2ae",
+      "expected_iou_min": 0.65,
+      "notes": "coverage=0.50, bg_edge=9.37, bg_var=89.07"
+    },
+    {
+      "image": "cluttered_08.jpg",
+      "mask": "ground_truth/cluttered_08.png",
+      "category": "other",
+      "scenario": "cluttered",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "KakaoTalk_20220303_160000669_Difference_between_wired_and_wireless_jpg.rf.31cdaab81717530ccde4b582b43c0ee7",
+      "expected_iou_min": 0.65,
+      "notes": "coverage=0.05, bg_edge=9.10, bg_var=61.34"
+    },
+    {
+      "image": "cluttered_09.jpg",
+      "mask": "ground_truth/cluttered_09.png",
+      "category": "dress",
+      "scenario": "cluttered",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "eco-sneakers_jpg.rf.03628448f6b43798e764ccfe6d9b368e",
+      "expected_iou_min": 0.65,
+      "notes": "coverage=0.33, bg_edge=8.89, bg_var=73.45"
+    },
+    {
+      "image": "cluttered_10.jpg",
+      "mask": "ground_truth/cluttered_10.png",
+      "category": "top",
+      "scenario": "cluttered",
+      "source_dataset": "STREETVISION",
+      "source_image_id": "image12_jpeg.rf.4f968c5a820abd61c5cc73e8a3e8a95f",
+      "expected_iou_min": 0.65,
+      "notes": "coverage=0.39, bg_edge=8.87, bg_var=69.88"
+    },
+    {
+      "image": "on_person_01.jpg",
+      "mask": "ground_truth/on_person_01.png",
+      "category": "top",
+      "scenario": "on_person",
+      "source_dataset": "FASHION_ASSISTANT",
+      "source_image_id": "photo_2023-05-29-19-50-52-1-_jpeg.rf.1f342e69aac719edd27914babd89255e",
+      "expected_iou_min": 0.45,
+      "notes": "coverage=0.39, bg_edge=8.29, bg_var=57.35"
+    },
+    {
+      "image": "on_person_02.jpg",
+      "mask": "ground_truth/on_person_02.png",
+      "category": "accessory",
+      "scenario": "on_person",
+      "source_dataset": "FASHION_ASSISTANT",
+      "source_image_id": "photo_2023-05-30-17-34-59-1-_jpeg.rf.8a3a81539fd2d0c1b7e158dbf1dad5a0",
+      "expected_iou_min": 0.45,
+      "notes": "coverage=0.04, bg_edge=8.87, bg_var=75.03"
+    },
+    {
+      "image": "on_person_03.jpg",
+      "mask": "ground_truth/on_person_03.png",
+      "category": "outerwear",
+      "scenario": "on_person",
+      "source_dataset": "FASHION_ASSISTANT",
+      "source_image_id": "photo_2023-05-29-14-11-03-1-_jpeg_jpg.rf.6cb2a44e9a0b74ff57f920aec83b79b3",
+      "expected_iou_min": 0.45,
+      "notes": "coverage=0.34, bg_edge=7.34, bg_var=88.00"
+    },
+    {
+      "image": "on_person_04.jpg",
+      "mask": "ground_truth/on_person_04.png",
+      "category": "shoes",
+      "scenario": "on_person",
+      "source_dataset": "FASHION_ASSISTANT",
+      "source_image_id": "photo_2023-05-29-19-51-18_jpeg.rf.a2a99bba5fbf988a97f91b948ec733c3",
+      "expected_iou_min": 0.45,
+      "notes": "coverage=0.13, bg_edge=6.24, bg_var=83.29"
+    },
+    {
+      "image": "on_person_05.jpg",
+      "mask": "ground_truth/on_person_05.png",
+      "category": "shoes",
+      "scenario": "on_person",
+      "source_dataset": "FASHION_ASSISTANT",
+      "source_image_id": "photo_2023-05-29-19-51-06-1-_jpeg.rf.7bb319a2658a5765e109d8548cedc253",
+      "expected_iou_min": 0.45,
+      "notes": "coverage=0.06, bg_edge=4.16, bg_var=79.60"
+    },
+    {
+      "image": "on_person_06.jpg",
+      "mask": "ground_truth/on_person_06.png",
+      "category": "outerwear",
+      "scenario": "on_person",
+      "source_dataset": "FASHION_ASSISTANT",
+      "source_image_id": "photo_2023-05-29-14-10-55_jpeg_jpg.rf.740fdf5f18e0d9a7a49eeb059bd938e8",
+      "expected_iou_min": 0.45,
+      "notes": "coverage=0.48, bg_edge=1.63, bg_var=106.59"
+    },
+    {
+      "image": "on_person_07.jpg",
+      "mask": "ground_truth/on_person_07.png",
+      "category": "top",
+      "scenario": "on_person",
+      "source_dataset": "FASHION_ASSISTANT",
+      "source_image_id": "photo_2023-05-29-19-51-00_jpeg.rf.d99831687ca092201cfd331a4cc2c339",
+      "expected_iou_min": 0.45,
+      "notes": "coverage=0.46, bg_edge=8.70, bg_var=96.69"
+    },
+    {
+      "image": "on_person_08.jpg",
+      "mask": "ground_truth/on_person_08.png",
+      "category": "accessory",
+      "scenario": "on_person",
+      "source_dataset": "FASHION_ASSISTANT",
+      "source_image_id": "photo_2023-05-30-17-35-00-1-_jpeg.rf.f7f7d7c2a7e68beef18ef678420f686f",
+      "expected_iou_min": 0.45,
+      "notes": "coverage=0.07, bg_edge=3.15, bg_var=69.21"
+    },
+    {
+      "image": "on_person_09.jpg",
+      "mask": "ground_truth/on_person_09.png",
+      "category": "bottom",
+      "scenario": "on_person",
+      "source_dataset": "FASHION_ASSISTANT",
+      "source_image_id": "photo_2023-05-30-17-35-29_jpeg.rf.4e0aa5c38710d24765032f63e3f63c94",
+      "expected_iou_min": 0.45,
+      "notes": "coverage=0.36, bg_edge=13.99, bg_var=80.57"
+    },
+    {
+      "image": "on_person_10.jpg",
+      "mask": "ground_truth/on_person_10.png",
+      "category": "bottom",
+      "scenario": "on_person",
+      "source_dataset": "FASHION_ASSISTANT",
+      "source_image_id": "photo_2023-05-29-14-10-11_jpeg_jpg.rf.f45e2dce21f12655f785503266f7eb6a",
+      "expected_iou_min": 0.45,
+      "notes": "coverage=0.19, bg_edge=8.17, bg_var=81.32"
+    }
+  ]
 }

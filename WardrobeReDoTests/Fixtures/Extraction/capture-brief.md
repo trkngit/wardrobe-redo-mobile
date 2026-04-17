@@ -13,7 +13,7 @@ alpha masks, distributed across three scenarios:
 ## How the fixtures get here
 
 Run `scripts/fetch_fixtures.py`. It pulls two **CC-BY 4.0** Roboflow Universe
-projects (Yanelys "Clothing Segmentation" + "Clothing Detection Test"),
+projects (StreetVision "Clothing" + Roboflow "Fashion Assistant Segmentation"),
 rasterises each COCO polygon annotation into an alpha PNG, buckets each image
 by background edge density, and writes the 30 picks into this directory
 with the naming convention above.
@@ -43,7 +43,7 @@ Each fixture has an entry:
   "mask": "ground_truth/clean_bg_01.png",
   "category": "top",
   "scenario": "clean_bg",
-  "source_dataset": "YANELYS",
+  "source_dataset": "STREETVISION",
   "source_image_id": "img_0001",
   "expected_iou_min": 0.82,
   "notes": "coverage=0.34, bg_edge=3.21, bg_var=14.8"

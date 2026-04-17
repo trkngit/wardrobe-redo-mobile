@@ -52,16 +52,16 @@ computer**, and save the resulting ZIPs somewhere stable. Then export the
 paths:
 
 ```bash
-export ROBOFLOW_ZIP_YANELYS=/absolute/path/to/clothing-segmentation.zip
-export ROBOFLOW_ZIP_CLOTHING_TEST=/absolute/path/to/clothing-detection-test.zip
+export ROBOFLOW_ZIP_STREETVISION=/absolute/path/to/clothing-segmentation.zip
+export ROBOFLOW_ZIP_FASHION_ASSISTANT=/absolute/path/to/fashion-assistant-segmentation.zip
 ```
 
 Dataset URLs:
 
-| Env var                          | Roboflow project URL                                                         |
-|----------------------------------|------------------------------------------------------------------------------|
-| `ROBOFLOW_ZIP_YANELYS`           | https://universe.roboflow.com/yanelys/clothing-segmentation                  |
-| `ROBOFLOW_ZIP_CLOTHING_TEST`     | https://universe.roboflow.com/clothing-detection/clothing-detection-test     |
+| Env var                             | Roboflow project URL                                                              |
+|-------------------------------------|-----------------------------------------------------------------------------------|
+| `ROBOFLOW_ZIP_STREETVISION`         | https://universe.roboflow.com/streetvision/clothing-8kbxo                         |
+| `ROBOFLOW_ZIP_FASHION_ASSISTANT`    | https://universe.roboflow.com/roboflow-jvuqo/fashion-assistant-segmentation      |
 
 If both the API key and ZIP env var are set, the ZIP takes precedence (it's
 more reliable offline).
@@ -80,10 +80,10 @@ python3 scripts/fetch_fixtures.py
 Output on success looks like:
 
 ```
-• [YANELYS] extracting ZIP /Users/you/Downloads/clothing-segmentation.zip
-• [YANELYS] parsed 1084 image(s) with masks
-• [CLOTHING_TEST] extracting ZIP /Users/you/Downloads/clothing-detection-test.zip
-• [CLOTHING_TEST] parsed 62 image(s) with masks
+• [STREETVISION] extracting ZIP /Users/you/Downloads/clothing-segmentation.zip
+• [STREETVISION] parsed 2889 image(s) with masks
+• [FASHION_ASSISTANT] extracting ZIP /Users/you/Downloads/fashion-assistant-segmentation.zip
+• [FASHION_ASSISTANT] parsed 239 image(s) with masks
 
 Scoring images (this takes a minute)…
 
@@ -93,8 +93,8 @@ Bucket pool sizes after scoring:
   on_person: 57 candidate(s)
 
 Writing fixtures…
-  • WardrobeReDoTests/Fixtures/Extraction/clean_bg_01.jpg (from YANELYS:img_0001)
-  • WardrobeReDoTests/Fixtures/Extraction/clean_bg_02.jpg (from YANELYS:img_0047)
+  • WardrobeReDoTests/Fixtures/Extraction/clean_bg_01.jpg (from STREETVISION:img_0001)
+  • WardrobeReDoTests/Fixtures/Extraction/clean_bg_02.jpg (from STREETVISION:img_0047)
   …
 
 Category coverage across 30 fixtures:
@@ -126,7 +126,7 @@ Before `git add`-ing the 60 new files, eyeball them:
 
    ```bash
    python3 scripts/fetch_fixtures.py \
-     --skip-ids YANELYS:img_0123,YANELYS:img_0456
+     --skip-ids STREETVISION:img_0123,STREETVISION:img_0456
    ```
 3. Verify `ATTRIBUTIONS.md` was regenerated and lists all 30 images.
 
@@ -162,7 +162,7 @@ needs to credit the code-level dependencies (SAM2 Apache-2.0, etc.).
 
 ## Troubleshooting
 
-**"No COCO annotations found under … for YANELYS."**
+**"No COCO annotations found under … for STREETVISION."**
 Roboflow export structures occasionally change. The script scans every
 `_annotations.coco.json` recursively, so the usual culprit is that the ZIP
 was exported in a non-COCO format. Re-export with **COCO Segmentation** (not

@@ -66,3 +66,7 @@ scripts/benchmark-tool/.build/
 # Python bytecode (from local script runs)
 __pycache__/
 *.py[cod]
+
+# Python virtualenv (used by scripts/fetch_fixtures.py + scripts/build_benchmark.py)
+.venv/
+venv/

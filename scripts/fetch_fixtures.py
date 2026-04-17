@@ -5,11 +5,13 @@ Replaces the owner-captured fixture flow (30 manual photos + 2 hours of hand
 tracing) with a one-shot downloader + curator. Pulls two Roboflow Universe
 projects, both explicitly licensed CC-BY 4.0:
 
-  * Yanelys "Clothing Segmentation" — 1,084 studio / flat-lay / worn
-    examples with instance masks. Used for `clean_bg_*` and `cluttered_*`
-    scenarios; bucketed by background edge density.
-  * "Clothing Detection Test" — 62 worn-on-person examples with instance
-    masks. Used for `on_person_*`.
+  * StreetVision "Clothing" — 2,889 images across 18 clothing classes with
+    instance masks (bag, dress, glasses, hat, mask, shirt, and more). Used
+    for `clean_bg_*` and `cluttered_*` scenarios; bucketed by background
+    edge density.
+  * Roboflow "Fashion Assistant Segmentation" — 239 worn-on-person
+    examples with instance masks across 10 clothing classes. Used for
+    `on_person_*`.
 
 Both arrive as COCO-format annotations (polygon segments). For each image we
 rasterise the union of its clothing polygons into an alpha PNG, then pick
@@ -36,8 +38,8 @@ USAGE
 
     # Path B — airgapped / no Roboflow account. Download each dataset
     # manually from the linked Roboflow project URL, then:
-    export ROBOFLOW_ZIP_YANELYS=/path/to/clothing-segmentation.zip
-    export ROBOFLOW_ZIP_CLOTHING_TEST=/path/to/clothing-detection-test.zip
+    export ROBOFLOW_ZIP_STREETVISION=/path/to/streetvision-clothing.zip
+    export ROBOFLOW_ZIP_FASHION_ASSISTANT=/path/to/fashion-assistant-segmentation.zip
     python3 scripts/fetch_fixtures.py
 
 The script is idempotent: re-running it overwrites the same 30 files with
@@ -116,34 +118,43 @@ class DatasetSpec:
     license_human: str        # Human-readable licence name
     source_url: str           # Linkable project URL for attribution
     uploader: str             # Attribution uploader name
-    intent: str               # "studio" (Yanelys) or "on_person"
+    intent: str               # "studio" (StreetVision) or "on_person"
     env_zip_var: str          # Override env var for ZIP path
 
 
 DATASETS: dict[str, DatasetSpec] = {
-    "YANELYS": DatasetSpec(
-        key="YANELYS",
-        workspace="yanelys",
-        project="clothing-segmentation",
-        version=1,
+    # Primary studio / cluttered pool. 1,331 CC-BY 4.0 images across 18
+    # clothing classes (bag, dress, glasses, hat, mask, shirt, and more).
+    # Replaces the originally-planned `yanelys/clothing-segmentation`,
+    # which exists on Universe but has no downloadable version.
+    "STREETVISION": DatasetSpec(
+        key="STREETVISION",
+        workspace="streetvision",
+        project="clothing-8kbxo",
+        version=2,
         license_spdx="CC-BY-4.0",
         license_human="Creative Commons Attribution 4.0 International",
-        source_url="https://universe.roboflow.com/yanelys/clothing-segmentation",
-        uploader="Yanelys (Roboflow Universe)",
+        source_url="https://universe.roboflow.com/streetvision/clothing-8kbxo",
+        uploader="StreetVision (Roboflow Universe)",
         intent="studio",
-        env_zip_var="ROBOFLOW_ZIP_YANELYS",
+        env_zip_var="ROBOFLOW_ZIP_STREETVISION",
     ),
-    "CLOTHING_TEST": DatasetSpec(
-        key="CLOTHING_TEST",
-        workspace="clothing-detection",
-        project="clothing-detection-test",
-        version=1,
+    # On-person pool. 239 CC-BY 4.0 images across 10 worn-clothing classes
+    # (jacket, shirt, hoodie, pants, shorts, sneaker, baseball cap, sunglasses,
+    # and more). Curated by Roboflow themselves, so the COCO-Segmentation
+    # export is reliably downloadable. Replaces the originally-planned
+    # `clothing-detection/clothing-detection-test`, whose v1 export is broken.
+    "FASHION_ASSISTANT": DatasetSpec(
+        key="FASHION_ASSISTANT",
+        workspace="roboflow-jvuqo",
+        project="fashion-assistant-segmentation",
+        version=5,
         license_spdx="CC-BY-4.0",
         license_human="Creative Commons Attribution 4.0 International",
-        source_url="https://universe.roboflow.com/clothing-detection/clothing-detection-test",
-        uploader="Clothing Detection Test (Roboflow Universe)",
+        source_url="https://universe.roboflow.com/roboflow-jvuqo/fashion-assistant-segmentation",
+        uploader="Roboflow Fashion Assistant (Roboflow Universe)",
         intent="on_person",
-        env_zip_var="ROBOFLOW_ZIP_CLOTHING_TEST",
+        env_zip_var="ROBOFLOW_ZIP_FASHION_ASSISTANT",
     ),
 }
 
@@ -194,9 +205,12 @@ CATEGORY_MAP: dict[str, str] = {
     "bag": "accessory",
     "hat": "accessory",
     "cap": "accessory",
+    "baseball_cap": "accessory",
     "scarf": "accessory",
     "belt": "accessory",
     "glasses": "accessory",
+    "sunglasses": "accessory",
+    "mask": "accessory",        # face mask, present in StreetVision
     "tie": "accessory",
 }
 
@@ -220,7 +234,7 @@ def parse_args() -> argparse.Namespace:
         default="",
         help=(
             "Comma-separated list of dataset-qualified image IDs to exclude "
-            "(e.g. YANELYS:img_0123,YANELYS:img_0456). Use after manual "
+            "(e.g. STREETVISION:img_0123,STREETVISION:img_0456). Use after manual "
             "spot-check finds bad traces or sensitive content."
         ),
     )
@@ -315,6 +329,53 @@ class CocoImage:
     intent: str                  # mirrors DatasetSpec.intent
 
 
+# Filename prefix patterns we drop at parse time.
+#
+# `yt-` — Roboflow uploaders include per-second screengrabs from YouTube
+# videos. The grabs from a single video share framing and often contain
+# burnt-in text overlays, thumbnails, etc. — a single-source bias that's
+# bad for IoU-regression diversity, independent of any licence story.
+#
+# `maxresdefault` — `maxresdefault.jpg` is YouTube's default high-res
+# thumbnail filename. Anything with that stem is a YouTube thumbnail, which
+# in this dataset consistently comes loaded with burnt-in network logos and
+# title text (Sky News, "THE HISTORY OF…", etc.). Same single-source-bias
+# + text-overlay quality problem as `yt-*`.
+FILENAME_STEM_SKIP_PREFIXES: tuple[str, ...] = ("yt-", "maxresdefault")
+FILENAME_STEM_SKIP_EXACT: frozenset[str] = frozenset({
+    # Product-catalogue montage: rasterises to many disjoint mask regions
+    # rather than a single-item extraction test.
+    "Drill-Header_MASKS_jpg",
+    # News / editorial composites — bystander faces, not a single garment.
+    "79118685-0-image-a-20_1702975471223_jpg",
+    "images6_jpg",
+    "images31_jpg",
+    "images42_jpg",
+    "images47_jpg",
+    "images51_jpg",
+    "images64_jpg",
+    "hijack-swordvauxhall-london-1989-copy-e1698857091949_jpg",
+    # Album-art / music-promo overlays with bystander faces.
+    "0_JS249742059-1_jpg",
+    "images32_jpg",
+    # Product / editorial screengrabs with burnt-in advertising text overlays.
+    "image13_jpeg",
+    "images36_jpg",
+    "0027874721_10_jpg",
+    # Amazon product-grid montage (multiple items in a single frame).
+    "81AIWMgs0L-_AC_UY1000__jpg",
+})
+
+
+def _should_skip_filename(stem: str) -> bool:
+    if any(stem.startswith(prefix) for prefix in FILENAME_STEM_SKIP_PREFIXES):
+        return True
+    # The Roboflow export appends `.rf.<hash>` to augmented copies, so
+    # exact-stem matching needs to compare against the pre-augmentation base.
+    base = augmentation_base_id(stem)
+    return base in FILENAME_STEM_SKIP_EXACT
+
+
 def parse_coco_split(annotations_json: Path, dataset_key: str, intent: str) -> list[CocoImage]:
     """Parse a single Roboflow COCO JSON file into CocoImage records."""
     with annotations_json.open("r", encoding="utf-8") as f:
@@ -339,6 +400,10 @@ def parse_coco_split(annotations_json: Path, dataset_key: str, intent: str) -> l
         if not image_path.is_file():
             continue
 
+        stem = Path(file_name).stem
+        if _should_skip_filename(stem):
+            continue
+
         polygons: list[list[float]] = []
         categories: list[str] = []
         for ann in annotations:
@@ -360,7 +425,7 @@ def parse_coco_split(annotations_json: Path, dataset_key: str, intent: str) -> l
 
         out.append(CocoImage(
             dataset_key=dataset_key,
-            source_image_id=Path(file_name).stem,
+            source_image_id=stem,
             image_path=image_path,
             polygons=polygons,
             categories=categories,
@@ -461,7 +526,7 @@ def bucket_images(scored: list[ScoredImage]) -> dict[str, list[ScoredImage]]:
     `on_person` is determined by source dataset intent — the Clothing
     Detection Test set is explicitly worn-on-people and nothing else.
 
-    For the Yanelys studio set we split on a percentile threshold of
+    For the StreetVision studio set we split on a percentile threshold of
     background edge density: bottom 40% → clean_bg candidates, top 40% →
     cluttered candidates. The middle 20% is reserved as fallback.
     """
@@ -510,15 +575,36 @@ def bucket_images(scored: list[ScoredImage]) -> dict[str, list[ScoredImage]]:
 # ---------------------------------------------------------------------------
 
 
+def augmentation_base_id(source_image_id: str) -> str:
+    """Collapse Roboflow augmentation variants to their source photo.
+
+    Roboflow's export pipeline duplicates each source image N times with a
+    `.rf.<hash>` suffix so a single photo contributes 3-5 near-identical
+    rows. Without dedup the picker will happily select 3 copies of the
+    same shirt. We want 30 distinct source photos.
+    """
+    lower = source_image_id.lower()
+    idx = lower.find(".rf.")
+    if idx >= 0:
+        return source_image_id[:idx]
+    return source_image_id
+
+
 def curate(buckets: dict[str, list[ScoredImage]]) -> dict[str, list[ScoredImage]]:
     """Trim each bucket to exactly PER_BUCKET_COUNT entries, deterministically.
 
-    Within each bucket we prefer:
-    * `clean_bg`: lowest background edge density (cleanest backgrounds first)
-    * `cluttered`: highest background edge density (busiest first)
-    * `on_person`: widest coverage spread (varied silhouettes)
-    Then break ties with a seeded random shuffle so spot-checks and skip-id
-    overrides remain reproducible.
+    Two-stage pick:
+      1. Dedup by (dataset_key, augmentation_base_id) so we never pick two
+         augmentation variants of the same source photo.
+      2. Within each dedup'd pool, prefer category diversity — walk the
+         sorted candidates in order and accept the first image from each
+         new category until we have 2 per category or the target count is
+         reached, then fill the rest by the bucket's sort preference.
+
+    Bucket sort preferences (tie-broken by source_image_id for reproducibility):
+      * `clean_bg`:  lowest bg_edge (cleanest backgrounds first)
+      * `cluttered`: highest bg_edge (busiest first)
+      * `on_person`: seeded shuffle (all samples have similar intent)
     """
     rng = random.Random(hashlib.sha256(RANDOM_SEED.encode()).digest())
     curated: dict[str, list[ScoredImage]] = {}
@@ -529,13 +615,41 @@ def curate(buckets: dict[str, list[ScoredImage]]) -> dict[str, list[ScoredImage]
         elif bucket == "cluttered":
             items.sort(key=lambda s: (-s.bg_edge, s.record.source_image_id))
         else:  # on_person
-            # Shuffle deterministically — all on_person images have similar
-            # intent, so coverage alone isn't a strong preference signal.
             pool = list(items)
             rng.shuffle(pool)
             items = pool
 
-        curated[bucket] = items[:PER_BUCKET_COUNT]
+        # Stage 1 — dedup augmentation duplicates.
+        seen_base: set[tuple[str, str]] = set()
+        deduped: list[ScoredImage] = []
+        for s in items:
+            base = augmentation_base_id(s.record.source_image_id)
+            key = (s.record.dataset_key, base)
+            if key in seen_base:
+                continue
+            seen_base.add(key)
+            deduped.append(s)
+
+        # Stage 2 — category-diverse pick.
+        picks: list[ScoredImage] = []
+        category_counts: dict[str, int] = {}
+        remaining: list[ScoredImage] = []
+        CATEGORY_SOFT_CAP = 2  # prefer ≤2 of any single category per bucket
+        for s in deduped:
+            cat = primary_category(s.record.categories)
+            if category_counts.get(cat, 0) < CATEGORY_SOFT_CAP and len(picks) < PER_BUCKET_COUNT:
+                picks.append(s)
+                category_counts[cat] = category_counts.get(cat, 0) + 1
+            else:
+                remaining.append(s)
+
+        # Stage 3 — top up any remaining slots by original sort order.
+        for s in remaining:
+            if len(picks) >= PER_BUCKET_COUNT:
+                break
+            picks.append(s)
+
+        curated[bucket] = picks[:PER_BUCKET_COUNT]
 
     return curated
 
