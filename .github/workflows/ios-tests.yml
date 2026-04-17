@@ -47,6 +47,17 @@ jobs:
       - name: Show installed simulators after download
         run: xcrun simctl list devices available | grep -E 'iPhone 1[5-9]' | head -10
 
+      - name: Write stub Secrets.plist
+        # `Secrets.plist` is gitignored (carries real Supabase creds locally)
+        # but is declared as a bundle resource in the Xcode project, so the
+        # build fails if it's missing. Stub values are fine for a build +
+        # unit-test run — no test exercises the network against Supabase.
+        run: |
+          /usr/libexec/PlistBuddy -c "Clear dict" \
+            -c "Add :SUPABASE_URL string https://stub.supabase.co" \
+            -c "Add :SUPABASE_ANON_KEY string ci-stub-anon-key" \
+            WardrobeReDo/Secrets.plist
+
       - name: Cache SwiftPM artifacts
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:

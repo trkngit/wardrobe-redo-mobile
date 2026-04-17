@@ -96,8 +96,11 @@ final class OutfitRepository: OutfitRepositoryProtocol {
                     .insert(slots)
                     .execute()
             } catch {
-                // Rollback: delete the orphaned outfit to keep DB consistent
-                try? await supabase
+                // Rollback: delete the orphaned outfit to keep DB consistent.
+                // Discard the response explicitly — the `try?` return is an
+                // ignorable `Optional<PostgrestResponse<Void>>` under Xcode
+                // 16, which emits "result of 'try?' is unused" otherwise.
+                _ = try? await supabase
                     .from("outfits")
                     .delete()
                     .eq("id", value: outfit.id)

@@ -91,8 +91,10 @@ final class CameraCaptureViewController: UIViewController {
     // and writes are already serialized on that queue.
 
     nonisolated(unsafe) private let session = AVCaptureSession()
-    nonisolated(unsafe) private let sessionQueue = DispatchQueue(label: "com.wardroberedo.camera.session")
-    nonisolated(unsafe) private let videoOutputQueue = DispatchQueue(label: "com.wardroberedo.camera.video", qos: .userInitiated)
+    // `DispatchQueue` is already `Sendable`, so no `nonisolated(unsafe)`
+    // marker is needed (Xcode 16 emits a warning when it's there).
+    private let sessionQueue = DispatchQueue(label: "com.wardroberedo.camera.session")
+    private let videoOutputQueue = DispatchQueue(label: "com.wardroberedo.camera.video", qos: .userInitiated)
     nonisolated(unsafe) private let photoOutput = AVCapturePhotoOutput()
     nonisolated(unsafe) private let videoOutput = AVCaptureVideoDataOutput()
     nonisolated(unsafe) private var qualityBridge: BackgroundQualityCaptureBridge?
