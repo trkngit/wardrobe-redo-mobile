@@ -69,14 +69,14 @@ import UIKit
 
         let result = await service.extract(image)
         guard let predicted = result.mask else {
-            Issue.record("\(fixture.image): extractor returned no mask (method=\(result.method.rawValue))")
+            Issue.record("\(fixture.image): extractor returned no mask (method=\(result.method.rawValue)) | img=\(Int(image.size.width))x\(Int(image.size.height)) orient=\(image.imageOrientation.rawValue) gt=\(CVPixelBufferGetWidth(gtMask))x\(CVPixelBufferGetHeight(gtMask)) gtCov=\(String(format: "%.3f", MaskDebug.coverage(gtMask)))")
             continue
         }
 
         let score = MaskIoU.score(prediction: predicted, groundTruth: gtMask)
         #expect(
             score >= fixture.expectedIoUMin,
-            "\(fixture.image) [\(fixture.scenario)]: IoU \(String(format: "%.3f", score)) < floor \(fixture.expectedIoUMin) (method=\(result.method.rawValue), conf=\(result.confidence.rawValue))"
+            "\(fixture.image) [\(fixture.scenario)]: IoU \(String(format: "%.3f", score)) < floor \(fixture.expectedIoUMin) (method=\(result.method.rawValue), conf=\(result.confidence.rawValue)) | img=\(Int(image.size.width))x\(Int(image.size.height)) orient=\(image.imageOrientation.rawValue) pred=\(CVPixelBufferGetWidth(predicted))x\(CVPixelBufferGetHeight(predicted)) predCov=\(String(format: "%.3f", MaskDebug.coverage(predicted))) gt=\(CVPixelBufferGetWidth(gtMask))x\(CVPixelBufferGetHeight(gtMask)) gtCov=\(String(format: "%.3f", MaskDebug.coverage(gtMask)))"
         )
     }
     #endif

@@ -132,6 +132,7 @@
 		E1E0B3F4000000000000E0A4 /* ClothingExtractionChainingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F3F4000000000000E0B4 /* ClothingExtractionChainingTests.swift */; };
 		E1E0B4F1000000000000E0A1 /* FixtureLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F4F1000000000000E0B1 /* FixtureLoader.swift */; };
 		E1E0B4F2000000000000E0A2 /* MaskIoU.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F4F2000000000000E0B2 /* MaskIoU.swift */; };
+		E1E0B4FA000000000000E0AA /* MaskDebug.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F4FA000000000000E0BA /* MaskDebug.swift */; };
 		E1E0B4F3000000000000E0A3 /* SegmentationIoUTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F4F3000000000000E0B3 /* SegmentationIoUTests.swift */; };
 		E1E0B4F4000000000000E0A4 /* ExtractionPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F4F4000000000000E0B4 /* ExtractionPerformanceTests.swift */; };
 		E1E0B4F5000000000000E0A5 /* Fixtures in Resources */ = {isa = PBXBuildFile; fileRef = E1E0F4F6000000000000E0B6 /* Fixtures */; };
@@ -297,6 +298,7 @@
 		E1E0F3F4000000000000E0B4 /* ClothingExtractionChainingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingExtractionChainingTests.swift; sourceTree = "<group>"; };
 		E1E0F4F1000000000000E0B1 /* FixtureLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixtureLoader.swift; sourceTree = "<group>"; };
 		E1E0F4F2000000000000E0B2 /* MaskIoU.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskIoU.swift; sourceTree = "<group>"; };
+		E1E0F4FA000000000000E0BA /* MaskDebug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskDebug.swift; sourceTree = "<group>"; };
 		E1E0F4F3000000000000E0B3 /* SegmentationIoUTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationIoUTests.swift; sourceTree = "<group>"; };
 		E1E0F4F4000000000000E0B4 /* ExtractionPerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtractionPerformanceTests.swift; sourceTree = "<group>"; };
 		E1E0F4F6000000000000E0B6 /* Fixtures */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Fixtures; sourceTree = "<group>"; };
@@ -503,6 +505,7 @@
 			children = (
 				E1E0F4F1000000000000E0B1 /* FixtureLoader.swift */,
 				E1E0F4F2000000000000E0B2 /* MaskIoU.swift */,
+				E1E0F4FA000000000000E0BA /* MaskDebug.swift */,
 				79B23EA65E265746ECEA5520 /* Mocks.swift */,
 				D8CBA05C935A71BB916EE48D /* TestFixtures.swift */,
 			);
@@ -1003,6 +1006,7 @@
 				E1E0B3F4000000000000E0A4 /* ClothingExtractionChainingTests.swift in Sources */,
 				E1E0B4F1000000000000E0A1 /* FixtureLoader.swift in Sources */,
 				E1E0B4F2000000000000E0A2 /* MaskIoU.swift in Sources */,
+				E1E0B4FA000000000000E0AA /* MaskDebug.swift in Sources */,
 				E1E0B4F3000000000000E0A3 /* SegmentationIoUTests.swift in Sources */,
 				E1E0B4F4000000000000E0A4 /* ExtractionPerformanceTests.swift in Sources */,
 			);
