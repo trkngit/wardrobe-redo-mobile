@@ -164,3 +164,53 @@ final class MockImageService: ImageServiceProtocol {
         return updateMaskedResult
     }
 }
+
+// MARK: - Mock ClothingExtractionService
+//
+// Phase 4 addition. Lets tests exercise the upload / color-extraction flow
+// without actually spinning up Vision or SAM2. Supply canned results via
+// `extractResult` / `tapPointsResult`; if either is left nil, the mock
+// returns a pass-through `ExtractionResult` that echoes the input image so
+// downstream code still has a valid `maskedImage` to work with.
+
+final class MockClothingExtractionService: ClothingExtracting, @unchecked Sendable {
+    var extractResult: ExtractionResult?
+    var tapPointsResult: ExtractionResult?
+
+    var extractCallCount = 0
+    var tapPointsExtractCallCount = 0
+    var prewarmCallCount = 0
+    var lastTapPoints: [SAM2TapPoint] = []
+
+    func extract(_ image: UIImage) async -> ExtractionResult {
+        extractCallCount += 1
+        return extractResult ?? MockClothingExtractionService.passThroughResult(for: image, method: .none, confidence: .failed)
+    }
+
+    func extract(_ image: UIImage, tapPoints: [SAM2TapPoint]) async -> ExtractionResult {
+        tapPointsExtractCallCount += 1
+        lastTapPoints = tapPoints
+        return tapPointsResult ?? MockClothingExtractionService.passThroughResult(for: image, method: .sam2Manual, confidence: .high)
+    }
+
+    func prewarm() async {
+        prewarmCallCount += 1
+    }
+
+    /// Builds a minimal "no-op" `ExtractionResult` that looks well-formed to
+    /// callers but performs no actual segmentation. Useful when the test
+    /// doesn't care about the mask itself, only the surrounding orchestration.
+    static func passThroughResult(
+        for image: UIImage,
+        method: ExtractionMethod = .none,
+        confidence: ExtractionConfidence = .failed
+    ) -> ExtractionResult {
+        ExtractionResult(
+            originalImage: image,
+            maskedImage: image,
+            mask: nil,
+            confidence: confidence,
+            method: method
+        )
+    }
+}

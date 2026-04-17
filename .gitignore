@@ -55,3 +55,14 @@ fastlane/test_output
 
 # Archive
 *.xcarchive
+
+# Benchmark scratch space (DeepFashion2 + dev reports)
+# The canonical location is ~/wardrobe-benchmark/, which is already under $HOME;
+# this rule is belt-and-suspenders in case anyone points the tool at the repo.
+wardrobe-benchmark/
+benchmark_results/
+scripts/benchmark-tool/.build/
+
+# Python bytecode (from local script runs)
+__pycache__/
+*.py[cod]

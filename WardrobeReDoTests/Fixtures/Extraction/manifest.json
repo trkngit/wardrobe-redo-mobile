@@ -1,0 +1,5 @@
+{
+  "_comment": "Hand-curated ground-truth manifest for ClothingExtractionService. Each entry maps a source photo (in this directory) to its alpha mask (in ground_truth/) and the IoU floor we expect extraction to hit. Thresholds were calibrated by running the current pipeline against the traces once and recording the score minus a 5% safety margin. Future commits must not drop below these numbers. See capture-brief.md for how to add new fixtures.",
+  "version": 1,
+  "fixtures": []
+}

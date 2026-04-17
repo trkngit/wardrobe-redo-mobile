@@ -130,6 +130,11 @@
 		E1E0B3F2000000000000E0A2 /* TapToSelectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F3F2000000000000E0B2 /* TapToSelectView.swift */; };
 		E1E0B3F3000000000000E0A3 /* SAM2ExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F3F3000000000000E0B3 /* SAM2ExtractorTests.swift */; };
 		E1E0B3F4000000000000E0A4 /* ClothingExtractionChainingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F3F4000000000000E0B4 /* ClothingExtractionChainingTests.swift */; };
+		E1E0B4F1000000000000E0A1 /* FixtureLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F4F1000000000000E0B1 /* FixtureLoader.swift */; };
+		E1E0B4F2000000000000E0A2 /* MaskIoU.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F4F2000000000000E0B2 /* MaskIoU.swift */; };
+		E1E0B4F3000000000000E0A3 /* SegmentationIoUTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F4F3000000000000E0B3 /* SegmentationIoUTests.swift */; };
+		E1E0B4F4000000000000E0A4 /* ExtractionPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F4F4000000000000E0B4 /* ExtractionPerformanceTests.swift */; };
+		E1E0B4F5000000000000E0A5 /* Fixtures in Resources */ = {isa = PBXBuildFile; fileRef = E1E0F4F6000000000000E0B6 /* Fixtures */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -290,6 +295,11 @@
 		E1E0F3F2000000000000E0B2 /* TapToSelectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapToSelectView.swift; sourceTree = "<group>"; };
 		E1E0F3F3000000000000E0B3 /* SAM2ExtractorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAM2ExtractorTests.swift; sourceTree = "<group>"; };
 		E1E0F3F4000000000000E0B4 /* ClothingExtractionChainingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingExtractionChainingTests.swift; sourceTree = "<group>"; };
+		E1E0F4F1000000000000E0B1 /* FixtureLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FixtureLoader.swift; sourceTree = "<group>"; };
+		E1E0F4F2000000000000E0B2 /* MaskIoU.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskIoU.swift; sourceTree = "<group>"; };
+		E1E0F4F3000000000000E0B3 /* SegmentationIoUTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationIoUTests.swift; sourceTree = "<group>"; };
+		E1E0F4F4000000000000E0B4 /* ExtractionPerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtractionPerformanceTests.swift; sourceTree = "<group>"; };
+		E1E0F4F6000000000000E0B6 /* Fixtures */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Fixtures; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -353,6 +363,7 @@
 			children = (
 				18165792F146D914FFB57C1E /* WardrobeReDoTests.swift */,
 				81364DC122BF6AF103A8575E /* Extensions */,
+				E1E0F4F6000000000000E0B6 /* Fixtures */,
 				7BD98756180ADC767E334D9D /* Helpers */,
 				AD9BB7B70D004FBEF1FB3CA5 /* Models */,
 				11389A58AC6D92C3D66690FB /* Services */,
@@ -369,6 +380,8 @@
 				E1E0F2F6000000000000E0B6 /* BackgroundQualityClassifierTests.swift */,
 				E1E0F3F3000000000000E0B3 /* SAM2ExtractorTests.swift */,
 				E1E0F3F4000000000000E0B4 /* ClothingExtractionChainingTests.swift */,
+				E1E0F4F3000000000000E0B3 /* SegmentationIoUTests.swift */,
+				E1E0F4F4000000000000E0B4 /* ExtractionPerformanceTests.swift */,
 				A61409AC1E4D748E2F35EDB3 /* ColorExtractionServiceTests.swift */,
 				F385FCB8D1419E716DE8E394 /* OutfitGenerationServiceTests.swift */,
 				96A1564CD534196B24209DA0 /* OutfitRepositoryDateTests.swift */,
@@ -488,6 +501,8 @@
 		7BD98756180ADC767E334D9D /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
+				E1E0F4F1000000000000E0B1 /* FixtureLoader.swift */,
+				E1E0F4F2000000000000E0B2 /* MaskIoU.swift */,
 				79B23EA65E265746ECEA5520 /* Mocks.swift */,
 				D8CBA05C935A71BB916EE48D /* TestFixtures.swift */,
 			);
@@ -761,6 +776,7 @@
 			buildConfigurationList = C7E511DCE345FC06EB6D2B6B /* Build configuration list for PBXNativeTarget "WardrobeReDoTests" */;
 			buildPhases = (
 				AC1F640B06AD0837868091DF /* Sources */,
+				E1E0D4F5000000000000E0B5 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -843,6 +859,14 @@
 				842566CC9DF1FC290B97AB7C /* Secrets.plist in Resources */,
 				8B945787989F72743EBA3AB5 /* archetypes.json in Resources */,
 				D9FDA3CD67BA6AE2ED3D60D4 /* rules.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E1E0D4F5000000000000E0B5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E1E0B4F5000000000000E0A5 /* Fixtures in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -977,6 +1001,10 @@
 				E1E0B2F6000000000000E0A6 /* BackgroundQualityClassifierTests.swift in Sources */,
 				E1E0B3F3000000000000E0A3 /* SAM2ExtractorTests.swift in Sources */,
 				E1E0B3F4000000000000E0A4 /* ClothingExtractionChainingTests.swift in Sources */,
+				E1E0B4F1000000000000E0A1 /* FixtureLoader.swift in Sources */,
+				E1E0B4F2000000000000E0A2 /* MaskIoU.swift in Sources */,
+				E1E0B4F3000000000000E0A3 /* SegmentationIoUTests.swift in Sources */,
+				E1E0B4F4000000000000E0A4 /* ExtractionPerformanceTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
