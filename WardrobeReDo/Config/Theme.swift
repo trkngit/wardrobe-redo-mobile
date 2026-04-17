@@ -9,7 +9,7 @@ enum Theme {
         static let surface = "Surface"
         static let textPrimary = "TextPrimary"
         static let textSecondary = "TextSecondary"
-        static let primary = "Primary"
+        static let primary = "BrandPrimary"
         static let primaryLight = "PrimaryLight"
         static let primaryMuted = "PrimaryMuted"
         static let destructive = "Destructive"

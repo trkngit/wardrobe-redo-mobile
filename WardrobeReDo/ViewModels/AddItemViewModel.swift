@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import os
 import UIKit
 import PhotosUI
 import SwiftUI
@@ -37,8 +38,17 @@ final class AddItemViewModel {
 
     // MARK: - Dependencies
 
-    private let imageService = ImageService()
-    private let wardrobeRepository = WardrobeRepository()
+    private let imageService: any ImageServiceProtocol
+    private let wardrobeRepository: any WardrobeRepositoryProtocol
+    private let logger = Logger(subsystem: "com.wardroberedo", category: "AddItem")
+
+    init(
+        imageService: any ImageServiceProtocol = ImageService(),
+        wardrobeRepository: any WardrobeRepositoryProtocol = WardrobeRepository()
+    ) {
+        self.imageService = imageService
+        self.wardrobeRepository = wardrobeRepository
+    }
 
     // MARK: - Computed
 
@@ -97,37 +107,80 @@ final class AddItemViewModel {
         isSaving = true
         currentStep = .saving
         errorMessage = nil
+        defer { isSaving = false }
 
         let itemId = UUID()
+        let colors = extractedColors
+        let cat = category.rawValue
+        let subcat = subcategory.rawValue
+        let tex = texture?.rawValue
+        let fit = fitAttribute?.rawValue
+        let seasons = Array(selectedSeasons).map(\.rawValue)
+        let occasions = Array(selectedOccasions).map(\.rawValue)
 
-        do {
-            let (imagePath, thumbnailPath) = try await imageService.upload(
-                processed: processed,
-                userId: userId,
-                itemId: itemId
-            )
+        logger.info("save: starting upload for itemId=\(itemId)")
 
-            let newItem = NewWardrobeItem(
-                userId: userId,
-                imagePath: imagePath,
-                thumbnailPath: thumbnailPath,
-                category: category.rawValue,
-                subcategory: subcategory.rawValue,
-                dominantColors: extractedColors,
-                texture: texture?.rawValue,
-                fitAttribute: fitAttribute?.rawValue,
-                seasons: Array(selectedSeasons).map(\.rawValue),
-                occasions: Array(selectedOccasions).map(\.rawValue)
-            )
+        // Race the entire save operation against a 45-second timeout
+        let success: Bool = await withTaskGroup(of: Bool.self) { group in
+            group.addTask { [imageService, wardrobeRepository, logger] in
+                var uploadedPaths: (imagePath: String, thumbnailPath: String)?
 
-            _ = try await wardrobeRepository.insertItem(newItem)
-            didSave = true
-        } catch {
-            errorMessage = "Failed to save item: \(error.localizedDescription)"
-            currentStep = .details
+                do {
+                    let paths = try await imageService.upload(
+                        processed: processed,
+                        userId: userId,
+                        itemId: itemId
+                    )
+                    uploadedPaths = paths
+                    logger.info("save: upload complete, inserting item")
+
+                    let newItem = NewWardrobeItem(
+                        userId: userId,
+                        imagePath: paths.imagePath,
+                        thumbnailPath: paths.thumbnailPath,
+                        category: cat,
+                        subcategory: subcat,
+                        dominantColors: colors,
+                        texture: tex,
+                        fitAttribute: fit,
+                        seasons: seasons,
+                        occasions: occasions
+                    )
+
+                    _ = try await wardrobeRepository.insertItem(newItem)
+                    logger.info("save: insert complete")
+                    return true
+                } catch {
+                    logger.error("save: failed — \(error.localizedDescription)")
+
+                    // Cleanup: if upload succeeded but DB insert failed,
+                    // delete orphaned images to prevent storage leaks
+                    if let paths = uploadedPaths {
+                        logger.info("save: cleaning up orphaned images")
+                        try? await imageService.deleteImages(
+                            imagePath: paths.imagePath,
+                            thumbnailPath: paths.thumbnailPath
+                        )
+                    }
+                    return false
+                }
+            }
+            group.addTask {
+                try? await Task.sleep(for: .seconds(45))
+                return false
+            }
+
+            let result = await group.next()!
+            group.cancelAll()
+            return result
         }
 
-        isSaving = false
+        if success {
+            didSave = true
+        } else {
+            errorMessage = "Failed to save item. Check your connection and try again."
+            currentStep = .details
+        }
     }
 
     func reset() {

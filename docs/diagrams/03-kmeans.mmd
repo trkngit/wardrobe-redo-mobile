@@ -1,0 +1,20 @@
+flowchart TD
+  A[Input UIImage] --> B[Downsample to 50 x 50<br/>2,500 pixels]
+  B --> C[Read RGB values per pixel]
+  C --> D[k-means++ init<br/>pick 1st center randomly<br/>next centers by squared-distance weighting]
+  D --> E{Assign each pixel<br/>to nearest center}
+  E --> F[Compute new centers<br/>as mean of assigned pixels]
+  F --> G{Converged?<br/>centers move &lt; epsilon}
+  G -->|no| E
+  G -->|yes| H[5 cluster centroids<br/>= dominant RGB colors]
+  H --> I[RGB -> HSL conversion<br/>per centroid]
+  I --> J[Color family classification<br/>by hue / saturation / lightness]
+  J --> K[Sort by cluster size<br/>= % coverage]
+  K --> L[ExtractedColor array<br/>hex, hsl, family, percentage]
+
+  classDef start fill:#fff3e0,stroke:#e65100;
+  classDef iter fill:#e8f5e9,stroke:#1b5e20;
+  classDef done fill:#e3f2fd,stroke:#0d47a1;
+  class A start;
+  class D,E,F,G iter;
+  class L done;

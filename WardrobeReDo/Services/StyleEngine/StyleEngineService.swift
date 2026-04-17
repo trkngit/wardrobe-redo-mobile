@@ -3,7 +3,6 @@ import Foundation
 /// Orchestrates the 7-dimension scoring engine.
 /// Each outfit candidate is scored across all dimensions, producing
 /// a weighted total score and per-dimension breakdown.
-@MainActor
 final class StyleEngineService {
 
     // MARK: - Scorers (one per dimension)

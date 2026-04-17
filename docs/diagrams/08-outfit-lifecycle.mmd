@@ -1,0 +1,41 @@
+sequenceDiagram
+  autonumber
+  participant U as User
+  participant V as DailyOutfitsView
+  participant VM as OutfitViewModel
+  participant GS as OutfitGenerationService
+  participant SR as StyleDataRepository
+  participant WR as WardrobeRepository
+  participant OR as OutfitRepository
+  participant DB as Supabase
+
+  U->>V: Tap Generate
+  V->>VM: generateDailyOutfits(userId)
+  VM->>OR: hasOutfitsForDate(today)
+  OR->>DB: SELECT outfits WHERE date=today
+  DB-->>OR: 0
+  OR-->>VM: false
+  VM->>WR: fetchItems(userId)
+  WR->>DB: SELECT wardrobe_items
+  DB-->>WR: items
+  WR-->>VM: items
+  VM->>VM: guard activeCount at least 2
+  VM->>GS: generateDailyOutfits(items, occasion, recent)
+  GS->>SR: fetchArchetypes + fetchRules
+  SR->>DB: SELECT style_archetypes + style_rules
+  alt Remote empty or failed
+    SR->>SR: load bundled archetypes.json and rules.json
+  end
+  SR-->>GS: 50 archetypes, 200 rules
+  GS->>GS: beam search per rule<br/>score via 7 dimensions<br/>top 3 distinct outfits
+  GS-->>VM: 3 OutfitCandidate
+  VM->>GS: saveDailyOutfits(candidates)
+  GS->>OR: insert outfits + outfit_slots
+  OR->>DB: INSERT
+  VM->>VM: loadOutfits(userId)<br/>updateWidget(top)
+  VM-->>V: dailyOutfits populated
+  V-->>U: 3 outfit cards shown
+  U->>V: React love / mark worn
+  V->>VM: react / toggleWorn
+  VM->>OR: updateReaction / markAsWorn
+  OR->>DB: UPDATE outfits

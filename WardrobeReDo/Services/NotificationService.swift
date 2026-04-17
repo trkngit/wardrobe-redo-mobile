@@ -76,19 +76,27 @@ final class NotificationService {
     // MARK: - Toggle
 
     /// Toggle notifications on/off. Requests permission if enabling for the first time.
-    func toggle(enabled: Bool) async {
+    /// Toggle notifications on/off. Requests permission if enabling for the first time.
+    /// Returns the final enabled state (may differ from requested if permission denied).
+    @discardableResult
+    func toggle(enabled: Bool) async -> Bool {
         if enabled {
             let status = await checkPermission()
             if status == .notDetermined {
                 let granted = await requestPermission()
-                if !granted { return }
+                if !granted {
+                    isEnabled = false
+                    return false
+                }
             } else if status == .denied {
-                // Can't enable — user needs to go to Settings
-                return
+                isEnabled = false
+                return false
             }
             scheduleDailyReminder()
+            return true
         } else {
             cancelDailyReminder()
+            return false
         }
     }
 }

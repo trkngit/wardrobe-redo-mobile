@@ -8,10 +8,18 @@ struct ContentView: View {
             if appState.isLoading {
                 LaunchView()
             } else if appState.isAuthenticated {
-                if appState.currentUser?.onboardingCompleted == false {
-                    OnboardingView()
+                if let user = appState.currentUser {
+                    if user.onboardingCompleted {
+                        TabRootView()
+                    } else {
+                        OnboardingView()
+                    }
                 } else {
-                    TabRootView()
+                    // Authenticated but profile not loaded — show retry when failed
+                    LaunchView(showRetry: appState.profileLoadFailed) {
+                        Task { await appState.refreshProfile() }
+                    }
+                    .task { await appState.refreshProfile() }
                 }
             } else {
                 LoginView()
@@ -29,6 +37,9 @@ struct ContentView: View {
 }
 
 private struct LaunchView: View {
+    var showRetry = false
+    var onRetry: (() -> Void)?
+
     var body: some View {
         ZStack {
             Color(Theme.Colors.background)
@@ -37,8 +48,19 @@ private struct LaunchView: View {
                 Text("Wardrobe")
                     .font(Theme.Fonts.display)
                     .foregroundStyle(Color(Theme.Colors.primary))
-                ProgressView()
-                    .tint(Color(Theme.Colors.primary))
+
+                if showRetry {
+                    Text("Unable to load your profile")
+                        .font(Theme.Fonts.bodySmall)
+                        .foregroundStyle(Color(Theme.Colors.textSecondary))
+                    GhostButton("Try Again") {
+                        onRetry?()
+                    }
+                    .frame(width: 160)
+                } else {
+                    ProgressView()
+                        .tint(Color(Theme.Colors.primary))
+                }
             }
         }
     }

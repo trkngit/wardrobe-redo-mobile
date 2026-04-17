@@ -1,0 +1,29 @@
+graph TD
+  Anchor["Anchor<br/>(hero item, if matching)"] --> S1{"Slot 1 - TOP<br/>filter items by category + subcategory aliases"}
+  S1 --> E1A["beam_1A: anchor + top_a"]
+  S1 --> E1B["beam_1B: anchor + top_b"]
+  S1 --> E1C["beam_1C: anchor + top_c"]
+  S1 --> E1D["beam_1D: anchor + top_d"]
+  E1A --> P1{"Score each<br/>keep top 10"}
+  E1B --> P1
+  E1C --> P1
+  E1D --> P1
+  P1 --> S2["Slot 2 - BOTTOM"]
+  S2 --> E2A["beam_2A"]
+  S2 --> E2B["beam_2B"]
+  S2 --> E2D["... up to 10 candidates"]
+  E2A --> P2{"Score<br/>keep top 10"}
+  E2B --> P2
+  E2D --> P2
+  P2 --> S3["Slot 3 - SHOE"]
+  S3 --> P3["Score + prune -> top 10"]
+  P3 --> O["Optional slot - OUTERWEAR<br/>expand WITH + WITHOUT<br/>keep best 10 overall"]
+  O --> DEDUP["Dedup by Set UUID<br/>distinct item sets only"]
+  DEDUP --> OUT["Final: top 3 daily<br/>or top 5 matches"]
+
+  classDef beam fill:#fff3e0,stroke:#e65100;
+  classDef prune fill:#e3f2fd,stroke:#0d47a1;
+  classDef final fill:#e8f5e9,stroke:#1b5e20;
+  class E1A,E1B,E1C,E1D,E2A,E2B,E2D beam;
+  class P1,P2,P3,DEDUP prune;
+  class OUT final;

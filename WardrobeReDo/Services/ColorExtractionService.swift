@@ -200,7 +200,7 @@ final class ColorExtractionService: Sendable {
 
     // MARK: - Color Math
 
-    private func colorDistance(
+    func colorDistance(
         _ a: (r: Double, g: Double, b: Double),
         _ b: (r: Double, g: Double, b: Double)
     ) -> Double {
@@ -210,7 +210,7 @@ final class ColorExtractionService: Sendable {
         return dr * dr + dg * dg + db * db
     }
 
-    private func rgbToHSL(r: Double, g: Double, b: Double) -> (h: Double, s: Double, l: Double) {
+    func rgbToHSL(r: Double, g: Double, b: Double) -> (h: Double, s: Double, l: Double) {
         let maxC = max(r, g, b)
         let minC = min(r, g, b)
         let l = (maxC + minC) / 2.0
@@ -235,14 +235,14 @@ final class ColorExtractionService: Sendable {
         return (h: h, s: s, l: l)
     }
 
-    private func rgbToHex(r: Double, g: Double, b: Double) -> String {
+    func rgbToHex(r: Double, g: Double, b: Double) -> String {
         let ri = Int((r * 255).rounded())
         let gi = Int((g * 255).rounded())
         let bi = Int((b * 255).rounded())
         return String(format: "#%02X%02X%02X", ri, gi, bi)
     }
 
-    private func colorFamily(hue: Double, saturation: Double, lightness: Double) -> String {
+    func colorFamily(hue: Double, saturation: Double, lightness: Double) -> String {
         // Achromatic check
         if saturation < 0.1 {
             if lightness < 0.15 { return "black" }
@@ -276,7 +276,7 @@ final class ColorExtractionService: Sendable {
         }
     }
 
-    private func isNeutral(saturation: Double, lightness: Double) -> Bool {
+    func isNeutral(saturation: Double, lightness: Double) -> Bool {
         saturation < 0.15 || lightness < 0.12 || lightness > 0.88
     }
 }

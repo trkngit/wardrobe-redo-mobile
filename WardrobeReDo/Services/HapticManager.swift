@@ -2,6 +2,7 @@ import UIKit
 
 /// Centralized haptic feedback manager with typed feedback styles.
 /// Replaces scattered UIImpactFeedbackGenerator calls throughout views.
+@MainActor
 enum HapticManager {
 
     // MARK: - Impact

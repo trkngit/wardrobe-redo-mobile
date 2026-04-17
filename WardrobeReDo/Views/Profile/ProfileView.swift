@@ -166,7 +166,12 @@ struct ProfileView: View {
             }
             .tint(Color(Theme.Colors.primary))
             .onChange(of: notificationsEnabled) { _, newValue in
-                Task { await NotificationService.shared.toggle(enabled: newValue) }
+                Task {
+                    let result = await NotificationService.shared.toggle(enabled: newValue)
+                    if result != newValue {
+                        notificationsEnabled = result
+                    }
+                }
             }
         }
     }

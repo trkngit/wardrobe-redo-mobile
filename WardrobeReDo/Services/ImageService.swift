@@ -10,7 +10,7 @@ struct ProcessedImage: Sendable {
 }
 
 @MainActor
-final class ImageService {
+final class ImageService: ImageServiceProtocol {
     private let supabase = SupabaseManager.shared.client
     private let colorExtractor = ColorExtractionService()
 
@@ -45,7 +45,11 @@ final class ImageService {
         userId: UUID,
         itemId: UUID
     ) async throws -> (imagePath: String, thumbnailPath: String) {
-        let basePath = "\(userId.uuidString)/\(itemId.uuidString)"
+        // Lowercase to match Postgres auth.uid()::text in the storage RLS policy.
+        // Swift's UUID.uuidString returns uppercase; the policy comparison
+        // `auth.uid()::text = (storage.foldername(name))[1]` is case-sensitive,
+        // so uppercase folder names get rejected as RLS violations.
+        let basePath = "\(userId.uuidString.lowercased())/\(itemId.uuidString.lowercased())"
         let imagePath = "\(basePath)/original.jpg"
         let thumbnailPath = "\(basePath)/thumb.jpg"
 
@@ -75,12 +79,11 @@ final class ImageService {
             .createSignedURL(path: path, expiresIn: expiresIn)
     }
 
-    /// Delete images for an item from storage.
-    func deleteImages(userId: UUID, itemId: UUID) async throws {
-        let basePath = "\(userId.uuidString)/\(itemId.uuidString)"
+    /// Delete images for an item from storage using the stored paths.
+    func deleteImages(imagePath: String, thumbnailPath: String) async throws {
         _ = try await supabase.storage
             .from("wardrobe-images")
-            .remove(paths: ["\(basePath)/original.jpg", "\(basePath)/thumb.jpg"])
+            .remove(paths: [imagePath, thumbnailPath])
     }
 
     // MARK: - Resize

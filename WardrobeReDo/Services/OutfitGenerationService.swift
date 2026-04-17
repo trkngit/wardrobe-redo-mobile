@@ -27,8 +27,7 @@ struct SlotAssignment: Sendable {
 /// Generates outfit candidates using beam search over the 7-dimension
 /// scoring engine. Supports daily generation (3 diverse outfits) and
 /// hero-piece matching (anchor item + complementary pieces).
-@MainActor
-final class OutfitGenerationService {
+final class OutfitGenerationService: @unchecked Sendable {
 
     private let styleEngine = StyleEngineService()
     private let styleDataRepository = StyleDataRepository()
@@ -140,11 +139,18 @@ final class OutfitGenerationService {
             let archetypeRules = rules.filter { $0.archetypeId == archetype.id }
 
             for rule in archetypeRules {
-                // Only consider rules that have a slot for the hero item
+                // Only consider rules that have a slot for the hero item.
+                // Uses alias-aware matching so a "sneakers" item satisfies a
+                // rule that requires "sneaker_low" (see SubcategoryAliases).
                 let heroFitsRule = rule.slotRequirements.contains { req in
-                    req.category == heroItem.category.rawValue &&
-                        (req.subcategories == nil ||
-                            req.subcategories!.contains(heroItem.subcategory.rawValue))
+                    guard req.category == heroItem.category.rawValue else { return false }
+                    guard let subs = req.subcategories, !subs.isEmpty else { return true }
+                    return subs.contains { sub in
+                        SubcategoryAliases.matches(
+                            itemSubcategory: heroItem.subcategory.rawValue,
+                            requiredSubcategory: sub
+                        )
+                    }
                 }
                 guard heroFitsRule else { continue }
 
@@ -265,12 +271,19 @@ final class OutfitGenerationService {
     ) -> [OutfitCandidate] {
         let itemsByCategory = Dictionary(grouping: items, by: \.category)
 
-        // Remove exactly one matching required slot for the anchor
+        // Remove exactly one matching required slot for the anchor.
+        // Uses alias-aware matching to bridge camelCase enum rawValues
+        // (e.g. "sneakers") with snake_case rule strings (e.g. "sneaker_low").
         var remainingRequired = rule.slotRequirements.filter(\.isRequired)
         if let anchorIndex = remainingRequired.firstIndex(where: { req in
-            req.category == anchor.category.rawValue &&
-                (req.subcategories == nil ||
-                    req.subcategories!.contains(anchor.subcategory.rawValue))
+            guard req.category == anchor.category.rawValue else { return false }
+            guard let subs = req.subcategories, !subs.isEmpty else { return true }
+            return subs.contains { sub in
+                SubcategoryAliases.matches(
+                    itemSubcategory: anchor.subcategory.rawValue,
+                    requiredSubcategory: sub
+                )
+            }
         }) {
             remainingRequired.remove(at: anchorIndex)
         }
@@ -424,6 +437,11 @@ final class OutfitGenerationService {
     // MARK: - Item Lookup
 
     /// Find wardrobe items matching a slot's category and optional subcategory filter.
+    ///
+    /// Uses alias-aware subcategory matching (`SubcategoryAliases.matches`)
+    /// so a "sneakers" item satisfies a slot requiring "sneaker_low".
+    /// Falls back to category-only matching when no item satisfies the
+    /// fine-grained taxonomy — small wardrobes never hard-fail.
     private func findMatchingItems(
         for slot: SlotRequirement,
         in itemsByCategory: [ClothingCategory: [WardrobeItem]]
@@ -431,17 +449,32 @@ final class OutfitGenerationService {
         guard let category = ClothingCategory(rawValue: slot.category),
               let categoryItems = itemsByCategory[category] else { return [] }
 
-        if let subcategories = slot.subcategories {
-            return categoryItems.filter { subcategories.contains($0.subcategory.rawValue) }
+        guard let subcategories = slot.subcategories, !subcategories.isEmpty else {
+            return categoryItems
         }
-        return categoryItems
+
+        let aliasMatched = categoryItems.filter { item in
+            subcategories.contains { req in
+                SubcategoryAliases.matches(
+                    itemSubcategory: item.subcategory.rawValue,
+                    requiredSubcategory: req
+                )
+            }
+        }
+
+        // Soft fallback: if no item satisfies the fine-grained taxonomy,
+        // accept any item in the same category. The OutfitFormulaScorer
+        // still rewards better subcategory fits, but a small wardrobe
+        // never produces zero candidates and a false "Generation timed
+        // out" message.
+        return aliasMatched.isEmpty ? categoryItems : aliasMatched
     }
 
     // MARK: - Archetype Selection
 
     /// Select archetypes matching the current context, preferring family diversity.
     /// Adds a small random factor so daily results vary across days.
-    private func selectDiverseArchetypes(
+    func selectDiverseArchetypes(
         archetypes: [StyleArchetype],
         context: ScoringContext,
         count: Int
@@ -483,7 +516,7 @@ final class OutfitGenerationService {
     // MARK: - Slot Assignment
 
     /// Assign each item a slot name and role (hero / supporting / completing).
-    private func assignSlots(items: [WardrobeItem], rule: StyleRule) -> [SlotAssignment] {
+    func assignSlots(items: [WardrobeItem], rule: StyleRule) -> [SlotAssignment] {
         // Identify the hero piece: outerwear > dress > most saturated item
         let heroItem = items.first { $0.category == .outerwear }
             ?? items.first { $0.category == .dress }
@@ -515,7 +548,7 @@ final class OutfitGenerationService {
     // MARK: - Editorial Description
 
     /// Generate a short editorial description from the outfit's items and score.
-    private func generateDescription(
+    func generateDescription(
         items: [WardrobeItem],
         archetype: StyleArchetype,
         score: OutfitScore
@@ -547,7 +580,7 @@ final class OutfitGenerationService {
     // MARK: - Deduplication
 
     /// Remove candidates with identical item sets, keeping higher-scored versions.
-    private func deduplicateCandidates(
+    func deduplicateCandidates(
         _ candidates: [OutfitCandidate],
         limit: Int
     ) -> [OutfitCandidate] {

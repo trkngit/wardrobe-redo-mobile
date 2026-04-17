@@ -17,6 +17,9 @@ final class MatchingViewModel {
     var isLoading = false
     var isMatching = false
     var errorMessage: String?
+    /// Reason the most recent matching attempt failed.
+    /// `nil` after a successful run, or before any item is selected.
+    var lastFailure: GenerationFailure?
 
     /// Thumbnail URL cache shared across hero picker and result items.
     var thumbnailURLs: [UUID: URL] = [:]
@@ -26,10 +29,22 @@ final class MatchingViewModel {
 
     // MARK: - Dependencies
 
-    private let wardrobeRepository = WardrobeRepository()
-    private let outfitRepository = OutfitRepository()
-    private let generationService = OutfitGenerationService()
-    private let imageService = ImageService()
+    private let wardrobeRepository: any WardrobeRepositoryProtocol
+    private let outfitRepository: any OutfitRepositoryProtocol
+    private let generationService: OutfitGenerationService
+    private let imageService: any ImageServiceProtocol
+
+    init(
+        wardrobeRepository: any WardrobeRepositoryProtocol = WardrobeRepository(),
+        outfitRepository: any OutfitRepositoryProtocol = OutfitRepository(),
+        generationService: OutfitGenerationService = OutfitGenerationService(),
+        imageService: any ImageServiceProtocol = ImageService()
+    ) {
+        self.wardrobeRepository = wardrobeRepository
+        self.outfitRepository = outfitRepository
+        self.generationService = generationService
+        self.imageService = imageService
+    }
 
     // MARK: - Computed
 
@@ -79,7 +94,18 @@ final class MatchingViewModel {
 
         isMatching = true
         errorMessage = nil
+        lastFailure = nil
         defer { isMatching = false }
+
+        // Pre-check wardrobe size: matching needs the hero plus at least
+        // one supporting piece. Surface a precise error instead of the
+        // generic "no matching outfits" message when the wardrobe is bare.
+        let supportingCount = wardrobeItems.filter { !$0.isArchived && $0.id != hero.id }.count
+        if supportingCount < 1 {
+            applyFailure(.wardrobeTooSmall(itemCount: wardrobeItems.count))
+            matchResults = []
+            return
+        }
 
         do {
             let recentIds = try await outfitRepository.fetchRecentItemIds(userId: userId)
@@ -98,11 +124,18 @@ final class MatchingViewModel {
             await loadThumbnails(for: resultItems)
 
             if results.isEmpty {
-                errorMessage = "No matching outfits found. Try a different item or occasion."
+                applyFailure(.noCompatibleOutfits)
             }
         } catch {
-            errorMessage = "Matching failed. Please try again."
+            applyFailure(.unknown(String(describing: error)))
         }
+    }
+
+    /// Surface a failure to both the legacy `errorMessage` and the
+    /// richer `lastFailure` state.
+    private func applyFailure(_ failure: GenerationFailure) {
+        lastFailure = failure
+        errorMessage = failure.userMessage
     }
 
     // MARK: - Save as Outfit

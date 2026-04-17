@@ -1,0 +1,23 @@
+graph TD
+  U[User taps camera roll] --> P1[PhotosPickerItem]
+  P1 --> P2[Data -> UIImage]
+  P2 --> P3{Resize}
+  P3 -->|maxDimension = 1200px| F[Full image UIImage]
+  P3 -->|thumbnailDimension = 400px| T[Thumbnail UIImage]
+  F --> JPG1[JPEG encode q=0.8]
+  T --> JPG2[JPEG encode q=0.8]
+  F --> CE[ColorExtractionService]
+  CE --> CO[5 ExtractedColor values<br/>hex, hsl, family, % coverage]
+  JPG1 --> PI[ProcessedImage]
+  JPG2 --> PI
+  CO --> PI
+  PI --> UP[ImageService.upload]
+  UP -->|Supabase Storage<br/>userId_lc/itemId_lc/original.jpg| S1[(wardrobe-images)]
+  UP -->|Supabase Storage<br/>userId_lc/itemId_lc/thumb.jpg| S1
+  UP --> WR[wardrobe_items row<br/>imagePath, thumbnailPath, colors]
+  WR --> DB[(Postgres)]
+
+  classDef proc fill:#f3e5f5,stroke:#4a148c;
+  classDef store fill:#e1f5fe,stroke:#01579b;
+  class P2,P3,F,T,JPG1,JPG2,CE,PI,UP proc;
+  class S1,DB store;

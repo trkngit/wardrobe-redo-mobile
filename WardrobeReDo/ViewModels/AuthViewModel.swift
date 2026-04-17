@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import os
 
 @MainActor
 @Observable
@@ -13,6 +14,9 @@ final class AuthViewModel {
 
     var isLoading = false
     var errorMessage: String?
+    /// Set when sign-up completed but requires email confirmation. Drives a
+    /// success banner instead of an error banner in the view.
+    var infoMessage: String?
     var showSignUp = false
 
     // MARK: - Validation
@@ -65,6 +69,7 @@ final class AuthViewModel {
     // MARK: - Dependencies
 
     private let authService = AuthService()
+    private let logger = Logger(subsystem: "com.wardroberedo", category: "Auth")
 
     // MARK: - Actions
 
@@ -72,11 +77,13 @@ final class AuthViewModel {
         guard canSignIn else { return }
         isLoading = true
         errorMessage = nil
+        infoMessage = nil
 
         do {
             _ = try await authService.signIn(email: email, password: password)
             clearForm()
         } catch {
+            logger.error("signIn failed: \(String(describing: error))")
             errorMessage = mapError(error)
         }
 
@@ -87,15 +94,27 @@ final class AuthViewModel {
         guard canSignUp else { return }
         isLoading = true
         errorMessage = nil
+        infoMessage = nil
 
         do {
-            _ = try await authService.signUp(
+            let result = try await authService.signUp(
                 email: email,
                 password: password,
                 displayName: displayName.trimmingCharacters(in: .whitespaces)
             )
-            clearForm()
+            switch result {
+            case .signedIn:
+                clearForm()
+            case .confirmationRequired(let email):
+                infoMessage = "Account created. Check \(email) for a confirmation link, then sign in."
+                showSignUp = false
+                // Keep email pre-filled, clear password fields
+                password = ""
+                confirmPassword = ""
+                displayName = ""
+            }
         } catch {
+            logger.error("signUp failed: \(String(describing: error))")
             errorMessage = mapError(error)
         }
 
@@ -105,6 +124,7 @@ final class AuthViewModel {
     func toggleMode() {
         showSignUp.toggle()
         errorMessage = nil
+        infoMessage = nil
     }
 
     private func clearForm() {
@@ -113,19 +133,38 @@ final class AuthViewModel {
         displayName = ""
         confirmPassword = ""
         errorMessage = nil
+        infoMessage = nil
     }
 
     private func mapError(_ error: Error) -> String {
-        let message = error.localizedDescription.lowercased()
-        if message.contains("invalid login") || message.contains("invalid credentials") {
+        // Inspect the full error for codes/payloads, not just localizedDescription
+        let raw = String(describing: error).lowercased()
+        let msg = error.localizedDescription.lowercased()
+        let combined = raw + " " + msg
+
+        if combined.contains("email_not_confirmed") || combined.contains("email not confirmed") {
+            return AuthError.emailNotConfirmed.localizedDescription
+        }
+        if combined.contains("invalid_credentials") || combined.contains("invalid login") || combined.contains("invalid credentials") {
             return AuthError.invalidCredentials.localizedDescription
         }
-        if message.contains("already registered") || message.contains("already exists") {
+        if combined.contains("user_already_exists") || combined.contains("already registered") || combined.contains("already exists") {
             return AuthError.emailTaken.localizedDescription
         }
-        if message.contains("weak password") || message.contains("password") {
+        if combined.contains("weak_password") || combined.contains("password should be") {
             return AuthError.weakPassword.localizedDescription
         }
+        if combined.contains("over_email_send_rate_limit") || combined.contains("rate limit") || combined.contains("too many requests") {
+            return AuthError.rateLimited.localizedDescription
+        }
+        if combined.contains("database error saving new user") || combined.contains("unexpected_failure") {
+            return AuthError.databaseSignupFailure.localizedDescription
+        }
+        // Surface the real error in development so the issue is visible
+        #if DEBUG
+        return "Auth error: \(error.localizedDescription)"
+        #else
         return "Something went wrong. Please try again."
+        #endif
     }
 }

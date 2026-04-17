@@ -1,0 +1,29 @@
+graph LR
+  subgraph Hue_Wheel["Hue ring - 0 to 360 degrees"]
+    H1["0-15 &amp; 345-360<br/>Red"]
+    H2["15-35<br/>Orange"]
+    H3["35-55<br/>Yellow"]
+    H4["55-75<br/>Olive"]
+    H5["75-150<br/>Green"]
+    H6["150-190<br/>Teal"]
+    H7["190-250<br/>Blue / Navy*"]
+    H8["250-290<br/>Purple"]
+    H9["290-345<br/>Pink"]
+    H1 --> H2 --> H3 --> H4 --> H5 --> H6 --> H7 --> H8 --> H9 --> H1
+  end
+
+  subgraph Neutrals["Neutrals - bypass hue"]
+    N1["L &lt; 0.12<br/>Black"]
+    N2["L &gt; 0.9<br/>White"]
+    N3["S &lt; 0.1<br/>L 0.15-0.85<br/>Gray"]
+    N4["Cream / Beige<br/>warm pale: H 10-50, S &lt; 0.25, L &gt; 0.6"]
+  end
+
+  Input[HSL values] --> Neut{Is neutral?}
+  Neut -->|yes| N1
+  Neut -->|yes| N2
+  Neut -->|yes| N3
+  Neut -->|yes| N4
+  Neut -->|no| Hue_Wheel
+
+  Note["*Navy = Blue hue range 190-250 &amp; lightness &lt; 0.3"]

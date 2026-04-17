@@ -1,6 +1,10 @@
 import SwiftUI
 import Kingfisher
 
+extension Notification.Name {
+    static let wardrobeDidChange = Notification.Name("wardrobeDidChange")
+}
+
 struct ItemDetailView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.dismiss) private var dismiss
@@ -10,6 +14,7 @@ struct ItemDetailView: View {
     @State private var imageURL: URL?
     @State private var showDeleteConfirm = false
     @State private var isArchiving = false
+    @State private var errorMessage: String?
 
     private let imageService = ImageService()
 
@@ -19,6 +24,20 @@ struct ItemDetailView: View {
                 imageSection
                 colorSection
                 detailsSection
+
+                if let errorMessage {
+                    HStack(spacing: Theme.Spacing.sm) {
+                        Image(systemName: "exclamationmark.circle")
+                        Text(errorMessage)
+                            .font(Theme.Fonts.bodySmall)
+                    }
+                    .foregroundStyle(Color(Theme.Colors.destructive))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(Theme.Spacing.md)
+                    .background(Color(Theme.Colors.destructive).opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+                }
+
                 actionsSection
             }
             .padding(.horizontal, Theme.Spacing.md)
@@ -38,11 +57,18 @@ struct ItemDetailView: View {
         ) {
             Button("Delete", role: .destructive) {
                 Task {
-                    guard let userId = appState.currentUser?.id else { return }
-                    let repo = WardrobeRepository()
-                    try? await imageService.deleteImages(userId: userId, itemId: item.id)
-                    try? await repo.deleteItem(id: item.id)
-                    dismiss()
+                    do {
+                        let repo = WardrobeRepository()
+                        try await imageService.deleteImages(
+                            imagePath: item.imagePath,
+                            thumbnailPath: item.thumbnailPath
+                        )
+                        try await repo.deleteItem(id: item.id)
+                        NotificationCenter.default.post(name: .wardrobeDidChange, object: nil)
+                        dismiss()
+                    } catch {
+                        errorMessage = "Failed to delete item."
+                    }
                 }
             }
         } message: {
@@ -129,10 +155,16 @@ struct ItemDetailView: View {
             Button {
                 Task {
                     isArchiving = true
-                    let repo = WardrobeRepository()
-                    try? await repo.archiveItem(id: item.id)
+                    errorMessage = nil
+                    do {
+                        let repo = WardrobeRepository()
+                        try await repo.archiveItem(id: item.id)
+                        NotificationCenter.default.post(name: .wardrobeDidChange, object: nil)
+                        dismiss()
+                    } catch {
+                        errorMessage = "Failed to archive item."
+                    }
                     isArchiving = false
-                    dismiss()
                 }
             } label: {
                 HStack(spacing: Theme.Spacing.sm) {

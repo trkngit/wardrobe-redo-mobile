@@ -2,7 +2,7 @@ import Foundation
 import Supabase
 
 @MainActor
-final class WardrobeRepository {
+final class WardrobeRepository: WardrobeRepositoryProtocol {
     private let supabase = SupabaseManager.shared.client
 
     func fetchItems(userId: UUID, category: ClothingCategory? = nil) async throws -> [WardrobeItem] {

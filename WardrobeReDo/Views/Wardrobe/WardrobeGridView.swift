@@ -67,6 +67,13 @@ struct WardrobeGridView: View {
             await viewModel.loadItems(userId: userId)
             await loadThumbnails()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .wardrobeDidChange)) { _ in
+            guard let userId = appState.currentUser?.id else { return }
+            Task {
+                await viewModel.loadItems(userId: userId)
+                await loadThumbnails()
+            }
+        }
     }
 
     // MARK: - Category Filters

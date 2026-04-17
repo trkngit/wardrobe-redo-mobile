@@ -21,6 +21,13 @@ final class OutfitViewModel {
     var isLoading = false
     var isGenerating = false
     var errorMessage: String?
+    /// Reason the most recent generation attempt failed.
+    /// `nil` after a successful run, or before the first attempt.
+    /// Views should prefer this over `errorMessage` for empty-state copy
+    /// — it carries enough information to show a Try-Again button and
+    /// the right wording for "wardrobe too small" vs "no compatible
+    /// outfits" vs "network timeout".
+    var lastFailure: GenerationFailure?
     var selectedOccasion: Occasion = .casual
 
     // MARK: - Thumbnail Cache
@@ -30,10 +37,22 @@ final class OutfitViewModel {
 
     // MARK: - Dependencies
 
-    private let outfitRepository = OutfitRepository()
-    private let wardrobeRepository = WardrobeRepository()
-    private let generationService = OutfitGenerationService()
-    private let imageService = ImageService()
+    private let outfitRepository: any OutfitRepositoryProtocol
+    private let wardrobeRepository: any WardrobeRepositoryProtocol
+    private let generationService: OutfitGenerationService
+    private let imageService: any ImageServiceProtocol
+
+    init(
+        outfitRepository: any OutfitRepositoryProtocol = OutfitRepository(),
+        wardrobeRepository: any WardrobeRepositoryProtocol = WardrobeRepository(),
+        generationService: OutfitGenerationService = OutfitGenerationService(),
+        imageService: any ImageServiceProtocol = ImageService()
+    ) {
+        self.outfitRepository = outfitRepository
+        self.wardrobeRepository = wardrobeRepository
+        self.generationService = generationService
+        self.imageService = imageService
+    }
 
     // MARK: - Computed
 
@@ -97,39 +116,94 @@ final class OutfitViewModel {
     // MARK: - Generate Daily Outfits
 
     /// Run the generation engine, save results, and reload.
+    /// Includes a 60-second timeout and duplicate-generation guard.
+    ///
+    /// On failure sets both `errorMessage` (legacy) and `lastFailure`
+    /// (preferred) so the empty-state can render reason-specific copy
+    /// and a Try-Again button.
     func generateDailyOutfits(userId: UUID) async {
         isGenerating = true
         errorMessage = nil
+        lastFailure = nil
         defer { isGenerating = false }
 
         do {
-            // Fetch wardrobe + recent item IDs for versatility scoring
-            let wardrobeItems = try await wardrobeRepository.fetchItems(userId: userId)
-            let recentIds = try await outfitRepository.fetchRecentItemIds(userId: userId)
-
-            // Generate candidates
-            let candidates = await generationService.generateDailyOutfits(
-                items: wardrobeItems,
-                occasion: selectedOccasion,
-                recentItemIds: recentIds
+            // Guard: don't regenerate if outfits already exist for today
+            let dateString = todayDateString
+            let alreadyExists = try await outfitRepository.hasOutfitsForDate(
+                userId: userId, date: dateString
             )
-
-            guard !candidates.isEmpty else {
-                errorMessage = "Not enough items to generate outfits. Add more to your wardrobe!"
+            if alreadyExists {
+                await loadOutfits(userId: userId)
                 return
             }
 
-            // Persist
-            _ = try await generationService.saveDailyOutfits(
-                candidates: candidates,
-                userId: userId
-            )
+            // Pre-check wardrobe size for an actionable error message.
+            // The generation service silently returns [] for < 2 items
+            // — without this we'd surface a generic "timed out" instead.
+            let wardrobeItems = try await wardrobeRepository.fetchItems(userId: userId)
+            let activeCount = wardrobeItems.filter { !$0.isArchived }.count
+            if activeCount < 2 {
+                applyFailure(.wardrobeTooSmall(itemCount: activeCount))
+                return
+            }
 
-            // Reload from database to get server timestamps
-            await loadOutfits(userId: userId)
+            // Race generation against a 60-second timeout. The outcome
+            // enum lets us distinguish empty results from real timeouts.
+            let outcome: GenerationOutcome = await withTaskGroup(of: GenerationOutcome.self) {
+                [outfitRepository, generationService, selectedOccasion, wardrobeItems] group in
+                group.addTask {
+                    do {
+                        let recentIds = try await outfitRepository.fetchRecentItemIds(userId: userId)
+
+                        let candidates = await generationService.generateDailyOutfits(
+                            items: wardrobeItems,
+                            occasion: selectedOccasion,
+                            recentItemIds: recentIds
+                        )
+
+                        if candidates.isEmpty { return .empty }
+
+                        _ = try await generationService.saveDailyOutfits(
+                            candidates: candidates,
+                            userId: userId
+                        )
+                        return .success
+                    } catch {
+                        return .error(String(describing: error))
+                    }
+                }
+                group.addTask {
+                    try? await Task.sleep(for: .seconds(60))
+                    return .timeout
+                }
+
+                let result = await group.next()!
+                group.cancelAll()
+                return result
+            }
+
+            switch outcome {
+            case .success:
+                await loadOutfits(userId: userId)
+            case .empty:
+                applyFailure(.noCompatibleOutfits)
+            case .timeout:
+                applyFailure(.networkTimeout)
+            case .error(let msg):
+                applyFailure(.unknown(msg))
+            }
         } catch {
-            errorMessage = "Generation failed. Please try again."
+            applyFailure(.unknown(String(describing: error)))
         }
+    }
+
+    /// Surface a failure to both the legacy `errorMessage` (kept for
+    /// existing tests) and the richer `lastFailure` state (preferred by
+    /// new view code).
+    private func applyFailure(_ failure: GenerationFailure) {
+        lastFailure = failure
+        errorMessage = failure.userMessage
     }
 
     // MARK: - Reactions
@@ -137,32 +211,33 @@ final class OutfitViewModel {
     /// Save user reaction (love / like / skip).
     func react(outfitId: UUID, reaction: String) async {
         do {
+            // Guard: skip unknown outfit IDs to avoid wasted network calls
+            guard let index = dailyOutfits.firstIndex(where: { $0.id == outfitId }) else { return }
+
             // Toggle: tapping the same reaction clears it
-            let currentReaction = dailyOutfits.first(where: { $0.id == outfitId })?.outfit.reaction
+            let currentReaction = dailyOutfits[index].outfit.reaction
             let newReaction = currentReaction == reaction ? nil : reaction
 
             try await outfitRepository.updateReaction(outfitId: outfitId, reaction: newReaction)
 
-            // Update local state
-            if let index = dailyOutfits.firstIndex(where: { $0.id == outfitId }) {
-                let old = dailyOutfits[index]
-                let updatedOutfit = Outfit(
-                    id: old.outfit.id,
-                    userId: old.outfit.userId,
-                    archetypeId: old.outfit.archetypeId,
-                    editorialName: old.outfit.editorialName,
-                    editorialDescription: old.outfit.editorialDescription,
-                    date: old.outfit.date,
-                    score: old.outfit.score,
-                    scoreBreakdown: old.outfit.scoreBreakdown,
-                    reaction: newReaction,
-                    isWorn: old.outfit.isWorn,
-                    createdAt: old.outfit.createdAt
-                )
-                dailyOutfits[index] = DailyOutfit(
-                    outfit: updatedOutfit, slots: old.slots, items: old.items
-                )
-            }
+            // Update local state (index already validated by guard above)
+            let old = dailyOutfits[index]
+            let updatedOutfit = Outfit(
+                id: old.outfit.id,
+                userId: old.outfit.userId,
+                archetypeId: old.outfit.archetypeId,
+                editorialName: old.outfit.editorialName,
+                editorialDescription: old.outfit.editorialDescription,
+                date: old.outfit.date,
+                score: old.outfit.score,
+                scoreBreakdown: old.outfit.scoreBreakdown,
+                reaction: newReaction,
+                isWorn: old.outfit.isWorn,
+                createdAt: old.outfit.createdAt
+            )
+            dailyOutfits[index] = DailyOutfit(
+                outfit: updatedOutfit, slots: old.slots, items: old.items
+            )
         } catch {
             errorMessage = "Couldn't save reaction."
         }

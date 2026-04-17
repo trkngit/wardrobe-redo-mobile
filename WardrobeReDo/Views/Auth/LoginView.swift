@@ -61,6 +61,10 @@ struct LoginView: View {
                 textContentType: .password
             )
 
+            if let info = viewModel.infoMessage {
+                infoBanner(info)
+            }
+
             if let error = viewModel.errorMessage {
                 errorBanner(error)
             }
@@ -120,6 +124,10 @@ struct LoginView: View {
                 textContentType: .newPassword
             )
 
+            if let info = viewModel.infoMessage {
+                infoBanner(info)
+            }
+
             if let error = viewModel.errorMessage {
                 errorBanner(error)
             }
@@ -166,6 +174,19 @@ struct LoginView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Theme.Spacing.md)
         .background(Color(Theme.Colors.destructive).opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+    }
+
+    private func infoBanner(_ message: String) -> some View {
+        HStack(spacing: Theme.Spacing.sm) {
+            Image(systemName: "envelope.badge")
+            Text(message)
+                .font(Theme.Fonts.bodySmall)
+        }
+        .foregroundStyle(Color(Theme.Colors.primary))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(Theme.Spacing.md)
+        .background(Color(Theme.Colors.primary).opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
     }
 }

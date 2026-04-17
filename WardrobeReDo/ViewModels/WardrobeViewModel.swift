@@ -14,8 +14,16 @@ final class WardrobeViewModel {
 
     // MARK: - Dependencies
 
-    private let wardrobeRepository = WardrobeRepository()
-    private let imageService = ImageService()
+    private let wardrobeRepository: any WardrobeRepositoryProtocol
+    private let imageService: any ImageServiceProtocol
+
+    init(
+        wardrobeRepository: any WardrobeRepositoryProtocol = WardrobeRepository(),
+        imageService: any ImageServiceProtocol = ImageService()
+    ) {
+        self.wardrobeRepository = wardrobeRepository
+        self.imageService = imageService
+    }
 
     // MARK: - Computed
 
@@ -66,9 +74,19 @@ final class WardrobeViewModel {
 
     func deleteItem(_ item: WardrobeItem, userId: UUID) async {
         do {
-            try await imageService.deleteImages(userId: userId, itemId: item.id)
+            // Delete from DB first — if this fails, no data loss occurs.
+            // Images are deleted second; if image cleanup fails, we have a
+            // storage leak (orphaned files) but the item is correctly removed.
             try await wardrobeRepository.deleteItem(id: item.id)
             items.removeAll { $0.id == item.id }
+
+            // Best-effort image cleanup — don't fail the delete if this errors
+            do {
+                try await imageService.deleteImages(imagePath: item.imagePath, thumbnailPath: item.thumbnailPath)
+            } catch {
+                // Storage leak is acceptable; item is already deleted from DB
+                errorMessage = "Item deleted, but image cleanup failed."
+            }
         } catch {
             errorMessage = "Couldn't delete item."
         }
