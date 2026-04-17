@@ -1,4 +1,11 @@
-import AVFoundation
+// AVFoundation's capture primitives (AVCaptureSession, AVCapturePhotoOutput,
+// AVCaptureVideoDataOutput) aren't yet annotated `Sendable`, so Xcode 16's
+// Swift 6 checker rejects sending references to them into the Sendable
+// closures we hand to `sessionQueue.async`. Apple's docs are clear these
+// types are safe when all mutations route through a single queue — which
+// this controller does — so `@preconcurrency` is the intended escape hatch
+// until the SDK completes its audit.
+@preconcurrency import AVFoundation
 import SwiftUI
 import UIKit
 
