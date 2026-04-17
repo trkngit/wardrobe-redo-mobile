@@ -57,6 +57,32 @@ import Testing
     #expect(BackgroundQualityClassifier.classify(metrics: metrics) == .tooBusy)
 }
 
+// 2026-04-18: the default edge-density ceiling was raised from 0.12
+// → 0.22. Typical furnished rooms pack ~0.15–0.20 edge density into at
+// least one corner patch; that level used to trip `.tooBusy` and disable
+// the shutter, which is what the user hit when they couldn't take a
+// photo of a person in a suit. Lock the relaxation in so a future
+// threshold tweak can't silently re-introduce the block.
+@Test func classifierTreatsIndoorEdgeDensityAsGoodAfterRelaxation() {
+    let metrics = BackgroundQualityMetrics(
+        meanLuminance: 0.5,
+        maxStddev: 0.08,
+        maxEdgeDensity: 0.18  // used to be .tooBusy; now .good
+    )
+    #expect(BackgroundQualityClassifier.classify(metrics: metrics) == .good)
+}
+
+// Just above the new ceiling should still trip `.tooBusy` — we loosened,
+// we didn't disable the check entirely.
+@Test func classifierStillFlagsGenuineBusyAboveNewCeiling() {
+    let metrics = BackgroundQualityMetrics(
+        meanLuminance: 0.5,
+        maxStddev: 0.08,
+        maxEdgeDensity: 0.25
+    )
+    #expect(BackgroundQualityClassifier.classify(metrics: metrics) == .tooBusy)
+}
+
 // Order of checks matters — darkness wins before texture/edges.
 @Test func classifierDarknessWinsOverTexture() {
     let metrics = BackgroundQualityMetrics(

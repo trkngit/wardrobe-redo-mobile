@@ -72,11 +72,20 @@ struct BackgroundQualityThresholds: Sendable, Equatable {
     let stddevCeiling: Double
     let edgeDensityCeiling: Double
 
+    /// 2026-04-18: `edgeDensityCeiling` raised from 0.12 → 0.22 after
+    /// device testing. The monitor publishes `.max()` across 4 corner
+    /// patches, so even one corner clipping a bookshelf / tiled floor
+    /// / plant trips the ceiling. 0.12 was over-strict for real-world
+    /// indoor captures; 0.22 keeps `.tooBusy` reserved for genuinely
+    /// cluttered frames while letting the common "furnished room"
+    /// case through as `.good`. Darkness / brightness / stddev
+    /// thresholds untouched — each surfaces a different failure mode
+    /// the HUD still needs to coach on.
     static let `default` = BackgroundQualityThresholds(
         darkCeiling: 0.25,
         brightFloor: 0.85,
         stddevCeiling: 0.15,
-        edgeDensityCeiling: 0.12
+        edgeDensityCeiling: 0.22
     )
 }
 
