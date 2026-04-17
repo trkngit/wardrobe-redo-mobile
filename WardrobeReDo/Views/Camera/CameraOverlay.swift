@@ -1,20 +1,29 @@
 import SwiftUI
 
 /// HUD drawn on top of the live camera preview. Shows a traffic-light
-/// pill with coaching copy, a cancel button, and a shutter button that
-/// dims until the `BackgroundQualityMonitor` reports `.good`. The user
-/// can still capture on a poor background via "Take anyway" — we coach,
-/// we don't gatekeep.
+/// pill with coaching copy, a cancel button, and the shutter button.
+///
+/// **The HUD is advisory, not gating.** Background quality drives the
+/// pill color + coaching copy only — the shutter is tappable the moment
+/// the user has granted camera permission, regardless of quality. We
+/// coach, we don't gatekeep. Users who are shooting a garment worn on a
+/// person, or who can't get to a plain wall, still need to be able to
+/// capture.
 struct CameraOverlay: View {
     let quality: BackgroundQuality
     let authorization: CameraAuthorizationState
     var onShutter: () -> Void
     var onCancel: () -> Void
 
-    @State private var forceShutter = false
+    /// Whether the shutter is tappable for a given authorization state.
+    /// Split out as a static function so unit tests can exercise the
+    /// gate without constructing a SwiftUI view.
+    static func shutterEnabled(for authorization: CameraAuthorizationState) -> Bool {
+        authorization == .authorized
+    }
 
     private var isShutterEnabled: Bool {
-        authorization == .authorized && (quality == .good || forceShutter)
+        Self.shutterEnabled(for: authorization)
     }
 
     var body: some View {
@@ -82,34 +91,22 @@ struct CameraOverlay: View {
     }
 
     private var shutterRow: some View {
-        VStack(spacing: Theme.Spacing.sm) {
-            if !isShutterEnabled && authorization == .authorized {
-                Button {
-                    forceShutter = true
-                } label: {
-                    Text("Take anyway")
-                        .font(Theme.Fonts.caption.weight(.medium))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, Theme.Spacing.md)
-                        .padding(.vertical, Theme.Spacing.xs)
-                        .background(Capsule().fill(.black.opacity(0.45)))
-                }
-                .accessibilityLabel("Take photo anyway")
+        // The shutter follows `isShutterEnabled` (camera authorization
+        // only). We keep the `.disabled` binding so the button is inert
+        // on the brief pre-authorization frame; we don't need a "Take
+        // anyway" escape hatch any more because quality is advisory.
+        Button(action: onShutter) {
+            ZStack {
+                Circle()
+                    .fill(.white.opacity(isShutterEnabled ? 1.0 : 0.5))
+                    .frame(width: 72, height: 72)
+                Circle()
+                    .stroke(.white.opacity(0.9), lineWidth: 4)
+                    .frame(width: 84, height: 84)
             }
-
-            Button(action: onShutter) {
-                ZStack {
-                    Circle()
-                        .fill(.white.opacity(isShutterEnabled ? 1.0 : 0.5))
-                        .frame(width: 72, height: 72)
-                    Circle()
-                        .stroke(.white.opacity(0.9), lineWidth: 4)
-                        .frame(width: 84, height: 84)
-                }
-            }
-            .disabled(!isShutterEnabled)
-            .accessibilityLabel("Capture photo")
         }
+        .disabled(!isShutterEnabled)
+        .accessibilityLabel("Capture photo")
     }
 
     // MARK: - Denied / not available
