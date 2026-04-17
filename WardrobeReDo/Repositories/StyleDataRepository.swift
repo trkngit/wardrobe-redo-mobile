@@ -1,6 +1,9 @@
 import Foundation
 import os
 import Supabase
+// See UserRepository.swift — `@preconcurrency` unblocks PostgREST's
+// Sendable surface on Xcode 16's Swift 6 toolchain.
+@preconcurrency import PostgREST
 
 /// Loads style archetypes + rules from Supabase, with bundled JSON as a
 /// fallback. The two datasets must stay paired (rule.archetype_id must

@@ -1,5 +1,9 @@
 import Foundation
 import Supabase
+// See UserRepository.swift. `@preconcurrency` keeps PostgREST's non-
+// Sendable response types crossing actor boundaries under Xcode 16's
+// Swift 6 checker; later Xcodes already handle this as a warning.
+@preconcurrency import PostgREST
 
 @MainActor
 final class OutfitRepository: OutfitRepositoryProtocol {
