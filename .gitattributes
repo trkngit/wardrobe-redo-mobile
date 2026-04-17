@@ -1,11 +1,13 @@
 # Core ML models are binary and can be large (the SAM2-tiny bundle is
-# ~40 MB). Track them via Git LFS so clones and diffs stay fast, and
-# committed blobs don't bloat the repo history.
+# ~30 MB palettized). Track them via Git LFS so clones and diffs stay
+# fast, and committed blobs don't bloat the repo history.
 #
 # `.mlmodelc` is the compiled form that ships in the app bundle — it's
-# actually a directory, so we LFS every file inside it.
-*.mlmodelc filter=lfs diff=lfs merge=lfs -text
-*.mlmodelc/** filter=lfs diff=lfs merge=lfs -text
-*.mlmodel filter=lfs diff=lfs merge=lfs -text
-*.mlpackage filter=lfs diff=lfs merge=lfs -text
-*.mlpackage/** filter=lfs diff=lfs merge=lfs -text
+# actually a directory, so we LFS every file inside it. Prefix the
+# patterns with `**/` so the rules match nested locations like
+# `WardrobeReDo/Models/CoreML/SAM2Tiny.mlmodelc/...`, not just repo-root.
+**/*.mlmodelc filter=lfs diff=lfs merge=lfs -text
+**/*.mlmodelc/** filter=lfs diff=lfs merge=lfs -text
+**/*.mlmodel filter=lfs diff=lfs merge=lfs -text
+**/*.mlpackage filter=lfs diff=lfs merge=lfs -text
+**/*.mlpackage/** filter=lfs diff=lfs merge=lfs -text
