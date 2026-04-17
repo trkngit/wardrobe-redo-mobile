@@ -50,6 +50,10 @@ protocol ImageServiceProtocol: Sendable {
     func upload(processed: ProcessedImage, userId: UUID, itemId: UUID) async throws -> (imagePath: String, thumbnailPath: String, maskedImagePath: String?)
     func processImage(_ image: UIImage) async -> ProcessedImage?
     func loadImage(from item: PhotosPickerItem) async -> UIImage?
+    /// Apply a user-edited mask on top of an already-processed image and
+    /// re-run color extraction. Used by the MaskTouchupView flow to fold
+    /// brush strokes into the saved palette without re-running Vision.
+    func updateMasked(processed: ProcessedImage, editedMask: UIImage) async -> ProcessedImage?
 }
 
 extension ImageServiceProtocol {

@@ -46,6 +46,69 @@ struct AddItemView: View {
             .onChange(of: viewModel.didSave) {
                 if viewModel.didSave { dismiss() }
             }
+            .fullScreenCover(isPresented: $viewModel.isShowingCamera) {
+                cameraCover
+            }
+            .fullScreenCover(isPresented: $viewModel.isShowingTouchup) {
+                touchupCover
+            }
+            .sheet(isPresented: $viewModel.isShowingTutorial) {
+                FirstRunTutorialView {
+                    viewModel.onTutorialDismissed()
+                }
+                .interactiveDismissDisabled()
+            }
+        }
+    }
+
+    // MARK: - Camera fullscreen cover
+
+    @ViewBuilder
+    private var cameraCover: some View {
+        let monitor = BackgroundQualityMonitor()
+        let controller = CameraController()
+        ZStack {
+            Color.black.ignoresSafeArea()
+            CameraCaptureView(
+                monitor: monitor,
+                controller: controller,
+                onPhotoCaptured: { image in
+                    Task { await viewModel.onCameraPhotoCaptured(image) }
+                },
+                onAuthorizationChanged: { _ in }
+            )
+            .ignoresSafeArea()
+            CameraOverlay(
+                quality: monitor.quality,
+                authorization: .authorized,
+                onShutter: controller.capture,
+                onCancel: viewModel.onCameraCancelled
+            )
+        }
+    }
+
+    // MARK: - Touch-up fullscreen cover
+
+    @ViewBuilder
+    private var touchupCover: some View {
+        if let source = viewModel.selectedImage,
+           let maskedData = viewModel.processedImage?.maskedData,
+           let masked = UIImage(data: maskedData) {
+            MaskTouchupView(
+                sourceImage: source,
+                initialMaskedImage: masked,
+                onDone: { edited in
+                    Task { await viewModel.onTouchupDone(edited) }
+                },
+                onSmartRecrop: {
+                    Task { await viewModel.onTouchupSmartRecrop() }
+                },
+                onCancel: viewModel.onTouchupCancelled
+            )
+        } else {
+            // Fallback: no masked data yet; skip touchup.
+            Color.clear
+                .onAppear { viewModel.onTouchupCancelled() }
         }
     }
 
@@ -68,35 +131,37 @@ struct AddItemView: View {
     private var photoStep: some View {
         VStack(spacing: Theme.Spacing.lg) {
             VStack(spacing: Theme.Spacing.sm) {
-                Text("Choose a photo")
+                Text("Add a photo")
                     .font(Theme.Fonts.h2)
                     .foregroundStyle(Color(Theme.Colors.textPrimary))
-                Text("Photograph your item against a clean background for best color extraction.")
+                Text("Photograph your item against a clean background, or choose from your library.")
                     .font(Theme.Fonts.bodySmall)
                     .foregroundStyle(Color(Theme.Colors.textSecondary))
                     .multilineTextAlignment(.center)
             }
+
+            Button {
+                viewModel.beginCameraCapture()
+            } label: {
+                SourceOptionLabel(
+                    systemImage: "camera.fill",
+                    title: "Take Photo",
+                    subtitle: "Live background check + smart crop",
+                    isPrimary: true
+                )
+            }
+            .accessibilityLabel("Take a new photo")
 
             PhotosPicker(
                 selection: $viewModel.selectedPhoto,
                 matching: .images,
                 photoLibrary: .shared()
             ) {
-                VStack(spacing: Theme.Spacing.md) {
-                    Image(systemName: "camera")
-                        .font(.system(size: 40, weight: .light))
-                        .foregroundStyle(Color(Theme.Colors.primary))
-                    Text("Select Photo")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(Color(Theme.Colors.primary))
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 200)
-                .background(Color(Theme.Colors.surface))
-                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
-                .overlay(
-                    RoundedRectangle(cornerRadius: Theme.Radius.card)
-                        .stroke(Color(Theme.Colors.border), style: StrokeStyle(lineWidth: 1, dash: [8]))
+                SourceOptionLabel(
+                    systemImage: "photo.on.rectangle",
+                    title: "Choose from Library",
+                    subtitle: "Pick an existing photo",
+                    isPrimary: false
                 )
             }
 
@@ -319,6 +384,58 @@ struct AddItemView: View {
         .padding(Theme.Spacing.md)
         .background(Color(Theme.Colors.destructive).opacity(0.08))
         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+    }
+}
+
+// MARK: - Source Option Label
+//
+// Extracted into its own View so it can be used inside the PhotosPicker
+// label closure, which Swift 6 requires to be Sendable / non-isolated.
+// Instance methods on `AddItemView` can't return `some View` into that
+// context, but a standalone View struct can.
+
+private struct SourceOptionLabel: View {
+    let systemImage: String
+    let title: String
+    let subtitle: String
+    let isPrimary: Bool
+
+    var body: some View {
+        HStack(spacing: Theme.Spacing.md) {
+            Image(systemName: systemImage)
+                .font(.system(size: 24, weight: .medium))
+                .foregroundStyle(isPrimary ? .white : Color(Theme.Colors.primary))
+                .frame(width: 48, height: 48)
+                .background(
+                    Circle()
+                        .fill(isPrimary
+                              ? Color(Theme.Colors.primary)
+                              : Color(Theme.Colors.primary).opacity(0.12))
+                )
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(Color(Theme.Colors.textPrimary))
+                Text(subtitle)
+                    .font(Theme.Fonts.caption)
+                    .foregroundStyle(Color(Theme.Colors.textSecondary))
+            }
+
+            Spacer(minLength: 0)
+
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color(Theme.Colors.textSecondary))
+        }
+        .padding(Theme.Spacing.md)
+        .frame(maxWidth: .infinity)
+        .background(Color(Theme.Colors.surface))
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.card)
+                .stroke(Color(Theme.Colors.border), lineWidth: 1)
+        )
     }
 }
 

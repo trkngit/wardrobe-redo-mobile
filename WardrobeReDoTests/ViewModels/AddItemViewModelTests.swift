@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import UIKit
 @testable import WardrobeReDo
 
 // MARK: - AddItemViewModel Tests
@@ -120,4 +121,231 @@ import Testing
     )
     #expect(vm.extractedColors.count == 1)
     #expect(vm.extractedColors.first?.colorFamily == "blue")
+}
+
+// MARK: - Phase 2: Camera flow + touch-up
+
+/// Helper: a minimal 1×1 UIImage for camera-flow tests that just need a
+/// non-nil `UIImage` to pass through the view model pipeline.
+@MainActor
+private func makePixelImage(color: UIColor = .systemBlue) -> UIImage {
+    let renderer = UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1))
+    return renderer.image { ctx in
+        color.setFill()
+        ctx.fill(CGRect(x: 0, y: 0, width: 1, height: 1))
+    }
+}
+
+@MainActor
+private func makeProcessedImage(maskedData: Data? = Data([0xFF])) -> ProcessedImage {
+    ProcessedImage(
+        originalData: Data([0xFF]),
+        thumbnailData: Data([0xFF]),
+        maskedData: maskedData,
+        extractionConfidence: nil,
+        dominantColors: []
+    )
+}
+
+@Test @MainActor func addItemDefaultCaptureMethodIsLibrary() {
+    let vm = AddItemViewModel()
+    #expect(vm.captureMethod == .library)
+    #expect(vm.isShowingCamera == false)
+    #expect(vm.isShowingTouchup == false)
+    #expect(vm.isShowingTutorial == false)
+}
+
+@Test @MainActor func addItemBeginCameraCaptureShowsTutorialOnFirstRun() {
+    UserDefaults.standard.removeObject(forKey: FirstRunTutorialView.hasSeenKey)
+    let vm = AddItemViewModel()
+    vm.beginCameraCapture()
+    #expect(vm.captureMethod == .camera)
+    #expect(vm.isShowingTutorial == true)
+    #expect(vm.isShowingCamera == false)
+}
+
+@Test @MainActor func addItemBeginCameraCaptureSkipsTutorialWhenAlreadySeen() {
+    UserDefaults.standard.set(true, forKey: FirstRunTutorialView.hasSeenKey)
+    defer { UserDefaults.standard.removeObject(forKey: FirstRunTutorialView.hasSeenKey) }
+
+    let vm = AddItemViewModel()
+    vm.beginCameraCapture()
+    #expect(vm.captureMethod == .camera)
+    #expect(vm.isShowingTutorial == false)
+    #expect(vm.isShowingCamera == true)
+}
+
+@Test @MainActor func addItemOnTutorialDismissedOpensCameraWhenCameraIntended() {
+    let vm = AddItemViewModel()
+    vm.captureMethod = .camera
+    vm.isShowingTutorial = true
+
+    vm.onTutorialDismissed()
+
+    #expect(vm.isShowingTutorial == false)
+    #expect(vm.isShowingCamera == true)
+}
+
+@Test @MainActor func addItemOnTutorialDismissedKeepsCameraClosedWhenLibrary() {
+    let vm = AddItemViewModel()
+    vm.captureMethod = .library
+    vm.isShowingTutorial = true
+
+    vm.onTutorialDismissed()
+
+    #expect(vm.isShowingTutorial == false)
+    #expect(vm.isShowingCamera == false)
+}
+
+@Test @MainActor func addItemOnCameraCancelledClosesCameraAndResetsMethod() {
+    let vm = AddItemViewModel()
+    vm.captureMethod = .camera
+    vm.isShowingCamera = true
+
+    vm.onCameraCancelled()
+
+    #expect(vm.isShowingCamera == false)
+    #expect(vm.captureMethod == .library)
+}
+
+@Test @MainActor func addItemOnCameraPhotoCapturedWithMaskShowsTouchup() async {
+    let mockImage = MockImageService()
+    mockImage.processImageResult = makeProcessedImage(maskedData: Data([0xAB]))
+    let vm = AddItemViewModel(
+        imageService: mockImage,
+        wardrobeRepository: MockWardrobeRepository()
+    )
+    vm.isShowingCamera = true
+    vm.currentStep = .photo
+
+    await vm.onCameraPhotoCaptured(makePixelImage())
+
+    #expect(vm.isShowingCamera == false)
+    #expect(vm.isShowingTouchup == true)
+    #expect(vm.processedImage != nil)
+    #expect(vm.processedImage?.maskedData != nil)
+    #expect(mockImage.processImageCallCount == 1)
+}
+
+@Test @MainActor func addItemOnCameraPhotoCapturedWithoutMaskSkipsTouchup() async {
+    let mockImage = MockImageService()
+    mockImage.processImageResult = makeProcessedImage(maskedData: nil)
+    let vm = AddItemViewModel(
+        imageService: mockImage,
+        wardrobeRepository: MockWardrobeRepository()
+    )
+    vm.isShowingCamera = true
+
+    await vm.onCameraPhotoCaptured(makePixelImage())
+
+    #expect(vm.isShowingCamera == false)
+    #expect(vm.isShowingTouchup == false)
+    #expect(vm.currentStep == .details)
+}
+
+@Test @MainActor func addItemOnCameraPhotoCapturedProcessFailureSurfacesError() async {
+    let mockImage = MockImageService()
+    mockImage.processImageResult = nil
+    let vm = AddItemViewModel(
+        imageService: mockImage,
+        wardrobeRepository: MockWardrobeRepository()
+    )
+    vm.isShowingCamera = true
+
+    await vm.onCameraPhotoCaptured(makePixelImage())
+
+    #expect(vm.errorMessage != nil)
+    #expect(vm.currentStep == .photo)
+    #expect(vm.isShowingTouchup == false)
+}
+
+@Test @MainActor func addItemOnTouchupDoneUpdatesProcessedImage() async {
+    let mockImage = MockImageService()
+    let original = makeProcessedImage(maskedData: Data([0x01]))
+    mockImage.updateMaskedResult = makeProcessedImage(maskedData: Data([0x02]))
+
+    let vm = AddItemViewModel(
+        imageService: mockImage,
+        wardrobeRepository: MockWardrobeRepository()
+    )
+    vm.processedImage = original
+    vm.isShowingTouchup = true
+
+    await vm.onTouchupDone(makePixelImage(color: .systemRed))
+
+    #expect(mockImage.updateMaskedCallCount == 1)
+    #expect(vm.isShowingTouchup == false)
+    #expect(vm.currentStep == .details)
+    #expect(vm.processedImage?.maskedData == Data([0x02]))
+}
+
+@Test @MainActor func addItemOnTouchupDoneWithoutProcessedImageStillAdvances() async {
+    let mockImage = MockImageService()
+    let vm = AddItemViewModel(
+        imageService: mockImage,
+        wardrobeRepository: MockWardrobeRepository()
+    )
+    vm.isShowingTouchup = true
+
+    await vm.onTouchupDone(makePixelImage())
+
+    // No processed image → nothing to update, but flow still proceeds.
+    #expect(mockImage.updateMaskedCallCount == 0)
+    #expect(vm.isShowingTouchup == false)
+    #expect(vm.currentStep == .details)
+}
+
+@Test @MainActor func addItemOnTouchupSmartRecropReprocessesImage() async {
+    let mockImage = MockImageService()
+    mockImage.processImageResult = makeProcessedImage(maskedData: Data([0x42]))
+
+    let vm = AddItemViewModel(
+        imageService: mockImage,
+        wardrobeRepository: MockWardrobeRepository()
+    )
+    vm.selectedImage = makePixelImage()
+
+    await vm.onTouchupSmartRecrop()
+
+    #expect(mockImage.processImageCallCount == 1)
+    #expect(vm.processedImage?.maskedData == Data([0x42]))
+    #expect(vm.isProcessing == false)
+}
+
+@Test @MainActor func addItemOnTouchupSmartRecropNoOpWithoutSelectedImage() async {
+    let mockImage = MockImageService()
+    let vm = AddItemViewModel(
+        imageService: mockImage,
+        wardrobeRepository: MockWardrobeRepository()
+    )
+
+    await vm.onTouchupSmartRecrop()
+
+    #expect(mockImage.processImageCallCount == 0)
+    #expect(vm.isProcessing == false)
+}
+
+@Test @MainActor func addItemOnTouchupCancelledClosesAndAdvances() {
+    let vm = AddItemViewModel()
+    vm.isShowingTouchup = true
+
+    vm.onTouchupCancelled()
+
+    #expect(vm.isShowingTouchup == false)
+    #expect(vm.currentStep == .details)
+}
+
+@Test @MainActor func addItemResetClearsPhase2State() {
+    let vm = AddItemViewModel()
+    vm.captureMethod = .camera
+    vm.isShowingCamera = true
+    vm.isShowingTouchup = true
+    vm.isShowingTutorial = true
+
+    vm.reset()
+
+    #expect(vm.captureMethod == .library)
+    #expect(vm.isShowingCamera == false)
+    #expect(vm.isShowingTouchup == false)
+    #expect(vm.isShowingTutorial == false)
 }

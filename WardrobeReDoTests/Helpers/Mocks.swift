@@ -119,13 +119,17 @@ final class MockImageService: ImageServiceProtocol {
     ))
     var processImageResult: ProcessedImage?
     var loadImageResult: UIImage?
+    var updateMaskedResult: ProcessedImage?
 
     var signedURLCallCount = 0
     var deleteImagesCallCount = 0
     var uploadCallCount = 0
     var processImageCallCount = 0
     var loadImageCallCount = 0
+    var updateMaskedCallCount = 0
     var lastDeletedMaskedImagePath: String??
+    var lastUpdateMaskedProcessed: ProcessedImage?
+    var lastUpdateMaskedEditedMask: UIImage?
 
     func signedURL(for path: String, expiresIn: Int) async throws -> URL {
         signedURLCallCount += 1
@@ -151,5 +155,12 @@ final class MockImageService: ImageServiceProtocol {
     func loadImage(from item: PhotosPickerItem) async -> UIImage? {
         loadImageCallCount += 1
         return loadImageResult
+    }
+
+    func updateMasked(processed: ProcessedImage, editedMask: UIImage) async -> ProcessedImage? {
+        updateMaskedCallCount += 1
+        lastUpdateMaskedProcessed = processed
+        lastUpdateMaskedEditedMask = editedMask
+        return updateMaskedResult
     }
 }

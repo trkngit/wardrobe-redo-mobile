@@ -120,6 +120,12 @@
 		E1E0B1F1000000000000E0A1 /* OrientationUtil.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F1F1000000000000E0B1 /* OrientationUtil.swift */; };
 		E1E0B1F2000000000000E0A2 /* VisionForegroundExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F1F2000000000000E0B2 /* VisionForegroundExtractor.swift */; };
 		E1E0B1F3000000000000E0A3 /* ClothingExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F1F3000000000000E0B3 /* ClothingExtractionService.swift */; };
+		E1E0B2F1000000000000E0A1 /* BackgroundQualityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F2F1000000000000E0B1 /* BackgroundQualityMonitor.swift */; };
+		E1E0B2F2000000000000E0A2 /* CameraCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F2F2000000000000E0B2 /* CameraCaptureView.swift */; };
+		E1E0B2F3000000000000E0A3 /* CameraOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F2F3000000000000E0B3 /* CameraOverlay.swift */; };
+		E1E0B2F4000000000000E0A4 /* MaskTouchupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F2F4000000000000E0B4 /* MaskTouchupView.swift */; };
+		E1E0B2F5000000000000E0A5 /* FirstRunTutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F2F5000000000000E0B5 /* FirstRunTutorialView.swift */; };
+		E1E0B2F6000000000000E0A6 /* BackgroundQualityClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F2F6000000000000E0B6 /* BackgroundQualityClassifierTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -270,6 +276,12 @@
 		E1E0F1F1000000000000E0B1 /* OrientationUtil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrientationUtil.swift; sourceTree = "<group>"; };
 		E1E0F1F2000000000000E0B2 /* VisionForegroundExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionForegroundExtractor.swift; sourceTree = "<group>"; };
 		E1E0F1F3000000000000E0B3 /* ClothingExtractionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingExtractionService.swift; sourceTree = "<group>"; };
+		E1E0F2F1000000000000E0B1 /* BackgroundQualityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundQualityMonitor.swift; sourceTree = "<group>"; };
+		E1E0F2F2000000000000E0B2 /* CameraCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraCaptureView.swift; sourceTree = "<group>"; };
+		E1E0F2F3000000000000E0B3 /* CameraOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraOverlay.swift; sourceTree = "<group>"; };
+		E1E0F2F4000000000000E0B4 /* MaskTouchupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskTouchupView.swift; sourceTree = "<group>"; };
+		E1E0F2F5000000000000E0B5 /* FirstRunTutorialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunTutorialView.swift; sourceTree = "<group>"; };
+		E1E0F2F6000000000000E0B6 /* BackgroundQualityClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundQualityClassifierTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -346,6 +358,7 @@
 		11389A58AC6D92C3D66690FB /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				E1E0F2F6000000000000E0B6 /* BackgroundQualityClassifierTests.swift */,
 				A61409AC1E4D748E2F35EDB3 /* ColorExtractionServiceTests.swift */,
 				F385FCB8D1419E716DE8E394 /* OutfitGenerationServiceTests.swift */,
 				96A1564CD534196B24209DA0 /* OutfitRepositoryDateTests.swift */,
@@ -369,6 +382,7 @@
 			children = (
 				B2C9571A55D9A18682F09E9F /* TabRootView.swift */,
 				A24460E69A79B045AF20D1AF /* Auth */,
+				E1E0C2C1000000000000E0D1 /* Camera */,
 				ECEA690E5F1A2D9BEEC935E4 /* Components */,
 				C9357457193D12360ADC3D15 /* Matching */,
 				F9947A791789D75CB65DB1A3 /* Onboarding */,
@@ -435,6 +449,7 @@
 			isa = PBXGroup;
 			children = (
 				2869F1610C0A845EE9693D4B /* AddItemView.swift */,
+				E1E0F2F5000000000000E0B5 /* FirstRunTutorialView.swift */,
 				EF82CDF068E318725A1D2C02 /* ItemCardView.swift */,
 				4ADF6DCCAD94A6DE061B3CE1 /* ItemDetailView.swift */,
 				B3B70133845A41609D59A5FF /* WardrobeGridView.swift */,
@@ -481,6 +496,7 @@
 			isa = PBXGroup;
 			children = (
 				8436F78ED9DED40EAF50036F /* AuthService.swift */,
+				E1E0F2F1000000000000E0B1 /* BackgroundQualityMonitor.swift */,
 				A77AC489FED071A22EFD1085 /* ColorExtractionService.swift */,
 				90334A1885AC99F617DF15A3 /* HapticManager.swift */,
 				51971C0F2B9570B3CE177E48 /* ImageCacheService.swift */,
@@ -509,6 +525,16 @@
 				E1E0F1F2000000000000E0B2 /* VisionForegroundExtractor.swift */,
 			);
 			path = Extraction;
+			sourceTree = "<group>";
+		};
+		E1E0C2C1000000000000E0D1 /* Camera */ = {
+			isa = PBXGroup;
+			children = (
+				E1E0F2F2000000000000E0B2 /* CameraCaptureView.swift */,
+				E1E0F2F3000000000000E0B3 /* CameraOverlay.swift */,
+				E1E0F2F4000000000000E0B4 /* MaskTouchupView.swift */,
+			);
+			path = Camera;
 			sourceTree = "<group>";
 		};
 		8B6BF0963BADEF744CADEB35 /* Protocols */ = {
@@ -880,6 +906,11 @@
 				E1E0B1F1000000000000E0A1 /* OrientationUtil.swift in Sources */,
 				E1E0B1F2000000000000E0A2 /* VisionForegroundExtractor.swift in Sources */,
 				E1E0B1F3000000000000E0A3 /* ClothingExtractionService.swift in Sources */,
+				E1E0B2F1000000000000E0A1 /* BackgroundQualityMonitor.swift in Sources */,
+				E1E0B2F2000000000000E0A2 /* CameraCaptureView.swift in Sources */,
+				E1E0B2F3000000000000E0A3 /* CameraOverlay.swift in Sources */,
+				E1E0B2F4000000000000E0A4 /* MaskTouchupView.swift in Sources */,
+				E1E0B2F5000000000000E0A5 /* FirstRunTutorialView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -929,6 +960,7 @@
 				27E731C0A3F0C427374EC006 /* SecurityValidationTests.swift in Sources */,
 				33FDF6B7C8F4E04FC121C412 /* RepositoryEdgeCaseTests.swift in Sources */,
 				0CC78BCE2B52A8E5A47298FD /* WardrobeViewModelTests.swift in Sources */,
+				E1E0B2F6000000000000E0A6 /* BackgroundQualityClassifierTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

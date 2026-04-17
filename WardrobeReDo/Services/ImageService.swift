@@ -128,6 +128,28 @@ final class ImageService: ImageServiceProtocol {
             .createSignedURL(path: path, expiresIn: expiresIn)
     }
 
+    /// Re-encode a user-edited mask on top of an already-processed image
+    /// and re-run color extraction. Leaves `originalData` + `thumbnailData`
+    /// untouched — only the masked PNG and the color palette change.
+    /// Called by `AddItemViewModel.onTouchupDone(_:)` after the user
+    /// finishes brushing in `MaskTouchupView`.
+    func updateMasked(
+        processed: ProcessedImage,
+        editedMask: UIImage
+    ) async -> ProcessedImage? {
+        guard let resized = resize(editedMask, maxDimension: maxOriginalDimension),
+              let data = resized.pngData()
+        else { return nil }
+        let colors = await colorExtractor.extractColors(from: editedMask)
+        return ProcessedImage(
+            originalData: processed.originalData,
+            thumbnailData: processed.thumbnailData,
+            maskedData: data,
+            extractionConfidence: processed.extractionConfidence,
+            dominantColors: colors
+        )
+    }
+
     /// Delete images for an item from storage using the stored paths.
     /// `maskedImagePath` is optional — pre-migration-00007 rows don't have
     /// a masked file, so nothing to clean up for them.
