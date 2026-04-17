@@ -1,45 +1,41 @@
-# Extraction Fixture Capture Brief
+# Extraction Fixture Set
 
 This directory holds the committed ground-truth set that `SegmentationIoUTests`
 and `ExtractionPerformanceTests` run against on device. Thirty photos + thirty
-hand-traced alpha masks, distributed across three scenarios.
+alpha masks, distributed across three scenarios:
 
-Only the owner's own photos live here (no model releases needed, no research
-licences to worry about). DeepFashion2 and other external datasets stay on
+| Scenario             | Count | What it looks like                                                              | IoU floor target |
+|----------------------|-------|---------------------------------------------------------------------------------|------------------|
+| `clean_bg_NN.jpg`    | 10    | One item against a plain wall / sheet / studio backdrop. The baseline.          | ≥ 0.82           |
+| `cluttered_NN.jpg`   | 10    | Item on a patterned couch, bookshelf, rug, or floor. Realistic home capture.    | ≥ 0.65           |
+| `on_person_NN.jpg`   | 10    | Clothing worn on a person or held up in a mirror.                               | ≥ 0.45           |
+
+## How the fixtures get here
+
+Run `scripts/fetch_fixtures.py`. It pulls two **CC-BY 4.0** Roboflow Universe
+projects (Yanelys "Clothing Segmentation" + "Clothing Detection Test"),
+rasterises each COCO polygon annotation into an alpha PNG, buckets each image
+by background edge density, and writes the 30 picks into this directory
+with the naming convention above.
+
+See `scripts/fetch_fixtures.README.md` for setup (venv + either a Roboflow
+free-tier API key or pre-downloaded ZIPs) and troubleshooting.
+
+The script is idempotent — re-running it overwrites the same 30 files
+deterministically. DeepFashion2 and other research-only datasets stay on
 `~/wardrobe-benchmark/`, outside the repo — see `docs/EXTRACTION_BENCHMARK.md`.
 
-## What to capture
+## File conventions
 
-| Scenario | Count | What it looks like | IoU floor target |
-|----------|-------|--------------------|------------------|
-| `clean_bg_NN.jpg`   | 10 | One item against a plain wall / sheet / bed. Good lighting. The baseline. | ≥ 0.82 |
-| `cluttered_NN.jpg`  | 10 | Item on a patterned couch / bookshelf / rug / floor with toys around. Realistic "I took this in my living room" capture. | ≥ 0.65 |
-| `on_person_NN.jpg`  | 10 | Jacket / shirt / dress worn on a person, or held up in a mirror. You. | ≥ 0.45 |
+* **Images:** `<scenario>_<nn>.jpg`, zero-padded two-digit index (`01`…`10`),
+  resized to ≤ 3000 px on the long edge, JPEG quality 90.
+* **Masks:** `ground_truth/<same_filename>.png`. RGBA PNG with alpha = 0 for
+  background pixels and alpha = 255 for clothing. The IoU rig thresholds at
+  alpha > 127, so anti-aliased edges are fine.
 
-Distribute across categories so every `ClothingCategory` is represented at
-least twice: tops, bottoms, shoes, dresses, outerwear, accessories.
+## `manifest.json`
 
-File naming is strict: `<scenario>_<nn>.jpg` where `nn` is zero-padded to two
-digits (`01`…`10`). JPEGs at camera native resolution — the test rig resizes
-before it feeds the extractor.
-
-## How to trace the masks
-
-1. Open each photo in Procreate (iPad) or Photoshop.
-2. New layer. Trace the clothing piece with a hard brush — include the full
-   silhouette, exclude all background and skin.
-3. Export the traced layer as PNG with alpha to
-   `ground_truth/<same_filename>.png` (same name as the source image, but
-   `.png` instead of `.jpg`). Background pixels must be fully transparent
-   (alpha 0); clothing pixels fully opaque (alpha 255). Anti-aliasing at the
-   edge is fine — the IoU math thresholds at alpha > 127.
-
-Budget: about two hours for all thirty. Don't aim for pixel-perfect — the
-rig has a 5% safety margin built into each threshold.
-
-## Adding entries to manifest.json
-
-After adding a new photo + mask, append an object to `manifest.json`:
+Each fixture has an entry:
 
 ```json
 {
@@ -47,19 +43,50 @@ After adding a new photo + mask, append an object to `manifest.json`:
   "mask": "ground_truth/clean_bg_01.png",
   "category": "top",
   "scenario": "clean_bg",
+  "source_dataset": "YANELYS",
+  "source_image_id": "img_0001",
   "expected_iou_min": 0.82,
-  "notes": "White t-shirt on blue bedsheet, overhead window light."
+  "notes": "coverage=0.34, bg_edge=3.21, bg_var=14.8"
 }
 ```
 
-Then run the IoU test once on device with the *current* extraction code and
-record the actual score. Subtract 5 pp and replace `expected_iou_min` with
-that number. That's your floor — the rig will fail if a future refactor drops
-below it. Commit both the fixtures and the tuned threshold in the same PR.
+`source_dataset` + `source_image_id` let you drop a bad pick with
+`--skip-ids <DATASET>:<id>` and re-run the script. `expected_iou_min`
+starts at the scenario floor; after the first run of `SegmentationIoUTests`
+on device you tune it: subtract 5 pp from the actual score and commit the
+adjusted threshold in the same PR as the fixture.
+
+## `ATTRIBUTIONS.md`
+
+Auto-generated on every `fetch_fixtures.py` run. Lists the uploader, source
+URL, SPDX tag, and ISO fetch date for every one of the 30 images. Required
+by CC-BY 4.0. Ships only inside the XCTest bundle — no App Store binary
+impact.
+
+## BYO override (when the script can't cover a category twice)
+
+The script reports category gaps at the end of a run. If a `ClothingCategory`
+appears fewer than twice across the 30 picks, you have two options:
+
+1. **Accept it** — the IoU rig is category-signal, not perfectly balanced.
+2. **Add a BYO fixture** — drop your own photo + hand-traced alpha PNG into
+   the slot the script would have picked (e.g. `cluttered_07.jpg` +
+   `ground_truth/cluttered_07.png`), append a manifest entry by hand, and
+   use `--skip-ids` on future re-runs so the auto-picker stays out of that
+   slot.
+
+See `scripts/fetch_fixtures.README.md` → "When a category is
+under-represented" for the full workflow.
 
 ## What this directory must NEVER contain
 
-- Other people's photos (model releases, GDPR)
-- DeepFashion2 / Fashionpedia / LIP / ATR images (research licences)
-- Anything > 5 MB per file — resize and re-save at ~3000 px on the long edge
-- Thumbnails generated by macOS (`*.DS_Store` is already gitignored)
+- Images from research-only datasets (DeepFashion2, Fashionpedia, LIP, ATR)
+  or from HF re-uploads that claim a looser licence than the underlying data
+  (e.g. `mattmdjaga/human_parsing_dataset`, `SaffalPoosh/deepFashion-with-masks`).
+- Images larger than ~5 MB — the script resizes, but BYO drops must be
+  resized manually to ~3000 px on the long edge.
+- Thumbnails generated by macOS (`*.DS_Store` is already gitignored).
+- Unattributed BYO drops — if you add owner photos, add a manual section to
+  `ATTRIBUTIONS.md` (the script won't overwrite entries outside its
+  auto-generated block as long as you keep them in a clearly marked `## BYO
+  additions` section at the bottom — or edit the script to preserve them).
