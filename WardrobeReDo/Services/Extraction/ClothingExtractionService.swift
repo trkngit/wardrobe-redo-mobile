@@ -73,6 +73,15 @@ protocol ClothingExtracting: Sendable {
     /// work. Invoked from `AddItemView.onAppear` / `TapToSelectView.onAppear`
     /// so the user doesn't see a cold-start delay at capture time.
     func prewarm() async
+
+    /// Open a reusable SAM2 session bound to `image`. Used by
+    /// `AddItemViewModel` when the user is iterating on a single
+    /// capture ("Save & add another garment") so each tap-loop pass
+    /// reuses the cached pixel buffer instead of re-resizing. Returns
+    /// nil when SAM2 is unavailable (missing model, simulator without
+    /// LFS content) — callers should hide any multi-item UI in that
+    /// case and fall back to single-item capture.
+    func makeSession(for image: UIImage) async -> SAM2Session?
 }
 
 extension ClothingExtracting {
@@ -82,6 +91,10 @@ extension ClothingExtracting {
     }
 
     func prewarm() async { /* default no-op */ }
+
+    /// Default: no session support. Production `ClothingExtractionService`
+    /// overrides to forward to the underlying `SAM2Extractor` session.
+    func makeSession(for image: UIImage) async -> SAM2Session? { nil }
 }
 
 /// Orchestrates clothing-from-background isolation for every new
@@ -211,6 +224,15 @@ final class ClothingExtractionService: ClothingExtracting, @unchecked Sendable {
 
     func prewarm() async {
         await sam2Extractor.prewarm()
+    }
+
+    /// Open a SAM2 session for `image`, normalizing EXIF orientation
+    /// up-front so the session operates in the same coordinate space as
+    /// `extract(_:)` / `extract(_:tapPoints:)`. Returns nil when SAM2 is
+    /// unavailable — callers gate their multi-item UI on this.
+    func makeSession(for image: UIImage) async -> SAM2Session? {
+        let normalized = OrientationUtil.normalized(image)
+        return await sam2Extractor.makeSession(for: normalized)
     }
 
     // MARK: - Confidence heuristic

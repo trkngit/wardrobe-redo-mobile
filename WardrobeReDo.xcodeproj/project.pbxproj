@@ -127,6 +127,7 @@
 		E1E0B2F5000000000000E0A5 /* FirstRunTutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F2F5000000000000E0B5 /* FirstRunTutorialView.swift */; };
 		E1E0B2F6000000000000E0A6 /* BackgroundQualityClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F2F6000000000000E0B6 /* BackgroundQualityClassifierTests.swift */; };
 		E1E0B2F7000000000000E0A7 /* CameraOverlayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F2F7000000000000E0B7 /* CameraOverlayTests.swift */; };
+		E1E0B2F8000000000000E0A8 /* SAM2SessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F2F8000000000000E0B8 /* SAM2SessionTests.swift */; };
 		E1E0B3F1000000000000E0A1 /* SAM2Extractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F3F1000000000000E0B1 /* SAM2Extractor.swift */; };
 		E1E0B3F2000000000000E0A2 /* TapToSelectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F3F2000000000000E0B2 /* TapToSelectView.swift */; };
 		E1E0B3F3000000000000E0A3 /* SAM2ExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F3F3000000000000E0B3 /* SAM2ExtractorTests.swift */; };
@@ -295,6 +296,7 @@
 		E1E0F2F5000000000000E0B5 /* FirstRunTutorialView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunTutorialView.swift; sourceTree = "<group>"; };
 		E1E0F2F6000000000000E0B6 /* BackgroundQualityClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundQualityClassifierTests.swift; sourceTree = "<group>"; };
 		E1E0F2F7000000000000E0B7 /* CameraOverlayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraOverlayTests.swift; sourceTree = "<group>"; };
+		E1E0F2F8000000000000E0B8 /* SAM2SessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAM2SessionTests.swift; sourceTree = "<group>"; };
 		E1E0F3F1000000000000E0B1 /* SAM2Extractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAM2Extractor.swift; sourceTree = "<group>"; };
 		E1E0F3F2000000000000E0B2 /* TapToSelectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapToSelectView.swift; sourceTree = "<group>"; };
 		E1E0F3F3000000000000E0B3 /* SAM2ExtractorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAM2ExtractorTests.swift; sourceTree = "<group>"; };
@@ -385,6 +387,7 @@
 			children = (
 				E1E0F2F6000000000000E0B6 /* BackgroundQualityClassifierTests.swift */,
 				E1E0F2F7000000000000E0B7 /* CameraOverlayTests.swift */,
+				E1E0F2F8000000000000E0B8 /* SAM2SessionTests.swift */,
 				E1E0F3F3000000000000E0B3 /* SAM2ExtractorTests.swift */,
 				E1E0F3F4000000000000E0B4 /* ClothingExtractionChainingTests.swift */,
 				E1E0F4F3000000000000E0B3 /* SegmentationIoUTests.swift */,
@@ -1018,6 +1021,7 @@
 				0CC78BCE2B52A8E5A47298FD /* WardrobeViewModelTests.swift in Sources */,
 				E1E0B2F6000000000000E0A6 /* BackgroundQualityClassifierTests.swift in Sources */,
 				E1E0B2F7000000000000E0A7 /* CameraOverlayTests.swift in Sources */,
+				E1E0B2F8000000000000E0A8 /* SAM2SessionTests.swift in Sources */,
 				E1E0B3F3000000000000E0A3 /* SAM2ExtractorTests.swift in Sources */,
 				E1E0B3F4000000000000E0A4 /* ClothingExtractionChainingTests.swift in Sources */,
 				E1E0B4F1000000000000E0A1 /* FixtureLoader.swift in Sources */,
