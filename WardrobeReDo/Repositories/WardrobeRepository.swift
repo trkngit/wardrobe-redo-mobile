@@ -108,6 +108,17 @@ struct NewWardrobeItem: Codable, Sendable {
     /// One of ExtractionConfidence.rawValue, or nil when extraction
     /// was skipped entirely (simulator, iOS < 17).
     let extractionConfidence: String?
+    /// Shared across every row cut out of the same source capture.
+    /// Populated by `AddItemViewModel` on the *first* save of a
+    /// multi-garment loop and reused by garments 2..N. Nil for
+    /// single-item captures. See migration 00008.
+    let sourcePhotoId: UUID?
+    /// Storage path to the unmasked source JPEG. Uploaded lazily on
+    /// the *second* save of a capture (when we know the user is
+    /// actually building a group) and passed to every subsequent row
+    /// so storage usage stays proportional to *captures*, not
+    /// garments. Nil iff `sourcePhotoId` is nil.
+    let sourcePhotoPath: String?
     let category: String
     let subcategory: String
     let dominantColors: [ColorProfile]
@@ -122,6 +133,8 @@ struct NewWardrobeItem: Codable, Sendable {
         case thumbnailPath = "thumbnail_path"
         case maskedImagePath = "masked_image_path"
         case extractionConfidence = "extraction_confidence"
+        case sourcePhotoId = "source_photo_id"
+        case sourcePhotoPath = "source_photo_path"
         case category, subcategory
         case dominantColors = "dominant_colors"
         case texture

@@ -311,6 +311,13 @@ final class AddItemViewModel {
                         thumbnailPath: paths.thumbnailPath,
                         maskedImagePath: paths.maskedImagePath,
                         extractionConfidence: extractionConfidenceRaw,
+                        // Source-photo grouping (migration 00008) is
+                        // populated by the "Save & add another garment"
+                        // loop in Commit 5. For now every save is a
+                        // single-item capture and the columns stay nil,
+                        // matching legacy behavior.
+                        sourcePhotoId: nil,
+                        sourcePhotoPath: nil,
                         category: cat,
                         subcategory: subcat,
                         dominantColors: colors,
