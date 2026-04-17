@@ -59,6 +59,45 @@ final class AddItemViewModel {
     /// `MaskTouchupView` so the user knows to sanity-check.
     var isAutoCropped = false
 
+    // Phase 4: "Save & add another garment" per-capture loop
+
+    /// Stable identity for the current capture. Every garment row
+    /// extracted from the same source photo shares this UUID (populated
+    /// into `wardrobe_items.source_photo_id` via migration 00008).
+    /// Stamped fresh on every photo selection / camera capture; cleared
+    /// by `reset()`. Nil on legacy / single-item flows that never
+    /// enter the multi-garment loop.
+    var sourcePhotoId: UUID?
+
+    /// Storage path to the unmasked source JPEG at
+    /// `{userId}/source/{sourcePhotoId}/original.jpg`. Populated by
+    /// `ImageService.upload(...)` on the FIRST save of a multi-garment
+    /// loop and echoed back on garments 2..N so the original isn't
+    /// re-uploaded. Nil iff `sourcePhotoId` is nil.
+    var sourcePhotoPath: String?
+
+    /// Reusable SAM2 segmentation session bound to `selectedImage`.
+    /// Started in parallel with `processImage(_:)` so the first tap in
+    /// `TapToSelectView` doesn't pay the CGImage → 1024×1024 resize
+    /// cost on the user-visible path. Nil when SAM2 isn't available
+    /// (missing LFS bundle / old iOS) — callers hide the "Save & add
+    /// another" button in that case.
+    var sam2Session: (any SAM2Session)?
+
+    /// Number of wardrobe_item rows saved from the current capture so
+    /// far. Zero on every fresh photo selection; increments on each
+    /// successful save during the multi-garment loop. Drives the
+    /// "Garment N from this photo" badge and tells the UI when it's
+    /// safe to show the loop affordances.
+    var savedItemsFromSource: Int = 0
+
+    /// Set by `onSaveAndAddAnother(userId:)` immediately before
+    /// `save(userId:)` runs. The save-success branch reads this to
+    /// decide whether to loop back into tap-to-select or dismiss.
+    /// Always cleared on failure so the next tap of the regular Save
+    /// button behaves as a normal single-item save.
+    var wantsAnotherGarment: Bool = false
+
     // MARK: - Dependencies
 
     private let imageService: any ImageServiceProtocol
@@ -111,8 +150,20 @@ final class AddItemViewModel {
         }
 
         selectedImage = image
+        stampFreshCapture()
+
+        // Kick off SAM2 session load concurrently with Vision processing.
+        // The session isn't consumed until the user reaches tap-to-select
+        // (either "Trouble cropping?" or "Save & add another"), so its
+        // ~60 ms pixel-buffer resize completes behind the processing
+        // wait and the first tap in the user flow fires without a cold
+        // start. Cheap (session is non-optional Sendable) but net-win.
+        let sessionTask = Task { [clothingExtractor] in
+            await clothingExtractor.makeSession(for: image)
+        }
 
         guard let processed = await imageService.processImage(image) else {
+            sessionTask.cancel()
             errorMessage = "Couldn't process that image. Try another one."
             currentStep = .photo
             isProcessing = false
@@ -120,6 +171,7 @@ final class AddItemViewModel {
         }
 
         processedImage = processed
+        sam2Session = await sessionTask.value
         isProcessing = false
         currentStep = .details
     }
@@ -162,11 +214,19 @@ final class AddItemViewModel {
     func onCameraPhotoCaptured(_ image: UIImage) async {
         isShowingCamera = false
         selectedImage = image
+        stampFreshCapture()
         isProcessing = true
         errorMessage = nil
         currentStep = .analysis
 
+        // Run the SAM2 session prep alongside extraction — see
+        // `onPhotoSelected()` for the rationale.
+        let sessionTask = Task { [clothingExtractor] in
+            await clothingExtractor.makeSession(for: image)
+        }
+
         guard let processed = await imageService.processImage(image) else {
+            sessionTask.cancel()
             errorMessage = "Couldn't process that photo. Try again."
             currentStep = .photo
             isProcessing = false
@@ -175,6 +235,7 @@ final class AddItemViewModel {
 
         processedImage = processed
         isAutoCropped = (processed.extractionMethod == .sam2Auto)
+        sam2Session = await sessionTask.value
         isProcessing = false
 
         if processed.maskedData != nil {
@@ -183,6 +244,18 @@ final class AddItemViewModel {
         } else {
             currentStep = .details
         }
+    }
+
+    /// Reset the per-capture provenance state so the next photo gets
+    /// its own `source_photo_id` + a fresh save counter. Called at the
+    /// top of every photo-selection / camera-capture lifecycle, BEFORE
+    /// any extraction or save. Keeps the multi-garment loop scoped to
+    /// one capture at a time.
+    private func stampFreshCapture() {
+        sourcePhotoId = UUID()
+        sourcePhotoPath = nil
+        savedItemsFromSource = 0
+        wantsAnotherGarment = false
     }
 
     /// User cancelled out of the camera view without capturing anything.
@@ -287,12 +360,24 @@ final class AddItemViewModel {
         let seasons = Array(selectedSeasons).map(\.rawValue)
         let occasions = Array(selectedOccasions).map(\.rawValue)
 
-        logger.info("save: starting upload for itemId=\(itemId)")
+        // Hoist capture-level state into locals: the upload Task
+        // runs detached from self, so it needs isolated copies of
+        // sourcePhotoId / sourcePhotoPath to feed into ImageService.
+        let capturedSourcePhotoId = sourcePhotoId
+        let existingSourcePath = sourcePhotoPath
+        let shouldLoopAfter = wantsAnotherGarment
+
+        logger.info("save: starting upload for itemId=\(itemId) sourcePhotoId=\(capturedSourcePhotoId?.uuidString ?? "nil") savedSoFar=\(self.savedItemsFromSource)")
 
         let extractionConfidenceRaw = processed.extractionConfidence?.rawValue
 
-        // Race the entire save operation against a 45-second timeout
-        let success: Bool = await withTaskGroup(of: Bool.self) { group in
+        // Race the entire save operation against a 45-second timeout.
+        // The tuple carries (success, resolvedSourcePhotoPath) so the
+        // main-actor branch below can persist the source path back onto
+        // the ViewModel for garments 2..N to reuse.
+        let outcome: (success: Bool, sourcePath: String?) = await withTaskGroup(
+            of: (Bool, String?).self
+        ) { group in
             group.addTask { [imageService, wardrobeRepository, logger] in
                 var uploadedPaths: (imagePath: String, thumbnailPath: String, maskedImagePath: String?)?
 
@@ -300,9 +385,11 @@ final class AddItemViewModel {
                     let paths = try await imageService.upload(
                         processed: processed,
                         userId: userId,
-                        itemId: itemId
+                        itemId: itemId,
+                        sourcePhotoId: capturedSourcePhotoId,
+                        existingSourcePhotoPath: existingSourcePath
                     )
-                    uploadedPaths = paths
+                    uploadedPaths = (paths.imagePath, paths.thumbnailPath, paths.maskedImagePath)
                     logger.info("save: upload complete, inserting item")
 
                     let newItem = NewWardrobeItem(
@@ -311,13 +398,15 @@ final class AddItemViewModel {
                         thumbnailPath: paths.thumbnailPath,
                         maskedImagePath: paths.maskedImagePath,
                         extractionConfidence: extractionConfidenceRaw,
-                        // Source-photo grouping (migration 00008) is
-                        // populated by the "Save & add another garment"
-                        // loop in Commit 5. For now every save is a
-                        // single-item capture and the columns stay nil,
-                        // matching legacy behavior.
-                        sourcePhotoId: nil,
-                        sourcePhotoPath: nil,
+                        // `sourcePhotoId` stays stable across every save
+                        // in a multi-garment loop; `sourcePhotoPath` is
+                        // populated by ImageService on the first save
+                        // and echoed back on 2..N. Both are nil on
+                        // single-item captures where `stampFreshCapture`
+                        // ran but the loop was never entered — matching
+                        // the legacy row shape.
+                        sourcePhotoId: capturedSourcePhotoId,
+                        sourcePhotoPath: paths.sourcePhotoPath,
                         category: cat,
                         subcategory: subcat,
                         dominantColors: colors,
@@ -329,13 +418,16 @@ final class AddItemViewModel {
 
                     _ = try await wardrobeRepository.insertItem(newItem)
                     logger.info("save: insert complete")
-                    return true
+                    return (true, paths.sourcePhotoPath)
                 } catch {
                     logger.error("save: failed — \(error.localizedDescription)")
 
                     // Cleanup: if upload succeeded but DB insert failed,
-                    // delete orphaned images to prevent storage leaks.
-                    // Include the masked file when it was actually uploaded.
+                    // delete orphaned per-item images to prevent storage
+                    // leaks. Intentionally DO NOT remove the source-photo
+                    // object — sibling garments in the same capture may
+                    // already reference it, and a partial cleanup here
+                    // would strand those rows.
                     if let paths = uploadedPaths {
                         logger.info("save: cleaning up orphaned images")
                         try? await imageService.deleteImages(
@@ -344,25 +436,85 @@ final class AddItemViewModel {
                             maskedImagePath: paths.maskedImagePath
                         )
                     }
-                    return false
+                    return (false, nil)
                 }
             }
             group.addTask {
                 try? await Task.sleep(for: .seconds(45))
-                return false
+                return (false, nil)
             }
 
-            let result = await group.next()!
+            let first = await group.next() ?? (false, nil)
             group.cancelAll()
-            return result
+            return first
         }
 
-        if success {
-            didSave = true
+        if outcome.success {
+            // Persist the resolved source path back onto the ViewModel
+            // so garments 2..N of the same capture reuse it (and
+            // ImageService sees it via `existingSourcePhotoPath` →
+            // skips the re-upload). Idempotent: on garments 2..N the
+            // outcome already carries the pre-existing value.
+            if sourcePhotoPath == nil, let persistedPath = outcome.sourcePath {
+                sourcePhotoPath = persistedPath
+            }
+            savedItemsFromSource += 1
+
+            if shouldLoopAfter {
+                // "Save & add another garment" path: keep the captured
+                // image + session hot, clear only item-specific metadata,
+                // and re-enter tap-to-select for the next garment.
+                resetKeepingSource()
+                isShowingTapToSelect = true
+            } else {
+                didSave = true
+            }
         } else {
             errorMessage = "Failed to save item. Check your connection and try again."
             currentStep = .details
+            // Always clear the "add another" flag on failure — the next
+            // tap of the regular Save button should behave as a normal
+            // single-item save, not silently loop back to tap-to-select.
+            wantsAnotherGarment = false
         }
+    }
+
+    /// Secondary save action surfaced on the details step when
+    /// `selectedImage != nil && sam2Session != nil`. Flags the save
+    /// path to loop back into `TapToSelectView` for the next garment
+    /// instead of dismissing the Add Item sheet. No-op (plus a guard
+    /// against accidental invocation) when SAM2 isn't available.
+    func onSaveAndAddAnother(userId: UUID) async {
+        guard sam2Session != nil else { return }
+        wantsAnotherGarment = true
+        await save(userId: userId)
+    }
+
+    /// Reset item-specific metadata (category, mask, touchup flags)
+    /// while leaving `selectedImage`, `sourcePhotoId`, `sourcePhotoPath`,
+    /// `sam2Session`, and `savedItemsFromSource` intact. Called from
+    /// the save-success branch when the user picked "Save & add another
+    /// garment" — the next tap-to-select pass runs against the same
+    /// captured image and reuses the cached SAM2 pixel buffer.
+    ///
+    /// `processedImage` is intentionally kept: its `originalData` and
+    /// `thumbnailData` fields describe the source capture (same for
+    /// every garment), and `onTapToSelectDone(_:)` routes the next
+    /// mask through `imageService.updateMasked(...)` which needs a
+    /// non-nil `ProcessedImage` to swap the mask into.
+    private func resetKeepingSource() {
+        category = .top
+        subcategory = .tshirt
+        texture = nil
+        fitAttribute = nil
+        selectedSeasons = Set(Season.allCases)
+        selectedOccasions = [.casual]
+        errorMessage = nil
+        wantsAnotherGarment = false
+        isAutoCropped = false
+        isProcessing = false
+        isShowingTouchup = false
+        currentStep = .details
     }
 
     func reset() {
@@ -386,5 +538,12 @@ final class AddItemViewModel {
         isShowingTutorial = false
         isShowingTapToSelect = false
         isAutoCropped = false
+        // Phase 4 multi-garment loop state — always wiped on full reset
+        // (vs `resetKeepingSource()` which deliberately preserves these).
+        sourcePhotoId = nil
+        sourcePhotoPath = nil
+        sam2Session = nil
+        savedItemsFromSource = 0
+        wantsAnotherGarment = false
     }
 }

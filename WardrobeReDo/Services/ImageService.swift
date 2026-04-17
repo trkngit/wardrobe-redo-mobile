@@ -77,18 +77,31 @@ final class ImageService: ImageServiceProtocol {
     // MARK: - Upload to Supabase Storage
 
     /// Upload original, thumbnail, and (when extraction succeeded) the
-    /// masked PNG to Supabase Storage. Returns the three paths — the
-    /// masked path is nil when we didn't produce a masked image.
+    /// masked PNG to Supabase Storage. Returns the four paths — the
+    /// masked path is nil when we didn't produce a masked image, and the
+    /// source path is nil for single-item captures (`sourcePhotoId ==
+    /// nil`) or echoed back unchanged when the caller passed an
+    /// `existingSourcePhotoPath`.
+    ///
+    /// The source-photo upload reuses `processed.originalData`: the
+    /// unmasked JPEG we already resized for the per-item `image_path`
+    /// also doubles as the unmasked "source of truth" for every garment
+    /// row extracted from the same capture. So this costs one extra
+    /// Storage write on the *first* save per capture, and zero writes on
+    /// garments 2..N.
     func upload(
         processed: ProcessedImage,
         userId: UUID,
-        itemId: UUID
-    ) async throws -> (imagePath: String, thumbnailPath: String, maskedImagePath: String?) {
+        itemId: UUID,
+        sourcePhotoId: UUID?,
+        existingSourcePhotoPath: String?
+    ) async throws -> (imagePath: String, thumbnailPath: String, maskedImagePath: String?, sourcePhotoPath: String?) {
         // Lowercase to match Postgres auth.uid()::text in the storage RLS policy.
         // Swift's UUID.uuidString returns uppercase; the policy comparison
         // `auth.uid()::text = (storage.foldername(name))[1]` is case-sensitive,
         // so uppercase folder names get rejected as RLS violations.
-        let basePath = "\(userId.uuidString.lowercased())/\(itemId.uuidString.lowercased())"
+        let userFolder = userId.uuidString.lowercased()
+        let basePath = "\(userFolder)/\(itemId.uuidString.lowercased())"
         let imagePath = "\(basePath)/original.jpg"
         let thumbnailPath = "\(basePath)/thumb.jpg"
         let maskedPath = "\(basePath)/masked.png"
@@ -123,7 +136,31 @@ final class ImageService: ImageServiceProtocol {
             uploadedMaskedPath = nil
         }
 
-        return (imagePath, thumbnailPath, uploadedMaskedPath)
+        // Source-photo upload. Only runs when the caller is participating
+        // in the multi-garment loop (non-nil sourcePhotoId) AND this is the
+        // first save of that capture (no existingSourcePhotoPath). On
+        // garments 2..N we echo the same path back so the NewWardrobeItem
+        // row still gets populated but no extra Storage write fires.
+        let resolvedSourcePath: String?
+        if let sourcePhotoId {
+            if let existing = existingSourcePhotoPath {
+                resolvedSourcePath = existing
+            } else {
+                let sourcePath = "\(userFolder)/source/\(sourcePhotoId.uuidString.lowercased())/original.jpg"
+                try await supabase.storage
+                    .from("wardrobe-images")
+                    .upload(
+                        sourcePath,
+                        data: processed.originalData,
+                        options: FileOptions(contentType: "image/jpeg")
+                    )
+                resolvedSourcePath = sourcePath
+            }
+        } else {
+            resolvedSourcePath = nil
+        }
+
+        return (imagePath, thumbnailPath, uploadedMaskedPath, resolvedSourcePath)
     }
 
     /// Get a signed URL for an image in storage.

@@ -457,3 +457,187 @@ private func makeProcessedImage(
     #expect(vm.isShowingTapToSelect == false)
     #expect(vm.isAutoCropped == false)
 }
+
+// MARK: - Phase 4: Save & add another garment (per-capture loop)
+
+/// Minimal `SAM2Session` stub. Tests set this on the ViewModel to
+/// unlock the `onSaveAndAddAnother(userId:)` path; the stub's
+/// `segment(points:)` is never called because the loop-back writes
+/// go through `wardrobeRepository.insertItem`, not SAM2.
+private final class StubSAM2Session: SAM2Session, @unchecked Sendable {
+    func segment(points: [SAM2TapPoint]) async -> SAM2Result? { nil }
+}
+
+@Test @MainActor func addItemOnCameraPhotoCapturedStampsSourcePhotoId() async {
+    let mockImage = MockImageService()
+    mockImage.processImageResult = makeProcessedImage(maskedData: Data([0xAB]))
+    let vm = AddItemViewModel(
+        imageService: mockImage,
+        wardrobeRepository: MockWardrobeRepository()
+    )
+    vm.isShowingCamera = true
+
+    #expect(vm.sourcePhotoId == nil) // precondition
+
+    await vm.onCameraPhotoCaptured(makePixelImage())
+
+    #expect(vm.sourcePhotoId != nil)
+    #expect(vm.savedItemsFromSource == 0)
+    #expect(vm.sourcePhotoPath == nil) // not set until first successful save
+}
+
+@Test @MainActor func addItemSavePassesSourcePhotoIdThroughToInsert() async {
+    let mockImage = MockImageService()
+    let mockRepo = MockWardrobeRepository()
+    let vm = AddItemViewModel(
+        imageService: mockImage,
+        wardrobeRepository: mockRepo
+    )
+    let expectedId = UUID()
+    vm.processedImage = makeProcessedImage(maskedData: Data([0xAB]))
+    vm.sourcePhotoId = expectedId
+
+    await vm.save(userId: UUID())
+
+    #expect(mockRepo.insertItemCallCount == 1)
+    #expect(mockRepo.lastInsertedItem?.sourcePhotoId == expectedId)
+    // First save of a capture: ImageService returns a fresh path →
+    // ViewModel caches it for garments 2..N.
+    #expect(vm.sourcePhotoPath == mockImage.uploadSourcePhotoPath)
+    #expect(vm.savedItemsFromSource == 1)
+}
+
+@Test @MainActor func addItemSaveAndAddAnotherNoOpWithoutSession() async {
+    let mockImage = MockImageService()
+    let mockRepo = MockWardrobeRepository()
+    let vm = AddItemViewModel(
+        imageService: mockImage,
+        wardrobeRepository: mockRepo
+    )
+    vm.selectedImage = makePixelImage()
+    vm.processedImage = makeProcessedImage(maskedData: Data([0xAB]))
+    vm.sourcePhotoId = UUID()
+    // No sam2Session set
+
+    await vm.onSaveAndAddAnother(userId: UUID())
+
+    // Session guard short-circuits before the save runs
+    #expect(mockImage.uploadCallCount == 0)
+    #expect(mockRepo.insertItemCallCount == 0)
+    #expect(vm.wantsAnotherGarment == false)
+    #expect(vm.isShowingTapToSelect == false)
+}
+
+@Test @MainActor func addItemSaveAndAddAnotherLoopsBackIntoTapToSelect() async {
+    let mockImage = MockImageService()
+    let mockRepo = MockWardrobeRepository()
+    let vm = AddItemViewModel(
+        imageService: mockImage,
+        wardrobeRepository: mockRepo
+    )
+    vm.selectedImage = makePixelImage()
+    vm.processedImage = makeProcessedImage(maskedData: Data([0xAB]))
+    vm.sourcePhotoId = UUID()
+    vm.sam2Session = StubSAM2Session()
+    // Pretend the user picked a custom category — the loop reset
+    // should knock it back to the default.
+    vm.category = .shoe
+    vm.subcategory = .sneakers
+
+    await vm.onSaveAndAddAnother(userId: UUID())
+
+    #expect(mockRepo.insertItemCallCount == 1)
+    #expect(vm.savedItemsFromSource == 1)
+    #expect(vm.didSave == false, "loop path must not dismiss the sheet")
+    #expect(vm.isShowingTapToSelect == true)
+    #expect(vm.wantsAnotherGarment == false, "flag should reset after save")
+    // Captured-image state preserved
+    #expect(vm.selectedImage != nil)
+    #expect(vm.sourcePhotoId != nil)
+    #expect(vm.sam2Session != nil)
+    // Item-specific metadata rolled back to defaults
+    #expect(vm.category == .top)
+    #expect(vm.subcategory == .tshirt)
+}
+
+@Test @MainActor func addItemSaveAndAddAnotherReusesSourcePhotoPath() async {
+    let mockImage = MockImageService()
+    mockImage.uploadSourcePhotoPath = "users/abc/source/cap-xyz/original.jpg"
+    let mockRepo = MockWardrobeRepository()
+    let vm = AddItemViewModel(
+        imageService: mockImage,
+        wardrobeRepository: mockRepo
+    )
+    vm.selectedImage = makePixelImage()
+    vm.processedImage = makeProcessedImage(maskedData: Data([0xAB]))
+    vm.sourcePhotoId = UUID()
+    vm.sam2Session = StubSAM2Session()
+
+    // First save: ImageService sees no existing path, uploads the
+    // source photo, and returns the new path.
+    await vm.onSaveAndAddAnother(userId: UUID())
+    #expect(mockImage.uploadCallCount == 1)
+    // Inner nil check via ?? fallback: outer nil (never called) gets a
+    // sentinel string so the assertion fails loudly; outer .some(nil)
+    // collapses to nil and passes; outer .some("x") fails.
+    #expect((mockImage.lastUploadExistingSourcePhotoPath ?? "NEVER-CALLED") == nil)
+    #expect(vm.sourcePhotoPath == "users/abc/source/cap-xyz/original.jpg")
+
+    // Simulate garment 2: user just finished tap-to-select, mask was
+    // swapped into processedImage, details filled in → tap "Save &
+    // add another" again.
+    vm.processedImage = makeProcessedImage(maskedData: Data([0xCD]))
+
+    await vm.onSaveAndAddAnother(userId: UUID())
+
+    #expect(mockImage.uploadCallCount == 2)
+    #expect(
+        (mockImage.lastUploadExistingSourcePhotoPath ?? "NEVER-CALLED")
+            == "users/abc/source/cap-xyz/original.jpg",
+        "second save must pass the cached source path so ImageService skips re-upload"
+    )
+    #expect(vm.savedItemsFromSource == 2)
+    #expect(vm.isShowingTapToSelect == true)
+}
+
+@Test @MainActor func addItemSaveFinalGarmentDismissesInsteadOfLooping() async {
+    let mockImage = MockImageService()
+    let mockRepo = MockWardrobeRepository()
+    let vm = AddItemViewModel(
+        imageService: mockImage,
+        wardrobeRepository: mockRepo
+    )
+    vm.selectedImage = makePixelImage()
+    vm.processedImage = makeProcessedImage(maskedData: Data([0xAB]))
+    vm.sourcePhotoId = UUID()
+    vm.sam2Session = StubSAM2Session()
+    // Simulate one prior "Save & add another" already happened — user
+    // is on garment 2 and hits the primary "Save" button (not the
+    // loop-back variant).
+    vm.savedItemsFromSource = 1
+    vm.sourcePhotoPath = "users/abc/source/cap/original.jpg"
+
+    await vm.save(userId: UUID())
+
+    #expect(mockRepo.insertItemCallCount == 1)
+    #expect(vm.savedItemsFromSource == 2)
+    #expect(vm.didSave == true, "regular Save must still end the capture flow")
+    #expect(vm.isShowingTapToSelect == false)
+}
+
+@Test @MainActor func addItemResetWipesPhase4State() {
+    let vm = AddItemViewModel()
+    vm.sourcePhotoId = UUID()
+    vm.sourcePhotoPath = "users/test/source/cap/original.jpg"
+    vm.sam2Session = StubSAM2Session()
+    vm.savedItemsFromSource = 3
+    vm.wantsAnotherGarment = true
+
+    vm.reset()
+
+    #expect(vm.sourcePhotoId == nil)
+    #expect(vm.sourcePhotoPath == nil)
+    #expect(vm.sam2Session == nil)
+    #expect(vm.savedItemsFromSource == 0)
+    #expect(vm.wantsAnotherGarment == false)
+}

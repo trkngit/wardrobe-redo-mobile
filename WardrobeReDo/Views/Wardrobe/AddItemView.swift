@@ -359,7 +359,31 @@ struct AddItemView: View {
                 errorBanner(error)
             }
 
-            // Save button
+            // Multi-garment loop affordances. The "Save & add another"
+            // button loops back into tap-to-select on the same capture
+            // instead of dismissing the sheet, and the small pill above
+            // tells the user how many garments have landed from this
+            // photo so they know they're in a repeat flow.
+            saveActions
+                .padding(.top, Theme.Spacing.sm)
+                .padding(.bottom, Theme.Spacing.xl)
+        }
+    }
+
+    // MARK: - Save action buttons
+
+    /// Primary + optional secondary save buttons plus the "Garment N
+    /// saved from this photo" pill. The secondary button ("Save & add
+    /// another garment") is only rendered when we have a live capture
+    /// AND SAM2 is available — without SAM2 the next tap-to-select
+    /// pass would fail, so we hide the affordance rather than producing
+    /// a dead button.
+    @ViewBuilder
+    private var saveActions: some View {
+        VStack(spacing: Theme.Spacing.sm) {
+            if viewModel.savedItemsFromSource > 0 {
+                savedFromSourceBadge
+            }
             GoldButton("Save to Wardrobe", isLoading: viewModel.isSaving) {
                 guard let userId = appState.currentUser?.id else {
                     viewModel.errorMessage = "Not signed in. Please restart the app and try again."
@@ -368,9 +392,64 @@ struct AddItemView: View {
                 Task { await viewModel.save(userId: userId) }
             }
             .disabled(!viewModel.canSave)
-            .padding(.top, Theme.Spacing.sm)
-            .padding(.bottom, Theme.Spacing.xl)
+
+            if canShowAddAnother {
+                Button {
+                    guard let userId = appState.currentUser?.id else {
+                        viewModel.errorMessage = "Not signed in. Please restart the app and try again."
+                        return
+                    }
+                    Task { await viewModel.onSaveAndAddAnother(userId: userId) }
+                } label: {
+                    Label("Save & add another garment", systemImage: "square.stack.3d.up")
+                        .font(Theme.Fonts.bodySmall.weight(.medium))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, Theme.Spacing.sm)
+                }
+                .buttonStyle(.bordered)
+                .tint(Color(Theme.Colors.primary))
+                .disabled(!viewModel.canSave)
+                .accessibilityHint("Saves this garment and re-opens tap-to-select on the same photo for the next garment.")
+            }
         }
+    }
+
+    /// Whether the secondary "Save & add another garment" button is
+    /// rendered. Hidden when no capture has started yet OR when SAM2 is
+    /// unavailable — in that second case tap-to-select wouldn't work,
+    /// and the user shouldn't be offered a dead loop.
+    private var canShowAddAnother: Bool {
+        viewModel.selectedImage != nil && viewModel.sam2Session != nil
+    }
+
+    /// Small pill above the save buttons that surfaces how many garment
+    /// rows have been saved from the current capture so far. Only shows
+    /// during the multi-garment loop (savedItemsFromSource >= 1);
+    /// single-item flows never see it.
+    private var savedFromSourceBadge: some View {
+        HStack(spacing: Theme.Spacing.xs) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color(Theme.Colors.primary))
+            Text(savedFromSourceLabel)
+                .font(Theme.Fonts.caption.weight(.medium))
+                .foregroundStyle(Color(Theme.Colors.textSecondary))
+        }
+        .padding(.horizontal, Theme.Spacing.md)
+        .padding(.vertical, Theme.Spacing.xs)
+        .background(
+            Capsule().fill(Color(Theme.Colors.surface))
+        )
+        .overlay(
+            Capsule().stroke(Color(Theme.Colors.border), lineWidth: 1)
+        )
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var savedFromSourceLabel: String {
+        let count = viewModel.savedItemsFromSource
+        let noun = count == 1 ? "garment" : "garments"
+        return "\(count) \(noun) saved from this photo"
     }
 
     // MARK: - Step 4: Saving

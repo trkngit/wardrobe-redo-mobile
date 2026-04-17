@@ -117,6 +117,12 @@ final class MockImageService: ImageServiceProtocol {
         thumbnailPath: "thumbnails/test.jpg",
         maskedImagePath: "masked/test.png"
     ))
+    /// Path returned for the source-photo component of a multi-garment
+    /// upload. Mirrors the real ImageService behavior: on the first save
+    /// of a capture the ImageService uploads the unmasked original and
+    /// returns a path; on subsequent saves the mock (like the real impl)
+    /// echoes back the existing path the caller passed in.
+    var uploadSourcePhotoPath: String = "users/test/source/cap-1/original.jpg"
     var processImageResult: ProcessedImage?
     var loadImageResult: UIImage?
     var updateMaskedResult: ProcessedImage?
@@ -130,6 +136,8 @@ final class MockImageService: ImageServiceProtocol {
     var lastDeletedMaskedImagePath: String??
     var lastUpdateMaskedProcessed: ProcessedImage?
     var lastUpdateMaskedEditedMask: UIImage?
+    var lastUploadSourcePhotoId: UUID??
+    var lastUploadExistingSourcePhotoPath: String??
 
     func signedURL(for path: String, expiresIn: Int) async throws -> URL {
         signedURLCallCount += 1
@@ -142,9 +150,26 @@ final class MockImageService: ImageServiceProtocol {
         if let error = deleteImagesError { throw error }
     }
 
-    func upload(processed: ProcessedImage, userId: UUID, itemId: UUID) async throws -> (imagePath: String, thumbnailPath: String, maskedImagePath: String?) {
+    func upload(
+        processed: ProcessedImage,
+        userId: UUID,
+        itemId: UUID,
+        sourcePhotoId: UUID?,
+        existingSourcePhotoPath: String?
+    ) async throws -> (imagePath: String, thumbnailPath: String, maskedImagePath: String?, sourcePhotoPath: String?) {
         uploadCallCount += 1
-        return try uploadResult.get()
+        lastUploadSourcePhotoId = sourcePhotoId
+        lastUploadExistingSourcePhotoPath = existingSourcePhotoPath
+        let base = try uploadResult.get()
+        let resolvedSourcePath: String?
+        if sourcePhotoId == nil {
+            resolvedSourcePath = nil
+        } else if let existing = existingSourcePhotoPath {
+            resolvedSourcePath = existing
+        } else {
+            resolvedSourcePath = uploadSourcePhotoPath
+        }
+        return (base.imagePath, base.thumbnailPath, base.maskedImagePath, resolvedSourcePath)
     }
 
     func processImage(_ image: UIImage) async -> ProcessedImage? {
