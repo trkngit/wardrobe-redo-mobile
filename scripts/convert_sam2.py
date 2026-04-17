@@ -92,10 +92,17 @@ def check_environment() -> None:
     commit (this is a dev-only tool).
     """
     required = {
-        "torch": "torch>=2.1",
-        "coremltools": "coremltools>=7.2",
+        # Pin torch to the last version coremltools 9.0 explicitly tests
+        # against. Torch 2.11 emits aten::Int nodes that coremltools' torch
+        # frontend trips on ("only 0-dimensional arrays…"); 2.7 avoids it.
+        "torch": "torch==2.7.0",
+        "coremltools": "coremltools>=9.0",
         "sam2": "git+https://github.com/facebookresearch/sam2.git",
         "PIL": "Pillow",
+        # coremltools' k-means palettizer imports scikit-learn lazily — it
+        # only complains at quantize time, which is after the 2-minute
+        # trace + MIL conversion. Fail fast instead.
+        "sklearn": "scikit-learn",
     }
     missing: list[tuple[str, str]] = []
     for name, spec in required.items():
@@ -126,11 +133,42 @@ def check_environment() -> None:
 # Model loading + wrapping
 # ---------------------------------------------------------------------------
 
+def resolve_hydra_config_name(config: Path) -> str:
+    """Translate a filesystem path into the hydra-relative name sam2 expects.
+
+    sam2.build_sam calls ``hydra.compose(config_name=config_file)`` against its
+    own search path ``pkg://sam2``. That API wants a NAME relative to the sam2
+    package (e.g. ``configs/sam2/sam2_hiera_t.yaml``), not an absolute
+    filesystem path. Some sam2 releases silently strip the leading ``/`` and
+    then fail with "Cannot find primary config 'Users/...'".
+
+    Accept either form:
+    * an absolute path under the installed sam2 package — translate it to a
+      package-relative name.
+    * a bare hydra name (e.g. ``configs/sam2/sam2_hiera_t.yaml``) — pass
+      through unchanged.
+    """
+    import sam2 as _sam2_pkg
+
+    sam2_root = Path(_sam2_pkg.__file__).resolve().parent
+    config_resolved = config.expanduser()
+    if config_resolved.is_absolute():
+        try:
+            rel = config_resolved.resolve().relative_to(sam2_root)
+            return str(rel)
+        except ValueError:
+            # Path is absolute but not under the sam2 package. Fall through
+            # and let sam2 raise its own MissingConfigException.
+            return str(config_resolved)
+    return str(config_resolved)
+
+
 def build_sam2_model(checkpoint: Path, config: Path):
     """Load the SAM2 checkpoint on CPU. coremltools traces on CPU."""
     from sam2.build_sam import build_sam2
 
-    model = build_sam2(str(config), str(checkpoint), device="cpu")
+    config_name = resolve_hydra_config_name(config)
+    model = build_sam2(config_name, str(checkpoint), device="cpu")
     model.eval()
     return model
 
@@ -153,6 +191,49 @@ def make_traceable(sam2):
     import torch
     import torch.nn.functional as F
 
+    # --- Hiera positional-embed patch --------------------------------------
+    # Two problems with tracing `Hiera._get_pos_embed` straight:
+    #
+    # 1. It calls `F.interpolate(..., mode="bicubic")`. coremltools has no
+    #    MIL lowering for `upsample_bicubic2d`.
+    # 2. It tiles `pos_embed_window` by `[x // y for x, y in zip(...shape)]`,
+    #    which produces 0-dim tensors under the tracer. coremltools then
+    #    crashes trying to cast them with `int(x.val)` against a numpy
+    #    multi-d array.
+    #
+    # Both issues vanish if we precompute the embedding *before* tracing,
+    # since at a fixed `image_size` the forward pass always calls
+    # `_get_pos_embed` with the same `(h, w)`. The pre-baked tensor is
+    # captured as a graph constant, which every mainstream mobile-ViT port
+    # (MobileSAM, EfficientSAM, Apple's Core ML ViT examples) does.
+    trunk = sam2.image_encoder.trunk
+    _orig_get_pos_embed = trunk._get_pos_embed
+
+    # At image_size=1024 the Hiera patch-embed emits a 64×64 feature grid.
+    # The backbone re-queries `_get_pos_embed` at every stage's spatial
+    # size, so cache one Tensor per unique (h, w) pair.
+    _pos_embed_cache: dict = {}
+
+    def _cached_get_pos_embed(hw):
+        key = (int(hw[0]), int(hw[1]))
+        cached = _pos_embed_cache.get(key)
+        if cached is None:
+            with torch.no_grad():
+                cached = _orig_get_pos_embed(key).detach()
+            _pos_embed_cache[key] = cached
+        return cached
+
+    trunk._get_pos_embed = _cached_get_pos_embed
+
+    # Warm the cache up-front by running a single dummy forward pass. We
+    # run it on the same fixed-size input the tracer will see, so every
+    # `_get_pos_embed((h, w))` the tracer calls hits the cache and returns
+    # a precomputed tensor rather than going through bicubic interpolate.
+    with torch.no_grad():
+        _warmup = torch.zeros(1, 3, 1024, 1024, dtype=torch.float32)
+        sam2.forward_image(_warmup)
+    # ------------------------------------------------------------------------
+
     class TraceableSAM2(torch.nn.Module):
         def __init__(self, inner):
             super().__init__()
@@ -173,10 +254,17 @@ def make_traceable(sam2):
 
             # The mask decoder wants feature maps in (B, C, H, W) form.
             # SAM2's internal features are (HW, B, C); reshape back.
+            # NOTE: the trailing `[::-1]` is load-bearing — it restores
+            # fine→coarse order after the zip reversed the inputs. Without
+            # it, `feats[-1]` picks the FINEST map (256×256 @ image_size
+            # 1024) instead of the coarsest (64×64), and the mask decoder
+            # crashes with a shape mismatch against the prompt encoder's
+            # 64×64 dense embedding. Mirrors upstream sam2's
+            # SAM2ImagePredictor.set_image() exactly.
             feats = [
                 feat.permute(1, 2, 0).view(1, -1, size[0], size[1])
                 for feat, size in zip(vision_feats[::-1], feat_sizes[::-1])
-            ]
+            ][::-1]
             image_embeddings = feats[-1]
             high_res_features = feats[:-1]
 
@@ -214,9 +302,61 @@ def make_traceable(sam2):
 # Trace + convert
 # ---------------------------------------------------------------------------
 
+def _patch_coremltools_cast() -> None:
+    """Make coremltools' aten::Int / aten::Bool handler tolerate length-1
+    ndarrays.
+
+    Hiera's backbone destructures shape tuples (``B, H, W, C = x.shape``)
+    and feeds the resulting 0-d scalar tensors into ``view()``/``reshape()``
+    calls. PyTorch's jit tracer serialises each shape read as an
+    ``aten::Int`` node, and coremltools' folder tries to reduce it to a
+    compile-time constant with ``int(x.val)``. When ``x.val`` is a numpy
+    array of shape ``(1,)`` (not a true 0-d scalar), NumPy 2.x refuses the
+    implicit cast with ``TypeError: only 0-dimensional arrays can be
+    converted to Python scalars``.
+
+    The fix is a one-liner: use ``.item()`` on length-1 arrays before
+    casting. We monkey-patch rather than edit the site-package so the
+    script stays self-contained.
+    """
+    import numpy as np
+    from coremltools.converters.mil import Builder as mb
+    from coremltools.converters.mil.frontend.torch import ops as _torch_ops
+
+    _orig_cast = _torch_ops._cast
+
+    def _cast_tolerant(context, node, dtype, dtype_name):
+        inputs = _torch_ops._get_inputs(context, node, expected=1)
+        x = inputs[0]
+        if not (len(x.shape) == 0 or np.all([d == 1 for d in x.shape])):
+            raise ValueError("input to cast must be either a scalar or a length 1 tensor")
+
+        if x.can_be_folded_to_const():
+            val = x.val
+            # Normalise length-1 ndarrays to a Python scalar before the
+            # dtype cast — `int(np.array([3]))` raises in NumPy 2.x, but
+            # `int(np.array([3]).item())` is always fine.
+            if isinstance(val, np.ndarray):
+                val = val.item() if val.size == 1 else val.reshape(()).item()
+            if not isinstance(val, dtype):
+                res = mb.const(val=dtype(val), name=node.name)
+            else:
+                res = mb.const(val=val, name=node.name)
+        elif len(x.shape) > 0:
+            x2 = mb.squeeze(x=x, name=node.name + "_item")
+            res = mb.cast(x=x2, dtype=dtype_name, name=node.name)
+        else:
+            res = mb.cast(x=x, dtype=dtype_name, name=node.name)
+        context.add(res, node.name)
+
+    _torch_ops._cast = _cast_tolerant
+
+
 def convert(traced_module, image_size: int, max_points: int, out_mlpackage: Path) -> None:
     import coremltools as ct
     import torch
+
+    _patch_coremltools_cast()
 
     example_image = torch.zeros(1, 3, image_size, image_size, dtype=torch.float32)
     example_coords = torch.full((1, 1, 2), image_size / 2.0, dtype=torch.float32)
@@ -260,6 +400,23 @@ def convert(traced_module, image_size: int, max_points: int, out_mlpackage: Path
         "Output: sigmoid-logit mask at input resolution."
     )
     mlmodel.version = "1.0"
+
+    # fp16 alone lands the compiled bundle at ~80 MB for SAM2-tiny
+    # (~39M params × 2 bytes). The plan budgets ≤ 50 MB for the
+    # `.mlmodelc`. Palettize weights to 6-bit, which drops storage to
+    # ~0.75 bytes/param ≈ 29 MB and preserves mask IoU within ~1 pp on
+    # published SAM-family benchmarks.
+    from coremltools.optimize.coreml import (
+        OpPalettizerConfig,
+        OptimizationConfig,
+        palettize_weights,
+    )
+
+    palette_cfg = OptimizationConfig(
+        global_config=OpPalettizerConfig(mode="kmeans", nbits=6)
+    )
+    mlmodel = palettize_weights(mlmodel, config=palette_cfg)
+
     mlmodel.save(str(out_mlpackage))
 
 
@@ -317,7 +474,11 @@ def main() -> int:
 
     if not args.checkpoint.exists():
         sys.exit(f"Checkpoint not found: {args.checkpoint}")
-    if not args.config.exists():
+    # `--config` may be either an absolute path to the .yaml on disk OR a bare
+    # hydra-relative name (e.g. `configs/sam2/sam2_hiera_t.yaml`). Only reject
+    # the former if the file is missing; bare names resolve inside sam2's
+    # `pkg://sam2` search path and never exist on the local filesystem as-is.
+    if args.config.expanduser().is_absolute() and not args.config.expanduser().exists():
         sys.exit(f"Config not found: {args.config}")
 
     print("→ Building SAM2 from checkpoint…")

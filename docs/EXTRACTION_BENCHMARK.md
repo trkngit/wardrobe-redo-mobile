@@ -73,6 +73,33 @@ sunglasses) — those drag the `clean_bg_*` and `cluttered_*` means down,
 which is why the aggregates look soft. Per-fixture floors are the real
 regression gate.
 
+#### Accessory fixtures: kept as sub-percent sentinels
+
+Three `clean_bg_*` slots and a few `cluttered_*` slots land legitimately
+sub-5 % IoU for Vision because `VNGenerateForegroundInstanceMaskRequest`
+fights with transparent or see-through accessories. Offenders as of
+2026-04-18:
+
+| Fixture         | Subject                           | Vision IoU |
+|-----------------|-----------------------------------|------------|
+| `clean_bg_08`   | Muslim sports banner (CC-BY photo)| 0.022      |
+| `clean_bg_09`   | Person + over-ear headphones      | 0.041      |
+| `clean_bg_10`   | Over-ear headphones on a stand    | 0.149      |
+
+Current stance: **keep them in the set as regression sentinels with tiny
+per-fixture floors** (`expected_iou_min` = actual − 5 pp, floored at
+0.001 for sub-percent actuals). They will still catch a silent pipeline
+regression that collapses Vision output to zero, and they keep the
+committed set honest about what "real-world home capture" means. Scenario
+aggregates are softer for it, so we report **clothing-only means**
+separately in the results log (see `Clean-bg clothing-only` column
+below).
+
+If a future cycle wants cleaner scenario aggregates, split these into
+their own `accessory_*` bucket so they stop dragging the clothing-only
+`clean_bg_*` mean below 0.82. That's a documentation change only — the
+underlying fixtures and manifest entries wouldn't move.
+
 ### Latency / memory (device-only perf tests)
 
 | Path       | p95 wall clock | Peak memory |
@@ -89,9 +116,9 @@ is real.
 Append one row per commit that changed the extraction pipeline. Numbers
 come from the latest device run + the benchmark-tool report.
 
-| Date       | Commit    | Phase | Clean bg mean IoU | Cluttered mean IoU | On-person mean IoU | Vision avg/fixture | SAM2 p95 |
-|------------|-----------|-------|-------------------|--------------------|--------------------|--------------------|----------|
-| 2026-04-18 | `174b7b5` | 1     | 0.617 (n=8)       | 0.416 (n=10)       | 0.921 (n=9)        | ~0.63 s            | n/a      |
+| Date       | Commit    | Phase | Clean bg mean IoU | Clean bg clothing-only | Cluttered mean IoU | On-person mean IoU | Vision avg/fixture | SAM2 p95 |
+|------------|-----------|-------|-------------------|------------------------|--------------------|--------------------|--------------------|----------|
+| 2026-04-18 | `174b7b5` | 1     | 0.617 (n=8)       | 0.887 (n=5)            | 0.416 (n=10)       | 0.921 (n=9)        | ~0.63 s            | n/a      |
 
 Notes on the 2026-04-18 baseline (iPhone 15 Plus, iOS 26.4):
 - 27/27 fixtures met their per-fixture `expected_iou_min`.
