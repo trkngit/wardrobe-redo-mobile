@@ -1,0 +1,44 @@
+graph TD
+  ROOT[ClothingCategory]
+  ROOT --> TOP[top - 18 cases]
+  ROOT --> BOT[bottom - 14 cases]
+  ROOT --> SHOE[shoe - 16 cases]
+  ROOT --> DRESS[dress - 10 cases]
+  ROOT --> OUT[outerwear - 13 cases]
+  ROOT --> ACC[accessory - 13 cases]
+
+  TOP --> T1[tshirt / polo / blouse / tankTop / cropTop / henley / turtleneck / vneck]
+  TOP --> T2[buttonDown / dressShirt - snake_case]
+  TOP --> T3[sweater / knitSweater / hoodie / sweatshirt / blazer]
+  TOP --> T4[graphicTee / camisole / tank]
+
+  BOT --> B1[jeans / chinos / dressPants / cargo / joggers]
+  BOT --> B2[shorts / leggings]
+  BOT --> B3[skirt / miniSkirt / midiSkirt / pencilSkirt]
+  BOT --> B4[wideLeg / straightLeg / slimFit]
+
+  SHOE --> SH1[sneakers / highTops / designerSneakers]
+  SHOE --> SH2[sneakerLow / sneakerHigh / runningShoe - snake_case]
+  SHOE --> SH3[dressShoes / oxford / derby / loafers]
+  SHOE --> SH4[boots / chelseaBoots]
+  SHOE --> SH5[heels / flats / balletFlat / sandals]
+
+  DRESS --> D1[casualDress / shirtDress / wrapDress / sundress]
+  DRESS --> D2[cocktailDress / sheathDress]
+  DRESS --> D3[miniDress / midiDress / maxiDress / slipDress]
+
+  OUT --> O1[blazer: in top<br/>suitJacket - snake_case]
+  OUT --> O2[winterCoat / overcoat]
+  OUT --> O3[leatherJacket / denimJacket / shirtJacket]
+  OUT --> O4[windbreaker / bomber / puffer / parka]
+  OUT --> O5[cardigan / varsityJacket / trench]
+
+  ACC --> A1[baseballCap / beanie / fedoraHat / hat]
+  ACC --> A2[scarf / belt / sunglasses]
+  ACC --> A3[watch / necklace / bracelet / earrings]
+  ACC --> A4[bag / backpack]
+
+  classDef cat fill:#e3f2fd,stroke:#0d47a1;
+  classDef leaf fill:#f1f8e9,stroke:#33691e;
+  class TOP,BOT,SHOE,DRESS,OUT,ACC cat;
+  class T1,T2,T3,T4,B1,B2,B3,B4,SH1,SH2,SH3,SH4,SH5,D1,D2,D3,O1,O2,O3,O4,O5,A1,A2,A3,A4 leaf;

@@ -24,8 +24,9 @@ enum ImageCacheService {
         cache.diskStorage.config.expiration = .days(7)
 
         // Downsampling for grid thumbnails (400pt max)
+        let scale = MainActor.assumeIsolated { UIScreen.main.scale }
         KingfisherManager.shared.defaultOptions = [
-            .scaleFactor(UIScreen.main.scale),
+            .scaleFactor(scale),
             .cacheOriginalImage,
             .backgroundDecode,
         ]

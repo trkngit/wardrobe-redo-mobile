@@ -6,6 +6,17 @@ options:
   xcodeVersion: "16.0"
   generateEmptyDirectories: true
 
+settings:
+  base:
+    DEAD_CODE_STRIPPING: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
+    ENABLE_MODULE_VERIFIER: YES
+    MODULE_VERIFIER_SUPPORTED_LANGUAGES: "objective-c objective-c++"
+    MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS: "gnu17 gnu++20"
+    LOCALIZED_STRING_MACRO_NAMES: "$(inherited) NSLocalizedString CFCopyLocalizedString"
+    SWIFT_EMIT_LOC_STRINGS: YES
+
 packages:
   Supabase:
     url: https://github.com/supabase/supabase-swift
@@ -69,9 +80,7 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1"
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: Wardrobe Widget
-        INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        INFOPLIST_FILE: WardrobeReDoWidget/Info.plist
     entitlements:
       path: WardrobeReDoWidget/WardrobeReDoWidget.entitlements
       properties:
@@ -91,3 +100,4 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES

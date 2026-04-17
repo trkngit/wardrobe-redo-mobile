@@ -1,0 +1,60 @@
+graph LR
+  subgraph View_Layer["SwiftUI Views"]
+    V1[DailyOutfitsView]
+    V2[MatchingView]
+    V3[WardrobeView]
+    V4[AddItemView]
+  end
+
+  subgraph VM_Layer["@Observable ViewModels"]
+    VM1[OutfitViewModel]
+    VM2[MatchingViewModel]
+    VM3[WardrobeViewModel]
+    VM4[AddItemViewModel]
+  end
+
+  subgraph Services["Services (domain logic)"]
+    S1[OutfitGenerationService]
+    S2[ColorExtractionService]
+    S3[ImageService]
+    S4[StyleEngine / 7 Scorers]
+    S5[WidgetDataService]
+  end
+
+  subgraph Repos["Repositories (data access)"]
+    R1[OutfitRepository]
+    R2[WardrobeRepository]
+    R3[StyleDataRepository]
+  end
+
+  subgraph Backend["Supabase"]
+    B1[(Postgres tables)]
+    B2[(Storage - wardrobe-images)]
+    B3[(Auth)]
+  end
+
+  subgraph Bundle["App Bundle"]
+    J1[archetypes.json - 50]
+    J2[rules.json - 200]
+  end
+
+  V1 --> VM1
+  V2 --> VM2
+  V3 --> VM3
+  V4 --> VM4
+  VM1 --> S1
+  VM1 --> S3
+  VM2 --> S1
+  VM2 --> S3
+  VM3 --> R2
+  VM4 --> S2
+  VM4 --> S3
+  S1 --> S4
+  S1 --> R3
+  S3 --> B2
+  S5 -.->|App Group UserDefaults| Widget[iOS Home Widget]
+  R1 --> B1
+  R2 --> B1
+  R3 --> B1
+  R3 -.->|fallback| J1
+  R3 -.->|fallback| J2

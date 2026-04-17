@@ -4,11 +4,14 @@ import Kingfisher
 /// Full detail view for a single outfit: score breakdown bars,
 /// item gallery, reaction buttons, and "mark as worn" toggle.
 struct OutfitDetailView: View {
-    let dailyOutfit: DailyOutfit
+    let outfitId: UUID
     @Bindable var viewModel: OutfitViewModel
 
-    private var outfit: Outfit { dailyOutfit.outfit }
-    private var items: [WardrobeItem] { dailyOutfit.items }
+    private var dailyOutfit: DailyOutfit? {
+        viewModel.dailyOutfits.first { $0.id == outfitId }
+    }
+    private var outfit: Outfit { dailyOutfit?.outfit ?? placeholderOutfit }
+    private var items: [WardrobeItem] { dailyOutfit?.items ?? [] }
 
     var body: some View {
         ScrollView {
@@ -98,7 +101,7 @@ struct OutfitDetailView: View {
     }
 
     private func itemCard(for item: WardrobeItem) -> some View {
-        let slot = dailyOutfit.slots.first { $0.wardrobeItemId == item.id }
+        let slot = dailyOutfit?.slots.first { $0.wardrobeItemId == item.id }
 
         return VStack(spacing: Theme.Spacing.xs) {
             KFImage(viewModel.thumbnailURLs[item.id])
@@ -202,6 +205,16 @@ struct OutfitDetailView: View {
             }
             .frame(height: 6)
         }
+    }
+
+    // Fallback for when the outfit hasn't been found yet (shouldn't happen in practice)
+    private var placeholderOutfit: Outfit {
+        Outfit(
+            id: outfitId, userId: UUID(), archetypeId: UUID(),
+            editorialName: "", editorialDescription: nil,
+            date: "", score: 0, scoreBreakdown: nil,
+            reaction: nil, isWorn: false, createdAt: Date()
+        )
     }
 
     private func barColor(for value: Double) -> Color {

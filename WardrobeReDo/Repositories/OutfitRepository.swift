@@ -2,7 +2,7 @@ import Foundation
 import Supabase
 
 @MainActor
-final class OutfitRepository {
+final class OutfitRepository: OutfitRepositoryProtocol {
     private let supabase = SupabaseManager.shared.client
 
     // MARK: - Fetch by Date (Daily Outfits)
@@ -75,6 +75,7 @@ final class OutfitRepository {
 
     /// Save a generated outfit and its slot assignments.
     /// The outfit ID is client-generated so slots can reference it in a single pass.
+    /// If slot insertion fails, the outfit is rolled back (deleted) to prevent orphans.
     func saveOutfit(_ newOutfit: NewOutfit, slots: [NewOutfitSlot]) async throws -> Outfit {
         let outfit: Outfit = try await supabase
             .from("outfits")
@@ -85,10 +86,20 @@ final class OutfitRepository {
             .value
 
         if !slots.isEmpty {
-            try await supabase
-                .from("outfit_slots")
-                .insert(slots)
-                .execute()
+            do {
+                try await supabase
+                    .from("outfit_slots")
+                    .insert(slots)
+                    .execute()
+            } catch {
+                // Rollback: delete the orphaned outfit to keep DB consistent
+                try? await supabase
+                    .from("outfits")
+                    .delete()
+                    .eq("id", value: outfit.id)
+                    .execute()
+                throw error
+            }
         }
 
         return outfit
@@ -180,7 +191,7 @@ final class OutfitRepository {
     // MARK: - Date Helper
 
     /// Today's date formatted as a Supabase DATE string (yyyy-MM-dd).
-    static func todayDateString() -> String {
+    nonisolated static func todayDateString() -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter.string(from: Date())

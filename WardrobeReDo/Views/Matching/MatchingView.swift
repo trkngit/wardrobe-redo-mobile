@@ -275,16 +275,37 @@ struct MatchingView: View {
                 .font(.system(size: 36, weight: .light))
                 .foregroundStyle(Color(Theme.Colors.textSecondary).opacity(0.5))
 
-            Text(viewModel.errorMessage ?? "No matching outfits found.")
+            // Prefer the reason-specific message from `lastFailure`, but
+            // fall back to `errorMessage` for any code path that hasn't
+            // adopted the new enum yet.
+            Text(viewModel.lastFailure?.userMessage
+                 ?? viewModel.errorMessage
+                 ?? "No matching outfits found.")
                 .font(Theme.Fonts.body)
                 .foregroundStyle(Color(Theme.Colors.textSecondary))
                 .multilineTextAlignment(.center)
+                .padding(.horizontal, Theme.Spacing.lg)
+
+            // Try Again — re-runs matching with the same hero & occasion.
+            // Only shown when there's a recoverable failure (i.e. a hero
+            // is still selected).
+            if viewModel.selectedItem != nil && viewModel.lastFailure != nil {
+                GoldButton("Try Again", isLoading: viewModel.isMatching) {
+                    guard let userId = appState.currentUser?.id else { return }
+                    Task { await viewModel.findMatches(userId: userId) }
+                }
+                .frame(maxWidth: 240)
+                .padding(.horizontal, Theme.Spacing.lg)
+            }
 
             GhostButton("Try a different item") {
                 viewModel.selectedItem = nil
                 viewModel.matchResults = []
+                viewModel.lastFailure = nil
+                viewModel.errorMessage = nil
             }
-            .frame(maxWidth: 200)
+            .frame(maxWidth: 240)
+            .padding(.horizontal, Theme.Spacing.lg)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, Theme.Spacing.xxl)

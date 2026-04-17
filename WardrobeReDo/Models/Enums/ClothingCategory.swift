@@ -26,7 +26,7 @@ enum ClothingCategory: String, Codable, CaseIterable, Sendable {
         case .shoe: "shoe"
         case .dress: "figure.dress.line.vertical.figure"
         case .outerwear: "cloud.rain"
-        case .accessory: "watch"
+        case .accessory: "applewatch"
         }
     }
 }

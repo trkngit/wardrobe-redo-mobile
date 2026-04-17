@@ -4,6 +4,6 @@
     "version" : 1
   },
   "properties" : {
-    "provides-namespace" : true
+    "provides-namespace" : false
   }
 }

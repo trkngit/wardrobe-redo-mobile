@@ -34,9 +34,7 @@ struct DailyOutfitsView: View {
             await viewModel.loadOutfits(userId: userId)
         }
         .navigationDestination(for: UUID.self) { outfitId in
-            if let dailyOutfit = viewModel.dailyOutfits.first(where: { $0.id == outfitId }) {
-                OutfitDetailView(dailyOutfit: dailyOutfit, viewModel: viewModel)
-            }
+            OutfitDetailView(outfitId: outfitId, viewModel: viewModel)
         }
     }
 
@@ -106,29 +104,52 @@ struct DailyOutfitsView: View {
                 .font(Theme.Fonts.h1)
                 .foregroundStyle(Color(Theme.Colors.textPrimary))
 
-            Text("Generate styled outfit suggestions\nfrom your wardrobe.")
-                .font(Theme.Fonts.body)
-                .foregroundStyle(Color(Theme.Colors.textSecondary))
-                .multilineTextAlignment(.center)
+            // Reason-specific failure message takes precedence over the
+            // generic "Generate styled outfit suggestions" prompt — it
+            // tells the user exactly what went wrong.
+            if let failure = viewModel.lastFailure {
+                failureBanner(failure)
+            } else {
+                Text("Generate styled outfit suggestions\nfrom your wardrobe.")
+                    .font(Theme.Fonts.body)
+                    .foregroundStyle(Color(Theme.Colors.textSecondary))
+                    .multilineTextAlignment(.center)
+            }
 
             // Occasion selector
             occasionPicker
                 .padding(.top, Theme.Spacing.sm)
 
-            GoldButton("Generate Today's Outfits") {
+            GoldButton(
+                viewModel.lastFailure == nil ? "Generate Today's Outfits" : "Try Again",
+                isLoading: viewModel.isGenerating
+            ) {
+                guard !viewModel.isGenerating else { return }
                 guard let userId = appState.currentUser?.id else { return }
                 Task { await viewModel.generateDailyOutfits(userId: userId) }
             }
+            .disabled(viewModel.isGenerating)
             .padding(.horizontal, Theme.Spacing.xxl)
+        }
+        .padding(Theme.Spacing.lg)
+    }
 
-            if let error = viewModel.errorMessage {
-                Text(error)
+    /// Reason-specific empty-state copy. The wardrobe-too-small case
+    /// also nudges the user toward the Wardrobe tab.
+    private func failureBanner(_ failure: GenerationFailure) -> some View {
+        VStack(spacing: Theme.Spacing.sm) {
+            Text(failure.userMessage)
+                .font(Theme.Fonts.body)
+                .foregroundStyle(Color(Theme.Colors.textSecondary))
+                .multilineTextAlignment(.center)
+
+            if failure.suggestsAddingItems {
+                Text("Open the Wardrobe tab to add a piece.")
                     .font(Theme.Fonts.caption)
-                    .foregroundStyle(Color(Theme.Colors.destructive))
+                    .foregroundStyle(Color(Theme.Colors.textSecondary).opacity(0.8))
                     .multilineTextAlignment(.center)
             }
         }
-        .padding(Theme.Spacing.lg)
     }
 
     // MARK: - Loading State
