@@ -112,7 +112,11 @@ final class MockOutfitRepository: OutfitRepositoryProtocol {
 final class MockImageService: ImageServiceProtocol {
     var signedURLResult: Result<URL, Error> = .success(URL(string: "https://example.com/image.jpg")!)
     var deleteImagesError: Error?
-    var uploadResult: Result<(imagePath: String, thumbnailPath: String), Error> = .success((imagePath: "images/test.jpg", thumbnailPath: "thumbnails/test.jpg"))
+    var uploadResult: Result<(imagePath: String, thumbnailPath: String, maskedImagePath: String?), Error> = .success((
+        imagePath: "images/test.jpg",
+        thumbnailPath: "thumbnails/test.jpg",
+        maskedImagePath: "masked/test.png"
+    ))
     var processImageResult: ProcessedImage?
     var loadImageResult: UIImage?
 
@@ -121,18 +125,20 @@ final class MockImageService: ImageServiceProtocol {
     var uploadCallCount = 0
     var processImageCallCount = 0
     var loadImageCallCount = 0
+    var lastDeletedMaskedImagePath: String??
 
     func signedURL(for path: String, expiresIn: Int) async throws -> URL {
         signedURLCallCount += 1
         return try signedURLResult.get()
     }
 
-    func deleteImages(imagePath: String, thumbnailPath: String) async throws {
+    func deleteImages(imagePath: String, thumbnailPath: String, maskedImagePath: String?) async throws {
         deleteImagesCallCount += 1
+        lastDeletedMaskedImagePath = maskedImagePath
         if let error = deleteImagesError { throw error }
     }
 
-    func upload(processed: ProcessedImage, userId: UUID, itemId: UUID) async throws -> (imagePath: String, thumbnailPath: String) {
+    func upload(processed: ProcessedImage, userId: UUID, itemId: UUID) async throws -> (imagePath: String, thumbnailPath: String, maskedImagePath: String?) {
         uploadCallCount += 1
         return try uploadResult.get()
     }

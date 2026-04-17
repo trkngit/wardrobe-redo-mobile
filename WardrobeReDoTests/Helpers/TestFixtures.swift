@@ -43,13 +43,17 @@ enum TestFixtures {
         seasons: [Season] = Season.allCases.map { $0 },
         occasions: [Occasion] = [.casual],
         wearCount: Int = 0,
-        isArchived: Bool = false
+        isArchived: Bool = false,
+        maskedImagePath: String? = nil,
+        extractionConfidence: ExtractionConfidence? = nil
     ) -> WardrobeItem {
         WardrobeItem(
             id: id,
             userId: userId,
             imagePath: "images/\(id).jpg",
             thumbnailPath: "thumbnails/\(id).jpg",
+            maskedImagePath: maskedImagePath,
+            extractionConfidence: extractionConfidence,
             category: category,
             subcategory: subcategory,
             dominantColors: dominantColors ?? [makeColorProfile()],

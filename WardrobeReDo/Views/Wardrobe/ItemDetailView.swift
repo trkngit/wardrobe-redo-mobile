@@ -61,7 +61,8 @@ struct ItemDetailView: View {
                         let repo = WardrobeRepository()
                         try await imageService.deleteImages(
                             imagePath: item.imagePath,
-                            thumbnailPath: item.thumbnailPath
+                            thumbnailPath: item.thumbnailPath,
+                            maskedImagePath: item.maskedImagePath
                         )
                         try await repo.deleteItem(id: item.id)
                         NotificationCenter.default.post(name: .wardrobeDidChange, object: nil)

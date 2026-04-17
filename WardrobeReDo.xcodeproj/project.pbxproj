@@ -117,6 +117,9 @@
 		FBA86764A0F1CF832762779F /* StyleEngineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6E465734D0F4208AE7FBB42 /* StyleEngineService.swift */; };
 		FDD9ED140A3AC2577BD560B9 /* OutfitCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B7BF5813E651F8CDB8CD164 /* OutfitCardView.swift */; };
 		ZYS1JC6JXWPCY5ZT4NO3RGYK /* AppStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3WISN1KPXKIWP7HNN0NNYW62 /* AppStateTests.swift */; };
+		E1E0B1F1000000000000E0A1 /* OrientationUtil.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F1F1000000000000E0B1 /* OrientationUtil.swift */; };
+		E1E0B1F2000000000000E0A2 /* VisionForegroundExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F1F2000000000000E0B2 /* VisionForegroundExtractor.swift */; };
+		E1E0B1F3000000000000E0A3 /* ClothingExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F1F3000000000000E0B3 /* ClothingExtractionService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -264,6 +267,9 @@
 		FE2B5F0EAC67F97B40E243D4 /* WardrobeViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeViewModelTests.swift; sourceTree = "<group>"; };
 		FECD392912E83419B91CAE5C /* SupabaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseManager.swift; sourceTree = "<group>"; };
 		FEE186DCA4E71660B5C512CA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		E1E0F1F1000000000000E0B1 /* OrientationUtil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrientationUtil.swift; sourceTree = "<group>"; };
+		E1E0F1F2000000000000E0B2 /* VisionForegroundExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionForegroundExtractor.swift; sourceTree = "<group>"; };
+		E1E0F1F3000000000000E0B3 /* ClothingExtractionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingExtractionService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -315,6 +321,7 @@
 				398457868FC3700B55F0A584 /* Repositories */,
 				294B45BDEE150A28542D9F92 /* Resources */,
 				883DCF6A7179EB1CE7C5D906 /* Services */,
+				E1E0C1C1000000000000E0D1 /* Utilities */,
 				EC02A8CE7B421DE48C40BDCA /* ViewModels */,
 				260131920231FB7FB73A9ED4 /* Views */,
 			);
@@ -481,9 +488,27 @@
 				D123122D77B0FC8202D1335F /* NotificationService.swift */,
 				0688E82B35A527869065DFD9 /* OutfitGenerationService.swift */,
 				C592BAD5B2ABC33292A5FD4C /* WidgetDataService.swift */,
+				E1E0C1C2000000000000E0D2 /* Extraction */,
 				A3C25A59929F288BE15908E5 /* StyleEngine */,
 			);
 			path = Services;
+			sourceTree = "<group>";
+		};
+		E1E0C1C1000000000000E0D1 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				E1E0F1F1000000000000E0B1 /* OrientationUtil.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		E1E0C1C2000000000000E0D2 /* Extraction */ = {
+			isa = PBXGroup;
+			children = (
+				E1E0F1F3000000000000E0B3 /* ClothingExtractionService.swift */,
+				E1E0F1F2000000000000E0B2 /* VisionForegroundExtractor.swift */,
+			);
+			path = Extraction;
 			sourceTree = "<group>";
 		};
 		8B6BF0963BADEF744CADEB35 /* Protocols */ = {
@@ -852,6 +877,9 @@
 				BBC20C655A418EC320416035 /* WardrobeRepository.swift in Sources */,
 				D1D30A113E77B2BCBABA3B07 /* WardrobeViewModel.swift in Sources */,
 				CB2CAC5E420DA6A2B0B5B563 /* WidgetDataService.swift in Sources */,
+				E1E0B1F1000000000000E0A1 /* OrientationUtil.swift in Sources */,
+				E1E0B1F2000000000000E0A2 /* VisionForegroundExtractor.swift in Sources */,
+				E1E0B1F3000000000000E0A3 /* ClothingExtractionService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -83,6 +83,8 @@ import Testing
     vm.processedImage = ProcessedImage(
         originalData: Data([0xFF]),
         thumbnailData: Data([0xFF]),
+        maskedData: nil,
+        extractionConfidence: nil,
         dominantColors: []
     )
     #expect(vm.canSave == true)
@@ -112,6 +114,8 @@ import Testing
     vm.processedImage = ProcessedImage(
         originalData: Data([0xFF]),
         thumbnailData: Data([0xFF]),
+        maskedData: nil,
+        extractionConfidence: nil,
         dominantColors: [extractedColor]
     )
     #expect(vm.extractedColors.count == 1)

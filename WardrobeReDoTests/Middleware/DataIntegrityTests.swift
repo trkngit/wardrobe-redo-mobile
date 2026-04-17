@@ -126,6 +126,8 @@ import Testing
     vm.processedImage = ProcessedImage(
         originalData: Data([0xFF]),
         thumbnailData: Data([0xFF]),
+        maskedData: nil,
+        extractionConfidence: nil,
         dominantColors: []
     )
 

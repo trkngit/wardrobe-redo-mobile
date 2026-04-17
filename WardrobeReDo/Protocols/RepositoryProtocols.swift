@@ -39,11 +39,15 @@ extension OutfitRepositoryProtocol {
 }
 
 /// ImageService interface for ViewModels.
+///
+/// `upload` returns three storage paths. `maskedImagePath` is nil when
+/// background extraction was skipped (simulator / legacy path) — callers
+/// must handle that case and pass nil through to `NewWardrobeItem`.
 @MainActor
 protocol ImageServiceProtocol: Sendable {
     func signedURL(for path: String, expiresIn: Int) async throws -> URL
-    func deleteImages(imagePath: String, thumbnailPath: String) async throws
-    func upload(processed: ProcessedImage, userId: UUID, itemId: UUID) async throws -> (imagePath: String, thumbnailPath: String)
+    func deleteImages(imagePath: String, thumbnailPath: String, maskedImagePath: String?) async throws
+    func upload(processed: ProcessedImage, userId: UUID, itemId: UUID) async throws -> (imagePath: String, thumbnailPath: String, maskedImagePath: String?)
     func processImage(_ image: UIImage) async -> ProcessedImage?
     func loadImage(from item: PhotosPickerItem) async -> UIImage?
 }
@@ -51,5 +55,11 @@ protocol ImageServiceProtocol: Sendable {
 extension ImageServiceProtocol {
     func signedURL(for path: String) async throws -> URL {
         try await signedURL(for: path, expiresIn: 3600)
+    }
+
+    /// Convenience shim for call sites that don't have a masked path
+    /// (e.g. archiving a legacy item whose row predates migration 00007).
+    func deleteImages(imagePath: String, thumbnailPath: String) async throws {
+        try await deleteImages(imagePath: imagePath, thumbnailPath: thumbnailPath, maskedImagePath: nil)
     }
 }

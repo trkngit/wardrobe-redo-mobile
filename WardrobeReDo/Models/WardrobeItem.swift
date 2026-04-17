@@ -5,6 +5,13 @@ struct WardrobeItem: Codable, Identifiable, Sendable {
     let userId: UUID
     var imagePath: String
     var thumbnailPath: String
+    /// Path to the background-masked JPEG produced by
+    /// `ClothingExtractionService`. Nil for rows uploaded before
+    /// migration 00007 — the UI should fall back to `imagePath` in
+    /// that case and treat them as "legacy unmasked."
+    var maskedImagePath: String?
+    /// Synthetic confidence bucket for the mask. Nil on legacy rows.
+    var extractionConfidence: ExtractionConfidence?
     var category: ClothingCategory
     var subcategory: ClothingSubcategory
     var dominantColors: [ColorProfile]
@@ -26,6 +33,8 @@ struct WardrobeItem: Codable, Identifiable, Sendable {
         case userId = "user_id"
         case imagePath = "image_path"
         case thumbnailPath = "thumbnail_path"
+        case maskedImagePath = "masked_image_path"
+        case extractionConfidence = "extraction_confidence"
         case category, subcategory
         case dominantColors = "dominant_colors"
         case texture

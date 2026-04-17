@@ -97,6 +97,13 @@ struct NewWardrobeItem: Codable, Sendable {
     let userId: UUID
     let imagePath: String
     let thumbnailPath: String
+    /// Storage path to the background-masked JPEG. Nil when extraction
+    /// failed (e.g. on simulator builds that can't run Vision) — the
+    /// insert still succeeds and the row renders from `imagePath`.
+    let maskedImagePath: String?
+    /// One of ExtractionConfidence.rawValue, or nil when extraction
+    /// was skipped entirely (simulator, iOS < 17).
+    let extractionConfidence: String?
     let category: String
     let subcategory: String
     let dominantColors: [ColorProfile]
@@ -109,6 +116,8 @@ struct NewWardrobeItem: Codable, Sendable {
         case userId = "user_id"
         case imagePath = "image_path"
         case thumbnailPath = "thumbnail_path"
+        case maskedImagePath = "masked_image_path"
+        case extractionConfidence = "extraction_confidence"
         case category, subcategory
         case dominantColors = "dominant_colors"
         case texture

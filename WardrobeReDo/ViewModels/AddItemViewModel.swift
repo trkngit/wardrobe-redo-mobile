@@ -120,10 +120,12 @@ final class AddItemViewModel {
 
         logger.info("save: starting upload for itemId=\(itemId)")
 
+        let extractionConfidenceRaw = processed.extractionConfidence?.rawValue
+
         // Race the entire save operation against a 45-second timeout
         let success: Bool = await withTaskGroup(of: Bool.self) { group in
             group.addTask { [imageService, wardrobeRepository, logger] in
-                var uploadedPaths: (imagePath: String, thumbnailPath: String)?
+                var uploadedPaths: (imagePath: String, thumbnailPath: String, maskedImagePath: String?)?
 
                 do {
                     let paths = try await imageService.upload(
@@ -138,6 +140,8 @@ final class AddItemViewModel {
                         userId: userId,
                         imagePath: paths.imagePath,
                         thumbnailPath: paths.thumbnailPath,
+                        maskedImagePath: paths.maskedImagePath,
+                        extractionConfidence: extractionConfidenceRaw,
                         category: cat,
                         subcategory: subcat,
                         dominantColors: colors,
@@ -154,12 +158,14 @@ final class AddItemViewModel {
                     logger.error("save: failed — \(error.localizedDescription)")
 
                     // Cleanup: if upload succeeded but DB insert failed,
-                    // delete orphaned images to prevent storage leaks
+                    // delete orphaned images to prevent storage leaks.
+                    // Include the masked file when it was actually uploaded.
                     if let paths = uploadedPaths {
                         logger.info("save: cleaning up orphaned images")
                         try? await imageService.deleteImages(
                             imagePath: paths.imagePath,
-                            thumbnailPath: paths.thumbnailPath
+                            thumbnailPath: paths.thumbnailPath,
+                            maskedImagePath: paths.maskedImagePath
                         )
                     }
                     return false
