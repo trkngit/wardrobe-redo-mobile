@@ -136,6 +136,7 @@
 		E1E0B4F3000000000000E0A3 /* SegmentationIoUTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F4F3000000000000E0B3 /* SegmentationIoUTests.swift */; };
 		E1E0B4F4000000000000E0A4 /* ExtractionPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F4F4000000000000E0B4 /* ExtractionPerformanceTests.swift */; };
 		E1E0B4F5000000000000E0A5 /* Fixtures in Resources */ = {isa = PBXBuildFile; fileRef = E1E0F4F6000000000000E0B6 /* Fixtures */; };
+		E1E0B5F1000000000000E0A1 /* SAM2Tiny.mlmodelc in Resources */ = {isa = PBXBuildFile; fileRef = E1E0F5F1000000000000E0B1 /* SAM2Tiny.mlmodelc */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -302,6 +303,7 @@
 		E1E0F4F3000000000000E0B3 /* SegmentationIoUTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationIoUTests.swift; sourceTree = "<group>"; };
 		E1E0F4F4000000000000E0B4 /* ExtractionPerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtractionPerformanceTests.swift; sourceTree = "<group>"; };
 		E1E0F4F6000000000000E0B6 /* Fixtures */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Fixtures; sourceTree = "<group>"; };
+		E1E0F5F1000000000000E0B1 /* SAM2Tiny.mlmodelc */ = {isa = PBXFileReference; lastKnownFileType = folder; path = SAM2Tiny.mlmodelc; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -741,8 +743,17 @@
 				25DC5CD683DD962BA802B6BA /* StyleRule.swift */,
 				663352C0EAED405CDDB92744 /* WardrobeItem.swift */,
 				8F3D651203434BEC344C3BB1 /* Enums */,
+				E1E0C3C1000000000000E0D1 /* CoreML */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		E1E0C3C1000000000000E0D1 /* CoreML */ = {
+			isa = PBXGroup;
+			children = (
+				E1E0F5F1000000000000E0B1 /* SAM2Tiny.mlmodelc */,
+			);
+			path = CoreML;
 			sourceTree = "<group>";
 		};
 		F9947A791789D75CB65DB1A3 /* Onboarding */ = {
@@ -862,6 +873,7 @@
 				842566CC9DF1FC290B97AB7C /* Secrets.plist in Resources */,
 				8B945787989F72743EBA3AB5 /* archetypes.json in Resources */,
 				D9FDA3CD67BA6AE2ED3D60D4 /* rules.json in Resources */,
+				E1E0B5F1000000000000E0A1 /* SAM2Tiny.mlmodelc in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
