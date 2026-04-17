@@ -62,18 +62,33 @@ final class CameraCaptureViewController: UIViewController {
 
     // MARK: - Inputs (set before viewDidLoad)
 
-    weak var monitor: BackgroundQualityMonitor?
+    // `monitor` is touched inside `sessionQueue.async` when we configure
+    // the video output. Same reasoning as the other AVFoundation members
+    // below — serialized by sessionQueue, so the Swift-6 actor isolation
+    // check is safe to bypass.
+    nonisolated(unsafe) weak var monitor: BackgroundQualityMonitor?
     var onPhotoCaptured: ((UIImage) -> Void)?
     var onAuthorizationChanged: ((CameraAuthorizationState) -> Void)?
 
     // MARK: - Internals
+    //
+    // AVFoundation's capture primitives are the textbook use case for
+    // `nonisolated(unsafe)` under Swift 6: they're thread-safe by design
+    // *when* all mutations go through a single dedicated queue — which
+    // `sessionQueue` enforces here. Without the marker, the compiler sees
+    // a `@MainActor` view controller touching these properties from a
+    // non-main dispatch block and rejects it.
+    //
+    // `qualityBridge` gets the same treatment because it's assigned
+    // inside the same `sessionQueue.async { ... }` block, so its reads
+    // and writes are already serialized on that queue.
 
-    private let session = AVCaptureSession()
-    private let sessionQueue = DispatchQueue(label: "com.wardroberedo.camera.session")
-    private let videoOutputQueue = DispatchQueue(label: "com.wardroberedo.camera.video", qos: .userInitiated)
-    private let photoOutput = AVCapturePhotoOutput()
-    private let videoOutput = AVCaptureVideoDataOutput()
-    private var qualityBridge: BackgroundQualityCaptureBridge?
+    nonisolated(unsafe) private let session = AVCaptureSession()
+    nonisolated(unsafe) private let sessionQueue = DispatchQueue(label: "com.wardroberedo.camera.session")
+    nonisolated(unsafe) private let videoOutputQueue = DispatchQueue(label: "com.wardroberedo.camera.video", qos: .userInitiated)
+    nonisolated(unsafe) private let photoOutput = AVCapturePhotoOutput()
+    nonisolated(unsafe) private let videoOutput = AVCaptureVideoDataOutput()
+    nonisolated(unsafe) private var qualityBridge: BackgroundQualityCaptureBridge?
     private var previewLayer: AVCaptureVideoPreviewLayer?
     private var captureDelegate: PhotoCaptureDelegate?
 

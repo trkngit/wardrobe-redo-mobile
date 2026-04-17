@@ -1,5 +1,9 @@
 import Foundation
 import Supabase
+// See UserRepository.swift for the rationale — `@preconcurrency` keeps
+// this file building on Xcode 16's Swift 6 toolchain without waiting for
+// PostgREST to complete its Sendable audit.
+@preconcurrency import PostgREST
 
 @MainActor
 final class WardrobeRepository: WardrobeRepositoryProtocol {
