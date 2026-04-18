@@ -429,6 +429,18 @@ final class AddItemViewModel {
         isShowingTapToSelect = true
     }
 
+    /// User tapped "Refine with brush" inside `TapToSelectView` — the
+    /// forward-direction counterpart to `onTroubleCropping`. Pivots from
+    /// the tap/point-based selection UI over to the pixel-level brush
+    /// editor in `MaskTouchupView` while keeping all per-capture state
+    /// (selectedImage, processedImage, sam2Session) intact. The brush
+    /// editor's Done callback already routes to `.details`, so this
+    /// detour rejoins the main flow seamlessly.
+    func onTapToSelectRequestTouchup() {
+        isShowingTapToSelect = false
+        isShowingTouchup = true
+    }
+
     /// User tapped "Use this crop" in `TapToSelectView`. Rebuild
     /// `ProcessedImage` from the chosen mask so the saved palette
     /// matches, then route straight to `.details`. The brush-touchup

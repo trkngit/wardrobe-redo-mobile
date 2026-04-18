@@ -174,7 +174,8 @@ struct AddItemView: View {
                 onDone: { result in
                     Task { await viewModel.onTapToSelectDone(result) }
                 },
-                onCancel: viewModel.onTapToSelectCancelled
+                onCancel: viewModel.onTapToSelectCancelled,
+                onRefineWithBrush: viewModel.onTapToSelectRequestTouchup
             )
         } else {
             Color.clear

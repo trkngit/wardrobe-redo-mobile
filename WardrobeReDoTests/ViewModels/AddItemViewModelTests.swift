@@ -418,6 +418,20 @@ private func makeProcessedImage(
     #expect(vm.isShowingTapToSelect == true)
 }
 
+@Test @MainActor func addItemOnTapToSelectRequestTouchupOpensBrushEditor() {
+    let vm = AddItemViewModel()
+    vm.isShowingTapToSelect = true
+
+    vm.onTapToSelectRequestTouchup()
+
+    // Forward-direction counterpart to onTroubleCropping — the user
+    // pivots from tap-to-select into the brush editor for pixel-level
+    // refinement, then MaskTouchupView's Done callback rejoins the
+    // main flow at .details.
+    #expect(vm.isShowingTapToSelect == false)
+    #expect(vm.isShowingTouchup == true)
+}
+
 @Test @MainActor func addItemOnTapToSelectCancelledRoutesToDetails() {
     let vm = AddItemViewModel()
     vm.isShowingTapToSelect = true

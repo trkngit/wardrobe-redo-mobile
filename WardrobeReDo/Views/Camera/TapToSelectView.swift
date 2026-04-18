@@ -23,6 +23,12 @@ struct TapToSelectView: View {
     let extractor: any ClothingExtracting
     var onDone: (ExtractionResult) -> Void
     var onCancel: () -> Void
+    /// "Refine with brush" detour — when non-nil, a toolbar button
+    /// surfaces it as the escape hatch into `MaskTouchupView` for users
+    /// who want pixel-level control. Optional so legacy entry points
+    /// (e.g. the `MaskTouchupView` "Trouble cropping?" back-detour) can
+    /// hide the button to avoid a brush ↔ tap loop.
+    var onRefineWithBrush: (() -> Void)?
 
     @State private var points: [SAM2TapPoint] = []
     @State private var mode: PointMode = .positive
@@ -69,6 +75,21 @@ struct TapToSelectView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Back", action: onCancel)
+                }
+                if let onRefineWithBrush {
+                    // Power-user escape hatch — most users finish in
+                    // tap-to-select alone. Lives in the trailing
+                    // toolbar (not the action row) to keep visual
+                    // weight low; "Use this crop" stays the primary
+                    // CTA per the tap-to-select-first redesign.
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            onRefineWithBrush()
+                        } label: {
+                            Label("Refine with brush", systemImage: "paintbrush")
+                        }
+                        .accessibilityLabel("Refine selection with brush")
+                    }
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Button("Use this crop") { commit() }
