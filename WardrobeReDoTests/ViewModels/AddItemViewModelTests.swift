@@ -214,7 +214,7 @@ private func makeProcessedImage(
     #expect(vm.captureMethod == .library)
 }
 
-@Test @MainActor func addItemOnCameraPhotoCapturedWithMaskShowsTouchup() async {
+@Test @MainActor func addItemOnCameraPhotoCapturedWithMaskOpensTapToSelect() async {
     let mockImage = MockImageService()
     mockImage.processImageResult = makeProcessedImage(maskedData: Data([0xAB]))
     let vm = AddItemViewModel(
@@ -226,14 +226,19 @@ private func makeProcessedImage(
 
     await vm.onCameraPhotoCaptured(makePixelImage())
 
+    // After the tap-to-select-first redesign, every successful capture
+    // routes into TapToSelectView pre-populated with the auto mask —
+    // touchup is now reachable only via the explicit "Refine with brush"
+    // detour. See `unified-mapping-honey.md` Part 2.
     #expect(vm.isShowingCamera == false)
-    #expect(vm.isShowingTouchup == true)
+    #expect(vm.isShowingTapToSelect == true)
+    #expect(vm.isShowingTouchup == false)
     #expect(vm.processedImage != nil)
     #expect(vm.processedImage?.maskedData != nil)
     #expect(mockImage.processImageCallCount == 1)
 }
 
-@Test @MainActor func addItemOnCameraPhotoCapturedWithoutMaskSkipsTouchup() async {
+@Test @MainActor func addItemOnCameraPhotoCapturedWithoutMaskAlsoOpensTapToSelect() async {
     let mockImage = MockImageService()
     mockImage.processImageResult = makeProcessedImage(maskedData: nil)
     let vm = AddItemViewModel(
@@ -244,9 +249,13 @@ private func makeProcessedImage(
 
     await vm.onCameraPhotoCaptured(makePixelImage())
 
+    // Tap-to-select opens regardless of mask quality. With no upstream
+    // mask, the user gets an empty canvas to tap their way through —
+    // strictly better than the old "skip straight to details with no
+    // crop" path.
     #expect(vm.isShowingCamera == false)
+    #expect(vm.isShowingTapToSelect == true)
     #expect(vm.isShowingTouchup == false)
-    #expect(vm.currentStep == .details)
 }
 
 @Test @MainActor func addItemOnCameraPhotoCapturedProcessFailureSurfacesError() async {
@@ -263,6 +272,7 @@ private func makeProcessedImage(
     #expect(vm.errorMessage != nil)
     #expect(vm.currentStep == .photo)
     #expect(vm.isShowingTouchup == false)
+    #expect(vm.isShowingTapToSelect == false)
 }
 
 @Test @MainActor func addItemOnTouchupDoneUpdatesProcessedImage() async {
@@ -372,8 +382,12 @@ private func makeProcessedImage(
 
     await vm.onCameraPhotoCaptured(makePixelImage())
 
+    // The badge state still tracks the upstream method even though it's
+    // now consumed inside TapToSelectView (the "Auto-detected" hint)
+    // rather than MaskTouchupView. Tap-to-select is the new
+    // post-processing surface.
     #expect(vm.isAutoCropped == true)
-    #expect(vm.isShowingTouchup == true)
+    #expect(vm.isShowingTapToSelect == true)
 }
 
 @Test @MainActor func addItemOnCameraPhotoClearsAutoCroppedWhenVisionUsed() async {
@@ -404,17 +418,21 @@ private func makeProcessedImage(
     #expect(vm.isShowingTapToSelect == true)
 }
 
-@Test @MainActor func addItemOnTapToSelectCancelledReturnsToTouchup() {
+@Test @MainActor func addItemOnTapToSelectCancelledRoutesToDetails() {
     let vm = AddItemViewModel()
     vm.isShowingTapToSelect = true
 
     vm.onTapToSelectCancelled()
 
+    // The "Back" affordance on tap-to-select is now a flow exit, not a
+    // detour to touchup. Drops the user at `.details` so they can either
+    // save what they have or scrap and start over from `.photo`.
     #expect(vm.isShowingTapToSelect == false)
-    #expect(vm.isShowingTouchup == true)
+    #expect(vm.isShowingTouchup == false)
+    #expect(vm.currentStep == .details)
 }
 
-@Test @MainActor func addItemOnTapToSelectDoneClearsAutoCroppedAndReopensTouchup() async {
+@Test @MainActor func addItemOnTapToSelectDoneRoutesToDetails() async {
     let mockImage = MockImageService()
     mockImage.updateMaskedResult = makeProcessedImage(
         maskedData: Data([0x03]),
@@ -440,9 +458,15 @@ private func makeProcessedImage(
     )
     await vm.onTapToSelectDone(result)
 
+    // "Use this crop" is now the primary flow forward — straight to the
+    // metadata-entry step. Touchup is no longer auto-opened; it's only
+    // reachable via the explicit "Refine with brush" detour. The
+    // auto-cropped badge is cleared because the user explicitly committed
+    // to the (possibly-refined) mask.
     #expect(vm.isShowingTapToSelect == false)
     #expect(vm.isAutoCropped == false)
-    #expect(vm.isShowingTouchup == true)
+    #expect(vm.isShowingTouchup == false)
+    #expect(vm.currentStep == .details)
     #expect(vm.processedImage?.maskedData == Data([0x03]))
     #expect(mockImage.updateMaskedCallCount == 1)
 }

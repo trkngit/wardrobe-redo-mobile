@@ -205,9 +205,13 @@ final class AddItemViewModel {
         processingTask = nil
     }
 
-    /// Post-processing branch for library-picked images. Library
-    /// captures skip the touch-up sheet (they typically already have
-    /// a clean background) and go straight to `.details`.
+    /// Post-processing branch for library-picked images. As of the
+    /// "tap-to-select-first" reorg, both library and camera flows now
+    /// open `TapToSelectView` immediately after processing — tap-to-
+    /// select is pre-populated with the auto-detected mask so the
+    /// happy-path user just hits "Use this crop" once, while users
+    /// who got a bad auto-mask can refine with taps before
+    /// proceeding.
     private func applyProcessedFromLibrary(
         _ processed: ProcessedImage?,
         sessionTask: Task<(any SAM2Session)?, Never>
@@ -234,7 +238,7 @@ final class AddItemViewModel {
             selectedImage = resized
         }
         isProcessing = false
-        currentStep = .details
+        isShowingTapToSelect = true
     }
 
     func onCategoryChanged() {
@@ -307,10 +311,10 @@ final class AddItemViewModel {
         processingTask = nil
     }
 
-    /// Post-processing branch for camera captures. Camera captures
-    /// run through the touch-up sheet so the user can refine the mask
-    /// before details — except when extraction failed entirely, in
-    /// which case we skip ahead to `.details` with no mask.
+    /// Post-processing branch for camera captures. As of the
+    /// "tap-to-select-first" reorg, both library and camera flows now
+    /// open `TapToSelectView` immediately after processing — see
+    /// `applyProcessedFromLibrary` for the rationale.
     private func applyProcessedFromCamera(
         _ processed: ProcessedImage?,
         sessionTask: Task<(any SAM2Session)?, Never>
@@ -334,13 +338,7 @@ final class AddItemViewModel {
             selectedImage = resized
         }
         isProcessing = false
-
-        if processed.maskedData != nil {
-            // Show touchup so the user can confirm or refine the mask.
-            isShowingTouchup = true
-        } else {
-            currentStep = .details
-        }
+        isShowingTapToSelect = true
     }
 
     /// Reset the per-capture provenance state so the next photo gets
@@ -431,10 +429,12 @@ final class AddItemViewModel {
         isShowingTapToSelect = true
     }
 
-    /// User finished `TapToSelectView` and wants to use the SAM2-manual
-    /// result. Rebuild `ProcessedImage` from the new mask so the saved
-    /// palette matches, then re-enter the touch-up sheet so the user can
-    /// still brush refinements on top.
+    /// User tapped "Use this crop" in `TapToSelectView`. Rebuild
+    /// `ProcessedImage` from the chosen mask so the saved palette
+    /// matches, then route straight to `.details`. The brush-touchup
+    /// sheet is no longer auto-opened here — users who want to brush
+    /// refinements reach it via the "Refine with brush" button on
+    /// the tap-to-select toolbar instead.
     func onTapToSelectDone(_ result: ExtractionResult) async {
         isShowingTapToSelect = false
         // Re-encode the new mask into storage-ready PNG + re-run color
@@ -448,20 +448,18 @@ final class AddItemViewModel {
             }
         }
         // Manual tap-to-select is the highest-trust path — clear the
-        // auto-cropped badge and let the user finish in touchup.
+        // auto-cropped badge so `.details` doesn't surface it.
         isAutoCropped = false
-        if processedImage?.maskedData != nil {
-            isShowingTouchup = true
-        } else {
-            currentStep = .details
-        }
+        currentStep = .details
     }
 
-    /// User backed out of `TapToSelectView` — go back to the touch-up
-    /// sheet with the pre-existing mask intact.
+    /// User backed out of `TapToSelectView`. Routes to `.details` with
+    /// whatever mask the auto-extraction produced, so cancelling means
+    /// "skip the manual selection, accept the auto crop" rather than
+    /// losing the processing work entirely.
     func onTapToSelectCancelled() {
         isShowingTapToSelect = false
-        isShowingTouchup = true
+        currentStep = .details
     }
 
     func save(userId: UUID) async {

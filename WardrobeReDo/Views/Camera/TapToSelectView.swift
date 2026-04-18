@@ -11,7 +11,12 @@ import UIKit
 /// commits and the edited mask flows back into the view model.
 struct TapToSelectView: View {
     let sourceImage: UIImage
-    var initialPreview: UIImage?
+    /// Pre-populated extraction result from the upstream auto-pipeline
+    /// (Vision or SAM2-auto). When non-nil, the view opens with this mask
+    /// already shown so the user can hit "Use this crop" without tapping
+    /// — the happy-path single-item flow is now a one-button confirm.
+    /// Tapping anywhere overrides the auto-mask with a fresh SAM2 pass.
+    var initialResult: ExtractionResult?
     /// Extractor used to re-segment after every tap. Parent supplies the
     /// same instance the rest of the pipeline uses so prewarmed models
     /// aren't re-loaded here.
@@ -45,6 +50,10 @@ struct TapToSelectView: View {
                 Color(Theme.Colors.background).ignoresSafeArea()
 
                 VStack(spacing: Theme.Spacing.md) {
+                    if showAutoDetectedHint {
+                        autoDetectedHint
+                    }
+
                     GeometryReader { geo in
                         tappableCanvas(in: geo.size)
                     }
@@ -69,16 +78,58 @@ struct TapToSelectView: View {
             .task {
                 guard !hasRunInitial else { return }
                 hasRunInitial = true
-                preview = initialPreview
-                // Kick off a center-point segmentation as the starting
-                // proposal — matches the auto-fallback path so the first
-                // frame feels instant. Goes through `scheduleSegment` so
-                // the same cancellation guard applies if the user taps
-                // before the initial pass finishes.
-                scheduleSegment(with: [SAM2TapPoint.positive(CGPoint(x: 0.5, y: 0.5))])
+                if let initial = initialResult {
+                    // Tap-to-select-first flow: parent already ran the
+                    // auto-pipeline (Vision or SAM2-auto), so paint that
+                    // mask immediately and let the user commit with one
+                    // button. Skip the initial center-point SAM2 pass —
+                    // we already have a higher-quality starting point.
+                    lastResult = initial
+                    preview = initial.maskedImage
+                } else {
+                    // Legacy entry point (e.g. the brush-detour back into
+                    // tap-to-select with no upstream result). Kick off a
+                    // center-point segmentation so the user has something
+                    // to refine instead of an empty canvas.
+                    scheduleSegment(with: [SAM2TapPoint.positive(CGPoint(x: 0.5, y: 0.5))])
+                }
             }
             .onDisappear { segmentTask?.cancel() }
         }
+    }
+
+    // MARK: - Hint
+
+    /// Show the "Auto-detected — tap to refine" callout while the
+    /// pre-populated mask is still untouched. As soon as the user taps
+    /// even once the hint disappears (they've engaged with the tool, no
+    /// more nudge needed). Also hidden if upstream extraction failed
+    /// (`.none`) so we don't claim to have detected something we didn't.
+    private var showAutoDetectedHint: Bool {
+        guard points.isEmpty, let result = lastResult else { return false }
+        switch result.method {
+        case .vision, .sam2Auto:
+            return true
+        case .sam2Manual, .none:
+            return false
+        }
+    }
+
+    private var autoDetectedHint: some View {
+        HStack(spacing: Theme.Spacing.sm) {
+            Image(systemName: "sparkles")
+                .foregroundStyle(Color(Theme.Colors.primary))
+            Text("Auto-detected — tap to refine if needed")
+                .font(Theme.Fonts.caption.weight(.medium))
+                .foregroundStyle(Color(Theme.Colors.textSecondary))
+            Spacer()
+        }
+        .padding(.horizontal, Theme.Spacing.md)
+        .padding(.vertical, Theme.Spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: Theme.Radius.button)
+                .fill(Color(Theme.Colors.primary).opacity(0.08))
+        )
     }
 
     // MARK: - Canvas
@@ -272,7 +323,13 @@ struct TapToSelectView: View {
     if let placeholder = UIImage(systemName: "tshirt.fill")?.withTintColor(.systemBlue, renderingMode: .alwaysOriginal) {
         TapToSelectView(
             sourceImage: placeholder,
-            initialPreview: placeholder,
+            initialResult: ExtractionResult(
+                originalImage: placeholder,
+                maskedImage: placeholder,
+                mask: nil,
+                confidence: .high,
+                method: .sam2Auto
+            ),
             extractor: ClothingExtractionService(),
             onDone: { _ in },
             onCancel: {}

@@ -18,10 +18,15 @@ struct AddItemView: View {
                         progressBar
 
                         switch viewModel.currentStep {
-                        case .photo:
+                        case .photo, .analysis:
+                            // The `.analysis` step no longer renders its
+                            // own surface — `AnalyzingPopup` sits on top
+                            // of the (stable) photo step while processing
+                            // runs, so the popup smoothly dismisses back
+                            // to the picker if the user cancels. The
+                            // enum case is kept for source-compat with
+                            // existing tests + future surfaces.
                             photoStep
-                        case .analysis:
-                            analysisStep
                         case .details:
                             detailsStep
                         case .saving:
@@ -144,11 +149,27 @@ struct AddItemView: View {
     @ViewBuilder
     private var tapToSelectCover: some View {
         if let source = viewModel.selectedImage {
-            let initialPreview = viewModel.processedImage?.maskedData
-                .flatMap { UIImage(data: $0) }
+            // Build an `ExtractionResult` from the processed metadata so
+            // tap-to-select opens already showing the auto-pipeline's
+            // best guess. One-button "Use this crop" commits straight
+            // through; tapping anywhere overrides with a fresh SAM2 pass.
+            // Falls back to a `.none` result when no upstream mask is
+            // available (e.g. the brush detour re-enters with no fresh
+            // processing run behind it).
+            let initialResult = viewModel.processedImage.map { processed -> ExtractionResult in
+                let maskedImage = processed.maskedData
+                    .flatMap { UIImage(data: $0) } ?? source
+                return ExtractionResult(
+                    originalImage: source,
+                    maskedImage: maskedImage,
+                    mask: nil,
+                    confidence: processed.extractionConfidence ?? .low,
+                    method: processed.extractionMethod ?? .none
+                )
+            }
             TapToSelectView(
                 sourceImage: source,
-                initialPreview: initialPreview,
+                initialResult: initialResult,
                 extractor: viewModel.clothingExtractor,
                 onDone: { result in
                     Task { await viewModel.onTapToSelectDone(result) }
@@ -216,29 +237,6 @@ struct AddItemView: View {
 
             if let error = viewModel.errorMessage {
                 errorBanner(error)
-            }
-        }
-    }
-
-    // MARK: - Step 2: Analysis (Loading)
-
-    private var analysisStep: some View {
-        VStack(spacing: Theme.Spacing.lg) {
-            if let image = viewModel.selectedImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(maxHeight: 300)
-                    .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
-            }
-
-            VStack(spacing: Theme.Spacing.md) {
-                ProgressView()
-                    .tint(Color(Theme.Colors.primary))
-                    .scaleEffect(1.2)
-                Text("Analyzing colors...")
-                    .font(Theme.Fonts.body)
-                    .foregroundStyle(Color(Theme.Colors.textSecondary))
             }
         }
     }
