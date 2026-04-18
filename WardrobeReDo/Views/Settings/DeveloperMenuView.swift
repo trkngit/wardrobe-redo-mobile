@@ -12,10 +12,29 @@ struct DeveloperMenuView: View {
     var body: some View {
         List {
             experimentalFeaturesSection
+            diagnosticsSection
             aboutSection
         }
         .navigationTitle("Developer")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var diagnosticsSection: some View {
+        Section {
+            NavigationLink {
+                MLDiagnosticsView()
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("ML Diagnostics")
+                        .font(Theme.Fonts.body)
+                    Text("Latency, compute unit, smoke-test status, and last 10 inferences.")
+                        .font(Theme.Fonts.caption)
+                        .foregroundStyle(Color(Theme.Colors.textSecondary))
+                }
+            }
+        } header: {
+            Text("Diagnostics")
+        }
     }
 
     private var experimentalFeaturesSection: some View {

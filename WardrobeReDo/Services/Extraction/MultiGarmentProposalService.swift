@@ -134,10 +134,12 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
 
     func detectProposals(in image: UIImage) async throws -> [MaskProposal] {
         logger.info("detectProposals.start size=\(image.size.width, privacy: .public)x\(image.size.height, privacy: .public)")
+        let start = Date()
 
         guard let model = loadModelIfAvailable() else {
             let path = Self.defaultModelURL()?.lastPathComponent
             logger.error("detectProposals.modelLoadFailed modelPath=\(path ?? "nil", privacy: .public)")
+            await recordFailure(start: start)
             throw MultiGarmentError.modelLoadFailed(
                 reason: "Core ML model could not be loaded (missing from bundle or compile failed)",
                 modelPath: path
@@ -148,6 +150,7 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
 
         guard let pixelBuffer = Self.preprocessedPixelBuffer(for: normalized, model: model) else {
             logger.error("detectProposals.preprocessingFailed")
+            await recordFailure(start: start)
             throw MultiGarmentError.preprocessingFailed(
                 reason: "Could not convert source image to model input buffer"
             )
@@ -161,6 +164,7 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             ])
         } catch {
             logger.error("detectProposals.providerFailed \(error.localizedDescription, privacy: .public)")
+            await recordFailure(start: start)
             throw MultiGarmentError.preprocessingFailed(reason: error.localizedDescription)
         }
 
@@ -169,6 +173,7 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             prediction = try await model.prediction(from: provider)
         } catch {
             logger.error("detectProposals.inferenceFailed \(error.localizedDescription, privacy: .public)")
+            await recordFailure(start: start)
             throw MultiGarmentError.inferenceFailed(reason: error.localizedDescription)
         }
 
@@ -180,6 +185,7 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             // Empty array — NOT an error, just a photo with no clothing.
             // Callers check `isEmpty` and fall through to the single-item
             // flow automatically.
+            await recordSuccess(start: start, proposals: [])
             return []
         }
 
@@ -193,7 +199,27 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
         }
 
         logger.info("detectProposals.success count=\(proposals.count, privacy: .public) topScore=\(proposals.first?.detectionScore ?? 0, privacy: .public)")
+        await recordSuccess(start: start, proposals: proposals)
         return proposals
+    }
+
+    // MARK: - Diagnostics recording
+
+    private func recordSuccess(start: Date, proposals: [MaskProposal]) async {
+        let latencyMs = Date().timeIntervalSince(start) * 1000
+        await MLDiagnosticsStore.shared.record(
+            latencyMs: latencyMs,
+            proposals: proposals,
+            modelName: Self.bundledModelName
+        )
+    }
+
+    private func recordFailure(start: Date) async {
+        let latencyMs = Date().timeIntervalSince(start) * 1000
+        await MLDiagnosticsStore.shared.recordFailure(
+            latencyMs: latencyMs,
+            modelName: Self.bundledModelName
+        )
     }
 
     func prewarm() async {
