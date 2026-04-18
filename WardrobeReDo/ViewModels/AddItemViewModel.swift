@@ -84,6 +84,14 @@ final class AddItemViewModel {
     /// another" button in that case.
     var sam2Session: (any SAM2Session)?
 
+    /// In-flight SAM2 session-load task. Stored on the ViewModel so a
+    /// rapid second photo-pick / camera-capture can cancel the prior
+    /// load before kicking off another, instead of letting two
+    /// concurrent MLModel loads race for ~100 MB of working memory each.
+    /// See the "bound heap in capture loop" fix in plan
+    /// `unified-mapping-honey.md`.
+    private var sessionLoadTask: Task<(any SAM2Session)?, Never>?
+
     /// Number of wardrobe_item rows saved from the current capture so
     /// far. Zero on every fresh photo selection; increments on each
     /// successful save during the multi-garment loop. Drives the
@@ -158,12 +166,19 @@ final class AddItemViewModel {
         // ~60 ms pixel-buffer resize completes behind the processing
         // wait and the first tap in the user flow fires without a cold
         // start. Cheap (session is non-optional Sendable) but net-win.
+        //
+        // Cancel any in-flight session load from a prior capture before
+        // starting a new one — rapid back-to-back photo selections
+        // would otherwise stack two MLModel loads in memory.
+        sessionLoadTask?.cancel()
         let sessionTask = Task { [clothingExtractor] in
             await clothingExtractor.makeSession(for: image)
         }
+        sessionLoadTask = sessionTask
 
         guard let processed = await imageService.processImage(image) else {
             sessionTask.cancel()
+            sessionLoadTask = nil
             errorMessage = "Couldn't process that image. Try another one."
             currentStep = .photo
             isProcessing = false
@@ -172,6 +187,16 @@ final class AddItemViewModel {
 
         processedImage = processed
         sam2Session = await sessionTask.value
+        sessionLoadTask = nil
+        // Drop the full-resolution UIImage now that processing is done.
+        // The 1200×1200 JPEG inside `processed.originalData` is what
+        // gets uploaded to Storage and what TapToSelectView normalizes
+        // to image-space `[0,1]` coordinates anyway, so swapping
+        // `selectedImage` for the resized version trims ~45 MB of
+        // pinned RAM per active capture without changing behaviour.
+        if let resized = UIImage(data: processed.originalData) {
+            selectedImage = resized
+        }
         isProcessing = false
         currentStep = .details
     }
@@ -220,13 +245,17 @@ final class AddItemViewModel {
         currentStep = .analysis
 
         // Run the SAM2 session prep alongside extraction — see
-        // `onPhotoSelected()` for the rationale.
+        // `onPhotoSelected()` for the rationale, including why we
+        // cancel any prior in-flight session load before starting.
+        sessionLoadTask?.cancel()
         let sessionTask = Task { [clothingExtractor] in
             await clothingExtractor.makeSession(for: image)
         }
+        sessionLoadTask = sessionTask
 
         guard let processed = await imageService.processImage(image) else {
             sessionTask.cancel()
+            sessionLoadTask = nil
             errorMessage = "Couldn't process that photo. Try again."
             currentStep = .photo
             isProcessing = false
@@ -236,6 +265,12 @@ final class AddItemViewModel {
         processedImage = processed
         isAutoCropped = (processed.extractionMethod == .sam2Auto)
         sam2Session = await sessionTask.value
+        sessionLoadTask = nil
+        // Downsample the retained UIImage — see `onPhotoSelected()`
+        // for the rationale.
+        if let resized = UIImage(data: processed.originalData) {
+            selectedImage = resized
+        }
         isProcessing = false
 
         if processed.maskedData != nil {
@@ -545,5 +580,9 @@ final class AddItemViewModel {
         sam2Session = nil
         savedItemsFromSource = 0
         wantsAnotherGarment = false
+        // Cancel any in-flight session load so a sheet dismissal mid-
+        // processing doesn't leak the MLModel load into the background.
+        sessionLoadTask?.cancel()
+        sessionLoadTask = nil
     }
 }
