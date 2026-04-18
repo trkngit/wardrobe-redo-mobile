@@ -1,7 +1,7 @@
 # Wardrobe Re-Do — Multi-Garment Detection (Polished, Multi-Pick)
 
 **Plan slug:** `2026-04-18-multi-garment-detection`
-**Status:** IN PROGRESS — iOS plumbing shipped behind flag; blocked on GPU training run for Commit 9 flag-flip
+**Status:** IN PROGRESS — iOS plumbing shipped; training scripts aligned to rfdetr 1.4 API + local probe 6/6 green; Section 0.1 RunPod execution plan authored; Phase 1 pod boot pending fresh-session kickoff
 **Estimated cycle time:** 5-7 weeks calendar
 **Estimated total cost:** ~$200 GPU + ~$500 engineering tooling subscriptions (Sentry, Roboflow optional)
 
@@ -19,7 +19,10 @@
 | 8 — FirstRunTutorial copy | shipped | `2455e2f` | Slide 3 rewritten to cover multi-pick |
 | 2 — Training notebook scaffold | shipped (scaffold only) | `da243e5` | GPU run deferred; recipe + pins + export pipeline checked in |
 | 3.1 — decodeClassLabel bug fix | shipped | `307ba75` | `fashionpediaLabels` array + drift-guard test; fixes silent-nil categorisation for proposals once the trained model is wired up |
-| 9 — Flag default-on | **blocked on trained `.mlpackage`** | — | Needs Commit 2's notebook to actually run; see Section 14 |
+| 8.1 — RunPod $30 runbook + runnable training scripts | shipped | `c2581ac` | `prepare_fashionpedia.py` / `train.py` / `export_coreml.py` + `RUNPOD_RUNBOOK.md` — smoke + prod recipes, mAP gates, teardown |
+| 8.2 — rfdetr 1.4 API alignment | shipped | `8cbf350` | probe/train/export updated to match real `RFDETRSegSmall` surface (`get_model()`, `pretrain_weights=None`, `dataset_file="roboflow"`, `segmentation_head=True`, `class_names=[...]`); local probe `PASSED: 6/6 checks` |
+| 8.3 — Section 0.1 + 0.2 execution + handoff plan | this commit | — | Phase 1 + Phase 2 RunPod execution plan authored; session-log + patterns docs handoff plan authored; fresh-session kickoff recommended for pod boot |
+| 9 — Flag default-on | **blocked on trained `.mlpackage`** | — | Needs Phase 1 + Phase 2 to ship; see Section 0.1 |
 
 ---
 
@@ -51,6 +54,277 @@ A one-line pointer lives in `/Users/tarkansurav/.claude/projects/-Users-tarkansu
 - Plan-mode scratch (`~/.claude/plans/*.md`) — current draft, ephemeral, overwritten
 - Repo `docs/plans/*.md` — source of truth, committed, durable
 - This document is the canonical plan; after ExitPlanMode + approval, copy to repo as the first execution step
+
+---
+
+## 0.1 — Active Execution Plan: Phase 1 Smoke Run (authored 2026-04-18)
+
+**Context.** 12 iOS commits shipped on `feature/photo-extraction-engine` (PR #1, open). Three training scripts (`probe_env.py`, `train.py`, `export_coreml.py`) aligned to rfdetr 1.4's actual API in commit `8cbf350`. Local probe prints `PASSED: 6/6 checks`. User has $30 RunPod credit and is logged into runpod.io in Chrome. User chose "Chrome-drive the pod boot" — I execute via Chrome MCP + Bash; only the final **Deploy** click (first paid action) requires an explicit chat confirmation.
+
+### Tool split
+
+| Step | Tool | Why |
+|---|---|---|
+| Pod creation (web form) | `mcp__Claude_in_Chrome__*` | User is already authenticated in Chrome; DOM-aware clicks are fast and reliable |
+| SSH to pod + remote commands | Bash (built-in) | Pod gives an SSH command; Bash runs it directly, streams stdout, supports `run_in_background` for the long train |
+| Long log tailing | Monitor tool | Stream `ssh root@pod "tail -f /root/train.log"` with a grep filter for epoch / error signatures |
+| scp artifact back | Bash | Single command |
+| Fallback if SSH keys aren't wired | Chrome MCP → RunPod web terminal | Pod detail page embeds a browser terminal |
+
+No computer-use / Terminal.app path needed — Bash handles every local-side action.
+
+### Phase 1 — Smoke run ($2 expected, wall ~3 hrs)
+
+**Goal:** prove `prepare_fashionpedia → train → export_coreml → scp` runs end-to-end on 500 images. A green smoke unblocks Phase 2; a red smoke costs $2 and tells us exactly what's broken before we commit ~$6 to the production run.
+
+Pod spec: **RTX 4090 24 GB, Community Cloud, RunPod PyTorch 2.5 (CUDA 12.4) image, 50 GB container disk, 0 GB volume** (ephemeral — smoke outputs don't need persistence).
+
+#### 0.1.1 Pod creation (Chrome MCP)
+1. Bulk-load Chrome MCP tool schemas: `ToolSearch { query: "claude_in_chrome", max_results: 30 }`.
+2. Screenshot the active Chrome tab; confirm URL is on runpod.io and the user-icon shows logged-in state.
+3. Navigate: top nav → **Pods** → **Deploy**.
+4. Filter: **Community Cloud**, GPU = **RTX 4090**, 1× GPU.
+5. Sort by hourly price ascending; pick the lowest-price region with availability.
+6. Template: **RunPod PyTorch 2.5** (CUDA 12.4).
+7. Container Disk: **50 GB**. Volume Disk: **0 GB**.
+8. Stop at the **Deploy On-Demand** button. Read spec + hourly price back to the user in chat. **User must type `go` before I click.** Anything else → I stop.
+9. After Deploy, wait for pod status = **Running** (30–90 s). Copy the SSH command from the pod detail page.
+
+#### 0.1.2 SSH connectivity check (Bash)
+```bash
+ssh -o StrictHostKeyChecking=accept-new root@<pod-host> -p <port> \
+    "echo connected; python3 --version; nvidia-smi -L"
+```
+Green: "connected", Python 3.x, `GPU 0: NVIDIA GeForce RTX 4090`.
+Red (auth failure): fall back to RunPod web terminal via Chrome MCP — same commands, slower tool.
+
+#### 0.1.3 Pod bootstrap + env probe (Bash, ~5 min)
+One heredoc → one round-trip:
+```bash
+ssh root@<pod> 'bash -s' <<'EOF'
+set -euo pipefail
+apt-get update -qq && apt-get install -y -qq git tmux htop
+cd /root
+git clone https://github.com/trkngit/wardrobe-redo-mobile.git
+cd wardrobe-redo-mobile
+git checkout feature/photo-extraction-engine
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r notebooks/training/requirements.txt
+python notebooks/training/scripts/probe_env.py
+EOF
+```
+Green: probe prints `PASSED: 6/6 checks`.
+Red: STOP — don't burn GPU time on a broken env. Fix locally, commit + push, `git pull` on pod, re-run probe.
+
+#### 0.1.4 Smoke dataset prepare (Bash, ~5 min)
+```bash
+ssh root@<pod> 'set -e; cd /root/wardrobe-redo-mobile && source .venv/bin/activate && \
+    python notebooks/training/scripts/prepare_fashionpedia.py \
+        --out ./data/fashionpedia --max-train 500 --max-val 100'
+```
+Green: stdout reports ~500 train / ~100 val images; both subdirs have `_annotations.coco.json` + jpgs.
+
+#### 0.1.5 Smoke training (Bash, ~1–2 hrs, detached in tmux)
+Launch detached so a dropped ssh channel doesn't kill the train:
+```bash
+ssh root@<pod> 'cd /root/wardrobe-redo-mobile && source .venv/bin/activate && \
+    tmux new-session -d -s train "python notebooks/training/scripts/train.py \
+        --dataset-dir ./data/fashionpedia --output-dir ./checkpoints \
+        --epochs 2 --batch-size 2 --resolution 768 \
+        2>&1 | tee /root/train.log"'
+```
+Monitor via a grep filter that matches both happy path AND failure signatures (so silence never hides a crash):
+```bash
+# via Monitor tool, persistent:
+ssh root@<pod> "tail -f /root/train.log" \
+  | grep -E --line-buffered "Epoch |mAP|Traceback|Error|CUDA out of memory|NaN|assert|Killed"
+```
+Green per epoch: `Epoch 1 ... val mAP=<positive float>`; `best.pth` lands in `./checkpoints/`.
+Red signals: `Traceback`, `CUDA out of memory`, `NaN` in loss → STOP + diagnose.
+
+Known failure modes & fixes:
+- CUDA OOM → drop `--batch-size 1`, re-launch (smoke is cheap to restart).
+- rfdetr API drift → shouldn't happen (probe caught this class of bug), but if it does, `git pull` any fix I've pushed.
+
+#### 0.1.6 Smoke Core ML export (Bash, ~10 min)
+```bash
+ssh root@<pod> 'cd /root/wardrobe-redo-mobile && source .venv/bin/activate && \
+    python notebooks/training/scripts/export_coreml.py \
+        --checkpoint ./checkpoints/best.pth \
+        --out ./checkpoints/coreml \
+        --resolution 768'
+```
+Green: `./checkpoints/coreml/RFDETRSegFashion.mlpackage` exists, 20–80 MB.
+Red: one of the known DETR export failure modes documented in `export_coreml.py` (upsample_bicubic2d, dynamic shape, FP16 softmax overflow) — fix in a follow-up commit, re-pull, re-run export only (training doesn't need to rerun).
+
+#### 0.1.7 scp artifact to local (Bash)
+```bash
+mkdir -p "/Users/tarkansurav/Projects/Coding/Wardrobe Re-Do/WardrobeReDo/Models/CoreML"
+scp -r -P <port> root@<pod>:/root/wardrobe-redo-mobile/checkpoints/coreml/RFDETRSegFashion.mlpackage \
+    "/Users/tarkansurav/Projects/Coding/Wardrobe Re-Do/WardrobeReDo/Models/CoreML/"
+ls -la "/Users/tarkansurav/Projects/Coding/Wardrobe Re-Do/WardrobeReDo/Models/CoreML/RFDETRSegFashion.mlpackage"
+```
+Green: mlpackage present on local, non-zero size.
+
+#### 0.1.8 Teardown (Chrome MCP)
+RunPod UI → Pods → this pod → **Stop** (not Terminate). Stop preserves the disk for Phase 2 if we want to reuse the env; $0.10/GB/month × 50 GB ≈ $5/month, ignorable over days.
+
+### Phase-1 → Phase-2 gate
+
+Advance only if ALL of:
+- [ ] probe: 6/6 PASS on pod
+- [ ] train.py exits 0; `best.pth` exists
+- [ ] export_coreml.py exits 0; `.mlpackage` materialized
+- [ ] scp landed `.mlpackage` on local machine
+- [ ] User responds `go` to the Phase 2 cost preview in chat
+
+Any red → I report which gate failed, propose a fix, wait. No yolo-ing into production on smoke failures.
+
+### Phase 2 — Production run (budget ~$6, wall ~13 hrs)
+
+**Recommended spec: RTX 4090 @ batch 4 / grad-accum 2 / resolution 1024 / 10 epochs.**
+
+Math: $30 − $2 (Phase 1) = $28 remaining. 4090 × $0.44/hr × 13 hrs = **$5.72**, leaves $22 retry buffer. H100 80 GB × $2.49/hr × 10 hrs = $24.90 leaves < $3 — no retry margin. Plan Section 2 originally favored H100 for throughput; with $30 ceiling the 4090 wins on risk-adjusted basis.
+
+24 GB VRAM at batch 8 / 1024² typically OOMs on 4090 → **batch 4 with grad-accum 2** gives effective batch 8, same gradient signal, fits comfortably.
+
+Commands (identical scripts, prod hyperparams, drop the dataset subset flags):
+```bash
+# 200 GB container disk this time (~12 GB dataset + ~5 GB checkpoints + slack).
+# Full dataset prep, ~20–30 min:
+ssh root@<pod> '... prepare_fashionpedia.py --out ./data/fashionpedia'
+
+# Full train, ~13 hrs, detached:
+ssh root@<pod> 'tmux new-session -d -s train "python notebooks/training/scripts/train.py \
+    --dataset-dir ./data/fashionpedia --output-dir ./checkpoints \
+    --epochs 10 --batch-size 4 --grad-accum-steps 2 --resolution 1024 --lr 1e-4 \
+    2>&1 | tee /root/train.log"'
+
+# Export at production resolution:
+ssh root@<pod> '... export_coreml.py --checkpoint ./checkpoints/best.pth \
+    --out ./checkpoints/coreml --resolution 1024'
+
+# scp final artifact to local:
+scp -r -P <port> root@<pod>:/root/wardrobe-redo-mobile/checkpoints/coreml/RFDETRSegFashion.mlpackage \
+    "/Users/tarkansurav/Projects/Coding/Wardrobe Re-Do/WardrobeReDo/Models/CoreML/"
+```
+
+Per-epoch green-light gates (match `notebooks/training/RUNPOD_RUNBOOK.md`):
+- Epoch 1: val mAP > 0 (labels flow through; training alive)
+- Epoch 3: val mAP > 15 (early signal — if not, pause + reassess; unlikely to recover to 30)
+- Epoch 6: val mAP > 25
+- Epoch 10: val mAP ≥ 30 (plan Section 4 target)
+
+**Teardown: Terminate** the pod after scp (not just Stop). Production is the expensive run; don't leak hourly charges.
+
+### Post-training (follow-up, not this session)
+
+1. `cd "/Users/tarkansurav/Projects/Coding/Wardrobe Re-Do" && xcodegen generate` to pick up the new Resources reference.
+2. Rebuild the app, flip `FeatureFlags.isMultiGarmentEnabled = true` in the Debug menu, device-test on the user's original photo (sunglasses + blazer + tshirt + skirt). Expect ≥ 3 proposals.
+3. If device test passes, Commit 9 of the canonical plan (flip the flag default to `true`) is unblocked.
+
+### Critical files referenced
+
+- `notebooks/training/scripts/probe_env.py` — env guard; must pass 6/6 on pod before training
+- `notebooks/training/scripts/prepare_fashionpedia.py` — dataset prep; supports `--max-train/--max-val` for the smoke subset
+- `notebooks/training/scripts/train.py` — training CLI; now correctly passes `dataset_file="roboflow"`, `segmentation_head=True`, `class_names=FASHIONPEDIA_MAIN_CLASSES`; resolution at constructor time
+- `notebooks/training/scripts/export_coreml.py` — Core ML converter; now uses `model.get_model()` + `pretrain_weights=None` per rfdetr 1.4 API
+- `notebooks/training/RUNPOD_RUNBOOK.md` — green-light thresholds + failure-mode decision tree (single source of truth for mAP gates)
+
+### Files touched this session
+
+**Pod-side (ephemeral, dies on Terminate):** `/root/wardrobe-redo-mobile/` clone, `.venv/`, `data/fashionpedia/`, `checkpoints/`, `/root/train.log`.
+
+**Local (new binary artifact):** `WardrobeReDo/Models/CoreML/RFDETRSegFashion.mlpackage` (~30–80 MB after Phase 2 palettization).
+
+**No edits to tracked source files.** Everything on `feature/photo-extraction-engine @ 8cbf350` is already correct. This session is pure artifact generation.
+
+### Verification
+
+- **Phase 1 green:** probe 6/6; train exits 0; `best.pth` non-empty; `.mlpackage` ≥ 10 MB; scp succeeds; local `.mlpackage` dir is a valid Core ML model (inspect via `plutil WardrobeReDo/Models/CoreML/RFDETRSegFashion.mlpackage/Manifest.json` — should parse as JSON).
+- **Phase 2 green:** val mAP ≥ 30 at epoch 10; `.mlpackage` 30–80 MB (palettized); app project rebuilds cleanly with new model; Debug-menu smoke test on the user's reference photo surfaces ≥ 3 proposals with sensible categories.
+
+### Confirmation gates (hard stops for user consent)
+
+1. Before clicking **Deploy** on Phase 1 pod (first paid action, ~$2 expected).
+2. Before clicking **Deploy** on Phase 2 pod (~$6 expected).
+3. Any unexpected incremental cost > $1 (bigger disk, different GPU, region change) — confirm in chat first.
+
+### Explicit non-goals
+
+- NOT flipping `FeatureFlags.isMultiGarmentEnabled` default in this session (that's Commit 9 follow-up).
+- NOT committing the `.mlpackage` to git in this session — the user decides based on final size (if > 50 MB, Background Assets path per plan Section 9).
+- NOT adding new Python deps, NOT editing iOS code — production run is pure artifact generation against code already merged on the branch.
+
+---
+
+## 0.2 — Session Documentation + Handoff (authored 2026-04-18)
+
+**Why this section exists.** User request (verbatim): *"save and coument everything we did on this code session all of the history you can un compact our chat do whatevers neccesary and save it as data for later use for app orjects and setups."* Pairs with Section 0's durable-plan convention: before we burn GPU $ on Phase 1, persist this session's decisions + findings so nothing is lost to future compactions and the patterns are reusable across other app projects and setups.
+
+**Performance question — answered in chat:** Recommend **starting a fresh Claude Code session** for the Phase 1 + Phase 2 RunPod execution. Rationale:
+1. This session has already been compacted once → some earlier context is summary-only, not verbatim.
+2. Phase 1 is ~3 hrs wall; Phase 2 is ~13 hrs wall. Both involve long tool-call chains + likely debug cycles (OOM retries, rfdetr edge cases, Core ML op-mapping surprises).
+3. A fresh session starts with full context budget and warm prompt cache — meaningfully cheaper per tool call over a 16+ hr horizon.
+4. Training runs detached in `tmux` on the pod, so session death is not catastrophic: a new session can re-attach via `ssh root@pod 'tmux attach -t train'`, and the docs/plans files we're about to write make the current state legible.
+
+Handoff sequence: finish the documentation below in THIS session → commit + push → `/clear` or new session → fresh session resumes Section 0.1 (Phase 1 pod boot) with durable docs + updated INDEX.md as its starting context.
+
+### What to write (execution order after ExitPlanMode)
+
+All paths relative to `/Users/tarkansurav/Projects/Coding/Wardrobe Re-Do/`. Files already in the repo are marked **update**; new files are marked **create**.
+
+| # | Path | Action | Purpose | Source material |
+|---|---|---|---|---|
+| 1 | `docs/plans/2026-04-18-multi-garment-detection.md` | update | Append Sections 0.1 + 0.2 verbatim so the repo copy stays in sync with the scratch plan. This is the Section 0 convention obligation. | this plan file |
+| 2 | `docs/plans/INDEX.md` | update | Refresh the one-liner for this plan to mention that Section 0.1 (execution plan) is authored and Phase 1 is pending fresh-session kickoff. | existing INDEX |
+| 3 | `docs/session-logs/2026-04-18-training-scripts-rfdetr-api-alignment.md` | create | Narrative log: rfdetr 1.4 wrapper API differs from upstream docs → 3 scripts misaligned → probe caught it at $0 → fixed `probe_env.py`, `train.py`, `export_coreml.py` → local 6/6 probe PASS → commit `8cbf350` on `feature/photo-extraction-engine`. | session summary + 3 script diffs |
+| 4 | `docs/session-logs/2026-04-18-raw-transcript-pointer.md` | create | Pointer file to the raw JSONL transcript at `~/.claude/projects/-Users-tarkansurav-Projects-Coding-Wardrobe-Re-Do/118928d5-cdda-4951-b7cb-6d50c5eb0063.jsonl` with retrieval instructions. NOT copied into repo (too large + internal tool noise). | raw transcript path |
+| 5 | `docs/patterns/plan-storage-convention.md` | create | Generalise Section 0 to any project: mirror plan-mode scratch to `docs/plans/`, MEMORY.md pointer, INDEX.md format. | Section 0 |
+| 6 | `docs/patterns/probe-env-before-gpu-spend.md` | create | Pattern: CPU-only local probe of ML stack API + trace + convert round-trip before GPU spend. Template = `notebooks/training/scripts/probe_env.py`. | `probe_env.py` |
+| 7 | `docs/patterns/gpu-workflow-tool-split.md` | create | Pattern: Chrome MCP (authed web UI) + Bash (SSH/scp) + Monitor (grep-filtered log tail). Fallback rules. Computer-use reserved for native apps only. | Section 0.1 tool-split table |
+| 8 | `docs/patterns/gpu-budget-math.md` | create | Pattern: size smoke + production + retry buffer against a fixed GPU credit. Worked example: $30 credit → $2 smoke + $6 production on 4090 + $22 buffer; H100 ruled out (< $3 buffer = no retry margin). | Section 0.1 Phase 2 budget paragraph |
+| 9 | `docs/patterns/rfdetr-1.4-api-surface.md` | create | Reference: `TrainConfig` + `ModelConfig` field lists, `model.get_model()` for inner `nn.Module`, `pretrain_weights=None`, seg-variant required kwargs (`dataset_file="roboflow"`, `segmentation_head=True`, `class_names=[...]`). Copy-pastable construction snippet. | `probe_env.py::_check_rfdetr_api` + 3 script fixes |
+
+### What NOT to write
+
+- Raw JSONL chat transcript into the repo — too large, mostly internal tool messages, privacy-noisy. Pointer file (#4) is sufficient.
+- Re-documentation of what's already in `notebooks/training/RUNPOD_RUNBOOK.md` — link to it, don't duplicate.
+- Speculative patterns — only distil from what actually happened this session.
+- Changes to `notebooks/training/**` Python — the scripts are already correct at commit `8cbf350`.
+
+### Commit sequence
+
+1. `docs(plans): mirror Section 0.1 + 0.2 execution plan` — file #1.
+2. `docs(plans): refresh INDEX one-liner for 2026-04-18-multi-garment-detection` — file #2.
+3. `docs(session-log): record rfdetr-1.4 API alignment session` — files #3 + #4 together (same topic).
+4. `docs(patterns): extract reusable patterns from rfdetr session` — files #5-#9 together (five small docs ship as one unit).
+5. `git push origin feature/photo-extraction-engine`.
+
+### Verification
+
+- [ ] `docs/plans/2026-04-18-multi-garment-detection.md` contains both "0.1 — Active Execution Plan" and "0.2 — Session Documentation" headings (`grep -c '^## 0\.[12]'` returns 2).
+- [ ] `docs/plans/INDEX.md` one-liner mentions the Phase 1 execution plan is authored.
+- [ ] `docs/session-logs/` contains exactly two files, both named `2026-04-18-*`.
+- [ ] `docs/patterns/` contains exactly five files listed above.
+- [ ] All patterns files are < ~300 lines and reusable without Wardrobe-Re-Do-specific context (a future iOS or ML project should be able to apply them directly).
+- [ ] Raw JSONL transcript NOT copied into git: `git log --all --full-history -- 'docs/**/*.jsonl'` returns empty.
+- [ ] All commits pushed to `feature/photo-extraction-engine`.
+- [ ] After push: `/clear` (or start new session) and confirm next session's first-read is `docs/plans/INDEX.md` via MEMORY.md pointer.
+
+### Non-goals (explicit)
+
+- NOT booting a RunPod pod in this session.
+- NOT flipping `FeatureFlags.isMultiGarmentEnabled` in this session.
+- NOT editing `notebooks/training/**`.
+- NOT modifying Section 0.1 — it is frozen; future changes happen in the mirrored repo copy after docs land.
+- NOT copying raw chat transcript into the repo.
+
+### Definition of done
+
+All 9 files written/updated, 4 commits shipped to `feature/photo-extraction-engine`, verification checklist green. At that point this session has zero pending work and the fresh session can pick up Phase 1 with full context.
 
 ---
 
