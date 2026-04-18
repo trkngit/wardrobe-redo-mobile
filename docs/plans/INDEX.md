@@ -22,7 +22,7 @@ Every plan file has:
 
 | Slug | Status | Started | Shipped | One-liner |
 |------|--------|---------|---------|-----------|
-| [2026-04-18-multi-garment-detection](./2026-04-18-multi-garment-detection.md) | IN PROGRESS (iOS plumbing shipped behind flag; blocked on GPU run for flag-flip) | 2026-04-18 | — | RF-DETR-Seg + Fashionpedia: detect multiple garments in one photo, multi-pick UI, sequential per-item save loop |
+| [2026-04-18-multi-garment-detection](./2026-04-18-multi-garment-detection.md) | IN PROGRESS (iOS plumbing shipped; training scripts aligned to rfdetr 1.4, local probe 6/6 green; Section 0.1 RunPod execution plan authored; Phase 1 pod boot pending fresh-session kickoff) | 2026-04-18 | — | RF-DETR-Seg + Fashionpedia: detect multiple garments in one photo, multi-pick UI, sequential per-item save loop |
 
 ## Memory pointer
 
