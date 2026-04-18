@@ -8,12 +8,16 @@ import Testing
 @MainActor
 struct FeatureFlagsTests {
 
-    @Test func multiGarmentFlagDefaultsToFalse() {
+    @Test func multiGarmentFlagDefaultsToFalse() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
         FeatureFlags.resetAll()
         #expect(FeatureFlags.isMultiGarmentEnabled == false)
     }
 
-    @Test func multiGarmentFlagRoundTripsThroughSetter() {
+    @Test func multiGarmentFlagRoundTripsThroughSetter() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
         FeatureFlags.resetAll()
         FeatureFlags.isMultiGarmentEnabled = true
         #expect(FeatureFlags.isMultiGarmentEnabled == true)
@@ -24,13 +28,17 @@ struct FeatureFlagsTests {
         FeatureFlags.resetAll()
     }
 
-    @Test func resetAllClearsMultiGarmentFlag() {
+    @Test func resetAllClearsMultiGarmentFlag() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
         FeatureFlags.isMultiGarmentEnabled = true
         FeatureFlags.resetAll()
         #expect(FeatureFlags.isMultiGarmentEnabled == false)
     }
 
-    @Test func multiGarmentFlagPersistsAcrossReads() {
+    @Test func multiGarmentFlagPersistsAcrossReads() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
         FeatureFlags.resetAll()
         FeatureFlags.isMultiGarmentEnabled = true
 

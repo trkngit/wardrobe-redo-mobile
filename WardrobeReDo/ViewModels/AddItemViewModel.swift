@@ -127,6 +127,36 @@ final class AddItemViewModel {
     /// button behaves as a normal single-item save.
     var wantsAnotherGarment: Bool = false
 
+    // Phase 5: multi-garment proposals (feature-flagged)
+
+    /// Proposals returned by `MultiGarmentProposalService` via
+    /// `ImageService.processImage`. Nil when detection was skipped
+    /// (flag off, extractor missing) or returned 0/1 items — either case
+    /// falls through to the existing single-item tap-to-select flow.
+    /// `count >= 2` is the trigger for `isShowingMultiPick`.
+    var proposals: [MaskProposal]?
+
+    /// IDs the user has currently checked on `MultiGarmentTapToSelectView`.
+    /// Seeded to "all selected" when proposals first arrive — most users
+    /// will want most items, so unchecking is cheaper than checking.
+    var selectedProposalIDs: Set<MaskProposal.ID> = []
+
+    /// FIFO queue of proposals the user confirmed, scored-descending.
+    /// Drives the sequential per-item details loop: each successful save
+    /// pops the next one into `currentProposal` + `.details`. Empty when
+    /// not in a batch.
+    var pendingProposalQueue: [MaskProposal] = []
+
+    /// Proposal currently being detailed. Non-nil only while a batch is
+    /// in flight; nil in single-item flows. Drives the "Skip this item"
+    /// toolbar action's visibility.
+    var currentProposal: MaskProposal?
+
+    /// Controls the full-screen `MultiGarmentTapToSelectView` cover.
+    /// Raised when ≥2 proposals land and the feature flag is on;
+    /// lowered by confirm / escape / cancel / start-next.
+    var isShowingMultiPick: Bool = false
+
     // MARK: - Dependencies
 
     private let imageService: any ImageServiceProtocol
@@ -251,7 +281,7 @@ final class AddItemViewModel {
             selectedImage = resized
         }
         isProcessing = false
-        isShowingTapToSelect = true
+        routeAfterProcessing(processed: processed)
     }
 
     func onCategoryChanged() {
@@ -351,7 +381,35 @@ final class AddItemViewModel {
             selectedImage = resized
         }
         isProcessing = false
-        isShowingTapToSelect = true
+        routeAfterProcessing(processed: processed)
+    }
+
+    /// Single routing gate for post-processing: when ≥2 proposals came
+    /// back and the feature flag is on, hand off to the multi-pick
+    /// cover; otherwise (flag off, 0-1 proposals, or extractor missing)
+    /// route to the existing single-item tap-to-select flow. Keeps
+    /// library + camera branches structurally identical so the single
+    /// rule change lives in one place.
+    ///
+    /// Belt-and-suspenders: `ImageService` already gates the proposal
+    /// population on `FeatureFlags.isMultiGarmentEnabled`, but a stale
+    /// `ProcessedImage` (e.g. injected from a test with proposals
+    /// pre-populated) shouldn't be able to route past the gate at this
+    /// later stage either.
+    private func routeAfterProcessing(processed: ProcessedImage) {
+        if FeatureFlags.isMultiGarmentEnabled,
+           let props = processed.proposals,
+           props.count >= 2 {
+            proposals = props
+            // Start with every proposal selected — users typically want
+            // most items from a multi-garment photo, so unchecking is
+            // cheaper than checking each from scratch.
+            selectedProposalIDs = Set(props.map(\.id))
+            logger.info("multiGarment.show: \(props.count) proposals, flag on")
+            isShowingMultiPick = true
+        } else {
+            isShowingTapToSelect = true
+        }
     }
 
     /// Reset the per-capture provenance state so the next photo gets
@@ -364,6 +422,13 @@ final class AddItemViewModel {
         sourcePhotoPath = nil
         savedItemsFromSource = 0
         wantsAnotherGarment = false
+        // Drop stale proposal state so a second photo doesn't inherit
+        // the prior capture's queue / selection.
+        proposals = nil
+        selectedProposalIDs = []
+        pendingProposalQueue = []
+        currentProposal = nil
+        isShowingMultiPick = false
     }
 
     /// User cancelled out of the camera view without capturing anything.
@@ -508,6 +573,121 @@ final class AddItemViewModel {
         currentStep = .details
     }
 
+    // MARK: - Phase 5 multi-garment multi-pick
+
+    /// User tapped "Save N items" on `MultiGarmentTapToSelectView`. Takes
+    /// the current checkbox selection, orders it score-descending so the
+    /// most confident garment is detailed first (matching the display
+    /// order), and starts the sequential details loop.
+    func onMultiPickConfirmed() {
+        guard let proposals else { return }
+        pendingProposalQueue = proposals
+            .filter { selectedProposalIDs.contains($0.id) }
+            .sorted { $0.detectionScore > $1.detectionScore }
+        logger.info("multiGarment.confirm: \(self.pendingProposalQueue.count) items queued")
+        startNextProposal()
+    }
+
+    /// Escape hatch. User tapped "Use full photo" on the multi-pick
+    /// screen — drops all proposals and routes to the existing single-
+    /// item tap-to-select flow. Telemetry-logged so we can measure how
+    /// often users bail on the multi-pick UX.
+    func onMultiPickUseFullPhoto() {
+        logger.info("multiGarment.escape: user chose 'Use full photo'")
+        proposals = nil
+        selectedProposalIDs = []
+        pendingProposalQueue = []
+        currentProposal = nil
+        isShowingMultiPick = false
+        isShowingTapToSelect = true
+    }
+
+    /// User tapped Cancel on the multi-pick toolbar. Unlike "Use full
+    /// photo" (which keeps the capture and falls through to single-item
+    /// selection), this abandons the capture entirely and drops back to
+    /// the photo step so the user can pick a different source.
+    func onMultiPickCancelled() {
+        logger.info("multiGarment.cancel: user dismissed multi-pick")
+        isShowingMultiPick = false
+        proposals = nil
+        selectedProposalIDs = []
+        pendingProposalQueue = []
+        currentProposal = nil
+        currentStep = .photo
+    }
+
+    /// "Skip this item" toolbar action on the details step, visible only
+    /// while a batch is in flight (`currentProposal != nil`). Pops the
+    /// next proposal without saving the current one; if the queue is
+    /// empty this becomes a no-save finish like the user just tapped
+    /// Cancel on the last item.
+    func onSkipCurrentProposal() {
+        logger.info("multiGarment.skip: skipping current proposal, \(self.pendingProposalQueue.count) remaining")
+        startNextProposal()
+    }
+
+    /// Pop the next proposal off the queue and prepare the details step
+    /// for it. Swaps the proposal's cutout into `processedImage` so the
+    /// details preview shows the correct garment, resets item-specific
+    /// metadata to defaults, and lowers the multi-pick cover.
+    ///
+    /// When the queue is empty this routes to one of:
+    /// - `didSave = true` if at least one item was saved (batch done)
+    /// - `.photo` step if nothing was saved (user skipped all)
+    private func startNextProposal() {
+        guard !pendingProposalQueue.isEmpty else {
+            isShowingMultiPick = false
+            isShowingTapToSelect = false
+            currentProposal = nil
+            if savedItemsFromSource > 0 {
+                // At least one garment landed — treat the batch as done
+                // and dismiss the sheet like any normal save flow.
+                didSave = true
+            } else {
+                // Batch ended without saving anything (user skipped
+                // through everything). Drop back to photo step instead
+                // of silently dismissing — friendlier for a restart.
+                currentStep = .photo
+            }
+            return
+        }
+        let next = pendingProposalQueue.removeFirst()
+        currentProposal = next
+        // Splice the proposal's cutout into processedImage so the
+        // details preview renders the right garment. PNG preserves the
+        // transparent background — JPEG would flatten it.
+        if let current = processedImage {
+            processedImage = ProcessedImage(
+                originalData: current.originalData,
+                thumbnailData: current.thumbnailData,
+                maskedData: next.maskedImage.pngData(),
+                extractionConfidence: next.confidence,
+                extractionMethod: .multiGarmentRFDETR,
+                dominantColors: current.dominantColors,
+                // Clear so the post-save branch doesn't re-route into
+                // multi-pick — this proposal is already being processed.
+                proposals: nil
+            )
+        }
+        // Reset item-specific metadata to defaults, same spirit as
+        // `resetKeepingSource()` but without flipping the single-item
+        // `wantsAnotherGarment` flag (batch progression is driven by
+        // the queue, not that flag).
+        category = .top
+        subcategory = .tshirt
+        texture = nil
+        fitAttribute = nil
+        selectedSeasons = Set(Season.allCases)
+        selectedOccasions = [.casual]
+        errorMessage = nil
+        isAutoCropped = false
+        isProcessing = false
+        isShowingTouchup = false
+        isShowingTapToSelect = false
+        isShowingMultiPick = false
+        currentStep = .details
+    }
+
     func save(userId: UUID) async {
         guard let processed = processedImage else { return }
 
@@ -625,7 +805,15 @@ final class AddItemViewModel {
             }
             savedItemsFromSource += 1
 
-            if shouldLoopAfter {
+            if !pendingProposalQueue.isEmpty || currentProposal != nil {
+                // Multi-pick batch in flight (queue has more items, or
+                // we're saving the last one). `startNextProposal`
+                // handles both branches: pop-and-detail, or dismiss
+                // via `didSave = true` when the queue is empty. Takes
+                // priority over the single-item `wantsAnotherGarment`
+                // flag because batch progression is the stronger signal.
+                startNextProposal()
+            } else if shouldLoopAfter {
                 // "Save & add another garment" path: keep the captured
                 // image + session hot, clear only item-specific metadata,
                 // and re-enter tap-to-select for the next garment.
@@ -710,6 +898,12 @@ final class AddItemViewModel {
         sam2Session = nil
         savedItemsFromSource = 0
         wantsAnotherGarment = false
+        // Phase 5 multi-pick state.
+        proposals = nil
+        selectedProposalIDs = []
+        pendingProposalQueue = []
+        currentProposal = nil
+        isShowingMultiPick = false
         // Cancel any in-flight session load so a sheet dismissal mid-
         // processing doesn't leak the MLModel load into the background.
         sessionLoadTask?.cancel()

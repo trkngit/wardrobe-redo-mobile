@@ -44,6 +44,18 @@ struct AddItemView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
+                // "Skip this item" is visible only while a multi-pick
+                // batch is mid-flight — i.e. the user has confirmed
+                // proposals and is walking through the sequential
+                // details step. Single-item flows never see it.
+                if viewModel.currentProposal != nil, viewModel.currentStep == .details {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Skip this item") {
+                            viewModel.onSkipCurrentProposal()
+                        }
+                        .accessibilityHint("Skips this garment without saving and moves to the next detected item.")
+                    }
+                }
             }
             .onChange(of: viewModel.selectedPhoto) {
                 Task { await viewModel.onPhotoSelected() }
@@ -59,6 +71,9 @@ struct AddItemView: View {
             }
             .fullScreenCover(isPresented: $viewModel.isShowingTapToSelect) {
                 tapToSelectCover
+            }
+            .fullScreenCover(isPresented: $viewModel.isShowingMultiPick) {
+                multiPickCover
             }
             .sheet(isPresented: $viewModel.isShowingTutorial) {
                 FirstRunTutorialView {
@@ -195,6 +210,32 @@ struct AddItemView: View {
         } else {
             Color.clear
                 .onAppear { viewModel.onTapToSelectCancelled() }
+        }
+    }
+
+    // MARK: - Multi-pick fullscreen cover (Phase 5)
+
+    @ViewBuilder
+    private var multiPickCover: some View {
+        if let source = viewModel.selectedImage,
+           let proposals = viewModel.proposals {
+            MultiGarmentTapToSelectView(
+                sourceImage: source,
+                proposals: proposals,
+                selectedIDs: Binding(
+                    get: { viewModel.selectedProposalIDs },
+                    set: { viewModel.selectedProposalIDs = $0 }
+                ),
+                onConfirmed: { viewModel.onMultiPickConfirmed() },
+                onUseFullPhoto: { viewModel.onMultiPickUseFullPhoto() },
+                onCancel: { viewModel.onMultiPickCancelled() }
+            )
+        } else {
+            // Defensive fallback — the cover shouldn't open without
+            // these, but closing it rather than showing a blank screen
+            // recovers gracefully if state ever diverges.
+            Color.clear
+                .onAppear { viewModel.onMultiPickCancelled() }
         }
     }
 
@@ -467,9 +508,13 @@ struct AddItemView: View {
     /// Whether the secondary "Save & add another garment" button is
     /// rendered. Hidden when no capture has started yet OR when SAM2 is
     /// unavailable — in that second case tap-to-select wouldn't work,
-    /// and the user shouldn't be offered a dead loop.
+    /// and the user shouldn't be offered a dead loop. Also hidden during
+    /// a multi-pick batch (queue-driven progression owns the loop
+    /// semantics; stacking the two affordances would confuse users).
     private var canShowAddAnother: Bool {
-        viewModel.selectedImage != nil && viewModel.sam2Session != nil
+        viewModel.selectedImage != nil
+            && viewModel.sam2Session != nil
+            && viewModel.currentProposal == nil
     }
 
     /// Small pill above the save buttons that surfaces how many garment

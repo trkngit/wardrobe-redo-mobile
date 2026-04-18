@@ -724,3 +724,384 @@ private final class StubSAM2Session: SAM2Session, @unchecked Sendable {
     #expect(vm.savedItemsFromSource == 0)
     #expect(vm.wantsAnotherGarment == false)
 }
+
+// MARK: - Phase 5: multi-garment multi-pick (feature-flagged)
+
+/// `.serialized` — these tests flip `FeatureFlags.isMultiGarmentEnabled`,
+/// which is UserDefaults-backed global mutable state. Swift Testing runs
+/// tests in parallel by default; without serialization, one test's
+/// `isMultiGarmentEnabled = true` races with another's `resetAll()` and
+/// the flag-gated assertions flake. Mirrors the pattern already in
+/// `ImageServiceProposalsTests`.
+@MainActor
+@Suite(.serialized)
+struct AddItemMultiGarmentTests {
+
+    /// Build a `ProcessedImage` carrying `count` distinct proposals.
+    /// Scores are descending (0.9, 0.85, 0.8, …) so the queue-ordering
+    /// tests can assert strict ordering. Bounding-box areas increase
+    /// with index so the render-order tests (if any) have meaningful
+    /// input too.
+    private func makeProcessedImageWithProposals(_ count: Int) -> ProcessedImage {
+        let props = (0..<count).map { i in
+            MaskProposalFixture.make(
+                boundingBox: CGRect(
+                    x: 0.1, y: 0.1,
+                    width: 0.3 + Double(i) * 0.05,
+                    height: 0.3
+                ),
+                detectionScore: Float(0.9 - Double(i) * 0.05)
+            )
+        }
+        return ProcessedImage(
+            originalData: Data([0xFF]),
+            thumbnailData: Data([0xFF]),
+            maskedData: Data([0xAB]),
+            extractionConfidence: .high,
+            extractionMethod: .multiGarmentRFDETR,
+            dominantColors: [],
+            proposals: props
+        )
+    }
+
+    private func makeProcessedImageWithoutProposals() -> ProcessedImage {
+        ProcessedImage(
+            originalData: Data([0xFF]),
+            thumbnailData: Data([0xFF]),
+            maskedData: Data([0xAB]),
+            extractionConfidence: .high,
+            extractionMethod: .vision,
+            dominantColors: []
+        )
+    }
+
+    private func makePixelImage() -> UIImage {
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: 1, height: 1))
+        return renderer.image { ctx in
+            UIColor.systemBlue.setFill()
+            ctx.fill(CGRect(x: 0, y: 0, width: 1, height: 1))
+        }
+    }
+
+    // MARK: - Routing
+
+    @Test func routesToMultiPickWhenFlagOnAndTwoOrMoreProposals() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
+        FeatureFlags.resetAll()
+        FeatureFlags.isMultiGarmentEnabled = true
+        defer { FeatureFlags.resetAll() }
+
+        let mockImage = MockImageService()
+        mockImage.processImageResult = makeProcessedImageWithProposals(3)
+        let vm = AddItemViewModel(
+            imageService: mockImage,
+            wardrobeRepository: MockWardrobeRepository()
+        )
+        vm.isShowingCamera = true
+
+        await vm.onCameraPhotoCaptured(makePixelImage())
+
+        #expect(vm.isShowingMultiPick == true)
+        #expect(vm.isShowingTapToSelect == false)
+        #expect(vm.proposals?.count == 3)
+        #expect(vm.selectedProposalIDs.count == 3, "all proposals start selected")
+    }
+
+    @Test func addItemSingleProposalFallsThroughToExistingFlow() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
+        FeatureFlags.resetAll()
+        FeatureFlags.isMultiGarmentEnabled = true
+        defer { FeatureFlags.resetAll() }
+
+        let mockImage = MockImageService()
+        mockImage.processImageResult = makeProcessedImageWithProposals(1)
+        let vm = AddItemViewModel(
+            imageService: mockImage,
+            wardrobeRepository: MockWardrobeRepository()
+        )
+        vm.isShowingCamera = true
+
+        await vm.onCameraPhotoCaptured(makePixelImage())
+
+        #expect(vm.isShowingMultiPick == false)
+        #expect(vm.isShowingTapToSelect == true)
+    }
+
+    @Test func addItemNoProposalsFallsThroughToExistingFlow() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
+        FeatureFlags.resetAll()
+        FeatureFlags.isMultiGarmentEnabled = true
+        defer { FeatureFlags.resetAll() }
+
+        let mockImage = MockImageService()
+        mockImage.processImageResult = makeProcessedImageWithoutProposals()
+        let vm = AddItemViewModel(
+            imageService: mockImage,
+            wardrobeRepository: MockWardrobeRepository()
+        )
+        vm.isShowingCamera = true
+
+        await vm.onCameraPhotoCaptured(makePixelImage())
+
+        #expect(vm.isShowingMultiPick == false)
+        #expect(vm.isShowingTapToSelect == true)
+    }
+
+    @Test func addItemFeatureFlagOffSkipsMultiPickEntirely() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
+        FeatureFlags.resetAll()
+        FeatureFlags.isMultiGarmentEnabled = false
+        defer { FeatureFlags.resetAll() }
+
+        let mockImage = MockImageService()
+        // Deliberately stuff proposals into the ProcessedImage — belt-
+        // and-suspenders check that the VM's routing gate (not just
+        // ImageService) respects the flag.
+        mockImage.processImageResult = makeProcessedImageWithProposals(5)
+        let vm = AddItemViewModel(
+            imageService: mockImage,
+            wardrobeRepository: MockWardrobeRepository()
+        )
+        vm.isShowingCamera = true
+
+        await vm.onCameraPhotoCaptured(makePixelImage())
+
+        #expect(vm.isShowingMultiPick == false)
+        #expect(vm.isShowingTapToSelect == true, "flag off → single-item flow even if proposals attached")
+        #expect(vm.proposals == nil, "routing gate drops proposals when flag is off")
+    }
+
+    @Test func addItemUseFullPhotoEscapeRoutesToSingleItemFlow() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
+        FeatureFlags.resetAll()
+        FeatureFlags.isMultiGarmentEnabled = true
+        defer { FeatureFlags.resetAll() }
+
+        let mockImage = MockImageService()
+        mockImage.processImageResult = makeProcessedImageWithProposals(3)
+        let vm = AddItemViewModel(
+            imageService: mockImage,
+            wardrobeRepository: MockWardrobeRepository()
+        )
+        vm.isShowingCamera = true
+        await vm.onCameraPhotoCaptured(makePixelImage())
+        #expect(vm.isShowingMultiPick == true) // precondition
+
+        vm.onMultiPickUseFullPhoto()
+
+        #expect(vm.isShowingMultiPick == false)
+        #expect(vm.isShowingTapToSelect == true)
+        #expect(vm.proposals == nil)
+        #expect(vm.pendingProposalQueue.isEmpty)
+    }
+
+    // MARK: - Queue progression
+
+    @Test func confirmQueuesSelectedProposalsScoreDescending() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
+        FeatureFlags.resetAll()
+        FeatureFlags.isMultiGarmentEnabled = true
+        defer { FeatureFlags.resetAll() }
+
+        let mockImage = MockImageService()
+        mockImage.processImageResult = makeProcessedImageWithProposals(3)
+        let vm = AddItemViewModel(
+            imageService: mockImage,
+            wardrobeRepository: MockWardrobeRepository()
+        )
+        vm.isShowingCamera = true
+        await vm.onCameraPhotoCaptured(makePixelImage())
+
+        vm.onMultiPickConfirmed()
+
+        #expect(vm.currentProposal != nil, "first proposal popped into details")
+        #expect(vm.pendingProposalQueue.count == 2, "remaining 2 still queued")
+        #expect(vm.currentStep == .details)
+        #expect(vm.isShowingMultiPick == false)
+        // Highest-scored proposal is detailed first.
+        let sortedScores = (vm.proposals ?? []).sorted { $0.detectionScore > $1.detectionScore }
+        #expect(vm.currentProposal?.id == sortedScores.first?.id)
+    }
+
+    @Test func addItemMultiPickQueueProgressesThroughDetails() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
+        FeatureFlags.resetAll()
+        FeatureFlags.isMultiGarmentEnabled = true
+        defer { FeatureFlags.resetAll() }
+
+        let mockImage = MockImageService()
+        mockImage.processImageResult = makeProcessedImageWithProposals(3)
+        let mockRepo = MockWardrobeRepository()
+        let vm = AddItemViewModel(
+            imageService: mockImage,
+            wardrobeRepository: mockRepo
+        )
+        vm.isShowingCamera = true
+        await vm.onCameraPhotoCaptured(makePixelImage())
+        vm.onMultiPickConfirmed()
+
+        let firstProposalId = vm.currentProposal?.id
+
+        // Save #1 → second proposal becomes current.
+        await vm.save(userId: UUID())
+        #expect(mockRepo.insertItemCallCount == 1)
+        #expect(vm.currentProposal != nil)
+        #expect(vm.currentProposal?.id != firstProposalId)
+        #expect(vm.pendingProposalQueue.count == 1)
+        #expect(vm.savedItemsFromSource == 1)
+        #expect(vm.didSave == false, "batch in progress shouldn't dismiss")
+
+        let secondProposalId = vm.currentProposal?.id
+
+        // Save #2 → third proposal becomes current.
+        await vm.save(userId: UUID())
+        #expect(mockRepo.insertItemCallCount == 2)
+        #expect(vm.currentProposal != nil)
+        #expect(vm.currentProposal?.id != firstProposalId)
+        #expect(vm.currentProposal?.id != secondProposalId)
+        #expect(vm.pendingProposalQueue.isEmpty)
+        #expect(vm.savedItemsFromSource == 2)
+
+        // Save #3 → queue empty, batch done, sheet dismisses.
+        await vm.save(userId: UUID())
+        #expect(mockRepo.insertItemCallCount == 3)
+        #expect(vm.currentProposal == nil)
+        #expect(vm.pendingProposalQueue.isEmpty)
+        #expect(vm.savedItemsFromSource == 3)
+        #expect(vm.didSave == true, "batch complete → sheet dismisses")
+    }
+
+    @Test func addItemMultiPickAllowsSkip() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
+        FeatureFlags.resetAll()
+        FeatureFlags.isMultiGarmentEnabled = true
+        defer { FeatureFlags.resetAll() }
+
+        let mockImage = MockImageService()
+        mockImage.processImageResult = makeProcessedImageWithProposals(3)
+        let mockRepo = MockWardrobeRepository()
+        let vm = AddItemViewModel(
+            imageService: mockImage,
+            wardrobeRepository: mockRepo
+        )
+        vm.isShowingCamera = true
+        await vm.onCameraPhotoCaptured(makePixelImage())
+        vm.onMultiPickConfirmed()
+        let firstProposalId = vm.currentProposal?.id
+
+        vm.onSkipCurrentProposal()
+
+        #expect(mockRepo.insertItemCallCount == 0, "skip doesn't save")
+        #expect(vm.currentProposal != nil, "second proposal should now be current")
+        #expect(vm.currentProposal?.id != firstProposalId)
+        #expect(vm.pendingProposalQueue.count == 1)
+        #expect(vm.savedItemsFromSource == 0)
+    }
+
+    @Test func skippingAllProposalsFallsBackToPhotoStep() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
+        FeatureFlags.resetAll()
+        FeatureFlags.isMultiGarmentEnabled = true
+        defer { FeatureFlags.resetAll() }
+
+        let mockImage = MockImageService()
+        mockImage.processImageResult = makeProcessedImageWithProposals(2)
+        let vm = AddItemViewModel(
+            imageService: mockImage,
+            wardrobeRepository: MockWardrobeRepository()
+        )
+        vm.isShowingCamera = true
+        await vm.onCameraPhotoCaptured(makePixelImage())
+        vm.onMultiPickConfirmed()
+
+        vm.onSkipCurrentProposal() // skip #1 (queue still has #2)
+        vm.onSkipCurrentProposal() // skip #2 (queue now empty)
+
+        #expect(vm.currentProposal == nil)
+        #expect(vm.savedItemsFromSource == 0)
+        #expect(vm.didSave == false, "skipping everything shouldn't dismiss; user gets photo step")
+        #expect(vm.currentStep == .photo)
+    }
+
+    @Test func cancelMultiPickReturnsToPhotoStep() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
+        FeatureFlags.resetAll()
+        FeatureFlags.isMultiGarmentEnabled = true
+        defer { FeatureFlags.resetAll() }
+
+        let mockImage = MockImageService()
+        mockImage.processImageResult = makeProcessedImageWithProposals(2)
+        let vm = AddItemViewModel(
+            imageService: mockImage,
+            wardrobeRepository: MockWardrobeRepository()
+        )
+        vm.isShowingCamera = true
+        await vm.onCameraPhotoCaptured(makePixelImage())
+
+        vm.onMultiPickCancelled()
+
+        #expect(vm.isShowingMultiPick == false)
+        #expect(vm.currentStep == .photo)
+        #expect(vm.proposals == nil)
+    }
+
+    @Test func addItemResetWipesPhase5State() {
+        let vm = AddItemViewModel()
+        vm.proposals = [MaskProposalFixture.make()]
+        vm.selectedProposalIDs = [UUID()]
+        vm.pendingProposalQueue = [MaskProposalFixture.make()]
+        vm.currentProposal = MaskProposalFixture.make()
+        vm.isShowingMultiPick = true
+
+        vm.reset()
+
+        #expect(vm.proposals == nil)
+        #expect(vm.selectedProposalIDs.isEmpty)
+        #expect(vm.pendingProposalQueue.isEmpty)
+        #expect(vm.currentProposal == nil)
+        #expect(vm.isShowingMultiPick == false)
+    }
+
+    @Test func stampFreshCaptureClearsProposalStateOnNewPhoto() async {
+        // User took one multi-garment photo, now takes a second that
+        // happens to return no proposals — the first capture's queue /
+        // selection shouldn't leak into the second capture.
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
+        FeatureFlags.resetAll()
+        FeatureFlags.isMultiGarmentEnabled = true
+        defer { FeatureFlags.resetAll() }
+
+        let mockImage = MockImageService()
+        let vm = AddItemViewModel(
+            imageService: mockImage,
+            wardrobeRepository: MockWardrobeRepository()
+        )
+
+        // First capture → 3 proposals.
+        mockImage.processImageResult = makeProcessedImageWithProposals(3)
+        vm.isShowingCamera = true
+        await vm.onCameraPhotoCaptured(makePixelImage())
+        #expect(vm.proposals?.count == 3)
+
+        // Second capture → no proposals. Stale state must be cleared.
+        mockImage.processImageResult = makeProcessedImageWithoutProposals()
+        vm.isShowingCamera = true
+        await vm.onCameraPhotoCaptured(makePixelImage())
+
+        #expect(vm.proposals == nil)
+        #expect(vm.selectedProposalIDs.isEmpty)
+        #expect(vm.isShowingMultiPick == false)
+        #expect(vm.isShowingTapToSelect == true)
+    }
+}

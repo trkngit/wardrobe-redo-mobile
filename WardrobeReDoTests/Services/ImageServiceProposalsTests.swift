@@ -23,6 +23,8 @@ struct ImageServiceProposalsTests {
     // MARK: - Feature flag gating
 
     @Test func processImageSkipsMultiGarmentWhenFlagOff() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
         FeatureFlags.resetAll()
         #expect(FeatureFlags.isMultiGarmentEnabled == false)
 
@@ -44,6 +46,8 @@ struct ImageServiceProposalsTests {
     }
 
     @Test func processImageInvokesMultiGarmentWhenFlagOn() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
         FeatureFlags.resetAll()
         FeatureFlags.isMultiGarmentEnabled = true
         defer { FeatureFlags.resetAll() }
@@ -69,6 +73,8 @@ struct ImageServiceProposalsTests {
     // MARK: - Single-proposal fall-through
 
     @Test func processImageReturnsNilProposalsWhenOnlyOneDetected() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
         FeatureFlags.resetAll()
         FeatureFlags.isMultiGarmentEnabled = true
         defer { FeatureFlags.resetAll() }
@@ -87,6 +93,8 @@ struct ImageServiceProposalsTests {
     }
 
     @Test func processImageReturnsNilProposalsWhenNoneDetected() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
         FeatureFlags.resetAll()
         FeatureFlags.isMultiGarmentEnabled = true
         defer { FeatureFlags.resetAll() }
@@ -106,6 +114,8 @@ struct ImageServiceProposalsTests {
     // MARK: - Error resilience
 
     @Test func processImageSwallowsMultiGarmentErrors() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
         FeatureFlags.resetAll()
         FeatureFlags.isMultiGarmentEnabled = true
         defer { FeatureFlags.resetAll() }
