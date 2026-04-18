@@ -22,6 +22,9 @@ struct ProfileView: View {
             notificationsSection
             cacheSection
             aboutSection
+            #if DEBUG
+            developerSection
+            #endif
             signOutSection
         }
         .navigationTitle("Profile")
@@ -225,6 +228,28 @@ struct ProfileView: View {
             }
         }
     }
+
+    // MARK: - Developer (DEBUG-only)
+
+    #if DEBUG
+    private var developerSection: some View {
+        Section("Developer") {
+            NavigationLink {
+                DeveloperMenuView()
+            } label: {
+                HStack(spacing: Theme.Spacing.md) {
+                    Image(systemName: "hammer")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color(Theme.Colors.primary))
+                        .frame(width: 20)
+                    Text("Developer Menu")
+                        .font(Theme.Fonts.body)
+                        .foregroundStyle(Color(Theme.Colors.textPrimary))
+                }
+            }
+        }
+    }
+    #endif
 
     // MARK: - Sign Out
 
