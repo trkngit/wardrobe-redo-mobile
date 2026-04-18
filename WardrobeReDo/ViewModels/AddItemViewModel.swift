@@ -92,6 +92,14 @@ final class AddItemViewModel {
     /// `unified-mapping-honey.md`.
     private var sessionLoadTask: Task<(any SAM2Session)?, Never>?
 
+    /// In-flight processing pipeline (Vision → optional SAM2-auto →
+    /// color extraction). Stored so the loading-popup Cancel button
+    /// can preempt it via `cancelProcessing()`. The wrapped body
+    /// checks `Task.isCancelled` after each await so a cancel rolls
+    /// the UI back to the photo step even if the underlying
+    /// `processImage` continues briefly in the background.
+    private var processingTask: Task<Void, Never>?
+
     /// Number of wardrobe_item rows saved from the current capture so
     /// far. Zero on every fresh photo selection; increments on each
     /// successful save during the multi-garment loop. Drives the
@@ -176,7 +184,35 @@ final class AddItemViewModel {
         }
         sessionLoadTask = sessionTask
 
-        guard let processed = await imageService.processImage(image) else {
+        // Wrap the heavy work in a `Task` so the loading-popup Cancel
+        // button can preempt it via `cancelProcessing()`. The public
+        // method still awaits the task's value so existing test
+        // contracts (post-conditions visible after the call returns)
+        // are preserved on the happy path.
+        processingTask?.cancel()
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let processed = await self.imageService.processImage(image)
+            guard !Task.isCancelled else {
+                sessionTask.cancel()
+                self.sessionLoadTask = nil
+                return
+            }
+            await self.applyProcessedFromLibrary(processed, sessionTask: sessionTask)
+        }
+        processingTask = task
+        await task.value
+        processingTask = nil
+    }
+
+    /// Post-processing branch for library-picked images. Library
+    /// captures skip the touch-up sheet (they typically already have
+    /// a clean background) and go straight to `.details`.
+    private func applyProcessedFromLibrary(
+        _ processed: ProcessedImage?,
+        sessionTask: Task<(any SAM2Session)?, Never>
+    ) async {
+        guard let processed else {
             sessionTask.cancel()
             sessionLoadTask = nil
             errorMessage = "Couldn't process that image. Try another one."
@@ -253,7 +289,33 @@ final class AddItemViewModel {
         }
         sessionLoadTask = sessionTask
 
-        guard let processed = await imageService.processImage(image) else {
+        // See `onPhotoSelected()` for the rationale of the wrapping
+        // `processingTask` — same cancel-via-popup mechanism applies.
+        processingTask?.cancel()
+        let task = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let processed = await self.imageService.processImage(image)
+            guard !Task.isCancelled else {
+                sessionTask.cancel()
+                self.sessionLoadTask = nil
+                return
+            }
+            await self.applyProcessedFromCamera(processed, sessionTask: sessionTask)
+        }
+        processingTask = task
+        await task.value
+        processingTask = nil
+    }
+
+    /// Post-processing branch for camera captures. Camera captures
+    /// run through the touch-up sheet so the user can refine the mask
+    /// before details — except when extraction failed entirely, in
+    /// which case we skip ahead to `.details` with no mask.
+    private func applyProcessedFromCamera(
+        _ processed: ProcessedImage?,
+        sessionTask: Task<(any SAM2Session)?, Never>
+    ) async {
+        guard let processed else {
             sessionTask.cancel()
             sessionLoadTask = nil
             errorMessage = "Couldn't process that photo. Try again."
@@ -298,6 +360,30 @@ final class AddItemViewModel {
     func onCameraCancelled() {
         isShowingCamera = false
         captureMethod = .library
+    }
+
+    /// User tapped Cancel on the analyzing-popup overlay while
+    /// `isProcessing == true`. Best-effort: cancels both in-flight
+    /// tasks (session-load + the processing wrap), wipes the
+    /// processing flags, and rolls the step back to `.photo` so the
+    /// user can pick a different image. The underlying `processImage`
+    /// may continue briefly in the background (Vision / SAM2 don't
+    /// check cancellation themselves), but its result is dropped via
+    /// the `Task.isCancelled` guard inside the wrap so no further UI
+    /// state mutates after this returns.
+    func cancelProcessing() {
+        processingTask?.cancel()
+        sessionLoadTask?.cancel()
+        processingTask = nil
+        sessionLoadTask = nil
+        isProcessing = false
+        currentStep = .photo
+        errorMessage = nil
+        // Clear the selected image so the user gets a clean next-pick
+        // experience instead of seeing the cancelled photo lingering
+        // in the photo step's preview area.
+        selectedImage = nil
+        selectedPhoto = nil
     }
 
     /// User finished in `MaskTouchupView` and wants to keep the edited
@@ -584,5 +670,8 @@ final class AddItemViewModel {
         // processing doesn't leak the MLModel load into the background.
         sessionLoadTask?.cancel()
         sessionLoadTask = nil
+        // Same for the processing wrap.
+        processingTask?.cancel()
+        processingTask = nil
     }
 }

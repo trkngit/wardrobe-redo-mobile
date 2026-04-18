@@ -625,6 +625,24 @@ private final class StubSAM2Session: SAM2Session, @unchecked Sendable {
     #expect(vm.isShowingTapToSelect == false)
 }
 
+@Test @MainActor func addItemCancelProcessingResetsToPhotoStep() {
+    let vm = AddItemViewModel()
+    // Simulate the state the ViewModel is in mid-processing: the
+    // analyzing-popup overlay drives off `isProcessing`, and the
+    // current step is `.analysis` while extraction runs.
+    vm.isProcessing = true
+    vm.currentStep = .analysis
+    vm.selectedImage = makePixelImage()
+    vm.errorMessage = "stale error from a previous attempt"
+
+    vm.cancelProcessing()
+
+    #expect(vm.isProcessing == false)
+    #expect(vm.currentStep == .photo)
+    #expect(vm.selectedImage == nil, "selected image should clear so the next pick is fresh")
+    #expect(vm.errorMessage == nil, "stale errors should clear on cancel")
+}
+
 @Test @MainActor func addItemResetWipesPhase4State() {
     let vm = AddItemViewModel()
     vm.sourcePhotoId = UUID()

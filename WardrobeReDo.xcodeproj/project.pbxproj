@@ -139,6 +139,7 @@
 		E1E0B4F4000000000000E0A4 /* ExtractionPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F4F4000000000000E0B4 /* ExtractionPerformanceTests.swift */; };
 		E1E0B4F5000000000000E0A5 /* Fixtures in Resources */ = {isa = PBXBuildFile; fileRef = E1E0F4F6000000000000E0B6 /* Fixtures */; };
 		E1E0B5F1000000000000E0A1 /* SAM2Tiny.mlmodelc in Resources */ = {isa = PBXBuildFile; fileRef = E1E0F5F1000000000000E0B1 /* SAM2Tiny.mlmodelc */; };
+		E1E0B6F1000000000000E0A1 /* AnalyzingPopup.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1E0F6F1000000000000E0B1 /* AnalyzingPopup.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -308,6 +309,7 @@
 		E1E0F4F4000000000000E0B4 /* ExtractionPerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtractionPerformanceTests.swift; sourceTree = "<group>"; };
 		E1E0F4F6000000000000E0B6 /* Fixtures */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Fixtures; sourceTree = "<group>"; };
 		E1E0F5F1000000000000E0B1 /* SAM2Tiny.mlmodelc */ = {isa = PBXFileReference; lastKnownFileType = folder; path = SAM2Tiny.mlmodelc; sourceTree = "<group>"; };
+		E1E0F6F1000000000000E0B1 /* AnalyzingPopup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyzingPopup.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -482,6 +484,7 @@
 			isa = PBXGroup;
 			children = (
 				2869F1610C0A845EE9693D4B /* AddItemView.swift */,
+				E1E0F6F1000000000000E0B1 /* AnalyzingPopup.swift */,
 				E1E0F2F5000000000000E0B5 /* FirstRunTutorialView.swift */,
 				EF82CDF068E318725A1D2C02 /* ItemCardView.swift */,
 				4ADF6DCCAD94A6DE061B3CE1 /* ItemDetailView.swift */,
@@ -970,6 +973,7 @@
 				E1E0B2F5000000000000E0A5 /* FirstRunTutorialView.swift in Sources */,
 				E1E0B3F1000000000000E0A1 /* SAM2Extractor.swift in Sources */,
 				E1E0B3F2000000000000E0A2 /* TapToSelectView.swift in Sources */,
+				E1E0B6F1000000000000E0A1 /* AnalyzingPopup.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

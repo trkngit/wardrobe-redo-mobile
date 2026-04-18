@@ -66,6 +66,23 @@ struct AddItemView: View {
                 // hit. The extractor guards against redundant work.
                 await viewModel.clothingExtractor.prewarm()
             }
+            .overlay {
+                // Centered analyzing-popup overlay. Replaces the inline
+                // `.analysis` step's role as the "processing" surface —
+                // the underlying view stays mounted (so the popup
+                // smoothly dismisses back to whichever step the user
+                // came from) and a 40% black backdrop blocks input on
+                // the rest of the UI while the user decides whether to
+                // wait or cancel.
+                if viewModel.isProcessing {
+                    ZStack {
+                        Color.black.opacity(0.4).ignoresSafeArea()
+                        AnalyzingPopup(onCancel: { viewModel.cancelProcessing() })
+                    }
+                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                }
+            }
+            .animation(.easeInOut(duration: 0.2), value: viewModel.isProcessing)
         }
     }
 
