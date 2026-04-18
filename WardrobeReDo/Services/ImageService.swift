@@ -2,6 +2,7 @@ import UIKit
 import PhotosUI
 import SwiftUI
 import Supabase
+import os.log
 
 struct ProcessedImage: Sendable {
     let originalData: Data
@@ -18,6 +19,31 @@ struct ProcessedImage: Sendable {
     /// for benchmarking. Nil when extraction was skipped.
     let extractionMethod: ExtractionMethod?
     let dominantColors: [ExtractedColor]
+    /// Multi-garment proposals detected in this photo, if the
+    /// `FeatureFlags.isMultiGarmentEnabled` gate was on and the Core ML
+    /// model produced any. Nil → detection skipped or failed; `count <=
+    /// 1` → downstream `AddItemViewModel` falls through to the existing
+    /// single-item `TapToSelectView`. `count >= 2` → present the
+    /// `MultiGarmentTapToSelectView` and queue per-item details.
+    let proposals: [MaskProposal]?
+
+    init(
+        originalData: Data,
+        thumbnailData: Data,
+        maskedData: Data?,
+        extractionConfidence: ExtractionConfidence?,
+        extractionMethod: ExtractionMethod?,
+        dominantColors: [ExtractedColor],
+        proposals: [MaskProposal]? = nil
+    ) {
+        self.originalData = originalData
+        self.thumbnailData = thumbnailData
+        self.maskedData = maskedData
+        self.extractionConfidence = extractionConfidence
+        self.extractionMethod = extractionMethod
+        self.dominantColors = dominantColors
+        self.proposals = proposals
+    }
 }
 
 @MainActor
@@ -25,13 +51,19 @@ final class ImageService: ImageServiceProtocol {
     private let supabase = SupabaseManager.shared.client
     private let colorExtractor = ColorExtractionService()
     private let clothingExtractor: any ClothingExtracting
+    private let multiGarmentExtractor: any MultiGarmentExtracting
+    private let logger = Logger(subsystem: "com.wardroberedo", category: "ImageService")
 
     private let maxOriginalDimension: CGFloat = 1200
     private let thumbnailDimension: CGFloat = 400
     private let compressionQuality: CGFloat = 0.8
 
-    init(clothingExtractor: any ClothingExtracting = ClothingExtractionService()) {
+    init(
+        clothingExtractor: any ClothingExtracting = ClothingExtractionService(),
+        multiGarmentExtractor: any MultiGarmentExtracting = MultiGarmentProposalService()
+    ) {
         self.clothingExtractor = clothingExtractor
+        self.multiGarmentExtractor = multiGarmentExtractor
     }
 
     // MARK: - Process Image
@@ -43,7 +75,17 @@ final class ImageService: ImageServiceProtocol {
     /// extraction failed) so the wardrobe palette reflects the clothing
     /// itself, not the floor / wall / mirror behind it.
     func processImage(_ image: UIImage) async -> ProcessedImage? {
-        let extraction = await clothingExtractor.extract(image)
+        // Run the single-mask path and the multi-garment path in
+        // parallel. The single path is the hard requirement — its result
+        // always drives the "did extraction succeed" decisions below.
+        // Multi-garment is strictly additive; when it's disabled or the
+        // model is missing we still ship a perfectly good ProcessedImage
+        // with proposals=nil.
+        async let extractionTask = clothingExtractor.extract(image)
+        async let proposalsTask: [MaskProposal]? = detectProposalsIfEnabled(for: image)
+
+        let extraction = await extractionTask
+        let proposals = await proposalsTask
 
         guard let originalResized = resize(extraction.originalImage, maxDimension: maxOriginalDimension),
               let thumbnailResized = resize(extraction.originalImage, maxDimension: thumbnailDimension),
@@ -70,8 +112,27 @@ final class ImageService: ImageServiceProtocol {
             maskedData: maskedData,
             extractionConfidence: extraction.confidence,
             extractionMethod: extraction.method,
-            dominantColors: colors
+            dominantColors: colors,
+            proposals: proposals
         )
+    }
+
+    /// Feature-flagged multi-garment proposal detection. Returns nil
+    /// when the flag is off, when the model isn't bundled yet, or when
+    /// inference threw — callers always see a valid ProcessedImage and
+    /// simply fall through to the single-item flow.
+    private func detectProposalsIfEnabled(for image: UIImage) async -> [MaskProposal]? {
+        guard FeatureFlags.isMultiGarmentEnabled else { return nil }
+        do {
+            let proposals = try await multiGarmentExtractor.detectProposals(in: image)
+            // Require at least 2 proposals to trigger multi-pick UX —
+            // single-proposal outputs fall through to the existing
+            // single-item flow so users don't get a one-item "batch."
+            return proposals.count >= 2 ? proposals : nil
+        } catch {
+            logger.error("multi-garment detection failed: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
     }
 
     // MARK: - Upload to Supabase Storage
@@ -189,7 +250,8 @@ final class ImageService: ImageServiceProtocol {
             maskedData: data,
             extractionConfidence: processed.extractionConfidence,
             extractionMethod: processed.extractionMethod,
-            dominantColors: colors
+            dominantColors: colors,
+            proposals: processed.proposals
         )
     }
 

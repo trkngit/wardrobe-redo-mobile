@@ -129,7 +129,7 @@ struct TapToSelectView: View {
     private var showAutoDetectedHint: Bool {
         guard points.isEmpty, let result = lastResult else { return false }
         switch result.method {
-        case .vision, .sam2Auto:
+        case .vision, .sam2Auto, .multiGarmentRFDETR:
             return true
         case .sam2Manual, .none:
             return false

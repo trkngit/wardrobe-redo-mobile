@@ -33,6 +33,11 @@ enum ExtractionMethod: String, Codable, Sendable, Equatable {
     case vision
     case sam2Auto
     case sam2Manual
+    /// Per-garment mask picked from a `MultiGarmentProposalService`
+    /// proposal. Assigned by `AddItemViewModel` when a proposal is
+    /// committed to the details step, so analytics can distinguish
+    /// multi-garment-batch captures from single-item flows.
+    case multiGarmentRFDETR
     case none
 }
 
