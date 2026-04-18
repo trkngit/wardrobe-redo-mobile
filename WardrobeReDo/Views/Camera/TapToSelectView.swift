@@ -25,6 +25,11 @@ struct TapToSelectView: View {
     @State private var lastResult: ExtractionResult?
     @State private var isProcessing = false
     @State private var hasRunInitial = false
+    /// Latest in-flight SAM2 inference. Cancelled before each new tap /
+    /// undo / reset so fast user input doesn't stack 2-3 concurrent
+    /// predictions (each ~100 MB working set). See "bound heap" plan
+    /// in `unified-mapping-honey.md`.
+    @State private var segmentTask: Task<Void, Never>?
 
     enum PointMode: String, CaseIterable, Identifiable {
         case positive, negative
@@ -67,9 +72,12 @@ struct TapToSelectView: View {
                 preview = initialPreview
                 // Kick off a center-point segmentation as the starting
                 // proposal — matches the auto-fallback path so the first
-                // frame feels instant.
-                await segment(with: [SAM2TapPoint.positive(CGPoint(x: 0.5, y: 0.5))])
+                // frame feels instant. Goes through `scheduleSegment` so
+                // the same cancellation guard applies if the user taps
+                // before the initial pass finishes.
+                scheduleSegment(with: [SAM2TapPoint.positive(CGPoint(x: 0.5, y: 0.5))])
             }
+            .onDisappear { segmentTask?.cancel() }
         }
     }
 
@@ -132,7 +140,7 @@ struct TapToSelectView: View {
                     )
                     let next = points + [tap]
                     points = next
-                    Task { await segment(with: next) }
+                    scheduleSegment(with: next)
                 }
         )
     }
@@ -166,7 +174,7 @@ struct TapToSelectView: View {
                 guard !points.isEmpty else { return }
                 let next = points.dropLast()
                 points = Array(next)
-                Task { await segment(with: Array(next)) }
+                scheduleSegment(with: Array(next))
             } label: {
                 Label("Undo", systemImage: "arrow.uturn.backward")
                     .font(Theme.Fonts.bodySmall.weight(.medium))
@@ -181,7 +189,7 @@ struct TapToSelectView: View {
                 points = []
                 preview = nil
                 lastResult = nil
-                Task { await segment(with: [SAM2TapPoint.positive(CGPoint(x: 0.5, y: 0.5))]) }
+                scheduleSegment(with: [SAM2TapPoint.positive(CGPoint(x: 0.5, y: 0.5))])
             } label: {
                 Label("Reset", systemImage: "arrow.counterclockwise")
                     .font(Theme.Fonts.bodySmall.weight(.medium))
@@ -196,12 +204,30 @@ struct TapToSelectView: View {
 
     // MARK: - Segmentation
 
+    /// Cancel any in-flight SAM2 inference and schedule a fresh one.
+    /// The previous Task continues to run until its current `await`
+    /// suspension point, but its result is dropped via the
+    /// `Task.isCancelled` check inside `segment(with:)`. Net effect:
+    /// fast successive taps no longer stack 2-3 concurrent SAM2
+    /// predictions in working memory — only the most recent one ever
+    /// commits to the UI state.
+    private func scheduleSegment(with taps: [SAM2TapPoint]) {
+        segmentTask?.cancel()
+        segmentTask = Task { await segment(with: taps) }
+    }
+
     private func segment(with taps: [SAM2TapPoint]) async {
         isProcessing = true
-        defer { isProcessing = false }
         let result = await extractor.extract(sourceImage, tapPoints: taps)
+        // If a fresh tap superseded this one mid-inference, the new
+        // task already flipped `isProcessing` back to true, so we must
+        // not commit `false` here (would clear the spinner during the
+        // newer prediction). The new task will own the eventual
+        // `isProcessing = false` flip when it finishes.
+        guard !Task.isCancelled else { return }
         lastResult = result
         preview = result.maskedImage
+        isProcessing = false
     }
 
     private func commit() {
