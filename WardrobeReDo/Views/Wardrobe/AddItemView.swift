@@ -87,7 +87,22 @@ struct AddItemView: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.9)))
                 }
             }
+            .overlay(alignment: .bottom) {
+                // Brief "Cancelled" pill confirms the cancel landed —
+                // the analyzing popup disappears at the same instant
+                // the underlying step reverts to `.photo`, which would
+                // otherwise look identical to a slow processing run
+                // that hadn't started yet. The pill auto-dismisses
+                // ~1.8s later via the VM's `cancellationDismissTask`.
+                if viewModel.cancellationToastVisible {
+                    cancellationToast
+                        .padding(.bottom, Theme.Spacing.xl)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .accessibilityAddTraits(.isStaticText)
+                }
+            }
             .animation(.easeInOut(duration: 0.2), value: viewModel.isProcessing)
+            .animation(.spring(duration: 0.3), value: viewModel.cancellationToastVisible)
         }
     }
 
@@ -181,6 +196,25 @@ struct AddItemView: View {
             Color.clear
                 .onAppear { viewModel.onTapToSelectCancelled() }
         }
+    }
+
+    // MARK: - Cancellation Toast
+
+    private var cancellationToast: some View {
+        HStack(spacing: Theme.Spacing.sm) {
+            Image(systemName: "checkmark.circle.fill")
+                .foregroundStyle(Color(Theme.Colors.primary))
+            Text("Cancelled")
+                .font(Theme.Fonts.bodySmall.weight(.medium))
+                .foregroundStyle(Color(Theme.Colors.textPrimary))
+        }
+        .padding(.horizontal, Theme.Spacing.lg)
+        .padding(.vertical, Theme.Spacing.md)
+        .background(
+            Capsule()
+                .fill(Color(Theme.Colors.surface))
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 2)
+        )
     }
 
     // MARK: - Progress Bar

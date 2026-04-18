@@ -681,6 +681,33 @@ private final class StubSAM2Session: SAM2Session, @unchecked Sendable {
     #expect(vm.errorMessage == nil, "stale errors should clear on cancel")
 }
 
+@Test @MainActor func addItemCancelProcessingShowsCancellationToast() {
+    let vm = AddItemViewModel()
+    vm.isProcessing = true
+    vm.currentStep = .analysis
+
+    vm.cancelProcessing()
+
+    // The toast flips on synchronously so the AddItemView overlay
+    // animates the pill in at the same moment the analyzing popup
+    // animates out — matched timing prevents a "did the cancel
+    // register?" gap. Auto-dismiss after ~1.8s isn't asserted here
+    // (would slow the suite); covered manually on the device walk.
+    #expect(vm.cancellationToastVisible == true)
+}
+
+@Test @MainActor func addItemResetClearsCancellationToast() {
+    let vm = AddItemViewModel()
+    vm.cancellationToastVisible = true
+
+    vm.reset()
+
+    // Sheet teardown drops the pill — the toast belongs to the live
+    // AddItem flow, no point showing it after the user has closed
+    // the sheet entirely.
+    #expect(vm.cancellationToastVisible == false)
+}
+
 @Test @MainActor func addItemResetWipesPhase4State() {
     let vm = AddItemViewModel()
     vm.sourcePhotoId = UUID()

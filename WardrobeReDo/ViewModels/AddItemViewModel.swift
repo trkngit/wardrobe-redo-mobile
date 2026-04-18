@@ -100,6 +100,19 @@ final class AddItemViewModel {
     /// `processImage` continues briefly in the background.
     private var processingTask: Task<Void, Never>?
 
+    /// Brief "Cancelled" pill shown at the bottom of `AddItemView`
+    /// after the user taps Cancel on the analyzing popup. Confirms the
+    /// action took effect (a silent rollback to the photo step would
+    /// leave the user wondering whether the cancel was registered).
+    /// Auto-clears via `cancellationDismissTask` after ~1.8 s.
+    var cancellationToastVisible: Bool = false
+
+    /// Auto-dismiss handle for the cancellation toast. Stored so a
+    /// rapid second cancel resets the timer instead of letting the
+    /// first dismiss fire mid-display, and so `reset()` can drop the
+    /// pill cleanly when the sheet closes.
+    private var cancellationDismissTask: Task<Void, Never>?
+
     /// Number of wardrobe_item rows saved from the current capture so
     /// far. Zero on every fresh photo selection; increments on each
     /// successful save during the multi-garment loop. Drives the
@@ -382,6 +395,19 @@ final class AddItemViewModel {
         // in the photo step's preview area.
         selectedImage = nil
         selectedPhoto = nil
+
+        // Flash a brief "Cancelled" pill so the user gets explicit
+        // feedback that the cancel landed — a silent rollback would
+        // leave them wondering whether the tap registered. Reset the
+        // dismiss timer if a previous toast was still on screen.
+        cancellationToastVisible = true
+        cancellationDismissTask?.cancel()
+        cancellationDismissTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 1_800_000_000)
+            guard !Task.isCancelled, let self else { return }
+            self.cancellationToastVisible = false
+            self.cancellationDismissTask = nil
+        }
     }
 
     /// User finished in `MaskTouchupView` and wants to keep the edited
@@ -683,5 +709,10 @@ final class AddItemViewModel {
         // Same for the processing wrap.
         processingTask?.cancel()
         processingTask = nil
+        // Drop any pending toast — if the sheet is being torn down,
+        // there's nothing to show feedback on.
+        cancellationDismissTask?.cancel()
+        cancellationDismissTask = nil
+        cancellationToastVisible = false
     }
 }
