@@ -12,7 +12,12 @@ garments.
 
 | File | Purpose |
 |------|---------|
-| `2026-04-multi-garment.ipynb` | End-to-end training + Core ML export notebook |
+| [`RUNPOD_RUNBOOK.md`](./RUNPOD_RUNBOOK.md) | **Copy-paste step-by-step for the \$30 RunPod training run.** Start here if you're about to burn GPU credit. |
+| `scripts/probe_env.py` | Laptop-only env probe. Free. Run before spending \$ on a pod. |
+| `scripts/prepare_fashionpedia.py` | CVDF download + filter to the 33 main apparel classes, emits rfdetr-compatible COCO dirs. |
+| `scripts/train.py` | Production training CLI. Invoked on the GPU pod. |
+| `scripts/export_coreml.py` | Trace + convert + 6-bit palettize + copy to app bundle. |
+| `2026-04-multi-garment.ipynb` | Exploratory notebook. Same recipe, interactive form; the scripts above are authoritative for the actual training run. |
 | `requirements.txt` | Pinned Python dependencies (run exactly once to reproduce the environment) |
 | `README.md` | This document |
 
@@ -41,24 +46,39 @@ matrix.
 
 Fashionpedia annotations are [CC BY 4.0](https://fashionpedia.github.io/home/data_license.html).
 The CVDF image mirror is commercial-use safe; we filter to CC-licensed
-photos only. Prep via:
+photos only.
+
+The HF `detection-datasets/fashionpedia` mirror is **detection-only** —
+it strips polygons. For RF-DETR-**Seg** training we need the CVDF S3
+source, which `scripts/prepare_fashionpedia.py` pulls directly:
 
 ```bash
-# The notebook has a one-shot cell that does this for you, but the
-# commands are documented here so you can sanity-check them.
-mkdir -p data/fashionpedia
-wget -P data/fashionpedia https://huggingface.co/datasets/detection-datasets/fashionpedia/resolve/main/train.zip
-wget -P data/fashionpedia https://huggingface.co/datasets/detection-datasets/fashionpedia/resolve/main/val.zip
+python notebooks/training/scripts/prepare_fashionpedia.py --out ./data/fashionpedia
+# For smoke tests: add --max-train 500 --max-val 100
 ```
+
+The script filters to the 33 main apparel classes, drops garment-parts
+(sleeves, collars, etc.) and attributes, and emits Roboflow-style
+`train/_annotations.coco.json` + `valid/_annotations.coco.json`.
 
 ## GPU
 
-A single NVIDIA A100 40GB or equivalent is sufficient. The notebook is
-parameterized on `device`, `batch_size`, and `image_size`; defaults are
-tuned for an A100 but can be dialed down for an RTX 4090 / T4.
+**Recommended — \$30 budget split across two RunPod pods:**
+1. RTX 4090 24GB, community tier, ~3 hrs, ~\$2 — smoke-test the whole
+   pipeline end-to-end on a 500-image subset.
+2. H100 80GB, community tier, ~10 hrs, ~\$24 — production run on the
+   full dataset at batch 8 / 1024².
 
-Budget for one full training cycle: **~$100-200** on Lambda Labs or
-Vast.ai interruptible.
+H100 beats A100 40GB at this \$ because its DETR throughput is ~2–3×,
+and 10 H100-hours is enough budget for 10 epochs at 1024². Full
+copy-paste steps live in `RUNPOD_RUNBOOK.md`.
+
+Alternative setups (Lambda, Vast.ai, local A100) work fine too — the
+scripts don't care which provider. The runbook is RunPod-specific only
+for pod boot instructions.
+
+Original plan budget estimate: **~\$100–200** for a comfortable run.
+\$30 gets a lean, minimum-viable model with one retry buffer.
 
 ## Outputs
 
@@ -79,11 +99,11 @@ build phase via `xcodegen`); run `xcodegen generate`; rebuild.
 
 ## Status
 
-As of 2026-04-18 the notebook is a **scaffold** — it describes the
-training recipe and exports to Core ML, but the GPU run has not been
-executed. The app ships behind a feature flag; when `isMultiGarmentEnabled`
-is `false` (default) the absence of the trained model is invisible to
-the user.
+As of 2026-04-18 the training run has not been executed. The Python
+scripts are ready (`scripts/` is authoritative; notebook is
+exploratory). The app ships behind a feature flag; when
+`isMultiGarmentEnabled` is `false` (default) the absence of the
+trained model is invisible to the user.
 
 Commit 9 of the canonical plan flips the default to `true`; that commit
-is blocked on this notebook producing a working `.mlpackage`.
+is blocked on `RUNPOD_RUNBOOK.md` producing a working `.mlpackage`.

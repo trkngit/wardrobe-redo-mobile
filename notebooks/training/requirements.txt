@@ -26,6 +26,11 @@ pycocotools==2.0.8
 pillow==11.0.0
 numpy==1.26.4
 
+# CVDF download helper (prepare_fashionpedia.py streams from S3).
+# Usually pulled in transitively by `datasets`/`huggingface-hub`, but
+# pinning explicitly keeps the dep graph honest.
+requests==2.32.3
+
 # Apple's conversion pipeline. 8.1 has the transformer-friendly MIL ops
 # that RF-DETR's DINOv2 backbone requires, plus 6-bit palettization.
 coremltools==8.1
