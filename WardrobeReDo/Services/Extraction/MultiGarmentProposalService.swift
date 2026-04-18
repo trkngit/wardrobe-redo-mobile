@@ -110,6 +110,39 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
     /// pass because heavy overlap is worse than a few dropped items.
     static let defaultNMSThreshold: Float = 0.5
 
+    /// Fashionpedia main-class labels in the exact order the training
+    /// notebook's `FASHIONPEDIA_CLASSES` list emits them — the trained
+    /// model's argmax index maps to this array one-to-one.
+    ///
+    /// **Single source of truth.** `notebooks/training/2026-04-multi-garment.ipynb`
+    /// cell 6 carries the matching Python list. Regenerate both from the
+    /// same source when the Fashionpedia schema evolves.
+    ///
+    /// **Drift guard.** `MultiGarmentProposalServiceFashionpediaLabelsTests`
+    /// asserts every label here either maps to a `ClothingCategory` or
+    /// is in a known-exclusion set — so adding a label without also
+    /// updating `ClothingCategory.fromFashionpediaClass` is a build-time
+    /// failure, not a silent "every proposal is uncategorised at runtime."
+    static let fashionpediaLabels: [String] = [
+        "shirt_blouse", "top_t-shirt_sweatshirt", "sweater", "cardigan",
+        "jacket", "vest", "coat", "cape",
+        "pants", "shorts", "skirt", "tights_stockings",
+        "dress", "jumpsuit",
+        "shoe", "boot", "sandal", "sock", "leg_warmer",
+        "glasses", "hat", "headband", "scarf", "tie",
+        "bag_wallet", "belt",
+        "glove", "watch", "ring", "bracelet", "earring", "necklace",
+        "umbrella"
+    ]
+
+    /// Fashionpedia labels that are deliberately not surfaced in v1's
+    /// wardrobe UI (no place to put a sock in a 6-case enum). Drift-guard
+    /// tests check this set is consistent with `fromFashionpediaClass`
+    /// returning `nil` for these exact labels.
+    static let fashionpediaExcludedLabels: Set<String> = [
+        "sock", "leg_warmer", "umbrella"
+    ]
+
     private let modelLoader: @Sendable () -> MLModel?
     private let confidenceThreshold: Float
     private let nmsThreshold: Float
@@ -376,17 +409,20 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
         return 0
     }
 
-    /// Pull the argmax class name. For v1 the label map is identity
-    /// ("class_0", "class_1", …) until the real training run publishes
-    /// the label index. Callers pass this through
-    /// `ClothingCategory.fromFashionpediaClass`.
+    /// Pull the argmax class name, mapping the model's integer class index
+    /// to the Fashionpedia label string via `fashionpediaLabels`. When the
+    /// index falls outside the known label set (future schema extension
+    /// or a buggy export) we fall back to `"class_N"` so the raw number
+    /// still shows up in `MaskProposal.modelClassRaw` for debugging —
+    /// but `ClothingCategory.fromFashionpediaClass` will return `nil`
+    /// for those so they never silently claim a category they aren't.
     static func decodeClassLabel(
         classes: MLMultiArray?,
         logits: MLMultiArray?,
         queryIndex q: Int
     ) -> String {
         if let classes, let idx = classes[safe: [0, q]] {
-            return "class_\(Int(idx))"
+            return labelForIndex(Int(idx))
         }
         if let logits {
             let classCount = logits.shape[safe: 2]?.intValue ?? 0
@@ -399,9 +435,19 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
                     bestIdx = c
                 }
             }
-            return "class_\(bestIdx)"
+            return labelForIndex(bestIdx)
         }
         return "unknown"
+    }
+
+    /// Look up a Fashionpedia label by model class index. Exposed as
+    /// `internal` so tests can assert index ↔ label round-trips without
+    /// going through a full MLMultiArray synthesis.
+    static func labelForIndex(_ index: Int) -> String {
+        guard index >= 0, index < fashionpediaLabels.count else {
+            return "class_\(index)"
+        }
+        return fashionpediaLabels[index]
     }
 
     private static func multiArray(
