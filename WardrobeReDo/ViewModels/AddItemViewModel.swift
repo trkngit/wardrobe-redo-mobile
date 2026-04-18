@@ -462,7 +462,15 @@ final class AddItemViewModel {
     /// (selectedImage, processedImage, sam2Session) intact. The brush
     /// editor's Done callback already routes to `.details`, so this
     /// detour rejoins the main flow seamlessly.
+    ///
+    /// Emits an `addItem.refineWithBrush` log event so the dev can
+    /// gauge real-world brush usage via Console.app
+    /// (`subsystem:com.wardroberedo category:AddItem`) and decide
+    /// whether the brush surface is worth keeping. Punch-list item
+    /// per `unified-mapping-honey.md` — if usage stays below ~5% of
+    /// saves over a few weeks, consider removing the detour entirely.
     func onTapToSelectRequestTouchup() {
+        logger.info("addItem.refineWithBrush: user invoked brush detour from tap-to-select")
         isShowingTapToSelect = false
         isShowingTouchup = true
     }
