@@ -2,8 +2,8 @@ import SwiftUI
 
 /// Three-slide pager shown the first time the user reaches the photo
 /// capture step. Explains what a "good" photo looks like, what to do
-/// with a bad background, and previews the tap-to-select fallback that
-/// ships in Phase 3. Dismissal persists through
+/// with a bad background, and previews the tap-to-select surface that
+/// every capture lands on after processing. Dismissal persists through
 /// `FirstRunTutorialView.hasSeenKey` so the pager shows at most once.
 struct FirstRunTutorialView: View {
 
@@ -64,13 +64,13 @@ struct FirstRunTutorialView: View {
             systemImage: "wand.and.stars",
             tint: Color(Theme.Colors.primary),
             title: "Cluttered? We'll try to help.",
-            body: "If a clean background isn't possible, capture anyway. Wardrobe auto-crops the clothing and you can brush in anything the auto-crop missed."
+            body: "If a clean background isn't possible, capture anyway. Wardrobe auto-crops the clothing — preview it on the next screen and tap to refine if needed."
         ),
         Slide(
             systemImage: "hand.tap.fill",
             tint: .orange,
-            title: "Worn on someone? Tap to select.",
-            body: "When the item is on a person, hanger, or mannequin, tap the clothing in the photo. The app will isolate just that piece for you."
+            title: "Tap to refine the crop.",
+            body: "After every photo, you'll see the auto-detected garment with a one-tap confirm. Tap on the clothing to nudge the selection — works great for items on a hanger, mannequin, or person."
         ),
     ]
 
