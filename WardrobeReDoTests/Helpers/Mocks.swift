@@ -239,3 +239,67 @@ final class MockClothingExtractionService: ClothingExtracting, @unchecked Sendab
         )
     }
 }
+
+// MARK: - Mock MultiGarmentExtractor
+
+/// Canned-response mock for `MultiGarmentExtracting`. Supply one of:
+///   - `detectResult` → returns these proposals verbatim
+///   - `detectError` → throws this error
+/// If neither is set, returns `[]` (model ran, no garments detected).
+final class MockMultiGarmentExtractor: MultiGarmentExtracting, @unchecked Sendable {
+    var detectResult: [MaskProposal]?
+    var detectError: Error?
+
+    var detectCallCount = 0
+    var prewarmCallCount = 0
+    var lastDetectedImage: UIImage?
+
+    func detectProposals(in image: UIImage) async throws -> [MaskProposal] {
+        detectCallCount += 1
+        lastDetectedImage = image
+        if let detectError { throw detectError }
+        return detectResult ?? []
+    }
+
+    func prewarm() async {
+        prewarmCallCount += 1
+    }
+}
+
+// MARK: - MaskProposal fixture helpers
+
+enum MaskProposalFixture {
+    /// 1×1 transparent pixel used as a filler `maskedImage` when tests
+    /// don't care about rendering the proposal. Avoids shipping a real
+    /// test asset.
+    static let placeholderImage: UIImage = {
+        UIGraphicsBeginImageContext(CGSize(width: 1, height: 1))
+        let image = UIGraphicsGetImageFromCurrentImageContext() ?? UIImage()
+        UIGraphicsEndImageContext()
+        return image
+    }()
+
+    /// Convenience constructor that returns a valid `MaskProposal` with
+    /// sensible defaults. Pass overrides for any field you care about;
+    /// the rest stay stable so test assertions aren't coupled to noise.
+    static func make(
+        id: UUID = UUID(),
+        maskedImage: UIImage? = nil,
+        confidence: ExtractionConfidence = .high,
+        predictedCategory: ClothingCategory? = .top,
+        boundingBox: CGRect = CGRect(x: 0.1, y: 0.1, width: 0.5, height: 0.5),
+        detectionScore: Float = 0.9,
+        modelClassRaw: String = "shirt_blouse"
+    ) -> MaskProposal {
+        MaskProposal(
+            id: id,
+            maskedImage: maskedImage ?? placeholderImage,
+            mask: nil,
+            confidence: confidence,
+            predictedCategory: predictedCategory,
+            boundingBox: boundingBox,
+            detectionScore: detectionScore,
+            modelClassRaw: modelClassRaw
+        )
+    }
+}
