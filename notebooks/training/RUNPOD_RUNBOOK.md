@@ -109,9 +109,12 @@ python notebooks/training/scripts/train.py \
     --output-dir ./checkpoints \
     --epochs 2 \
     --batch-size 2 \
-    --resolution 768 \
-    --max-steps-per-epoch 250
+    --resolution 768
 ```
+
+(rfdetr 1.4's `TrainConfig` has no per-epoch step cap; the 500-image
+smoke dataset from step 1.3 does the same throttling via dataset size
+— ~250 steps/epoch at batch-size 2.)
 
 **Success signal:** `train.py` exits 0, `checkpoints/` contains at
 least `last.pth` or `best.pth`. The model will be GARBAGE (intentional)

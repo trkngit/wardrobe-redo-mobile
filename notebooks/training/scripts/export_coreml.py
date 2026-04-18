@@ -54,40 +54,39 @@ except ImportError as exc:
     sys.exit(1)
 
 
-NUM_CLASSES = 33  # keep in sync with train.py
+NUM_CLASSES = 33  # keep in sync with train.py / prepare_fashionpedia.py
 
 
-def _load_checkpoint(checkpoint: Path) -> RFDETRSegSmall:
+def _load_checkpoint(checkpoint: Path, resolution: int) -> RFDETRSegSmall:
     """Load the fine-tuned weights into an RFDETRSegSmall instance set
     up for inference.
-    """
-    model = RFDETRSegSmall(num_classes=NUM_CLASSES, pretrained=False)
-    state = torch.load(checkpoint, map_location="cpu")
-    if isinstance(state, dict) and "model" in state:
-        model.load_state_dict(state["model"])
-    else:
-        model.load_state_dict(state)
-    # rfdetr exposes .eval() on the wrapper; it propagates to sub-modules.
-    model.eval()
-    return model
 
+    `pretrain_weights=None` is how rfdetr 1.4 skips the ~129 MB COCO
+    weight download at construct time — we're about to overwrite the
+    parameters with our fine-tuned checkpoint anyway, so the download
+    is pure waste.
 
-def _inner_module(model: RFDETRSegSmall) -> torch.nn.Module:
-    """Pull the bare nn.Module out of rfdetr's Python wrapper. The
-    attribute name varies by rfdetr version; try the known candidates.
+    `resolution` + `segmentation_head=True` MUST match the training
+    configuration — they shape the model graph, and a mismatch silently
+    loads wrong-shaped weights into the wrong slots.
     """
-    for attr in ("model", "detector", "net", "_model"):
-        inner = getattr(model, attr, None)
-        if isinstance(inner, torch.nn.Module):
-            return inner
-    # Last resort: maybe the wrapper IS a Module.
-    if isinstance(model, torch.nn.Module):
-        return model
-    raise RuntimeError(
-        "Could not locate the underlying nn.Module on the RFDETRSegSmall wrapper. "
-        "rfdetr's internals may have changed — inspect with `print(type(model))` "
-        "and `dir(model)` and update the fallback chain in _inner_module()."
+    model = RFDETRSegSmall(
+        num_classes=NUM_CLASSES,
+        resolution=resolution,
+        segmentation_head=True,
+        pretrain_weights=None,
     )
+    state = torch.load(checkpoint, map_location="cpu")
+    # rfdetr checkpoints are typically {'model': state_dict, 'optimizer': ..., 'epoch': ...}
+    # Load into the inner nn.Module via get_model() — the wrapper
+    # itself does not expose .load_state_dict() or .eval().
+    inner = model.get_model()
+    if isinstance(state, dict) and "model" in state:
+        inner.load_state_dict(state["model"])
+    else:
+        inner.load_state_dict(state)
+    inner.eval()
+    return model
 
 
 def trace_to_jit(model: RFDETRSegSmall, resolution: int) -> torch.jit.ScriptModule:
@@ -95,7 +94,7 @@ def trace_to_jit(model: RFDETRSegSmall, resolution: int) -> torch.jit.ScriptModu
     critical for Apple Neural Engine residency — dynamic inputs force
     CPU/GPU fallback.
     """
-    inner = _inner_module(model)
+    inner = model.get_model()
     inner.eval()
 
     # Warmup forward pass. DETR positional embeddings that depend on
@@ -206,7 +205,7 @@ def main() -> int:
     print()
 
     print("[1/4] loading checkpoint")
-    model = _load_checkpoint(args.checkpoint)
+    model = _load_checkpoint(args.checkpoint, args.resolution)
 
     print("[2/4] torch.jit.trace")
     traced = trace_to_jit(model, args.resolution)

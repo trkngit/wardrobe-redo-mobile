@@ -60,21 +60,28 @@ def _check_import_stack() -> None:
 
 
 def _check_rfdetr_api() -> None:
-    """Guard the exact RFDETRSegSmall constructor / method signatures the
-    train.py + export_coreml.py scripts rely on. If rfdetr publishes a
-    minor API change that renames a kwarg, this check flags it for <$0 —
-    whereas discovering it on a GPU pod costs whatever the pod rental
-    rate is per hour.
+    """Guard the exact RFDETRSegSmall surface the train.py + export_coreml.py
+    scripts rely on. rfdetr 1.4 routes all runtime kwargs through two
+    Pydantic configs (TrainConfig, ModelConfig) via `**kwargs`, so
+    probing those directly is stronger than probing the wrapper's
+    `__init__` signature (which is just `**kwargs`).
+
+    If rfdetr publishes a minor API change that renames a field, this
+    check flags it for $0 — whereas discovering it on a GPU pod costs
+    whatever the pod rental rate is per hour.
     """
     from rfdetr import RFDETRSegSmall
+    from rfdetr.config import ModelConfig, TrainConfig
 
     # Constructor signature — we don't instantiate (that would download
-    # the COCO checkpoint). We only introspect.
+    # the 129 MB COCO checkpoint). We only introspect.
     init_sig = inspect.signature(RFDETRSegSmall.__init__)
     print(f"  RFDETRSegSmall.__init__ params: {list(init_sig.parameters)[:8]}")
 
-    # Required methods on the class. If any is missing, bail loudly.
-    required_methods = ["train", "eval", "predict"]
+    # Required methods on the wrapper. rfdetr 1.4 exposes .get_model()
+    # to access the underlying nn.Module (which has .eval()) — the
+    # wrapper itself does NOT have .eval().
+    required_methods = ["train", "export", "predict", "get_model"]
     missing = [m for m in required_methods if not hasattr(RFDETRSegSmall, m)]
     assert not missing, (
         f"RFDETRSegSmall is missing expected methods: {missing}. "
@@ -82,24 +89,34 @@ def _check_rfdetr_api() -> None:
         f"https://github.com/roboflow/rf-detr/blob/main/CHANGELOG.md"
     )
 
-    # Introspect the train() signature so the RUNPOD_RUNBOOK stays honest.
-    train_sig = inspect.signature(RFDETRSegSmall.train)
-    params = list(train_sig.parameters)
-    print(f"  RFDETRSegSmall.train    params: {params[:12]}")
+    # TrainConfig — drives train.py's **train_kwargs. If any field name
+    # changes upstream, this catches it before a GPU pod boots.
+    train_fields = set(TrainConfig.model_fields.keys())
+    expected_train_fields = {
+        "dataset_dir", "epochs", "batch_size", "grad_accum_steps", "lr",
+        "output_dir", "num_workers", "dataset_file", "segmentation_head",
+        "class_names",
+    }
+    missing_train = expected_train_fields - train_fields
+    assert not missing_train, (
+        f"TrainConfig is missing expected fields: {missing_train}. "
+        f"Available fields: {sorted(train_fields)}"
+    )
+    print(f"  TrainConfig fields present: {sorted(expected_train_fields)}")
 
-    # The train.py script passes these kwargs — if any disappear, we
-    # want to know now.
-    expected_train_kwargs = {"dataset_dir", "epochs", "batch_size", "output_dir"}
-    actual_kwargs = set(params)
-    missing_kwargs = expected_train_kwargs - actual_kwargs
-    if missing_kwargs:
-        print(
-            f"  WARNING: train() is missing expected kwargs {missing_kwargs}. "
-            f"The train.py script will need to be adapted. "
-            f"Available params: {params}"
-        )
-    else:
-        print("  train() accepts all expected kwargs")
+    # ModelConfig — drives the RFDETRSegSmall(...) constructor in
+    # train.py + export_coreml.py. `pretrain_weights=None` is how you
+    # skip the COCO download at inference-time load.
+    model_fields = set(ModelConfig.model_fields.keys())
+    expected_model_fields = {
+        "num_classes", "resolution", "segmentation_head", "pretrain_weights",
+    }
+    missing_model = expected_model_fields - model_fields
+    assert not missing_model, (
+        f"ModelConfig is missing expected fields: {missing_model}. "
+        f"Available fields: {sorted(model_fields)}"
+    )
+    print(f"  ModelConfig fields present: {sorted(expected_model_fields)}")
 
 
 def _check_hf_dataset_schema() -> None:

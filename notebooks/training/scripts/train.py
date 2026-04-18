@@ -8,13 +8,16 @@ Produces:
 Run AFTER prepare_fashionpedia.py has populated --dataset-dir.
 
 Smoke-test recipe (~3 hrs on RTX 4090, ~$2):
+    # Cap the dataset at prepare time (rfdetr 1.4 has no per-epoch step cap).
+    python prepare_fashionpedia.py \\
+        --out ./data/fashionpedia \\
+        --max-train 500 --max-val 100
     python train.py \\
         --dataset-dir ./data/fashionpedia \\
         --output-dir ./checkpoints \\
         --epochs 2 \\
         --batch-size 2 \\
-        --resolution 768 \\
-        --max-steps-per-epoch 250
+        --resolution 768
 
 Production recipe (~10 hrs on H100 80GB, ~$24):
     python train.py \\
@@ -27,7 +30,7 @@ Production recipe (~10 hrs on H100 80GB, ~$24):
         --grad-accum-steps 2
 
 Resolution / batch / epoch defaults match the plan Section 4. Deviations
-get logged to metrics.json so the resulting model is auditable after
+get logged to run_summary.json so the resulting model is auditable after
 the fact.
 """
 from __future__ import annotations
@@ -38,9 +41,14 @@ import sys
 import time
 from pathlib import Path
 
+# Sibling-script import for FASHIONPEDIA_MAIN_CLASSES so the class list
+# stays in one place. prepare_fashionpedia.py lives next to this file.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 try:
     import torch
     from rfdetr import RFDETRSegSmall
+    from prepare_fashionpedia import FASHIONPEDIA_MAIN_CLASSES
 except ImportError as exc:
     print(
         f"Missing dependency: {exc}. Install with:\n"
@@ -49,13 +57,17 @@ except ImportError as exc:
     sys.exit(1)
 
 
-# 33 Fashionpedia "main apparel" classes. MUST match:
-#   - scripts/prepare_fashionpedia.py (FASHIONPEDIA_MAIN_CLASSES)
+# 33 Fashionpedia "main apparel" classes. Single source of truth lives in
+# prepare_fashionpedia.py; MUST match:
 #   - WardrobeReDo/Services/Extraction/MultiGarmentProposalService.swift
 #     (fashionpediaLabels)
 #   - WardrobeReDo/Models/Enums/ClothingCategory.swift
 #     (fromFashionpediaClass)
-NUM_CLASSES = 33
+NUM_CLASSES = len(FASHIONPEDIA_MAIN_CLASSES)
+assert NUM_CLASSES == 33, (
+    f"FASHIONPEDIA_MAIN_CLASSES has {NUM_CLASSES} entries; expected 33. "
+    f"Sync the Swift-side enum + label list if this was intentional."
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -78,12 +90,6 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--grad-accum-steps", type=int, default=1)
     p.add_argument("--resolution", type=int, default=1024)
     p.add_argument("--lr", type=float, default=1e-4)
-    p.add_argument(
-        "--max-steps-per-epoch",
-        type=int,
-        default=None,
-        help="Cap training steps per epoch (smoke-test throttle)",
-    )
     p.add_argument(
         "--resume",
         type=Path,
@@ -130,48 +136,58 @@ def main() -> int:
     print(f"  effective bs   {args.batch_size * args.grad_accum_steps}")
     print(f"  resolution     {args.resolution}")
     print(f"  lr             {args.lr}")
-    if args.max_steps_per_epoch:
-        print(f"  max steps/ep   {args.max_steps_per_epoch}  (smoke-test throttle)")
     print()
 
     t0 = time.time()
 
-    # Construct the model. rfdetr 1.4 auto-downloads the COCO-pretrained
-    # weights on first instantiation. NUM_CLASSES is our 33 Fashionpedia
-    # classes; rfdetr adapts the detection head automatically.
-    #
-    # NOTE: the exact kwargs `num_classes` and `pretrained` may have
-    # migrated between rfdetr 1.3/1.4/1.5. probe_env.py prints the
-    # constructor signature — cross-check if this line errors.
-    model = RFDETRSegSmall(num_classes=NUM_CLASSES, pretrained=True)
+    # Construct the model. rfdetr 1.4 routes all constructor kwargs into
+    # ModelConfig (Pydantic). Default `pretrain_weights` downloads the
+    # COCO-pretrained RF-DETR-Seg-Small checkpoint (~129 MB) on first
+    # instantiation. `resolution` + `segmentation_head` MUST be set at
+    # construct time because they shape the model graph.
+    model = RFDETRSegSmall(
+        num_classes=NUM_CLASSES,
+        resolution=args.resolution,
+        segmentation_head=True,
+    )
 
     if args.resume:
         print(f"Resuming from {args.resume}")
         state = torch.load(args.resume, map_location="cpu")
         # rfdetr checkpoints are typically {'model': state_dict, 'optimizer': ..., 'epoch': ...}
+        # Load into the inner nn.Module via get_model() — the wrapper
+        # itself does not expose .load_state_dict().
+        inner = model.get_model()
         if isinstance(state, dict) and "model" in state:
-            model.load_state_dict(state["model"])
+            inner.load_state_dict(state["model"])
         else:
-            model.load_state_dict(state)
+            inner.load_state_dict(state)
 
     # Kick off training. rfdetr.Trainer handles mixed precision, cosine
     # LR schedule, per-epoch val eval, and best-checkpoint selection
     # internally. We pass only the dials we actually tune.
+    #
+    # `dataset_file="roboflow"` tells rfdetr the on-disk layout is
+    # `<dataset_dir>/{train,valid}/_annotations.coco.json` (which is
+    # what prepare_fashionpedia.py emits).
+    # `segmentation_head=True` + `class_names=...` are required for the
+    # Seg variant; rfdetr uses class_names to emit a labels file
+    # alongside the checkpoint.
     train_kwargs = {
         "dataset_dir": str(args.dataset_dir),
         "epochs": args.epochs,
         "batch_size": args.batch_size,
         "grad_accum_steps": args.grad_accum_steps,
-        "resolution": args.resolution,
         "lr": args.lr,
         "output_dir": str(args.output_dir),
         "num_workers": args.num_workers,
+        "dataset_file": "roboflow",
+        "segmentation_head": True,
+        "class_names": FASHIONPEDIA_MAIN_CLASSES,
     }
-    if args.max_steps_per_epoch is not None:
-        train_kwargs["max_steps_per_epoch"] = args.max_steps_per_epoch
 
     # rfdetr's train() writes metrics + checkpoints itself; we just wrap
-    # it with wall-clock timing and a top-level metrics.json summary.
+    # it with wall-clock timing and a top-level run_summary.json.
     model.train(**train_kwargs)
 
     elapsed = time.time() - t0
@@ -188,7 +204,6 @@ def main() -> int:
         "resolution": args.resolution,
         "lr": args.lr,
         "num_classes": NUM_CLASSES,
-        "max_steps_per_epoch": args.max_steps_per_epoch,
         "dataset_dir": str(args.dataset_dir),
         "output_dir": str(args.output_dir),
         "rfdetr_version": getattr(__import__("rfdetr"), "__version__", "unknown"),
