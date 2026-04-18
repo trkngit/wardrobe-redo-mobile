@@ -22,7 +22,7 @@ Every plan file has:
 
 | Slug | Status | Started | Shipped | One-liner |
 |------|--------|---------|---------|-----------|
-| [2026-04-18-multi-garment-detection](./2026-04-18-multi-garment-detection.md) | IN PROGRESS | 2026-04-18 | — | RF-DETR-Seg + Fashionpedia: detect multiple garments in one photo, multi-pick UI, sequential per-item save loop |
+| [2026-04-18-multi-garment-detection](./2026-04-18-multi-garment-detection.md) | IN PROGRESS (iOS plumbing shipped behind flag; blocked on GPU run for flag-flip) | 2026-04-18 | — | RF-DETR-Seg + Fashionpedia: detect multiple garments in one photo, multi-pick UI, sequential per-item save loop |
 
 ## Memory pointer
 

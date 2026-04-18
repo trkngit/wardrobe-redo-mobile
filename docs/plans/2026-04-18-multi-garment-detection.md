@@ -1,9 +1,24 @@
 # Wardrobe Re-Do — Multi-Garment Detection (Polished, Multi-Pick)
 
 **Plan slug:** `2026-04-18-multi-garment-detection`
-**Status:** IN PROGRESS (approved 2026-04-18, execution started 2026-04-18)
+**Status:** IN PROGRESS — iOS plumbing shipped behind flag; blocked on GPU training run for Commit 9 flag-flip
 **Estimated cycle time:** 5-7 weeks calendar
 **Estimated total cost:** ~$200 GPU + ~$500 engineering tooling subscriptions (Sentry, Roboflow optional)
+
+## Execution log
+
+| Commit | Status | SHA (head of branch) | Notes |
+|---|---|---|---|
+| 0 — docs/plans seed | shipped | `67a869b` | Plan mirrored into repo, INDEX.md + MEMORY pointer added |
+| 1 — FeatureFlags + Debug toggle | shipped | `1581a8d` | UserDefaults-backed flag namespace, default off |
+| 3 — MaskProposal + service | shipped | `8ed87c1` | Protocol + mocks + class mapping + tests |
+| 4 — ProcessedImage.proposals + ImageService wiring | shipped | `a19fa13` | Parallel pipeline behind flag |
+| 5 — MultiGarmentTapToSelectView + snapshots | shipped | `a3bc8ac` | Checkbox UI + "Save N" CTA + "Use full photo" escape |
+| 6 — AddItemViewModel batch save loop | shipped | `b9a8841` | Sequential per-item details; actor-based test isolation resolved cross-suite race |
+| 7 — Smoke test + ML Diagnostics menu | shipped | `f68f2c7` | DEBUG-only launch smoke test, auto-disables flag on throw; diagnostics view exposes latency/classes/status |
+| 8 — FirstRunTutorial copy | shipped | `2455e2f` | Slide 3 rewritten to cover multi-pick |
+| 2 — Training notebook scaffold | shipped (scaffold only) | `da243e5` | GPU run deferred; recipe + pins + export pipeline checked in |
+| 9 — Flag default-on | **blocked on trained `.mlpackage`** | — | Needs Commit 2's notebook to actually run; see Section 14 |
 
 ---
 
