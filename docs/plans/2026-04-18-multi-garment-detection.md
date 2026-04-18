@@ -18,6 +18,7 @@
 | 7 — Smoke test + ML Diagnostics menu | shipped | `f68f2c7` | DEBUG-only launch smoke test, auto-disables flag on throw; diagnostics view exposes latency/classes/status |
 | 8 — FirstRunTutorial copy | shipped | `2455e2f` | Slide 3 rewritten to cover multi-pick |
 | 2 — Training notebook scaffold | shipped (scaffold only) | `da243e5` | GPU run deferred; recipe + pins + export pipeline checked in |
+| 3.1 — decodeClassLabel bug fix | shipped | `307ba75` | `fashionpediaLabels` array + drift-guard test; fixes silent-nil categorisation for proposals once the trained model is wired up |
 | 9 — Flag default-on | **blocked on trained `.mlpackage`** | — | Needs Commit 2's notebook to actually run; see Section 14 |
 
 ---
