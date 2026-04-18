@@ -69,8 +69,8 @@ struct FirstRunTutorialView: View {
         Slide(
             systemImage: "hand.tap.fill",
             tint: .orange,
-            title: "Tap to refine the crop.",
-            body: "After every photo, you'll see the auto-detected garment with a one-tap confirm. Tap on the clothing to nudge the selection — works great for items on a hanger, mannequin, or person."
+            title: "Review before saving.",
+            body: "For a single item, tap to refine the crop. If you're wearing multiple pieces — jacket, shirt, skirt — we detect each one and you pick which to save. Uncheck anything you don't want, then Save."
         ),
     ]
 
