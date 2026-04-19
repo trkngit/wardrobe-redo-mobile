@@ -782,6 +782,67 @@ final class AddItemViewModel {
         }
     }
 
+    /// Diff the `applyPrefill` snapshot against the final user-edited
+    /// form values to produce the provenance map persisted in
+    /// `wardrobe_items.detected_attributes` (migration 00009). Each key
+    /// maps to one of:
+    ///
+    ///   - `"ai"`                   — ML pre-filled this field AND the
+    ///                                final saved value matches the
+    ///                                pre-fill (user accepted).
+    ///   - `"user"`                 — ML never pre-filled this field
+    ///                                (below threshold or no prediction);
+    ///                                whatever the user saved is their
+    ///                                own answer.
+    ///   - `"user_changed_from_ai"` — ML pre-filled AND the user edited
+    ///                                or cleared the value before save.
+    ///
+    /// Fields the user never interacted with AND that ML never pre-filled
+    /// are omitted from the map entirely — those carry no signal.
+    ///
+    /// Pure function for testability. Matches the rawValue / sorted-
+    /// comma-join format produced by `applyPrefill(from:)` so snapshot
+    /// and final value are comparable character-for-character.
+    /// `nonisolated` because the helper touches only its arguments —
+    /// no actor state — so tests can call it directly without hopping
+    /// to the main actor.
+    nonisolated static func computeAttributeProvenance(
+        snapshot: [String: String],
+        finalCategory: String,
+        finalSubcategory: String,
+        finalTexture: String?,
+        finalFit: String?,
+        finalSeasons: [String],
+        finalOccasions: [String]
+    ) -> [String: String] {
+        let seasonsJoined = finalSeasons.sorted().joined(separator: ",")
+        let occasionsJoined = finalOccasions.sorted().joined(separator: ",")
+
+        let entries: [(key: String, snap: String?, final: String?)] = [
+            ("category",    snapshot["category"],    finalCategory),
+            ("subcategory", snapshot["subcategory"], finalSubcategory),
+            ("texture",     snapshot["texture"],     finalTexture),
+            ("fit",         snapshot["fit"],         finalFit),
+            ("seasons",     snapshot["seasons"],     seasonsJoined.isEmpty ? nil : seasonsJoined),
+            ("occasions",   snapshot["occasions"],   occasionsJoined.isEmpty ? nil : occasionsJoined),
+        ]
+
+        var result: [String: String] = [:]
+        for entry in entries {
+            switch (entry.snap, entry.final) {
+            case (nil, nil):
+                continue
+            case (nil, _?):
+                result[entry.key] = "user"
+            case (_?, nil):
+                result[entry.key] = "user_changed_from_ai"
+            case let (snap?, fin?):
+                result[entry.key] = (snap == fin) ? "ai" : "user_changed_from_ai"
+            }
+        }
+        return result
+    }
+
     func save(userId: UUID) async {
         guard let processed = processedImage else { return }
 
@@ -798,6 +859,20 @@ final class AddItemViewModel {
         let fit = fitAttribute?.rawValue
         let seasons = Array(selectedSeasons).map(\.rawValue)
         let occasions = Array(selectedOccasions).map(\.rawValue)
+
+        // Diff the `applyPrefill` snapshot against the final form values.
+        // Produces a {field: "ai" | "user" | "user_changed_from_ai"} map
+        // that lands in `wardrobe_items.detected_attributes` for
+        // correction-rate telemetry (migration 00009).
+        let provenance = Self.computeAttributeProvenance(
+            snapshot: detectedAttributes,
+            finalCategory: cat,
+            finalSubcategory: subcat,
+            finalTexture: tex,
+            finalFit: fit,
+            finalSeasons: seasons,
+            finalOccasions: occasions
+        )
 
         // Hoist capture-level state into locals: the upload Task
         // runs detached from self, so it needs isolated copies of
@@ -852,7 +927,8 @@ final class AddItemViewModel {
                         texture: tex,
                         fitAttribute: fit,
                         seasons: seasons,
-                        occasions: occasions
+                        occasions: occasions,
+                        detectedAttributes: provenance
                     )
 
                     _ = try await wardrobeRepository.insertItem(newItem)

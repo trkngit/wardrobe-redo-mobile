@@ -125,6 +125,7 @@
 		89D967DBC1C5B7C5AA3DB451 /* FirstRunTutorialView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EE86B8B1E284050E63721CD /* FirstRunTutorialView.swift */; };
 		8AB657AF6173BEC1CA766D6B /* ImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1187ED645956910F8C96393A /* ImageService.swift */; };
 		8B945787989F72743EBA3AB5 /* archetypes.json in Resources */ = {isa = PBXBuildFile; fileRef = 8DF3B0AF85BC98DC8DA7A52A /* archetypes.json */; };
+		8D86A615FBE314DADD01BFBC /* AddItemViewModelProvenanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 345BEA8DEA0CF880A3C85772 /* AddItemViewModelProvenanceTests.swift */; };
 		8E18997C3E2536948CA1B789 /* ColorExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A77AC489FED071A22EFD1085 /* ColorExtractionService.swift */; };
 		8F4CF9D6DD09F8A9AE9BB47C /* MultiGarmentSmokeTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F422F6F6172908054E434ED /* MultiGarmentSmokeTest.swift */; };
 		9081D833C8B2B9406806F8A6 /* ProportionBalanceScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEF81238AB7A8A0C6BF86BFD /* ProportionBalanceScorer.swift */; };
@@ -304,6 +305,7 @@
 		2E919CB1705C069652DC5700 /* cluttered_09.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = cluttered_09.png; sourceTree = "<group>"; };
 		2FB218A3E5982759A27575EF /* FormalityCoherenceScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormalityCoherenceScorer.swift; sourceTree = "<group>"; };
 		30CEFA6A7B5A6DA1D58FA150 /* ClothingCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingCategory.swift; sourceTree = "<group>"; };
+		345BEA8DEA0CF880A3C85772 /* AddItemViewModelProvenanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddItemViewModelProvenanceTests.swift; sourceTree = "<group>"; };
 		371B521875890F6DE5C89E19 /* ClothingSubcategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingSubcategory.swift; sourceTree = "<group>"; };
 		37BD77C9EC5F6BC24309C224 /* ClothingCategoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingCategoryTests.swift; sourceTree = "<group>"; };
 		389F52BD3C3B30D47BBCB75F /* clean_bg_07.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = clean_bg_07.jpg; sourceTree = "<group>"; };
@@ -506,6 +508,7 @@
 			isa = PBXGroup;
 			children = (
 				718D58D4DFF04750F552D8ED /* AddItemViewModelPrefillTests.swift */,
+				345BEA8DEA0CF880A3C85772 /* AddItemViewModelProvenanceTests.swift */,
 				3A5E56B68B900A52328E110C /* AddItemViewModelTests.swift */,
 				FD5ED7D35C75B13509510AB5 /* AppStateTests.swift */,
 				4C5ED3AC7EFDFC86DD91D4DF /* AuthViewModelTests.swift */,
@@ -1379,6 +1382,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AF26ED6257F8DC545C884CC3 /* AddItemViewModelPrefillTests.swift in Sources */,
+				8D86A615FBE314DADD01BFBC /* AddItemViewModelProvenanceTests.swift in Sources */,
 				97F0472C14662492908C85C0 /* AddItemViewModelTests.swift in Sources */,
 				982099EAFB06E31DD9C80D7F /* AppStateTests.swift in Sources */,
 				DFE23D899F2944276DA98C76 /* AttributeClassifierServiceTests.swift in Sources */,

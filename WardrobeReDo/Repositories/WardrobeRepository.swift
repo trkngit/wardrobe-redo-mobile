@@ -126,6 +126,15 @@ struct NewWardrobeItem: Codable, Sendable {
     let fitAttribute: String?
     let seasons: [String]
     let occasions: [String]
+    /// Per-field provenance map produced by the pre-fill diff in
+    /// `AddItemViewModel.save(userId:)`. Keys match the field names
+    /// snapshot by `applyPrefill` ("category", "subcategory", "texture",
+    /// "fit", "seasons", "occasions"). Values are one of "ai",
+    /// "user", or "user_changed_from_ai". Omitted from the encoded
+    /// payload when nil so pre-migration-00009 databases aren't told
+    /// about a column they don't yet have — Postgres' `DEFAULT '{}'`
+    /// still fills the cell on insert.
+    let detectedAttributes: [String: String]?
 
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
@@ -140,6 +149,7 @@ struct NewWardrobeItem: Codable, Sendable {
         case texture
         case fitAttribute = "fit_attribute"
         case seasons, occasions
+        case detectedAttributes = "detected_attributes"
     }
 }
 
