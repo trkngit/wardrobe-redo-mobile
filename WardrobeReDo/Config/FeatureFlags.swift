@@ -20,6 +20,7 @@ enum FeatureFlags {
 
     private enum Key {
         static let multiGarmentEnabled = "feature.multiGarment.enabled"
+        static let attributeDetectionEnabled = "feature.attributeDetection.enabled"
     }
 
     // MARK: - Flags
@@ -41,12 +42,35 @@ enum FeatureFlags {
         }
     }
 
+    /// Master switch for auto-attribute pre-fill (texture, fit, seasons,
+    /// occasions) on the Add Item form. Gate separate from
+    /// `isMultiGarmentEnabled` so we can roll out category-only pre-fill
+    /// via the rules engine while the attribute classifier is still
+    /// baking in Phase 3 training.
+    ///
+    /// Default: `false` until Phase 9 validation completes — see
+    /// `docs/plans/2026-04-19-auto-attribute-detection.md` Phase 9 for
+    /// the flip criteria. When off, `MaskProposal` attribute fields are
+    /// populated but the VM layer ignores them, so flipping the flag is
+    /// a runtime switch rather than a rebuild.
+    static var isAttributeDetectionEnabled: Bool {
+        get {
+            if defaults.object(forKey: Key.attributeDetectionEnabled) == nil { return false }
+            return defaults.bool(forKey: Key.attributeDetectionEnabled)
+        }
+        set {
+            defaults.set(newValue, forKey: Key.attributeDetectionEnabled)
+            logger.info("attributeDetection toggled -> \(newValue, privacy: .public)")
+        }
+    }
+
     // MARK: - Test / Preview helpers
 
     /// Reset every flag to its compiled-in default. Used by tests so the
     /// suite can run in any order without leaking UserDefaults state.
     static func resetAll() {
         defaults.removeObject(forKey: Key.multiGarmentEnabled)
+        defaults.removeObject(forKey: Key.attributeDetectionEnabled)
         logger.debug("all flags reset")
     }
 }
