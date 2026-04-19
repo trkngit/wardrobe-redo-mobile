@@ -22,7 +22,10 @@ Every plan file has:
 
 | Slug | Status | Started | Shipped | One-liner |
 |------|--------|---------|---------|-----------|
-| [2026-04-18-multi-garment-detection](./2026-04-18-multi-garment-detection.md) | IN PROGRESS (iOS plumbing shipped; training scripts aligned to rfdetr 1.4, local probe 6/6 green; Section 0.1 RunPod execution plan authored; Phase 1 pod boot pending fresh-session kickoff) | 2026-04-18 | — | RF-DETR-Seg + Fashionpedia: detect multiple garments in one photo, multi-pick UI, sequential per-item save loop |
+| [2026-04-18-multi-garment-detection](./2026-04-18-multi-garment-detection.md) | IN PROGRESS — 10-epoch training on pod (Epoch 7 val phase); iOS real-weights validated (461/461 tests); FeatureFlag default flipped to `true` pending wrap-up bundle commit | 2026-04-18 | — | RF-DETR-Seg + Fashionpedia: detect multiple garments in one photo, multi-pick UI, sequential per-item save loop |
+| [2026-04-18-autonomous-5hr-window](./2026-04-18-autonomous-5hr-window.md) | SHIPPED P1+P2 (bbox AP@0.5=0.65 / segm=0.64); P3 UNBLOCKED — rank-5 MSDA patch + shape-based rename + 6-bit palettization land a coremlc-compatible mlpackage; interim ckpt bundled, 461/461 tests green; final ckpt swap scheduled on DONE.txt | 2026-04-18 | 2026-04-18 | Autonomous Phase-1 finish + pre-authorized Phase-2 full train with guardrails, budget caps, and phone push dispatch |
+| [2026-04-19-multi-garment-crash-recovery](./2026-04-19-multi-garment-crash-recovery.md) | PROPOSED (v1.1 punch-list item) | — | — | Persist `pendingProposalQueue` to SwiftData so a mid-batch jetsam doesn't lose unsaved garments |
+| [2026-04-19-auto-attribute-detection](./2026-04-19-auto-attribute-detection.md) | IN PROGRESS — Phase 0 DONE (iOS foundation shipped behind "no prediction" sentinels, 475/475 tests green); Phases 1 + 5 now unblocked in parallel | 2026-04-19 | — | Auto-detect category / texture / fit / seasons / occasions from the capture and pre-select them on the Add Item form; user-editable; correction tracking via new `detected_attributes` JSONB column |
 
 ## Memory pointer
 

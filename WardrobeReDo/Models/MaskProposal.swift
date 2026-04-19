@@ -36,6 +36,45 @@ struct MaskProposal: Identifiable, Hashable, @unchecked Sendable {
     /// Nil when the class isn't surfaced in v1 (sock, leg_warmer, …).
     let predictedCategory: ClothingCategory?
 
+    /// Softmaxed confidence of the category prediction in [0, 1]. The
+    /// Add Item pre-fill only consumes `predictedCategory` when this
+    /// clears `AttributePrefill.minConfidence` — keeps low-confidence
+    /// guesses from annoying the user. 0.0 means "no prediction".
+    let predictedCategoryConfidence: Float
+
+    /// Subcategory hint derived from the raw Fashionpedia class (e.g.
+    /// `"shirt_blouse"` → `.buttonDown`). Nil when the class is too
+    /// ambiguous to commit to a subcategory (e.g. generic `"pants"` —
+    /// we don't know jeans vs chinos from the name alone). Populated by
+    /// `ClothingSubcategory.fromFashionpediaClass`.
+    let predictedSubcategory: ClothingSubcategory?
+
+    /// Texture prediction from the attribute classifier. Nil until the
+    /// attribute model ships (Phase 3–4 of the auto-attribute-detection
+    /// plan) — rely on `predictedTextureConfidence == 0.0` as the
+    /// "no prediction yet" sentinel rather than optional-chaining.
+    let predictedTexture: TextureType?
+
+    /// Softmaxed confidence of the texture prediction in [0, 1].
+    let predictedTextureConfidence: Float
+
+    /// Fit prediction from the attribute classifier. Same lifecycle as
+    /// `predictedTexture`.
+    let predictedFit: FitAttribute?
+
+    /// Softmaxed confidence of the fit prediction in [0, 1].
+    let predictedFitConfidence: Float
+
+    /// Seasons derived by `AttributeRulesEngine` from
+    /// (category, subcategory, texture). Empty until the rules engine
+    /// ships (Phase 5); the pre-fill layer falls back to all-seasons in
+    /// that case. Guaranteed non-empty once the rules engine is wired.
+    let predictedSeasons: [Season]
+
+    /// Occasions derived by `AttributeRulesEngine`. Same lifecycle as
+    /// `predictedSeasons`; falls back to `[.casual]` when empty.
+    let predictedOccasions: [Occasion]
+
     /// Normalized bounding box in [0, 1] × [0, 1] image coordinates
     /// (origin top-left). Drives the multi-pick overlay layout and
     /// render order (largest-first so accessories aren't buried).
@@ -50,6 +89,46 @@ struct MaskProposal: Identifiable, Hashable, @unchecked Sendable {
     /// in telemetry and expose finer granularity in v1.1 without
     /// retraining the model.
     let modelClassRaw: String
+
+    /// Full memberwise initializer with defaults for every
+    /// auto-attribute-detection field. Existing call sites that predate
+    /// the attribute classifier continue to compile unchanged — new
+    /// fields default to "no prediction" (empty / 0.0 / nil).
+    init(
+        id: UUID,
+        maskedImage: UIImage,
+        mask: CVPixelBuffer?,
+        confidence: ExtractionConfidence,
+        predictedCategory: ClothingCategory?,
+        predictedCategoryConfidence: Float = 0.0,
+        predictedSubcategory: ClothingSubcategory? = nil,
+        predictedTexture: TextureType? = nil,
+        predictedTextureConfidence: Float = 0.0,
+        predictedFit: FitAttribute? = nil,
+        predictedFitConfidence: Float = 0.0,
+        predictedSeasons: [Season] = [],
+        predictedOccasions: [Occasion] = [],
+        boundingBox: CGRect,
+        detectionScore: Float,
+        modelClassRaw: String
+    ) {
+        self.id = id
+        self.maskedImage = maskedImage
+        self.mask = mask
+        self.confidence = confidence
+        self.predictedCategory = predictedCategory
+        self.predictedCategoryConfidence = predictedCategoryConfidence
+        self.predictedSubcategory = predictedSubcategory
+        self.predictedTexture = predictedTexture
+        self.predictedTextureConfidence = predictedTextureConfidence
+        self.predictedFit = predictedFit
+        self.predictedFitConfidence = predictedFitConfidence
+        self.predictedSeasons = predictedSeasons
+        self.predictedOccasions = predictedOccasions
+        self.boundingBox = boundingBox
+        self.detectionScore = detectionScore
+        self.modelClassRaw = modelClassRaw
+    }
 
     // MARK: - Hashable / Equatable
 

@@ -282,11 +282,24 @@ enum MaskProposalFixture {
     /// Convenience constructor that returns a valid `MaskProposal` with
     /// sensible defaults. Pass overrides for any field you care about;
     /// the rest stay stable so test assertions aren't coupled to noise.
+    ///
+    /// The auto-attribute-detection fields (texture / fit / seasons /
+    /// occasions and their confidences) default to "no prediction" so
+    /// existing callers see identical behaviour. Phase 0 prefill tests
+    /// opt in by passing explicit values.
     static func make(
         id: UUID = UUID(),
         maskedImage: UIImage? = nil,
         confidence: ExtractionConfidence = .high,
         predictedCategory: ClothingCategory? = .top,
+        predictedCategoryConfidence: Float = 0.0,
+        predictedSubcategory: ClothingSubcategory? = nil,
+        predictedTexture: TextureType? = nil,
+        predictedTextureConfidence: Float = 0.0,
+        predictedFit: FitAttribute? = nil,
+        predictedFitConfidence: Float = 0.0,
+        predictedSeasons: [Season] = [],
+        predictedOccasions: [Occasion] = [],
         boundingBox: CGRect = CGRect(x: 0.1, y: 0.1, width: 0.5, height: 0.5),
         detectionScore: Float = 0.9,
         modelClassRaw: String = "shirt_blouse"
@@ -297,6 +310,14 @@ enum MaskProposalFixture {
             mask: nil,
             confidence: confidence,
             predictedCategory: predictedCategory,
+            predictedCategoryConfidence: predictedCategoryConfidence,
+            predictedSubcategory: predictedSubcategory,
+            predictedTexture: predictedTexture,
+            predictedTextureConfidence: predictedTextureConfidence,
+            predictedFit: predictedFit,
+            predictedFitConfidence: predictedFitConfidence,
+            predictedSeasons: predictedSeasons,
+            predictedOccasions: predictedOccasions,
             boundingBox: boundingBox,
             detectionScore: detectionScore,
             modelClassRaw: modelClassRaw

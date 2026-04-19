@@ -40,6 +40,16 @@ final class AddItemViewModel {
     var selectedSeasons: Set<Season> = Set(Season.allCases)
     var selectedOccasions: Set<Occasion> = [.casual]
 
+    /// Snapshot of attribute values pre-filled from a proposal's ML
+    /// predictions at the start of the details step. Keyed by field name
+    /// (`"category"`, `"subcategory"`, `"texture"`, `"fit"`, `"seasons"`,
+    /// `"occasions"`); value is the enum rawValue (seasons/occasions are
+    /// joined with `,`). Compared against the final user-edited values
+    /// on save to power correction-rate telemetry (Phase 7 of the
+    /// auto-attribute-detection plan). Empty outside an active details
+    /// step or when no pre-fill cleared the confidence threshold.
+    var detectedAttributes: [String: String] = [:]
+
     // UI state
     var isProcessing = false
     var isSaving = false
@@ -669,16 +679,13 @@ final class AddItemViewModel {
                 proposals: nil
             )
         }
-        // Reset item-specific metadata to defaults, same spirit as
-        // `resetKeepingSource()` but without flipping the single-item
-        // `wantsAnotherGarment` flag (batch progression is driven by
-        // the queue, not that flag).
-        category = .top
-        subcategory = .tshirt
-        texture = nil
-        fitAttribute = nil
-        selectedSeasons = Set(Season.allCases)
-        selectedOccasions = [.casual]
+        // Pre-fill item metadata from the proposal's ML predictions
+        // (threshold-gated) and snapshot which fields the ML drove so
+        // `save(userId:)` can diff against user edits for correction
+        // telemetry. Falls back to the legacy defaults when no field
+        // clears the threshold — identical behaviour to the old hard
+        // reset in that case.
+        applyPrefill(from: next)
         errorMessage = nil
         isAutoCropped = false
         isProcessing = false
@@ -686,6 +693,93 @@ final class AddItemViewModel {
         isShowingTapToSelect = false
         isShowingMultiPick = false
         currentStep = .details
+    }
+
+    /// Pre-fill category / subcategory / texture / fit / seasons /
+    /// occasions from a proposal's ML predictions, respecting the
+    /// per-field confidence threshold in `AttributePrefill`. Records a
+    /// `detectedAttributes` snapshot so the save path can detect user
+    /// corrections. Fields whose confidence doesn't clear the bar (or
+    /// whose proposal prediction is nil) fall back to the legacy
+    /// defaults — identical behaviour to the pre-Phase-0 hard reset.
+    private func applyPrefill(from proposal: MaskProposal) {
+        var snapshot: [String: String] = [:]
+
+        if let cat = proposal.predictedCategory,
+           AttributePrefill.shouldPrefill(proposal.predictedCategoryConfidence) {
+            category = cat
+            snapshot["category"] = cat.rawValue
+        } else {
+            category = .top
+        }
+
+        // Subcategory prediction is already a conservative commit (nil
+        // for ambiguous Fashionpedia classes, see
+        // `ClothingSubcategory.fromFashionpediaClass`), so it doesn't
+        // have its own confidence field. Guard on `category` match so a
+        // prediction mismatch (e.g. predicted blazer→.suitJacket but
+        // category fell back to .top) doesn't leave the picker stuck on
+        // an invalid option.
+        if let sub = proposal.predictedSubcategory, sub.category == category {
+            subcategory = sub
+            snapshot["subcategory"] = sub.rawValue
+        } else {
+            subcategory = defaultSubcategory(for: category)
+        }
+
+        if let tex = proposal.predictedTexture,
+           AttributePrefill.shouldPrefill(proposal.predictedTextureConfidence) {
+            texture = tex
+            snapshot["texture"] = tex.rawValue
+        } else {
+            texture = nil
+        }
+
+        if let fit = proposal.predictedFit,
+           AttributePrefill.shouldPrefill(proposal.predictedFitConfidence) {
+            fitAttribute = fit
+            snapshot["fit"] = fit.rawValue
+        } else {
+            fitAttribute = nil
+        }
+
+        if proposal.predictedSeasons.isEmpty {
+            selectedSeasons = Set(Season.allCases)
+        } else {
+            selectedSeasons = Set(proposal.predictedSeasons)
+            snapshot["seasons"] = proposal.predictedSeasons
+                .map(\.rawValue)
+                .sorted()
+                .joined(separator: ",")
+        }
+
+        if proposal.predictedOccasions.isEmpty {
+            selectedOccasions = [.casual]
+        } else {
+            selectedOccasions = Set(proposal.predictedOccasions)
+            snapshot["occasions"] = proposal.predictedOccasions
+                .map(\.rawValue)
+                .sorted()
+                .joined(separator: ",")
+        }
+
+        detectedAttributes = snapshot
+    }
+
+    /// Default picker selection for a category, used when the proposal
+    /// didn't commit to a subcategory. Mirrors the category's first
+    /// `availableSubcategories` entry (modulo the historical `.tshirt`
+    /// default for `.top`, kept verbatim so existing behaviour is
+    /// preserved pixel-for-pixel).
+    private func defaultSubcategory(for category: ClothingCategory) -> ClothingSubcategory {
+        switch category {
+        case .top: return .tshirt
+        case .bottom: return .jeans
+        case .shoe: return .sneakers
+        case .dress: return .casualDress
+        case .outerwear: return .leatherJacket
+        case .accessory: return .hat
+        }
     }
 
     func save(userId: UUID) async {
@@ -862,6 +956,7 @@ final class AddItemViewModel {
         fitAttribute = nil
         selectedSeasons = Set(Season.allCases)
         selectedOccasions = [.casual]
+        detectedAttributes = [:]
         errorMessage = nil
         wantsAnotherGarment = false
         isAutoCropped = false
@@ -881,6 +976,7 @@ final class AddItemViewModel {
         fitAttribute = nil
         selectedSeasons = Set(Season.allCases)
         selectedOccasions = [.casual]
+        detectedAttributes = [:]
         isProcessing = false
         isSaving = false
         errorMessage = nil
