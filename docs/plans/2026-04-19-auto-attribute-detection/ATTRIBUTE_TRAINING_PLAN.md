@@ -160,11 +160,13 @@ against the right data.
 **Architecture (single-head, per [BLOCKERS.md#D-2](./BLOCKERS.md#d-2--phase-3-train_attributespy-must-be-single-head)):**
 
 ```python
-# pseudo-spec, exact args TBD during implementation
-timm.create_model(
-    "mobilenetv3_small_100",
-    pretrained=True,
-    num_classes=5,  # TRAINABLE_FIT_LABELS
+# Actual construction in train_attributes.py::build_model.
+# Uses torchvision (already pinned) rather than timm — avoids a
+# new dependency for a one-line model.
+from torchvision.models import mobilenet_v3_small, MobileNet_V3_Small_Weights
+model = mobilenet_v3_small(weights=MobileNet_V3_Small_Weights.IMAGENET1K_V1)
+model.classifier[-1] = nn.Linear(
+    model.classifier[-1].in_features, 5  # TRAINABLE_FIT_LABELS
 )
 ```
 

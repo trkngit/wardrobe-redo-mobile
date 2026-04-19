@@ -312,35 +312,38 @@ xcodebuild test -scheme WardrobeReDo -sdk iphonesimulator \
 
 ### Phase 3 — Attribute classifier training
 
-**Status:** PROPOSED
+**Status:** IN PROGRESS — trainer + evaluator code shipped 2026-04-19; pod GPU run pending Phase 2 dataset materialization. See [ATTRIBUTE_TRAINING_PLAN.md](./2026-04-19-auto-attribute-detection/ATTRIBUTE_TRAINING_PLAN.md) § 4–5 for the full model / metric contract.
 **Track:** C
-**Depends on:** Phase 2 (prepared dataset)
+**Depends on:** Phase 2 dataset (pod)
 **Est. effort:** 2 days wall-clock (3–4 hours GPU × ~3 iterations)
 
-**Goal.** Produce a checkpoint that hits target metrics on held-out val: **texture ≥75% top-1, fit ≥70% top-1**. These numbers were chosen given Fashionpedia's known class-imbalance floor; refine after Phase 1 audit.
+**Goal (Option C scope).** Produce a single-head MobileNetV3-Small checkpoint that hits val macro-F1 ≥ 0.55 and top-1 ≥ 0.75 across the 5 fit classes. Target metrics + failure modes documented in [ATTRIBUTE_TRAINING_PLAN.md § 5](./2026-04-19-auto-attribute-detection/ATTRIBUTE_TRAINING_PLAN.md). Texture head removed — see [BLOCKERS.md#D-2](./2026-04-19-auto-attribute-detection/BLOCKERS.md).
 
 **Changes:**
 
-1. **`notebooks/training/scripts/train_attributes.py`** (NEW):
-   - PyTorch / timm `mobilenetv3_small_100` with ImageNet pretrain.
-   - Multi-head: linear → `Linear(in=1024, out=15)` + `Linear(in=1024, out=6)`.
-   - Loss: CE per head, sum. Optional class-balanced weighting from Phase 2 stats.
-   - Optimizer: AdamW, lr 3e-4 cosine.
-   - Hyperparams: 20 epochs, batch 128, 224×224 input, random crop / flip / color jitter.
-   - Checkpoints: `attr_best.pth`, `attr_last.pth`, `attr_metrics.json` (per-class precision/recall/F1 per head).
+1. **`notebooks/training/scripts/train_attributes.py`** (SHIPPED):
+   - `torchvision.models.mobilenet_v3_small` with ImageNet pretrain (no timm dep — torchvision is already pinned).
+   - Single head: `Linear(in=576, out=5)` — `TRAINABLE_FIT_LABELS` count.
+   - Loss: `nn.CrossEntropyLoss(weight=class_weights)` with `weights = clip(max / count, 1.0, 10.0)` (P2-3 clamp prevents oversized from fitting to noise).
+   - Sampler: `WeightedRandomSampler` with inverse-frequency weights (oversamples rare classes in training; val stays uniform).
+   - Optimizer: AdamW, lr 3e-4, weight_decay 1e-4, linear warmup (1 epoch) → cosine decay.
+   - Hyperparams: 20 epochs, batch 128, 224×224 input, RandomHorizontalFlip + mild ColorJitter + RandomErasing(p=0.25).
+   - Checkpoints: `attr_best.pth` (best val **macro-F1**, not top-1 — majority-class defense), `attr_last.pth`, `attr_metrics.json`, `run_summary.json`.
+   - Mixed precision on CUDA (fp32 on CPU and in `--smoke` mode). `GradScaler` persists across epochs.
 
-2. **`notebooks/training/scripts/eval_attributes.py`** (NEW):
-   - Emits confusion matrices per head.
-   - Calibration plot: pred confidence vs realized accuracy (matters for our 0.80 threshold).
-   - Per-attribute F1 with worst-5 callout (tells us where the rules engine may need to reinforce).
+2. **`notebooks/training/scripts/eval_attributes.py`** (SHIPPED):
+   - Row-normalized 5×5 confusion matrix (seaborn heatmap → PNG).
+   - Calibration plot: 20-bin reliability diagram with a dotted red line at the 0.80 pre-fill threshold, bubble size ∝ bin count.
+   - Markdown-formatted per-class precision/recall/F1/support table to stdout (pasteable into session logs).
+   - `summary.json` — machine-readable grade card keying on the conf≥0.80 `realized_acc` metric.
 
-3. **Launch script:** extend `notebooks/training/scripts/run_training.sh` (or add `run_attr_training.sh`) — same pod, sequential after RF-DETR-Seg finishes.
+3. **Launch:** pod runbook in [ATTRIBUTE_TRAINING_PLAN.md § 7](./2026-04-19-auto-attribute-detection/ATTRIBUTE_TRAINING_PLAN.md). No shell launcher — just a documented `python train_attributes.py …` command, mirroring the existing `train.py` invocation.
 
 **Verification:**
-- `attr_metrics.json` must show per-head accuracy + per-class F1 floor (≥0.35 for every class; rare classes like `corduroy` get a documented exception).
-- `eval_attributes.py` calibration plot: fraction of predictions with confidence ≥0.80 that are correct → should be ≥0.90 (the whole reason we picked 0.80 as the pre-fill threshold).
+- `run_summary.best_macro_f1 ≥ 0.55` (shippable floor) — per-class F1 ≥ 0.30 on oversized (rare) / 0.45 on relaxed (second-rarest).
+- `summary.high_conf.realized_acc ≥ 0.90` at threshold 0.80 — underwrites the iOS pre-fill threshold (`AttributePrefill.minConfidence = 0.80`).
 
-**Next action:** Once Phase 2 dataset is on the pod, launch a 2-epoch smoke run (~15 min) to validate the script compiles end-to-end before committing to the full 20-epoch schedule.
+**Next action:** Pod operator — after Phase 2 dataset lands at `/workspace/training/attr-dataset`, launch a 2-epoch smoke (`--smoke --epochs 2 --batch-size 32`) to prove wiring before committing to 20 epochs × 3 iterations (~10 pod-hrs).
 
 ---
 
