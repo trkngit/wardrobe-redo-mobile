@@ -58,7 +58,7 @@ struct DeveloperMenuView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Auto-Attribute Pre-fill")
                         .font(Theme.Fonts.body)
-                    Text("Pre-select category, texture, fit, seasons, and occasions after capture. Off → legacy hard-reset defaults.")
+                    Text("Pre-select category, fit, seasons, and occasions after capture. Texture stays user-input until v1.1. Off → legacy hard-reset defaults.")
                         .font(Theme.Fonts.caption)
                         .foregroundStyle(Color(Theme.Colors.textSecondary))
                 }

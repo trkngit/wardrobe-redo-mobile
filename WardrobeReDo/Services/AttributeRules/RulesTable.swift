@@ -16,6 +16,18 @@ import Foundation
 ///   - `_` in the texture slot matches both nil and any concrete value.
 ///   - First-match wins. The ordering follows the numbered rules in
 ///     `RULES_TABLE.md`, from most specific to least specific.
+///
+/// **Option C dormant clauses.** Per
+/// `docs/plans/2026-04-19-auto-attribute-detection/ATTRIBUTE_TAXONOMY.md`
+/// § Section 0, the v1 attribute classifier does not predict texture —
+/// Fashionpedia v2 has no main-fabric-type attributes. Every clause
+/// that keys on a concrete texture (e.g. `(.dress, _, .silk?)`,
+/// `(.outerwear, _, .wool?)`) is **unreachable in v1** and falls through
+/// to the next less-specific clause. The clauses stay in place
+/// deliberately: (1) they're correct for v1.1 when Option B's richer
+/// texture dataset lands, (2) they document the eventual-behavior intent,
+/// and (3) reactivating them takes zero code change. See
+/// `BLOCKERS.md#D-1`.
 enum RulesTable {
     // MARK: - Seasons
 

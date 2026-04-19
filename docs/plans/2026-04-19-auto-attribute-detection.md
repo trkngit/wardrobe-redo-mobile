@@ -220,7 +220,7 @@ xcodebuild test -scheme WardrobeReDo -sdk iphonesimulator \
 
 ### Phase 1 — Fashionpedia attribute audit + taxonomy mapping
 
-**Status:** DONE (2026-04-19) — taxonomy + rules engine shipped in `e67d14b`; full-train audit CSV in `9430ad2` (295 attribute types, 333,401 annotations, 61.9% texture coverage). Replaced the earlier val-only placeholder (`1b34071`).
+**Status:** DONE (2026-04-19) — taxonomy + rules engine shipped in `e67d14b`; full-train audit CSV in `9430ad2` (295 attribute types, 333,401 annotations, 61.9% texture coverage). Replaced the earlier val-only placeholder (`1b34071`). **Reviewer sign-off 2026-04-19 locked Option C (defer TextureType to v1.1; ship fit-only).** See [ATTRIBUTE_TAXONOMY.md § Section 0](./2026-04-19-auto-attribute-detection/ATTRIBUTE_TAXONOMY.md) and [BLOCKERS.md](./2026-04-19-auto-attribute-detection/BLOCKERS.md).
 **Track:** B
 **Depends on:** nothing
 **Est. effort:** 1.5 days (plus ~1 hour of user review for the mapping)
@@ -258,7 +258,7 @@ xcodebuild test -scheme WardrobeReDo -sdk iphonesimulator \
 
 ### Phase 2 — Architecture decision + dataset prep v2
 
-**Status:** PROPOSED
+**Status:** IN PROGRESS (Option C scope — fit-only, single-head; see [BLOCKERS.md § P2-1…P2-7](./2026-04-19-auto-attribute-detection/BLOCKERS.md))
 **Track:** B
 **Depends on:** Phase 1
 **Est. effort:** 2 days

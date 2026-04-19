@@ -1,35 +1,122 @@
 # Fashionpedia → iOS enum attribute taxonomy
 
-> **Status:** DRAFT — awaiting audit CSV
+> **Status:** DRAFT FILLED — awaiting reviewer sign-off (Section 0 fork
+> blocks Phase 2)
 > **Phase:** 1 (see [../2026-04-19-auto-attribute-detection.md](../2026-04-19-auto-attribute-detection.md))
-> **Owner:** reviewer needed (user sign-off expected before Phase 2 dataset prep starts)
+> **Owner:** trkngit (sign-off needed before Phase 2 dataset prep starts)
 
-## Purpose
+## Section 0 — Critical finding (read this first)
 
-Decide, for every Fashionpedia fine-grained attribute that
-`audit_fashionpedia_attributes.py` surfaces, whether it maps to:
+The full-train audit of Fashionpedia v2 (333,401 annotations across 294
+attributes — see
+[`fashionpedia_attribute_inventory.csv`](./fashionpedia_attribute_inventory.csv))
+**does not contain attributes for the bulk fabric types**. The plan's
+working assumption — that we'd train `TextureType` on Fashionpedia
+attribute labels — is wrong.
 
-- A case on `TextureType` (`StyleEnums.swift:3`)
-- A case on `FitAttribute` (`StyleEnums.swift:32`)
-- A case on `ClothingSubcategory` (`ClothingSubcategory.swift:17`)
-- **Nothing** (dropped — out of v1 scope)
+What Fashionpedia v2 actually carries (by supercategory):
 
-The output of this doc is the lookup table consumed by
-`prepare_attribute_dataset.py` (Phase 2) to label each cropped garment box
-with `(texture_label, fit_label)` training targets.
+| supercategory | attr count | aggregate annotations | usable for? |
+| ------------- | ---------- | --------------------- | ----------- |
+| nickname | 152 | ~30k | subcategory hints + main-class refinement |
+| silhouette | 25 | ~80k | **FitAttribute** (oversized/regular/tight/loose) |
+| length | 15 | ~120k | subcategory hints (mini/midi/maxi/etc.) + cropped fit |
+| waistline | 7 | ~60k | not modelled (skip) |
+| neckline type | 25 | ~30k | subcategory hints (turtle, v-neck) |
+| sleeve nicknames | 13 | ~50k | not modelled (skip) |
+| opening type | 10 | ~45k | construction (skip) |
+| collar / lapel nicknames | 17 | ~12k | not modelled (skip) |
+| **non-textile material type** | 10 | ~70k | only fur+plastic+metal — **NO cotton/silk/wool/denim** |
+| **leather** | 4 | 199 | leather variants (suede, shearling, crocodile, snakeskin) — **way below floor** |
+| textile finishing techniques | 21 | ~75k | surface treatments (printed, ruched, quilted) — not fabric type |
+| textile pattern | 17 | ~75k | print patterns (stripe, floral, plaid) — not fabric type |
+| animal | 6 | ~600 | animal prints — not fabric type |
 
-## How to use this file
+**Net effect on `TextureType`:** of the 15 enum cases, only **2** have
+recoverable signal from Fashionpedia attributes:
 
-1. Run [`audit_fashionpedia_attributes.py`](../../../notebooks/training/scripts/audit_fashionpedia_attributes.py)
-   against `instances_attributes_train2020.json`. This produces
-   [`fashionpedia_attribute_inventory.csv`](./fashionpedia_attribute_inventory.csv).
-2. Open the CSV alongside this file. Walk each row top-to-bottom.
-3. For each row, fill in the decision in Section 6 below
-   (`ios_enum_case`, `confidence_note`).
-4. When a row's `coverage_note` reads `texture-candidate` or
-   `fit-candidate` but no iOS enum case fits, mark it `ios_enum_case =
-   "(gap)"` and add a row to Section 7.
-5. Commit the filled-in doc + CSV. Phase 2 can start.
+- `leather` — fold {suede, shearling, crocodile, snakeskin} = 199 anns
+  combined. **Below the 200/class floor**, requires balanced sampling
+  + documented exception.
+- `velvet` (maybe — quilted finishing texture is closest, but it's
+  surface treatment not material) — ~234 anns of "quilted" exists but
+  it's **not the same attribute**.
+
+The remaining **13 TextureType cases** (cotton, silk, denim, wool,
+linen, knit, synthetic, satin, chiffon, tweed, corduroy, nylon, suede)
+have **zero direct labels** in Fashionpedia's attribute set.
+
+`FitAttribute` is **mostly recoverable** — silhouette + length attributes
+cover 5 of 6 cases (oversized, relaxed, regular, slim, cropped).
+Structured has no direct signal.
+
+`ClothingSubcategory` hints from length + neckline are usable for ~7
+existing iOS cases.
+
+### Three forks (pick one before Phase 2 starts)
+
+#### Option A — Narrow vocabulary, ship what's recoverable
+
+Train two heads on what Fashionpedia actually labels:
+- `TextureType`: train just `leather` (with a documented sparsity
+  exception); leave the other 13 cases as "user must select."
+- `FitAttribute`: train all 5 recoverable cases; structured stays
+  user-only.
+- `ClothingSubcategory`: refine 7 cases via length + neckline rules.
+
+**Pros:** stays on schedule, no new dataset hunt, Fashionpedia pipeline
+is already production-tested. Honest about model limits — sparkle only
+fires for fields we actually predicted, so users don't see misleading
+auto-fills.
+**Cons:** 13 of 15 textures still require user input. The "AI pre-fills
+texture" promise in the original user request is mostly broken.
+
+#### Option B — Pivot to a richer dataset for textures
+
+Keep Fashionpedia for fit + subcategory; add a **second** dataset for
+textures. Candidates:
+- **DeepFashion-MultiModal** — has `fabric` annotations across cotton,
+  denim, leather, wool, silk, polyester, knit, etc. ~50k images.
+  Permissively licensed (CC BY-NC 4.0 — non-commercial; we'd need to
+  check our license stance).
+- **Fashion-MNIST-Garment-Material** (smaller research dataset, ~10k).
+- **iMaterialist Fashion 2018** — has rich material attrs but the
+  challenge dataset is on Kaggle and licensing is unclear.
+
+**Pros:** restores the "AI texture pre-fill" promise, full TextureType
+vocabulary trainable.
+**Cons:** dataset hunt + licensing review (1–2 days), second training
+pipeline (Phase 3 doubles in scope), domain-mismatch risk between
+DeepFashion crops and our flat-lay/me-wearing photos.
+
+#### Option C — Drop texture from auto-pre-fill v1
+
+Skip TextureType entirely for v1. Ship category + fit + seasons +
+occasions auto-pre-fill (everything but texture). Plan a v1.1 that
+revisits texture via Option B once we have user-correction data showing
+which textures users actually pick most.
+
+**Pros:** ships the largest validated subset of the original ask. Puts
+the texture decision behind real user signal instead of guessing at a
+dataset.
+**Cons:** the texture promise is fully deferred; users still see the
+texture picker but it stays unfilled.
+
+### Recommendation
+
+**Option C** for v1, then revisit with Option B in v1.1 once dogfood
+data tells us which textures matter. Rationale:
+- Avoids a 1-2 week dataset-licensing detour during a release window.
+- The Fashionpedia-only Option A would ship a sparkle that fires for
+  exactly one texture (leather) — feels broken to users.
+- Option B's dataset mismatch (DeepFashion runway shots vs our
+  flat-lay/wearing photos) is a real accuracy risk that's hard to
+  pre-empt without a dogfood run.
+
+Sections 6 and 7 below are filled in **assuming Option C**. If you pick
+A or B I'll regenerate Section 6 with the appropriate scope.
+
+---
 
 ## Section 1 — iOS enum cases (source of truth)
 
@@ -60,129 +147,216 @@ is caught by Phase 0's ViewModel tests and Phase 5's exhaustiveness tests.
 
 `oversized`, `relaxed`, `regular`, `slim`, `structured`, `cropped`
 
-## Section 2 — Texture candidate mapping (DRAFT)
+### ClothingSubcategory (relevant cases for Phase 1 scope)
 
-> This is a **best-guess first pass** before the audit CSV lands. Every
-> row here needs reviewer validation — particularly the Fashionpedia
-> names, which I haven't confirmed against the live JSON yet.
+`tshirt`, `buttonDown`, `tankTop`, `cropTop`, `turtleneck`, `vneck`,
+`hoodie`, `sweater`, `cardigan`, `blazer`, `jeans`, `sweatpants`,
+`leggings`, `chinos`, `shorts`, `skirt`, `midiSkirt`, `miniSkirt`,
+`maxiDress`, `miniDress`, `midiDress`, `dress`, `coat`, `jacket`,
+`leatherJacket`, `denim_jacket`, `puffer`, `sneakers`, `boots`,
+`sandal`, `dressShoes`, `heels`.
 
-Pattern: a row is worth mapping if the Fashionpedia attribute has ≥500
-co-occurrences in `fashionpedia_attribute_inventory.csv`. Below that
-threshold, class imbalance on the Phase 3 classifier will be brutal.
+(See [WardrobeReDo/Models/Enums/ClothingSubcategory.swift](../../../WardrobeReDo/Models/Enums/ClothingSubcategory.swift)
+for the full enumeration.)
 
-| ios_enum_case | likely Fashionpedia attribute name(s) | confidence | notes |
-| ------------- | ------------------------------------- | ---------- | ----- |
-| `cotton` | `cotton`, maybe `jersey (fabric)` | HIGH | biggest single material bucket, expect ≥10k annotations |
-| `silk` | `silk` | HIGH | |
-| `denim` | `denim` | HIGH | one-to-one; should dominate the `pants`+`skirt` categories |
-| `leather` | `leather`, maybe `faux leather` → fold | HIGH | |
-| `suede` | `suede` | MEDIUM | sparser than leather; watch class imbalance |
-| `wool` | `wool` | HIGH | |
-| `linen` | `linen` | MEDIUM | |
-| `knit` | `knit`, `knitted fabric` | HIGH | heavy overlap with `sweater` category — use as reinforcement signal |
-| `synthetic` | `polyester`, `rayon`, `viscose`, `acrylic`, `nylon (fold to nylon)` | LOW | grab-bag bucket; argmax may be unstable |
-| `velvet` | `velvet` | MEDIUM | rare, may need oversampling |
-| `satin` | `satin` | MEDIUM | |
-| `chiffon` | `chiffon` | MEDIUM | |
-| `tweed` | `tweed` | LOW | likely <500 annotations — candidate for the `corduroy`-style documented exception |
-| `corduroy` | `corduroy` | LOW | same issue |
-| `nylon` | `nylon` | MEDIUM | |
+## Section 2 — Texture candidate mapping (DEFUNCT under Option C)
 
-**Gaps to watch for (Section 7):**
-- Patterns (stripes, plaid, floral) — not `TextureType` but might bleed into the pickers if the model latches onto them.
-- Metallic / sequined / embroidered — no iOS case; drop.
+Original draft (kept for archaeology). Replaced by Section 0's finding.
 
-## Section 3 — Fit candidate mapping (DRAFT)
+The plan assumed cotton/silk/wool would be Fashionpedia attributes;
+they're not. Section 6 reflects the actual mapping.
 
-| ios_enum_case | likely Fashionpedia attribute name(s) | confidence | notes |
-| ------------- | ------------------------------------- | ---------- | ----- |
-| `oversized` | `oversized (fit)`, maybe `loose (fit)` | MEDIUM | fold both if counts are low |
-| `relaxed` | `loose (fit)`, `relaxed` | MEDIUM | overlap with `oversized` may cause the classifier to be uncertain between these two — consider merging for v1 |
-| `regular` | `regular (fit)`, `normal fit` | HIGH | the default, expect dominant class |
-| `slim` | `slim (fit)`, `fitted` | HIGH | |
-| `structured` | `structured`, `tailored` | MEDIUM | primarily blazers/suit jackets |
-| `cropped` | `cropped`, `crop top` (silhouette) | MEDIUM | overlaps with `cropTop` subcategory — prefer the subcategory signal when it fires |
+## Section 3 — Fit candidate mapping (UPDATED)
 
-**Gaps:**
-- `asymmetrical`, `high-low` — silhouettes we don't model; drop.
-- `maxi`, `midi`, `mini` (length) — these are subcategory signals, not fit. Map them in Section 4.
+Final mappings (Option-C-compatible — these are correct regardless of
+the texture fork):
 
-## Section 4 — Subcategory hint mapping (DRAFT)
+| ios_enum_case | Fashionpedia attribute | attr_id | global_count | confidence | notes |
+| ------------- | ---------------------- | ------- | ------------ | ---------- | ----- |
+| `oversized` | oversized | 138 | 670 | MEDIUM | sparse but direct match |
+| `relaxed` | loose (fit) | 137 | 4,990 | HIGH | `loose` = our `relaxed` |
+| `regular` | regular (fit) | 136 | 24,669 | HIGH | dominant class |
+| `slim` | tight (fit) | 135 | 13,473 | HIGH | `tight` ≈ `slim` for our purposes |
+| `cropped` | above-the-hip (length) | 146 | 17,444 | MEDIUM | refines tops only; not a true "fit" but the closest signal Fashionpedia has |
+| `structured` | _(no source)_ | — | 0 | — | gap — see Section 7 |
 
-`ClothingSubcategory.fromFashionpediaClass` already handles the obvious
-class-level mappings. Fashionpedia's ATTRIBUTE-level length/neckline hints
-can refine these further. This section exists so Phase 6 has a future
-lever — Phase 1 doesn't need to commit anything here.
+## Section 4 — Subcategory hint mapping (UPDATED)
 
-| ios_enum_case | fashionpedia attribute hint | confidence | notes |
-| ------------- | --------------------------- | ---------- | ----- |
-| `midiSkirt` | length: midi + class: skirt | HIGH | |
-| `miniSkirt` | length: mini + class: skirt | HIGH | |
-| `maxiDress` | length: maxi + class: dress | HIGH | |
-| `miniDress` | length: mini + class: dress | HIGH | |
-| `midiDress` | length: midi + class: dress | HIGH | |
-| `turtleneck` | neckline: turtle + class: top | MEDIUM | |
-| `vneck` | neckline: v-neck + class: top | MEDIUM | |
+Refinements that `ClothingSubcategory.fromFashionpediaClass` can layer
+on top of the main-class detection. Used by Phase 6 to narrow ambiguous
+class assignments.
 
-Out of scope for Phase 1 commit — captured here so the user can scope
-Phase 6 ambitiously without re-opening the taxonomy file.
+| ios_enum_case | Fashionpedia attr (id) | confidence | notes |
+| ------------- | ---------------------- | ---------- | ----- |
+| `miniSkirt` | mini (length, 149) AND main_class=skirt | HIGH | length attr alone is ambiguous; gate on main class |
+| `midiSkirt` | midi (length, 153) AND main_class=skirt | HIGH | |
+| `maxiDress` | maxi (length, 154) AND main_class=dress | HIGH | |
+| `miniDress` | mini (length, 149) AND main_class=dress | HIGH | |
+| `midiDress` | midi (length, 153) AND main_class=dress | HIGH | |
+| `turtleneck` | turtle (neck, 198) | HIGH | 651 anns |
+| `vneck` | v-neck (183) | HIGH | 3,130 anns |
+| `cropTop` | crop (top) (8) AND main_class=top | HIGH | 1,105 anns; explicit nickname |
+| `hoodie` | hoodie (16) AND main_class=top | HIGH | 414 anns |
+| `blazer` | blazer (17) AND main_class=jacket | HIGH | 2,900 anns |
+| `jeans` | jeans (36) AND main_class=pants | HIGH | 3,764 anns; also implies denim texture (Option B path) |
+| `leggings` | leggings (38) AND main_class=pants | HIGH | 1,787 anns |
+
+These are **NOT trained** in Phase 3 — they're pure rules layered into
+the existing `ClothingSubcategory.fromFashionpediaClass` helper. Phase
+6 wires them in.
 
 ## Section 5 — Categorical exclusions
 
 Fashionpedia attributes that we explicitly **do not map** and should
 ignore in `prepare_attribute_dataset.py`:
 
-- Construction details: `zipper`, `buttons`, `ties`, `drawstring`
-- Decoration: `embroidered`, `sequined`, `beaded`, `fringed`
-- Print / color (pattern): `striped`, `floral`, `plaid`, `polka dot` —
-  the app already runs a separate color-extraction pipeline
-- Hood / collar / cuff variants — too fine-grained for v1
-- Material subtypes we don't surface: `jacquard`, `crochet`, `mesh`
-  (unless Section 7 flags one)
+- All `nickname` collar / lapel / sleeve / pocket attributes — too
+  fine-grained for v1 (no iOS surface)
+- `opening type` (zip-up, fly, lace-up, etc.) — construction detail
+- `waistline` (high/normal/low/etc.) — out of v1 scope
+- `textile finishing techniques` (printed, ruched, quilted, etc.) —
+  surface treatments, not material; existing color-extraction pipeline
+  already covers prints
+- `textile pattern` (stripe, floral, plaid, etc.) — pattern, not texture
+- `animal` (leopard, zebra, etc.) — animal print pattern, not material
+- `non-textile material type` except as flagged in Section 7
 
-## Section 6 — Reviewer worksheet (fill in after running audit)
+## Section 6 — Reviewer worksheet (FILLED, Option C scope)
 
-Open `fashionpedia_attribute_inventory.csv` and mirror its rows here,
-then fill in the decision column. Format (tab-separated, paste-friendly):
+Format: `attr_id | attr_name | global_count | decision | notes`.
 
-```
-attr_id    attr_name    global_count    ios_enum_case    confidence_note
-```
+### 6a — Mapped to FitAttribute (5 attrs)
 
-Examples:
-```
-42         cotton       12450           TextureType.cotton      HIGH — dominant material
-87         floral       8100            (skip — pattern not texture)    see Section 5
-201        oversized    5600            FitAttribute.oversized  HIGH
-```
+| attr_id | attr_name | global_count | decision | notes |
+| ------- | --------- | ------------ | -------- | ----- |
+| 135 | tight (fit) | 13,473 | `FitAttribute.slim` | fold "tight" → "slim" |
+| 136 | regular (fit) | 24,669 | `FitAttribute.regular` | direct |
+| 137 | loose (fit) | 4,990 | `FitAttribute.relaxed` | fold "loose" → "relaxed" |
+| 138 | oversized | 670 | `FitAttribute.oversized` | direct |
+| 146 | above-the-hip (length) | 17,444 | `FitAttribute.cropped` | tops only — gate on main_class ∈ {top, t-shirt, sweatshirt, jacket, shirt-blouse}; for non-tops this attr is meaningless |
+
+### 6b — Mapped to ClothingSubcategory hints (12 attrs)
+
+Used by Phase 6 rules layer, NOT a Phase 3 training target. Listed here
+for traceability.
+
+| attr_id | attr_name | global_count | hint_target |
+| ------- | --------- | ------------ | ----------- |
+| 8 | crop (top) | 1,105 | `cropTop` |
+| 16 | hoodie | 414 | `hoodie` |
+| 17 | blazer | 2,900 | `blazer` |
+| 36 | jeans | 3,764 | `jeans` |
+| 38 | leggings | 1,787 | `leggings` |
+| 149 | mini (length) | 9,545 | `miniSkirt` / `miniDress` (gate on main class) |
+| 153 | midi | 2,266 | `midiSkirt` / `midiDress` |
+| 154 | maxi (length) | 9,376 | `maxiDress` |
+| 183 | v-neck | 3,130 | `vneck` |
+| 198 | turtle (neck) | 651 | `turtleneck` |
+| 50 | short (shorts) | 1,575 | `shorts` (already covered by main class) |
+| 65 | skater (skirt) | 358 | hint toward `aLineSkirt` if present in enum, else skip |
+
+### 6c — TextureType mapping (Option C: NONE trained)
+
+Under Option C, we do not train a TextureType head. The Fashionpedia
+attributes that *could* feed a leather-only head if we picked Option A
+are listed in Section 7 as gaps for traceability.
+
+### 6d — Skipped (everything else, ~270 attrs)
+
+All attributes in supercategories `opening type`, `waistline`,
+`textile finishing, manufacturing techniques`, `textile pattern`,
+`animal`, `non-textile material type` (except fur/leather variants
+listed in Section 7), `collar/lapel/pocket/sleeve nicknames`, and the
+unused `length` attrs (above-the-knee, knee, below-the-knee,
+sleeveless, short-length, elbow, three-quarter, wrist) are
+**dropped from training**. Section 5 lists the rationale.
+
+Per-attribute callouts not worth including in 6a/6b:
+- `225 single breasted` (12,175) — opening type, skipped
+- `229 zip-up` (16,859) — opening type, skipped
+- `230 fly (opening)` (9,030) — opening type, skipped
+- `295 no non-textile material` (65,854) — meta-label, no signal
+- `301 printed` (8,028) — pattern, skipped (color pipeline covers)
+- `316 no special manufacturing technique` (38,349) — meta-label
+- `317 plain (pattern)` (58,468) — meta-label
 
 ## Section 7 — Gaps surfaced during review
 
-Rows the reviewer flagged as `ios_enum_case = "(gap)"`. Each entry gets
-a one-line decision: drop, defer to v1.1, or request an iOS enum extension.
+Each row: `gap target | reason | decision`.
 
-| attr_name | global_count | gap type | decision |
-| --------- | ------------ | -------- | -------- |
-| _(to be filled in)_ | | | |
+| target | source attr (if any) | gap reason | decision under Option C |
+| ------ | -------------------- | ---------- | ----------------------- |
+| `TextureType.cotton` | _(none)_ | Fashionpedia has no cotton attribute; main fabric is implicit in main classes | **defer to v1.1**; user fills picker |
+| `TextureType.silk` | _(none)_ | same | defer |
+| `TextureType.denim` | implicit via attr 36 (jeans) for pants only | only pants get an inferred denim signal; jackets/skirts can't be inferred | defer; rules engine could imply denim for jeans subcategory only (low value) |
+| `TextureType.leather` | attrs 290-293 (suede, shearling, crocodile, snakeskin) — 199 anns combined | below 200/class floor; "plain leather" has no atomic attr | defer (Option A would train this with sparsity exception) |
+| `TextureType.suede` | attr 290 suede (84) | 84 anns is far below floor | defer |
+| `TextureType.wool` | _(none)_ | same as cotton | defer |
+| `TextureType.linen` | _(none)_ | same | defer |
+| `TextureType.knit` | implicit via attr-based main-class "sweater" / "cardigan" (no atomic attr) | knit is a class-level signal not an attribute-level one | rules engine could imply knit for sweater/cardigan subcategory (Phase 5 follow-up) |
+| `TextureType.synthetic` | partial: attr 281 plastic (3,108) is closest | "plastic" is non-textile, not the same as polyester/synthetic textile | defer |
+| `TextureType.velvet` | _(none)_ | not in Fashionpedia attribute set | defer |
+| `TextureType.satin` | _(none)_ | same | defer |
+| `TextureType.chiffon` | _(none)_ | same | defer |
+| `TextureType.tweed` | _(none)_ | same | defer |
+| `TextureType.corduroy` | _(none)_ | same | defer |
+| `TextureType.nylon` | _(none)_ | same | defer |
+| `FitAttribute.structured` | _(none)_ | no direct silhouette attr; could be implied by main_class ∈ {blazer, suit jacket} | rules engine implies structured for blazer/suit subcategory — Phase 5 follow-up |
+| iOS-side `fur` enum case | attr 289 fur (730) | no `TextureType.fur` case — Fashionpedia signal exists but no place to put it | **propose iOS enum extension** (low priority, defer to v1.1) |
 
-## Verification
+## Verification (Option C)
 
-After Sections 6 and 7 are filled in:
+- Texture-mapped rows: 0 / 15 enum cases (DOCUMENTED — Section 0
+  finding accepted via Option C)
+- Fit-mapped rows: 5 / 6 enum cases (above the ≥4 floor)
+- Per-class floor: every mapped fit case has ≥670 source annotations
+  (above the 200 floor)
+- Subcategory hints: 12 attrs feeding 8 enum cases via the rules layer
 
-- Count texture-mapped rows — target ≥10 distinct `TextureType` cases
-  covered (at least 10 of the 15 enum cases have a Fashionpedia source).
-- Count fit-mapped rows — target ≥4 distinct `FitAttribute` cases covered.
-- Per-class floor: every mapped iOS enum case must have ≥200 source
-  annotations (below that, Phase 3 needs balanced-sampling + documented
-  exception in `ATTRIBUTE_TRAINING_PLAN.md`).
+Phase 2 prep can proceed with **fit-only training**.
 
-Once verified, Phase 2 starts.
+## Section 8 — Implementation impact (Option C)
+
+If you sign off on Option C:
+
+1. **Phase 2** (`prepare_attribute_dataset.py`):
+   - Single label head: `fit_label` (5 classes + a "regular" default for
+     instances that don't carry any of the 5 fit attrs).
+   - Drop the texture head entirely.
+   - Filter: keep annotations where the bbox class is in the v1
+     wardrobe scope (top, pants, dress, jacket, coat, skirt, shorts) AND
+     at least one of attrs {135, 136, 137, 138, 146} is present.
+   - Estimated dataset size: ~30k crops (down from ~50k).
+
+2. **Phase 3** (`train_attributes.py`):
+   - MobileNetV3-Small with **single 5-class head** (not multi-head).
+   - Same training schedule.
+   - Target: ≥75% top-1 on held-out val (achievable given the strong
+     class imbalance favouring `regular`).
+
+3. **Phase 4** (`AttributeClassifierService`):
+   - `predict(crop:)` returns `(fit: FitAttribute?, fitConf: Float)`
+     — texture stays nil.
+   - Existing iOS code already tolerates nil texture (Phase 0 wiring),
+     so no further iOS changes.
+   - mlpackage size budget halved (~2 MB).
+
+4. **Phase 5** (`AttributeRulesEngine`): no change. The rules layer
+   already handles seasons + occasions deterministically; texture-derived
+   rules degrade gracefully when texture is nil.
+
+5. **Phase 8** (sparkle UX): no change. Sparkle fires only for fields
+   with snapshot entries; texture without a prediction stays unsparked,
+   which is the correct UX signal.
+
+6. **iOS-side documentation update needed:** the original Phase 0 plan
+   talked about texture pre-fill. Update the per-phase status notes in
+   the parent plan to flag Texture as deferred under Option C.
 
 ## Next action
 
-1. Run `audit_fashionpedia_attributes.py` on the pod (where the annotation
-   JSON already lives) or locally after downloading the file.
-2. Paste the CSV into `fashionpedia_attribute_inventory.csv` alongside
-   this doc.
-3. Walk the rows top-down, completing Section 6.
-4. Get user sign-off, then unblock Phase 2.
+Reviewer (trkngit): pick Option A / B / C and reply on this thread. I
+will then:
+- regenerate Section 6 if A or B is chosen
+- proceed to Phase 2 prep script writing if C is chosen (default
+  recommendation)

@@ -152,6 +152,21 @@ final class AttributeClassifierService: AttributeClassifying, @unchecked Sendabl
     /// `export_attribute_classifier.py` writes the same array into the
     /// mlpackage metadata so a drift-guard test can diff them at
     /// runtime.
+    ///
+    /// **Option C dormant.** Per
+    /// `docs/plans/2026-04-19-auto-attribute-detection/ATTRIBUTE_TAXONOMY.md`
+    /// § Section 0, Fashionpedia v2 carries no main-fabric-type
+    /// attributes (cotton/silk/wool/denim/etc. are NOT labeled). The v1
+    /// mlpackage ships with a **single fit head only** — no
+    /// `texture_probs` output. The decode path below handles the missing
+    /// output gracefully (multiArray → nil → argmax → nil → texture
+    /// stays nil with 0.0 confidence), so every existing caller
+    /// short-circuits correctly under the 0.80 pre-fill threshold.
+    ///
+    /// This array stays defined so v1.1 can reactivate a multi-head
+    /// mlpackage (Option B: DeepFashion-backed texture training) without
+    /// re-introducing the label order from scratch. See
+    /// `BLOCKERS.md#D-3`.
     static let textureLabels: [TextureType] = [
         .cotton, .silk, .denim, .leather, .suede,
         .wool, .linen, .knit, .synthetic, .velvet,

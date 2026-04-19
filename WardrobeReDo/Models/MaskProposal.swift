@@ -49,10 +49,14 @@ struct MaskProposal: Identifiable, Hashable, @unchecked Sendable {
     /// `ClothingSubcategory.fromFashionpediaClass`.
     let predictedSubcategory: ClothingSubcategory?
 
-    /// Texture prediction from the attribute classifier. Nil until the
-    /// attribute model ships (Phase 3–4 of the auto-attribute-detection
-    /// plan) — rely on `predictedTextureConfidence == 0.0` as the
-    /// "no prediction yet" sentinel rather than optional-chaining.
+    /// Texture prediction from the attribute classifier. **Nil in v1**
+    /// — Fashionpedia v2 doesn't carry main-fabric-type attributes, so
+    /// Option C of the auto-attribute plan ships fit-only and leaves
+    /// texture as user-input. v1.1 revisits with a richer dataset
+    /// (Option B, DeepFashion-backed training). See
+    /// `docs/plans/2026-04-19-auto-attribute-detection/ATTRIBUTE_TAXONOMY.md`
+    /// § Section 0. Rely on `predictedTextureConfidence == 0.0` as the
+    /// "no prediction" sentinel rather than optional-chaining.
     let predictedTexture: TextureType?
 
     /// Softmaxed confidence of the texture prediction in [0, 1].
