@@ -1,0 +1,295 @@
+attr_id,attr_name,attr_supercategory,global_count,global_fraction,top_category_1,top_category_2,top_category_3,coverage_note
+0,classic (t-shirt),nickname,5466,0.016395,"top, t-shirt, sweatshirt (5462)",neckline (3),sleeve (1),
+1,polo (shirt),nickname,198,0.000594,"top, t-shirt, sweatshirt (198)",,,
+2,undershirt,nickname,573,0.001719,"top, t-shirt, sweatshirt (567)",neckline (6),,
+3,henley (shirt),nickname,81,0.000243,"top, t-shirt, sweatshirt (81)",,,
+4,ringer (t-shirt),nickname,79,0.000237,"top, t-shirt, sweatshirt (79)",,,
+5,raglan (t-shirt),nickname,172,0.000516,"top, t-shirt, sweatshirt (172)",,,
+6,rugby (shirt),nickname,96,0.000288,"top, t-shirt, sweatshirt (96)",,,
+7,sailor (shirt),nickname,213,0.000639,"top, t-shirt, sweatshirt (213)",,,
+8,crop (top),nickname,1105,0.003314,"top, t-shirt, sweatshirt (1105)",,,
+9,halter (top),nickname,360,0.00108,"top, t-shirt, sweatshirt (360)",,,
+10,camisole,nickname,1041,0.003122,"top, t-shirt, sweatshirt (1041)",,,
+11,tank (top),nickname,2182,0.006545,"top, t-shirt, sweatshirt (2181)",neckline (1),,
+12,peasant (top),nickname,238,0.000714,"top, t-shirt, sweatshirt (238)",,,
+13,tube (top),nickname,475,0.001425,"top, t-shirt, sweatshirt (474)",neckline (1),,
+14,tunic (top),nickname,411,0.001233,"top, t-shirt, sweatshirt (411)",,,
+15,smock (top),nickname,87,0.000261,"top, t-shirt, sweatshirt (87)",,,
+16,hoodie,nickname,414,0.001242,"top, t-shirt, sweatshirt (413)",hood (1),,
+17,blazer,nickname,2900,0.008698,jacket (2900),,,
+18,pea (jacket),nickname,47,0.000141,jacket (47),,,
+19,puffer (jacket),nickname,159,0.000477,jacket (159),,,
+20,biker (jacket),nickname,1043,0.003128,jacket (1043),,,
+21,trucker (jacket),nickname,445,0.001335,jacket (445),,,
+22,bomber (jacket),nickname,322,0.000966,jacket (322),,,
+23,anorak,nickname,24,7.2e-05,jacket (24),,,
+24,safari (jacket),nickname,83,0.000249,jacket (83),,,
+25,mao (jacket),nickname,3,9e-06,jacket (3),,,
+26,nehru (jacket),nickname,12,3.6e-05,jacket (12),,,
+27,norfolk (jacket),nickname,125,0.000375,jacket (125),,,
+28,classic military (jacket),nickname,44,0.000132,jacket (44),,,
+29,track (jacket),nickname,238,0.000714,jacket (238),,,
+30,windbreaker,nickname,82,0.000246,jacket (82),,,
+31,chanel (jacket),nickname,85,0.000255,jacket (85),,,
+32,bolero,nickname,94,0.000282,jacket (94),,,
+33,tuxedo (jacket),nickname,424,0.001272,jacket (424),,,
+34,varsity (jacket),nickname,96,0.000288,jacket (96),,,
+35,crop (jacket),nickname,128,0.000384,jacket (128),,,
+36,jeans,nickname,3764,0.01129,pants (3764),,,
+37,sweatpants,nickname,115,0.000345,pants (115),,,
+38,leggings,nickname,1787,0.00536,pants (1787),,,
+39,hip-huggers (pants),nickname,103,0.000309,pants (103),,,
+40,cargo (pants),nickname,67,0.000201,pants (67),,,
+41,culottes,nickname,178,0.000534,pants (178),,,
+42,capri (pants),nickname,183,0.000549,pants (183),,,
+43,harem (pants),nickname,53,0.000159,pants (53),,,
+44,sailor (pants),nickname,283,0.000849,pants (283),,,
+45,jodhpur,nickname,85,0.000255,pants (85),,,
+46,peg (pants),nickname,269,0.000807,pants (269),,,
+47,camo (pants),nickname,23,6.9e-05,pants (23),,,
+48,track (pants),nickname,33,9.9e-05,pants (33),,,
+49,crop (pants),nickname,350,0.00105,pants (350),,,
+50,short (shorts),nickname,1575,0.004724,shorts (1575),,,
+51,booty (shorts),nickname,20,6e-05,shorts (20),,,
+52,bermuda (shorts),nickname,198,0.000594,shorts (198),,,
+53,cargo (shorts),nickname,25,7.5e-05,shorts (25),,,
+54,trunks,nickname,44,0.000132,shorts (44),,,
+55,boardshorts,nickname,20,6e-05,shorts (20),,,
+56,skort,nickname,5,1.5e-05,shorts (5),,,
+57,roll-up (shorts),nickname,204,0.000612,shorts (204),,,
+58,tie-up (shorts),nickname,72,0.000216,shorts (72),,,
+59,culotte (shorts),nickname,50,0.00015,shorts (50),,,
+60,lounge (shorts),nickname,160,0.00048,shorts (160),,,
+61,bloomers,nickname,5,1.5e-05,shorts (5),,,
+62,tutu (skirt),nickname,62,0.000186,skirt (62),,,
+63,kilt,nickname,12,3.6e-05,skirt (12),,,
+64,wrap (skirt),nickname,42,0.000126,skirt (42),,,
+65,skater (skirt),nickname,358,0.001074,skirt (358),,,
+66,cargo (skirt),nickname,9,2.7e-05,skirt (9),,,
+67,hobble (skirt),nickname,332,0.000996,skirt (332),,,
+68,sheath (skirt),nickname,1701,0.005102,skirt (1701),,,
+69,ball gown (skirt),nickname,125,0.000375,skirt (125),,,
+70,gypsy (skirt),nickname,72,0.000216,skirt (72),,,
+71,rah-rah (skirt),nickname,166,0.000498,skirt (166),,,
+72,prairie (skirt),nickname,39,0.000117,skirt (39),,,
+73,flamenco (skirt),nickname,2,6e-06,skirt (2),,,
+74,accordion (skirt),nickname,91,0.000273,skirt (91),,,
+75,sarong (skirt),nickname,11,3.3e-05,skirt (11),,,
+76,tulip (skirt),nickname,33,9.9e-05,skirt (33),,,
+77,dirndl (skirt),nickname,446,0.001338,skirt (446),,,
+78,godet (skirt),nickname,21,6.3e-05,skirt (21),,,
+79,blanket (coat),nickname,449,0.001347,coat (449),,,
+80,parka,nickname,130,0.00039,coat (130),,,
+81,trench (coat),nickname,193,0.000579,coat (193),,,
+82,pea (coat),nickname,234,0.000702,coat (234),,,
+83,shearling (coat),nickname,55,0.000165,coat (55),,,
+84,teddy bear (coat),nickname,180,0.00054,coat (180),,,
+85,puffer (coat),nickname,69,0.000207,coat (69),,,
+86,duster (coat),nickname,69,0.000207,coat (69),,,
+87,raincoat,nickname,12,3.6e-05,coat (12),,,
+88,kimono,nickname,65,0.000195,coat (65),,,
+89,robe,nickname,26,7.8e-05,coat (26),,,
+90,dress (coat ),nickname,36,0.000108,coat (36),,,
+91,duffle (coat),nickname,34,0.000102,coat (34),,,
+92,wrap (coat),nickname,145,0.000435,coat (145),,,
+93,military (coat),nickname,70,0.00021,coat (70),,,
+94,swing (coat),nickname,34,0.000102,coat (34),,,
+95,halter (dress),nickname,604,0.001812,dress (604),,,
+96,wrap (dress),nickname,136,0.000408,dress (136),,,
+97,chemise (dress),nickname,55,0.000165,dress (55),,,
+98,slip (dress),nickname,474,0.001422,dress (474),,,
+99,cheongsams,nickname,15,4.5e-05,dress (15),,,
+100,jumper (dress),nickname,285,0.000855,dress (285),,,
+101,shift (dress),nickname,1526,0.004577,dress (1526),,,
+102,sheath (dress),nickname,2077,0.00623,dress (2077),,,
+103,shirt (dress),nickname,518,0.001554,dress (518),,,
+104,sundress,nickname,224,0.000672,dress (224),,,
+105,kaftan,nickname,119,0.000357,dress (119),,,
+106,bodycon (dress),nickname,1144,0.003431,dress (1144),,,
+107,nightgown,nickname,61,0.000183,dress (61),,,
+108,gown,nickname,5252,0.015753,dress (5252),,,
+109,sweater (dress),nickname,403,0.001209,dress (403),,,
+110,tea (dress),nickname,65,0.000195,dress (65),,,
+111,blouson (dress),nickname,182,0.000546,dress (182),,,
+112,tunic (dress),nickname,915,0.002744,dress (915),,,
+113,skater (dress),nickname,1259,0.003776,dress (1259),,,
+114,asymmetrical,silhouette,2201,0.006602,dress (1437),"top, t-shirt, sweatshirt (260)",skirt (180),fit-candidate
+115,symmetrical,silhouette,60164,0.180455,"top, t-shirt, sweatshirt (14454)",dress (13428),pants (7316),fit-candidate
+116,peplum,silhouette,226,0.000678,"top, t-shirt, sweatshirt (114)",dress (66),coat (18),fit-candidate
+117,circle,silhouette,1462,0.004385,dress (1329),skirt (131),jumpsuit (1),fit-candidate
+118,flare,silhouette,1180,0.003539,skirt (689),dress (483),pants (8),fit-candidate
+119,fit and flare,silhouette,3408,0.010222,dress (3392),skirt (12),coat (3),fit-candidate
+120,trumpet,silhouette,758,0.002274,dress (597),skirt (145),pants (12),fit-candidate
+121,mermaid,silhouette,669,0.002007,dress (637),skirt (32),,fit-candidate
+122,balloon,silhouette,169,0.000507,dress (125),skirt (42),jumpsuit (2),fit-candidate
+123,bell,silhouette,937,0.00281,dress (474),skirt (463),,fit-candidate
+124,bell bottom,silhouette,43,0.000129,pants (38),jumpsuit (4),skirt (1),fit-candidate
+125,bootcut,silhouette,257,0.000771,pants (224),jumpsuit (33),,fit-candidate
+126,peg,silhouette,918,0.002753,pants (678),dress (109),jumpsuit (77),fit-candidate
+127,pencil,silhouette,3538,0.010612,dress (2609),skirt (886),pants (40),fit-candidate
+128,straight,silhouette,6801,0.020399,dress (3004),pants (2503),skirt (1169),fit-candidate
+129,a-line,silhouette,4111,0.01233,dress (3180),skirt (891),coat (36),fit-candidate
+130,tent,silhouette,444,0.001332,dress (427),skirt (17),,fit-candidate
+131,baggy,silhouette,77,0.000231,pants (59),jumpsuit (11),shorts (6),fit-candidate
+132,wide leg,silhouette,590,0.00177,pants (466),jumpsuit (121),skirt (1),fit-candidate
+133,high low,silhouette,663,0.001989,dress (602),skirt (56),jacket (2),fit-candidate
+134,curved (fit),silhouette,111,0.000333,pants (93),vest (7),"top, t-shirt, sweatshirt (6)",fit-candidate
+135,tight (fit),silhouette,13473,0.040411,"top, t-shirt, sweatshirt (5628)",pants (3380),jacket (1760),fit-candidate
+136,regular (fit),silhouette,24669,0.073992,"top, t-shirt, sweatshirt (7418)",pants (5659),jacket (3769),fit-candidate
+137,loose (fit),silhouette,4990,0.014967,"top, t-shirt, sweatshirt (1224)",pants (938),coat (693),fit-candidate
+138,oversized,silhouette,670,0.00201,dress (148),"top, t-shirt, sweatshirt (130)",pants (110),fit-candidate
+139,empire waistline,waistline,380,0.00114,dress (265),"top, t-shirt, sweatshirt (109)",jumpsuit (3),
+140,dropped waistline,waistline,872,0.002615,dress (753),"top, t-shirt, sweatshirt (66)",coat (25),
+141,high waist,waistline,11532,0.034589,dress (6600),"top, t-shirt, sweatshirt (1738)",skirt (1331),
+142,normal waist,waistline,25019,0.075042,dress (6819),pants (4284),"top, t-shirt, sweatshirt (3754)",
+143,low waist,waistline,3682,0.011044,pants (2281),shorts (827),skirt (360),
+144,basque (wasitline),waistline,134,0.000402,dress (111),"top, t-shirt, sweatshirt (21)",skirt (2),
+145,no waistline,waistline,18942,0.056814,"top, t-shirt, sweatshirt (7972)",dress (2765),jacket (2422),
+146,above-the-hip (length),length,17444,0.052321,"top, t-shirt, sweatshirt (9640)",jacket (3385),"shirt, blouse (2979)",fit-candidate
+147,hip (length),length,10109,0.030321,"top, t-shirt, sweatshirt (4211)",jacket (3235),"shirt, blouse (1113)",fit-candidate
+148,micro (length),length,3190,0.009568,shorts (857),jacket (684),dress (440),fit-candidate
+149,mini (length),length,9545,0.028629,dress (4700),skirt (1505),shorts (1484),fit-candidate
+150,above-the-knee (length),length,4153,0.012456,dress (2449),skirt (904),coat (538),fit-candidate
+151,knee (length),length,2662,0.007984,dress (1630),skirt (590),coat (292),fit-candidate
+152,below the knee (length),length,1511,0.004532,dress (876),skirt (382),coat (143),fit-candidate
+153,midi,length,2266,0.006797,dress (965),pants (621),skirt (393),fit-candidate
+154,maxi (length),length,9376,0.028122,pants (7953),dress (881),skirt (246),fit-candidate
+155,floor (length),length,5338,0.016011,dress (4454),pants (367),skirt (333),fit-candidate
+156,sleeveless,length,303,0.000909,sleeve (298),ruffle (3),dress (1),fit-candidate
+157,short (length),length,13141,0.039415,sleeve (13141),,,fit-candidate
+158,elbow-length,length,3149,0.009445,sleeve (3147),ruffle (2),,fit-candidate
+159,three quarter (length),length,6165,0.018491,sleeve (6162),"top, t-shirt, sweatshirt (2)",dress (1),fit-candidate
+160,wrist-length,length,34135,0.102384,sleeve (34116),"shirt, blouse (7)","top, t-shirt, sweatshirt (5)",fit-candidate
+161,asymmetric (collar),nickname,44,0.000132,collar (44),,,
+162,regular (collar),nickname,1442,0.004325,collar (1441),"shirt, blouse (1)",,
+163,shirt (collar),nickname,5058,0.015171,collar (5054),"shirt, blouse (4)",,
+164,polo (collar),nickname,181,0.000543,collar (181),,,
+165,chelsea (collar),nickname,39,0.000117,collar (39),,,
+166,banded (collar),nickname,773,0.002319,collar (773),,,
+167,mandarin (collar),nickname,192,0.000576,collar (192),,,
+168,peter pan (collar),nickname,213,0.000639,collar (213),,,
+169,bow (collar),nickname,96,0.000288,collar (96),,,
+170,stand-away (collar),nickname,410,0.00123,collar (410),,,
+171,jabot (collar),nickname,8,2.4e-05,collar (8),,,
+172,sailor (collar),nickname,17,5.1e-05,collar (17),,,
+173,oversized (collar),nickname,241,0.000723,collar (241),,,
+174,notched (lapel),nickname,2626,0.007876,lapel (2626),,,
+175,peak (lapel),nickname,717,0.002151,lapel (717),,,
+176,shawl (lapel),nickname,700,0.0021,lapel (700),,,
+177,napoleon (lapel),nickname,776,0.002328,lapel (776),,,
+178,oversized (lapel),nickname,447,0.001341,lapel (447),,,
+179,collarless,neckline type,884,0.002651,neckline (883),"top, t-shirt, sweatshirt (1)",,subcategory-hint
+180,asymmetric (neckline),neckline type,926,0.002777,neckline (925),ruffle (1),,subcategory-hint
+181,crew (neck),neckline type,804,0.002412,neckline (800),"top, t-shirt, sweatshirt (4)",,subcategory-hint
+182,round (neck),neckline type,5810,0.017426,neckline (5793),"top, t-shirt, sweatshirt (15)",bead (1),subcategory-hint
+183,v-neck,neckline type,3130,0.009388,neckline (3127),"top, t-shirt, sweatshirt (2)",bead (1),subcategory-hint
+184,surplice (neck),neckline type,469,0.001407,neckline (469),,,subcategory-hint
+185,oval (neck),neckline type,3117,0.009349,neckline (3116),"top, t-shirt, sweatshirt (1)",,subcategory-hint
+186,u-neck,neckline type,1005,0.003014,neckline (1005),,,subcategory-hint
+187,sweetheart (neckline),neckline type,1745,0.005234,neckline (1744),ruffle (1),,subcategory-hint
+188,queen anne (neck),neckline type,338,0.001014,neckline (338),,,subcategory-hint
+189,boat (neck),neckline type,1795,0.005384,neckline (1795),,,subcategory-hint
+190,scoop (neck),neckline type,2835,0.008503,neckline (2832),bead (2),fringe (1),subcategory-hint
+191,square (neckline),neckline type,688,0.002064,neckline (688),,,subcategory-hint
+192,plunging (neckline),neckline type,966,0.002897,neckline (965),bead (1),,subcategory-hint
+193,keyhole (neck),neckline type,122,0.000366,neckline (122),,,subcategory-hint
+194,halter (neck),neckline type,622,0.001866,neckline (622),,,subcategory-hint
+195,crossover (neck),neckline type,101,0.000303,neckline (101),,,subcategory-hint
+196,choker (neck),neckline type,112,0.000336,neckline (112),,,subcategory-hint
+197,high (neck),neckline type,804,0.002412,neckline (802),"top, t-shirt, sweatshirt (2)",,subcategory-hint
+198,turtle (neck),neckline type,651,0.001953,neckline (646),"top, t-shirt, sweatshirt (5)",,subcategory-hint
+199,cowl (neck),neckline type,228,0.000684,neckline (226),flower (1),"top, t-shirt, sweatshirt (1)",subcategory-hint
+200,straight across (neck),neckline type,2425,0.007274,neckline (2421),ruffle (2),bead (2),subcategory-hint
+201,illusion (neck),neckline type,249,0.000747,neckline (249),,,subcategory-hint
+202,off-the-shoulder,neckline type,581,0.001743,neckline (581),,,subcategory-hint
+203,one shoulder,neckline type,694,0.002082,neckline (693),bead (1),,subcategory-hint
+204,set-in sleeve,nickname,39004,0.116988,sleeve (38991),"shirt, blouse (5)","top, t-shirt, sweatshirt (4)",
+205,dropped-shoulder sleeve,nickname,3147,0.009439,sleeve (3147),,,
+206,raglan (sleeve),nickname,1894,0.005681,sleeve (1894),,,
+207,cap (sleeve),nickname,2721,0.008161,sleeve (2721),,,
+208,tulip (sleeve),nickname,225,0.000675,sleeve (225),,,
+209,puff (sleeve),nickname,951,0.002852,sleeve (949),ruffle (2),,
+210,bell (sleeve),nickname,579,0.001737,sleeve (578),ruffle (1),,
+211,circular flounce (sleeve),nickname,470,0.00141,sleeve (468),ruffle (2),,
+212,poet (sleeve),nickname,349,0.001047,sleeve (349),,,
+213,"dolman (sleeve), batwing (sleeve)",nickname,972,0.002915,sleeve (972),,,
+214,bishop (sleeve),nickname,559,0.001677,sleeve (559),,,
+215,leg of mutton (sleeve),nickname,319,0.000957,sleeve (319),,,
+216,kimono (sleeve),nickname,618,0.001854,sleeve (618),,,
+217,cargo (pocket),nickname,232,0.000696,pocket (232),,,
+218,patch (pocket),nickname,5076,0.015225,pocket (5072),bead (2),zipper (2),
+219,welt (pocket),nickname,5460,0.016377,pocket (5410),zipper (50),,
+220,kangaroo (pocket),nickname,552,0.001656,pocket (552),,,
+221,seam (pocket),nickname,847,0.00254,pocket (844),zipper (3),,
+222,slash (pocket),nickname,4317,0.012948,pocket (4291),zipper (25),pants (1),
+223,curved (pocket),nickname,5064,0.015189,pocket (5063),zipper (1),,
+224,flap (pocket),nickname,5284,0.015849,pocket (5284),,,
+225,single breasted,opening type,12175,0.036518,"shirt, blouse (5446)",jacket (3820),coat (954),construction (skip)
+226,double breasted,opening type,636,0.001908,coat (357),jacket (205),dress (26),construction (skip)
+227,lace up,opening type,351,0.001053,dress (164),shorts (39),"shirt, blouse (37)",construction (skip)
+228,wrapping,opening type,977,0.00293,coat (482),dress (186),cardigan (122),construction (skip)
+229,zip-up,opening type,16859,0.050567,dress (11108),jacket (2406),skirt (2045),construction (skip)
+230,fly (opening),opening type,9030,0.027085,pants (7531),shorts (1360),skirt (122),construction (skip)
+231,chained (opening),opening type,19,5.7e-05,jacket (7),cape (3),dress (2),construction (skip)
+232,buckled (opening),opening type,92,0.000276,jacket (25),coat (23),dress (21),construction (skip)
+233,toggled (opening),opening type,58,0.000174,coat (35),jacket (15),dress (4),construction (skip)
+234,no opening,opening type,4542,0.013623,dress (2550),pants (982),shorts (423),construction (skip)
+281,plastic,non-textile material type,3108,0.009322,dress (1454),jacket (1086),"top, t-shirt, sweatshirt (138)",texture-candidate
+282,rubber,non-textile material type,188,0.000564,dress (67),pants (54),jacket (29),texture-candidate
+283,metal,non-textile material type,1135,0.003404,jacket (574),dress (238),pants (145),texture-candidate
+285,feather,non-textile material type,43,0.000129,dress (18),skirt (17),coat (4),texture-candidate
+286,gem,non-textile material type,793,0.002379,dress (694),"top, t-shirt, sweatshirt (52)",jacket (21),texture-candidate
+287,bone,non-textile material type,2,6e-06,dress (2),,,texture-candidate
+288,ivory,non-textile material type,1,3e-06,dress (1),,,texture-candidate
+289,fur,non-textile material type,730,0.00219,coat (381),jacket (220),vest (50),texture-candidate
+290,suede,leather,84,0.000252,jacket (43),skirt (14),coat (11),
+291,shearling,leather,76,0.000228,coat (37),jacket (36),vest (2),
+292,crocodile,leather,24,7.2e-05,jacket (8),skirt (7),dress (4),
+293,snakeskin,leather,15,4.5e-05,jacket (7),skirt (4),dress (1),
+294,wood,non-textile material type,4,1.2e-05,coat (2),dress (1),skirt (1),texture-candidate
+295,no non-textile material,non-textile material type,65854,0.197522,dress (16001),"top, t-shirt, sweatshirt (14651)",pants (11826),texture-candidate
+296,burnout,"textile finishing, manufacturing techniques",484,0.001452,dress (268),"top, t-shirt, sweatshirt (108)",skirt (36),texture-candidate
+297,distressed,"textile finishing, manufacturing techniques",856,0.002567,pants (643),shorts (128),skirt (24),texture-candidate
+298,washed,"textile finishing, manufacturing techniques",3909,0.011725,pants (2500),shorts (676),jacket (233),texture-candidate
+299,embossed,"textile finishing, manufacturing techniques",86,0.000258,dress (30),"top, t-shirt, sweatshirt (23)",jacket (17),texture-candidate
+300,frayed,"textile finishing, manufacturing techniques",500,0.0015,shorts (385),pants (33),skirt (32),texture-candidate
+301,printed,"textile finishing, manufacturing techniques",8028,0.024079,"top, t-shirt, sweatshirt (3825)",dress (1766),"shirt, blouse (585)",texture-candidate
+302,ruched,"textile finishing, manufacturing techniques",1359,0.004076,dress (1041),"top, t-shirt, sweatshirt (144)",skirt (84),texture-candidate
+303,quilted,"textile finishing, manufacturing techniques",234,0.000702,jacket (132),coat (56),vest (27),texture-candidate
+304,pleat,"textile finishing, manufacturing techniques",2321,0.006962,dress (1019),skirt (689),pants (245),texture-candidate
+305,gathering,"textile finishing, manufacturing techniques",4778,0.014331,dress (3317),skirt (583),"top, t-shirt, sweatshirt (528)",texture-candidate
+306,smocking,"textile finishing, manufacturing techniques",152,0.000456,dress (91),"top, t-shirt, sweatshirt (20)",skirt (10),texture-candidate
+307,tiered,"textile finishing, manufacturing techniques",545,0.001635,dress (417),skirt (68),"top, t-shirt, sweatshirt (34)",texture-candidate
+308,cutout,"textile finishing, manufacturing techniques",765,0.002295,dress (485),"top, t-shirt, sweatshirt (136)",sweater (42),texture-candidate
+309,slit,"textile finishing, manufacturing techniques",973,0.002918,dress (686),skirt (206),pants (35),texture-candidate
+310,perforated,"textile finishing, manufacturing techniques",181,0.000543,dress (59),"top, t-shirt, sweatshirt (37)",jacket (27),texture-candidate
+311,lining,"textile finishing, manufacturing techniques",10243,0.030723,jacket (4865),dress (2555),coat (2294),texture-candidate
+312,applique(a),"textile finishing, manufacturing techniques",2156,0.006467,dress (1287),"top, t-shirt, sweatshirt (321)",jacket (174),texture-candidate
+313,bead(a),"textile finishing, manufacturing techniques",2030,0.006089,dress (1716),"top, t-shirt, sweatshirt (163)",skirt (40),texture-candidate
+314,rivet(a),"textile finishing, manufacturing techniques",763,0.002289,dress (330),"top, t-shirt, sweatshirt (120)",coat (82),texture-candidate
+315,sequin(a),"textile finishing, manufacturing techniques",536,0.001608,dress (345),"top, t-shirt, sweatshirt (77)",jacket (43),texture-candidate
+316,no special manufacturing technique,"textile finishing, manufacturing techniques",38349,0.115024,"top, t-shirt, sweatshirt (9211)",pants (8471),dress (6645),texture-candidate
+317,plain (pattern),textile pattern,58468,0.175368,dress (12792),"top, t-shirt, sweatshirt (11990)",pants (11304),texture-candidate
+318,abstract,textile pattern,1478,0.004433,dress (462),"top, t-shirt, sweatshirt (313)",skirt (188),texture-candidate
+319,cartoon,textile pattern,893,0.002678,"top, t-shirt, sweatshirt (359)",dress (208),pants (74),texture-candidate
+320,"letters, numbers",textile pattern,1674,0.005021,"top, t-shirt, sweatshirt (1461)",dress (88),shorts (24),texture-candidate
+321,camouflage,textile pattern,147,0.000441,"top, t-shirt, sweatshirt (44)",jacket (24),pants (18),texture-candidate
+322,check,textile pattern,2275,0.006824,"shirt, blouse (735)",dress (424),jacket (304),texture-candidate
+323,dot,textile pattern,1062,0.003185,dress (437),"top, t-shirt, sweatshirt (181)","shirt, blouse (135)",texture-candidate
+324,fair isle,textile pattern,355,0.001065,dress (162),sweater (50),cardigan (39),texture-candidate
+325,floral,textile pattern,3579,0.010735,dress (2038),"top, t-shirt, sweatshirt (478)",skirt (300),texture-candidate
+326,geometric,textile pattern,1240,0.003719,dress (570),"top, t-shirt, sweatshirt (233)",skirt (87),texture-candidate
+327,paisley,textile pattern,303,0.000909,dress (172),"top, t-shirt, sweatshirt (51)",skirt (26),texture-candidate
+328,stripe,textile pattern,2981,0.008941,dress (832),"top, t-shirt, sweatshirt (820)","shirt, blouse (305)",texture-candidate
+329,houndstooth (pattern),textile pattern,97,0.000291,dress (29),skirt (16),jacket (12),texture-candidate
+330,herringbone (pattern),textile pattern,78,0.000234,dress (20),coat (13),"top, t-shirt, sweatshirt (10)",texture-candidate
+331,chevron,textile pattern,188,0.000564,dress (69),skirt (34),"top, t-shirt, sweatshirt (25)",texture-candidate
+332,argyle,textile pattern,114,0.000342,dress (39),"top, t-shirt, sweatshirt (23)",sweater (9),texture-candidate
+333,leopard,animal,210,0.00063,dress (80),"top, t-shirt, sweatshirt (50)",jacket (19),
+334,snakeskin (pattern),animal,100,0.0003,dress (38),jacket (19),"top, t-shirt, sweatshirt (14)",
+335,cheetah,animal,137,0.000411,dress (51),"top, t-shirt, sweatshirt (32)",skirt (13),
+336,peacock,animal,30,9e-05,dress (20),skirt (3),"shirt, blouse (3)",
+337,zebra,animal,71,0.000213,dress (27),"top, t-shirt, sweatshirt (13)",skirt (10),
+338,giraffe,animal,44,0.000132,dress (13),"top, t-shirt, sweatshirt (12)",skirt (7),
+339,toile de jouy,textile pattern,364,0.001092,dress (309),"top, t-shirt, sweatshirt (18)",jumpsuit (9),texture-candidate
+340,plant,textile pattern,430,0.00129,dress (166),"top, t-shirt, sweatshirt (75)",skirt (71),texture-candidate
