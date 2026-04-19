@@ -69,4 +69,14 @@ __pycache__/
 
 # Python virtualenv (used by scripts/fetch_fixtures.py + scripts/build_benchmark.py)
 .venv/
+.venv-train/
 venv/
+
+# ML training artifacts — bulk binaries, not shipped
+notebooks/training/checkpoints-p2/
+notebooks/training/checkpoints/
+rf-detr-seg-small.pt
+*.pth
+# fp16 mlpackage is the un-palettized debug variant — 122MB, not shipped.
+# The production (palettized) RFDETRSegFashion.mlpackage IS committed.
+WardrobeReDo/Models/CoreML/RFDETRSegFashion_fp16.mlpackage/

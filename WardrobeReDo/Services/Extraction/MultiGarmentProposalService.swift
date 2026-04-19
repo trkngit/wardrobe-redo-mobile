@@ -123,6 +123,15 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
     /// is in a known-exclusion set — so adding a label without also
     /// updating `ClothingCategory.fromFashionpediaClass` is a build-time
     /// failure, not a silent "every proposal is uncategorised at runtime."
+    ///
+    /// **Why 33 entries but `pred_logits` has 91 slots.** rfdetr 1.4
+    /// reinitialises the classifier head to the pretrained COCO layout
+    /// (91 slots) during `Model.train`, regardless of the `num_classes`
+    /// we pass at construction — see `notebooks/training/scripts/export_coreml.py`
+    /// (the "rfdetr 1.4 quirk" comment). Our fitted Fashionpedia logits
+    /// occupy slots 0–32; slots 33–90 are unfitted COCO weights.
+    /// `labelForIndex` returns `"class_N"` for anything >= 33 so those
+    /// proposals never silently claim a category.
     static let fashionpediaLabels: [String] = [
         "shirt_blouse", "top_t-shirt_sweatshirt", "sweater", "cardigan",
         "jacket", "vest", "coat", "cape",
@@ -445,10 +454,18 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
     /// going through a full MLMultiArray synthesis.
     static func labelForIndex(_ index: Int) -> String {
         guard index >= 0, index < fashionpediaLabels.count else {
+            classIndexLogger.debug(
+                "pred_logits argmax=\(index, privacy: .public) outside fitted range [0,\(fashionpediaLabels.count - 1, privacy: .public)] — unfitted COCO slot"
+            )
             return "class_\(index)"
         }
         return fashionpediaLabels[index]
     }
+
+    private static let classIndexLogger = Logger(
+        subsystem: "com.wardroberedo",
+        category: "MultiGarmentClassIndex"
+    )
 
     private static func multiArray(
         for keys: [String],

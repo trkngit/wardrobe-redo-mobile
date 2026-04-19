@@ -26,6 +26,8 @@ struct ImageServiceProposalsTests {
         await FeatureFlagTestIsolation.shared.acquire()
         defer { Task { await FeatureFlagTestIsolation.shared.release() } }
         FeatureFlags.resetAll()
+        FeatureFlags.isMultiGarmentEnabled = false
+        defer { FeatureFlags.resetAll() }
         #expect(FeatureFlags.isMultiGarmentEnabled == false)
 
         let multi = MockMultiGarmentExtractor()

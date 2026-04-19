@@ -26,12 +26,15 @@ enum FeatureFlags {
 
     /// Master switch for multi-garment detection + multi-pick save loop.
     ///
-    /// Default: `false`. The trained Core ML model has to be in the bundle
-    /// (or delivered via Background Assets) before this is flipped. While
-    /// off, `ImageService` skips the `MultiGarmentProposalService` call and
-    /// the existing single-item flow runs unchanged.
+    /// Default: `true`. Trained Core ML model ships inside the bundle and
+    /// real-weights inference is validated end-to-end. When explicitly
+    /// toggled off via the Developer menu the persisted value wins; the
+    /// default only applies when the key has never been written.
     static var isMultiGarmentEnabled: Bool {
-        get { defaults.bool(forKey: Key.multiGarmentEnabled) }
+        get {
+            if defaults.object(forKey: Key.multiGarmentEnabled) == nil { return true }
+            return defaults.bool(forKey: Key.multiGarmentEnabled)
+        }
         set {
             defaults.set(newValue, forKey: Key.multiGarmentEnabled)
             logger.info("multiGarment toggled -> \(newValue, privacy: .public)")

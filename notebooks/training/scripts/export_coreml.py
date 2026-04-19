@@ -40,6 +40,8 @@ from pathlib import Path
 try:
     import coremltools as ct
     import torch
+    from coremltools.models import MLModel
+    from coremltools.models.utils import rename_feature
     from coremltools.optimize.coreml import (
         OpPalettizerConfig,
         OptimizationConfig,
@@ -52,6 +54,22 @@ except ImportError as exc:
         f"  pip install -r notebooks/training/requirements.txt"
     )
     sys.exit(1)
+
+# RF-DETR-Seg's deformable attention natively produces a rank-6
+# `sampling_offsets` tensor (B, L_q, n_heads, n_levels, n_points, 2) that
+# Core ML (both coremltools 8.1 at conversion time, and Xcode's `coremlc`
+# at compile time) rejects: reshape rank must be <= 5. An earlier version
+# of this script tried to bypass the coremltools pre-flight check on the
+# assumption that downstream passes + Neural Engine would still accept
+# the rank-6 op. That produced an .mlpackage that `coremlc` rejected at
+# Xcode build time with:
+#     in operation sampling_offsets_1: Rank of the shape parameter must
+#     be between 0 and 5 (inclusive) in reshape
+# Real fix: monkey-patch rfdetr to fold (n_heads, n_levels) into one axis
+# (HL = n_heads * n_levels) so the traced graph stays rank-5. Weights are
+# untouched — no retraining needed.
+from _rfdetr_coreml_patches import apply_rank5_patches
+apply_rank5_patches()
 
 
 NUM_CLASSES = 33  # keep in sync with train.py / prepare_fashionpedia.py
@@ -71,16 +89,18 @@ def _load_checkpoint(checkpoint: Path, resolution: int) -> RFDETRSegSmall:
     loads wrong-shaped weights into the wrong slots.
     """
     model = RFDETRSegSmall(
-        num_classes=NUM_CLASSES,
         resolution=resolution,
         segmentation_head=True,
         pretrain_weights=None,
     )
-    state = torch.load(checkpoint, map_location="cpu")
-    # rfdetr checkpoints are typically {'model': state_dict, 'optimizer': ..., 'epoch': ...}
-    # Load into the inner nn.Module via get_model() — the wrapper
-    # itself does not expose .load_state_dict() or .eval().
-    inner = model.get_model()
+    state = torch.load(checkpoint, map_location="cpu", weights_only=False)
+    # rfdetr 1.4 quirk: even when fine-tuning with fewer classes, it
+    # reinits the class head to match the pretrained COCO checkpoint's
+    # 91-slot layout during Model.train. So our fine-tuned weights live
+    # in a 91-slot head — fitted Fashionpedia IDs occupy the first 34
+    # slots, the remainder is unused. Leave the default num_classes to
+    # get a matching 91-slot head.
+    inner = model.model.model
     if isinstance(state, dict) and "model" in state:
         inner.load_state_dict(state["model"])
     else:
@@ -94,8 +114,13 @@ def trace_to_jit(model: RFDETRSegSmall, resolution: int) -> torch.jit.ScriptModu
     critical for Apple Neural Engine residency — dynamic inputs force
     CPU/GPU fallback.
     """
-    inner = model.get_model()
+    inner = model.model.model
+    inner = inner.cpu()
     inner.eval()
+    # Switch LWDETR to its trace-friendly forward_export path, which
+    # returns (bbox, class[, masks]) tuples instead of the training-time
+    # NestedTensor dict that torch.jit.trace can't handle.
+    inner.export()
 
     # Warmup forward pass. DETR positional embeddings that depend on
     # input resolution get computed lazily in some implementations; the
@@ -122,14 +147,61 @@ def convert_to_coreml(
         scale=1.0 / 255.0,
         bias=[0.0, 0.0, 0.0],
     )
+    # FLOAT32 avoids the automatic FP16 cast that introduces a rank-6
+    # reshape on the deformable-attention `sampling_offsets` path, which
+    # coremltools 8.1 rejects with "Core ML only supports rank <= 5".
+    # We recover the size benefit via 6-bit palettization downstream.
     mlmodel = ct.convert(
         traced,
         inputs=[image_input],
         convert_to="mlprogram",
         minimum_deployment_target=ct.target.iOS17,
         compute_units=ct.ComputeUnit.ALL,
+        compute_precision=ct.precision.FLOAT32,
     )
     return mlmodel
+
+
+def rename_detr_outputs(mlmodel: "ct.models.MLModel") -> "ct.models.MLModel":
+    """Rename coremltools' auto-generated output names (``var_XXXX``,
+    ``linear_YYY``) to the stable DETR contract the iOS decoder probes for:
+
+        pred_boxes   shape (1, n_queries, 4)
+        pred_logits  shape (1, n_queries, num_classes)
+        pred_masks   shape (1, n_queries, H, W)
+
+    Identification is shape-based rather than name-based so this survives
+    coremltools changing the autogen name scheme between versions.
+
+    Why: `MultiGarmentProposalService.decodeDETROutput` looks up outputs by
+    semantic name. Without this step the Swift side finds no outputs and
+    returns an empty proposal list — the feature would silently no-op on
+    every photo even though inference ran successfully.
+    """
+    spec = mlmodel.get_spec()
+    rename_map: dict[str, str] = {}
+    for out in spec.description.output:
+        multi = out.type.multiArrayType
+        shape = [int(s) for s in multi.shape]
+        if len(shape) == 3 and shape[-1] == 4:
+            rename_map[out.name] = "pred_boxes"
+        elif len(shape) == 3:
+            rename_map[out.name] = "pred_logits"
+        elif len(shape) == 4:
+            rename_map[out.name] = "pred_masks"
+
+    if not rename_map:
+        raise RuntimeError(
+            "rename_detr_outputs: no DETR-shaped outputs found "
+            f"in spec (outputs: {[o.name for o in spec.description.output]})"
+        )
+
+    for old, new in rename_map.items():
+        rename_feature(spec, old, new, rename_inputs=False, rename_outputs=True)
+
+    # Rebuild MLModel from the mutated spec. mlprogram keeps weights in a
+    # side directory we must preserve.
+    return MLModel(spec, weights_dir=mlmodel.weights_dir)
 
 
 def palettize(mlmodel: "ct.models.MLModel") -> "ct.models.MLModel":
@@ -137,11 +209,14 @@ def palettize(mlmodel: "ct.models.MLModel") -> "ct.models.MLModel":
     recipe that's already shipping, so latency characteristics are
     predictable.
     """
+    # per_tensor is iOS 16+ compatible; per_grouped_channel requires
+    # iOS 18 (the app targets iOS 17.0, so per-grouped would lock out
+    # the install base). 6-bit k-means per-tensor still nets ~4x weight
+    # compression versus FP16.
     cfg = OpPalettizerConfig(
         nbits=6,
         mode="kmeans",
-        granularity="per_grouped_channel",
-        group_size=16,
+        granularity="per_tensor",
     )
     return palettize_weights(mlmodel, OptimizationConfig(global_config=cfg))
 
@@ -210,8 +285,11 @@ def main() -> int:
     print("[2/4] torch.jit.trace")
     traced = trace_to_jit(model, args.resolution)
 
-    print("[3/4] coremltools convert")
+    print("[3/5] coremltools convert")
     mlmodel = convert_to_coreml(traced, args.resolution)
+
+    print("[4/5] rename outputs → pred_boxes / pred_logits / pred_masks")
+    mlmodel = rename_detr_outputs(mlmodel)
     fp16_path = args.out / "RFDETRSegFashion_fp16.mlpackage"
     mlmodel.save(str(fp16_path))
     print(f"  saved {fp16_path} "
@@ -221,7 +299,7 @@ def main() -> int:
         print("\nSkipping palettization (--no-palettize). Done.")
         return 0
 
-    print("[4/4] 6-bit palettization")
+    print("[5/5] 6-bit palettization")
     compressed = palettize(mlmodel)
     final_path = args.out / "RFDETRSegFashion.mlpackage"
     compressed.save(str(final_path))
