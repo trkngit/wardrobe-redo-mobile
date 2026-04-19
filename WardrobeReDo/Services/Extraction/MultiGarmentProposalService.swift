@@ -155,6 +155,7 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
     private let modelLoader: @Sendable () -> MLModel?
     private let confidenceThreshold: Float
     private let nmsThreshold: Float
+    private let attributeClassifier: AttributeClassifying?
     private let logger = Logger(subsystem: "com.wardroberedo", category: "MultiGarment")
 
     /// One-shot model load. `NSLock`-gated lazy just like SAM2Extractor.
@@ -165,11 +166,13 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
     init(
         modelLoader: (@Sendable () -> MLModel?)? = nil,
         confidenceThreshold: Float = MultiGarmentProposalService.defaultConfidenceThreshold,
-        nmsThreshold: Float = MultiGarmentProposalService.defaultNMSThreshold
+        nmsThreshold: Float = MultiGarmentProposalService.defaultNMSThreshold,
+        attributeClassifier: AttributeClassifying? = nil
     ) {
         self.modelLoader = modelLoader ?? MultiGarmentProposalService.defaultModelLoader
         self.confidenceThreshold = confidenceThreshold
         self.nmsThreshold = nmsThreshold
+        self.attributeClassifier = attributeClassifier
     }
 
     // MARK: - Public API
@@ -236,8 +239,36 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             .sorted { $0.score > $1.score }
             .prefix(Self.maxProposals))
 
-        let proposals = capped.compactMap { raw -> MaskProposal? in
+        let baseProposals = capped.compactMap { raw -> MaskProposal? in
             Self.makeProposal(from: raw, sourceImage: normalized)
+        }
+
+        // Per-proposal attribute enrichment (Phase 6 of the
+        // auto-attribute-detection plan). Runs sequentially so the
+        // attribute model doesn't contend with the RF-DETR inference
+        // that just finished — both use the Neural Engine. Sequential
+        // over ≤8 proposals at ~20ms each stays comfortably inside the
+        // capture-to-details transition budget.
+        let proposals: [MaskProposal]
+        if let classifier = attributeClassifier {
+            var enriched: [MaskProposal] = []
+            enriched.reserveCapacity(baseProposals.count)
+            for proposal in baseProposals {
+                let next = await Self.enriched(
+                    proposal,
+                    with: classifier,
+                    logger: logger
+                )
+                enriched.append(next)
+            }
+            proposals = enriched
+        } else {
+            // No classifier injected — apply rules-engine pre-fill
+            // using whatever category + subcategory we already have
+            // from the detection head. Texture is left nil, which the
+            // rules engine tolerates (subcategory-level rules still
+            // narrow the season / occasion sets).
+            proposals = baseProposals.map { Self.enrichedWithRulesOnly($0) }
         }
 
         logger.info("detectProposals.success count=\(proposals.count, privacy: .public) topScore=\(proposals.first?.detectionScore ?? 0, privacy: .public)")
@@ -516,6 +547,7 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
     ) -> MaskProposal? {
         guard let cropped = cropped(sourceImage, to: raw.boundingBox) else { return nil }
         let category = ClothingCategory.fromFashionpediaClass(raw.rawClass)
+        let subcategory = ClothingSubcategory.fromFashionpediaClass(raw.rawClass)
         let confidence: ExtractionConfidence = {
             if raw.score >= 0.85 { return .high }
             if raw.score >= 0.6 { return .medium }
@@ -527,9 +559,88 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             mask: raw.mask,
             confidence: confidence,
             predictedCategory: category,
+            // raw.score is already a post-sigmoid objectness in [0,1];
+            // DETR's formulation makes "is this a valid detection of
+            // class C" inseparable from "what's the class C", so the
+            // detection score IS the category confidence.
+            predictedCategoryConfidence: raw.score,
+            predictedSubcategory: subcategory,
             boundingBox: raw.boundingBox,
             detectionScore: raw.score,
             modelClassRaw: raw.rawClass
+        )
+    }
+
+    /// Run the attribute classifier on a proposal's cropped image and
+    /// feed the result through the rules engine to populate seasons +
+    /// occasions. Classifier errors (model missing, inference threw)
+    /// are swallowed — the proposal is returned with rules-engine-only
+    /// fallback so the caller's UX is identical to the "no classifier
+    /// injected" path.
+    static func enriched(
+        _ proposal: MaskProposal,
+        with classifier: AttributeClassifying,
+        logger: Logger
+    ) async -> MaskProposal {
+        let prediction: AttributePrediction
+        do {
+            prediction = try await classifier.predict(crop: proposal.maskedImage)
+        } catch {
+            logger.notice("attribute.predict.failed \(error.localizedDescription, privacy: .public)")
+            return enrichedWithRulesOnly(proposal)
+        }
+        return applyAttributesAndRules(to: proposal, prediction: prediction)
+    }
+
+    /// Fallback enrichment when no classifier is available. Still
+    /// populates seasons + occasions from the rules engine using
+    /// whatever category + subcategory the detection head produced.
+    static func enrichedWithRulesOnly(_ proposal: MaskProposal) -> MaskProposal {
+        applyAttributesAndRules(to: proposal, prediction: .empty)
+    }
+
+    /// Shared enrichment logic: given a base proposal and an (optional)
+    /// attribute prediction, return a proposal with seasons + occasions
+    /// filled in from `AttributeRulesEngine`.
+    static func applyAttributesAndRules(
+        to proposal: MaskProposal,
+        prediction: AttributePrediction
+    ) -> MaskProposal {
+        // Rules engine needs a concrete ClothingCategory +
+        // ClothingSubcategory. Fall back to sensible defaults when the
+        // detection head didn't surface one — the enum's `.category`
+        // chain keeps the types consistent, and every subcategory has
+        // a category by construction.
+        let category = proposal.predictedCategory
+            ?? proposal.predictedSubcategory?.category
+            ?? .top
+        let subcategory = proposal.predictedSubcategory
+            ?? ClothingSubcategory.subcategories(for: category).first
+            ?? .tshirt
+
+        let rules = AttributeRulesEngine.derive(
+            category: category,
+            subcategory: subcategory,
+            texture: prediction.texture
+        )
+
+        return MaskProposal(
+            id: proposal.id,
+            maskedImage: proposal.maskedImage,
+            mask: proposal.mask,
+            confidence: proposal.confidence,
+            predictedCategory: proposal.predictedCategory,
+            predictedCategoryConfidence: proposal.predictedCategoryConfidence,
+            predictedSubcategory: proposal.predictedSubcategory,
+            predictedTexture: prediction.texture,
+            predictedTextureConfidence: prediction.textureConfidence,
+            predictedFit: prediction.fit,
+            predictedFitConfidence: prediction.fitConfidence,
+            predictedSeasons: Array(rules.seasons).sorted { $0.rawValue < $1.rawValue },
+            predictedOccasions: Array(rules.occasions).sorted { $0.rawValue < $1.rawValue },
+            boundingBox: proposal.boundingBox,
+            detectionScore: proposal.detectionScore,
+            modelClassRaw: proposal.modelClassRaw
         )
     }
 

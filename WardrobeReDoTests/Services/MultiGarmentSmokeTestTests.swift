@@ -9,8 +9,12 @@ import Testing
 ///
 /// `@Suite(.serialized)` because the smoke test writes to the
 /// `MLDiagnosticsStore` singleton AND (on the failure path) to the
-/// global `FeatureFlags` UserDefaults. Cross-test isolation is enforced
-/// via `FeatureFlagTestIsolation` for the flag-touching cases.
+/// global `FeatureFlags` UserDefaults. Cross-suite isolation is enforced
+/// via `MLDiagnosticsTestIsolation` (every test mutates the store) and
+/// `FeatureFlagTestIsolation` (only the failure-path test also toggles
+/// the flag). Without the diagnostics mutex, `MLDiagnosticsStoreTests`
+/// could race a `resetAll()` into the middle of our smoke-test body and
+/// flip `smokeTestStatus` back to `.notRun`.
 @MainActor
 @Suite(.serialized)
 struct MultiGarmentSmokeTestTests {
@@ -18,6 +22,9 @@ struct MultiGarmentSmokeTestTests {
     // MARK: - Skipped path (model not present)
 
     @Test func smokeTestSkipsWhenModelMissing() async {
+        await MLDiagnosticsTestIsolation.shared.acquire()
+        defer { Task { await MLDiagnosticsTestIsolation.shared.release() } }
+
         MLDiagnosticsStore.shared.resetAll()
         let extractor = MockMultiGarmentExtractor()
 
@@ -39,6 +46,9 @@ struct MultiGarmentSmokeTestTests {
     // MARK: - Passed path
 
     @Test func smokeTestPassesOnSuccessfulInference() async {
+        await MLDiagnosticsTestIsolation.shared.acquire()
+        defer { Task { await MLDiagnosticsTestIsolation.shared.release() } }
+
         MLDiagnosticsStore.shared.resetAll()
         let extractor = MockMultiGarmentExtractor()
         extractor.detectResult = []  // zero proposals is still success
@@ -63,6 +73,8 @@ struct MultiGarmentSmokeTestTests {
     @Test func smokeTestFailsAndDisablesFlagOnThrow() async {
         await FeatureFlagTestIsolation.shared.acquire()
         defer { Task { await FeatureFlagTestIsolation.shared.release() } }
+        await MLDiagnosticsTestIsolation.shared.acquire()
+        defer { Task { await MLDiagnosticsTestIsolation.shared.release() } }
 
         MLDiagnosticsStore.shared.resetAll()
         FeatureFlags.resetAll()
@@ -91,6 +103,9 @@ struct MultiGarmentSmokeTestTests {
     // MARK: - Idempotency
 
     @Test func smokeTestCanBeRunMultipleTimes() async {
+        await MLDiagnosticsTestIsolation.shared.acquire()
+        defer { Task { await MLDiagnosticsTestIsolation.shared.release() } }
+
         MLDiagnosticsStore.shared.resetAll()
         let extractor = MockMultiGarmentExtractor()
         extractor.detectResult = []

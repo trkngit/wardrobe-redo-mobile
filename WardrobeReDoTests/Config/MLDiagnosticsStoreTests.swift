@@ -9,14 +9,20 @@ import Testing
 /// `@Suite(.serialized)` because all tests share the singleton
 /// `MLDiagnosticsStore.shared` — Swift Testing's default parallel
 /// execution within a suite would have tests step on each other's
-/// records / smoke-test state.
+/// records / smoke-test state. Cross-suite isolation is enforced via
+/// `MLDiagnosticsTestIsolation`; without it `MultiGarmentSmokeTestTests`
+/// could stomp our `resetAll()` mid-assertion (both suites mutate the
+/// same singleton and Swift Testing runs suites in parallel).
 @MainActor
 @Suite(.serialized)
 struct MLDiagnosticsStoreTests {
 
     // MARK: - Record insertion
 
-    @Test func recordInsertsMostRecentFirst() {
+    @Test func recordInsertsMostRecentFirst() async {
+        await MLDiagnosticsTestIsolation.shared.acquire()
+        defer { Task { await MLDiagnosticsTestIsolation.shared.release() } }
+
         MLDiagnosticsStore.shared.resetAll()
 
         MLDiagnosticsStore.shared.record(
@@ -35,7 +41,10 @@ struct MLDiagnosticsStoreTests {
         #expect(MLDiagnosticsStore.shared.records.last?.latencyMs == 100)
     }
 
-    @Test func recordTopPredictionsCappedAtThree() {
+    @Test func recordTopPredictionsCappedAtThree() async {
+        await MLDiagnosticsTestIsolation.shared.acquire()
+        defer { Task { await MLDiagnosticsTestIsolation.shared.release() } }
+
         MLDiagnosticsStore.shared.resetAll()
 
         let proposals = (0 ..< 5).map { i in
@@ -60,7 +69,10 @@ struct MLDiagnosticsStoreTests {
                 "Proposal count reflects the full detection set, not the capped top-3")
     }
 
-    @Test func recordFailureTagsRecordAsThrew() {
+    @Test func recordFailureTagsRecordAsThrew() async {
+        await MLDiagnosticsTestIsolation.shared.acquire()
+        defer { Task { await MLDiagnosticsTestIsolation.shared.release() } }
+
         MLDiagnosticsStore.shared.resetAll()
         MLDiagnosticsStore.shared.recordFailure(latencyMs: 50, modelName: "TestModel")
 
@@ -72,7 +84,10 @@ struct MLDiagnosticsStoreTests {
 
     // MARK: - Ring-buffer capping
 
-    @Test func ringBufferCapsAtMaxRecords() {
+    @Test func ringBufferCapsAtMaxRecords() async {
+        await MLDiagnosticsTestIsolation.shared.acquire()
+        defer { Task { await MLDiagnosticsTestIsolation.shared.release() } }
+
         MLDiagnosticsStore.shared.resetAll()
 
         for i in 0 ..< (MLDiagnosticsStore.maxRecords + 5) {
@@ -91,7 +106,10 @@ struct MLDiagnosticsStoreTests {
 
     // MARK: - Smoke test status
 
-    @Test func smokeTestStatusRoundTrips() {
+    @Test func smokeTestStatusRoundTrips() async {
+        await MLDiagnosticsTestIsolation.shared.acquire()
+        defer { Task { await MLDiagnosticsTestIsolation.shared.release() } }
+
         MLDiagnosticsStore.shared.resetAll()
         #expect(MLDiagnosticsStore.shared.smokeTestStatus == .notRun)
 
@@ -110,7 +128,10 @@ struct MLDiagnosticsStoreTests {
 
     // MARK: - Derived helpers
 
-    @Test func inferredComputeUnitReflectsLatestLatency() {
+    @Test func inferredComputeUnitReflectsLatestLatency() async {
+        await MLDiagnosticsTestIsolation.shared.acquire()
+        defer { Task { await MLDiagnosticsTestIsolation.shared.release() } }
+
         MLDiagnosticsStore.shared.resetAll()
 
         // Latest = 100 ms → ANE lane
@@ -127,7 +148,10 @@ struct MLDiagnosticsStoreTests {
         #expect(MLDiagnosticsStore.shared.inferredComputeUnit == "CPU (likely)")
     }
 
-    @Test func medianLatencyIgnoresThrows() {
+    @Test func medianLatencyIgnoresThrows() async {
+        await MLDiagnosticsTestIsolation.shared.acquire()
+        defer { Task { await MLDiagnosticsTestIsolation.shared.release() } }
+
         MLDiagnosticsStore.shared.resetAll()
 
         MLDiagnosticsStore.shared.record(latencyMs: 100, proposals: [], modelName: "m")
@@ -139,7 +163,10 @@ struct MLDiagnosticsStoreTests {
         #expect(MLDiagnosticsStore.shared.medianLatencyMs == 200)
     }
 
-    @Test func medianLatencyReturnsNilWhenNoSuccesses() {
+    @Test func medianLatencyReturnsNilWhenNoSuccesses() async {
+        await MLDiagnosticsTestIsolation.shared.acquire()
+        defer { Task { await MLDiagnosticsTestIsolation.shared.release() } }
+
         MLDiagnosticsStore.shared.resetAll()
         #expect(MLDiagnosticsStore.shared.medianLatencyMs == nil)
 
@@ -150,7 +177,10 @@ struct MLDiagnosticsStoreTests {
 
     // MARK: - Reset
 
-    @Test func resetAllClearsState() {
+    @Test func resetAllClearsState() async {
+        await MLDiagnosticsTestIsolation.shared.acquire()
+        defer { Task { await MLDiagnosticsTestIsolation.shared.release() } }
+
         MLDiagnosticsStore.shared.record(latencyMs: 100, proposals: [], modelName: "m")
         MLDiagnosticsStore.shared.setSmokeTestStatus(.passed(latencyMs: 50))
 
