@@ -349,7 +349,7 @@ xcodebuild test -scheme WardrobeReDo -sdk iphonesimulator \
 
 ### Phase 4 — Core ML export + iOS inference wiring
 
-**Status:** PARTIAL — iOS scaffolding DONE (2026-04-19, `223dcf3`): `AttributeClassifying` protocol, `AttributeClassifierService`, `MockAttributeClassifier`, and the test suite all in place. **Real `AttributeClassifier.mlpackage` is not shipped yet** — it depends on Phase 3's trained checkpoint (pod work). Flag-gated (`FeatureFlags.isAttributeDetectionEnabled`, default off, Phase 8 wiring) so the app is ready to consume the package the moment it lands.
+**Status:** PARTIAL — iOS scaffolding DONE (2026-04-19, `223dcf3`): `AttributeClassifying` protocol, `AttributeClassifierService`, `MockAttributeClassifier`, and the test suite all in place. Exporter `notebooks/training/scripts/export_attribute_classifier.py` shipped (Option C single-head, 6-bit palettization, ImageNet normalization + softmax baked into the traced graph, output renamed to `fit_probs`). **Real `AttributeClassifier.mlpackage` is not shipped yet** — depends on Phase 3's trained checkpoint (pod work). Flag-gated (`FeatureFlags.isAttributeDetectionEnabled`, default off, Phase 8 wiring) so the app is ready to consume the package the moment it lands.
 **Track:** D
 **Depends on:** Phase 3 (at least first checkpoint) — but scaffolding can start earlier with a dummy mlpackage
 **Est. effort:** 2 days
