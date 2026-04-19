@@ -343,9 +343,11 @@ struct AddItemView: View {
 
             // Category + Subcategory
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                Text("Category")
-                    .font(Theme.Fonts.h3)
-                    .foregroundStyle(Color(Theme.Colors.textPrimary))
+                autoDetectedHeader(
+                    "Category",
+                    autoDetected: isAutoDetected("category", matching: viewModel.category.rawValue)
+                        || isAutoDetected("subcategory", matching: viewModel.subcategory.rawValue)
+                )
 
                 Picker("Category", selection: $viewModel.category) {
                     ForEach(ClothingCategory.allCases, id: \.self) { cat in
@@ -368,9 +370,10 @@ struct AddItemView: View {
 
             // Texture
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                Text("Texture")
-                    .font(Theme.Fonts.h3)
-                    .foregroundStyle(Color(Theme.Colors.textPrimary))
+                autoDetectedHeader(
+                    "Texture",
+                    autoDetected: isAutoDetected("texture", matching: viewModel.texture?.rawValue)
+                )
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: Theme.Spacing.sm) {
                     ForEach(TextureType.allCases, id: \.self) { tex in
@@ -386,9 +389,10 @@ struct AddItemView: View {
 
             // Fit
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                Text("Fit")
-                    .font(Theme.Fonts.h3)
-                    .foregroundStyle(Color(Theme.Colors.textPrimary))
+                autoDetectedHeader(
+                    "Fit",
+                    autoDetected: isAutoDetected("fit", matching: viewModel.fitAttribute?.rawValue)
+                )
 
                 HStack(spacing: Theme.Spacing.sm) {
                     ForEach(FitAttribute.allCases, id: \.self) { fit in
@@ -404,9 +408,13 @@ struct AddItemView: View {
 
             // Seasons
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                Text("Seasons")
-                    .font(Theme.Fonts.h3)
-                    .foregroundStyle(Color(Theme.Colors.textPrimary))
+                autoDetectedHeader(
+                    "Seasons",
+                    autoDetected: isAutoDetected(
+                        "seasons",
+                        matchingSortedJoined: viewModel.selectedSeasons.map { $0.rawValue }
+                    )
+                )
 
                 HStack(spacing: Theme.Spacing.sm) {
                     ForEach(Season.allCases, id: \.self) { season in
@@ -426,9 +434,13 @@ struct AddItemView: View {
 
             // Occasions
             VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                Text("Occasions")
-                    .font(Theme.Fonts.h3)
-                    .foregroundStyle(Color(Theme.Colors.textPrimary))
+                autoDetectedHeader(
+                    "Occasions",
+                    autoDetected: isAutoDetected(
+                        "occasions",
+                        matchingSortedJoined: viewModel.selectedOccasions.map { $0.rawValue }
+                    )
+                )
 
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: Theme.Spacing.sm) {
                     ForEach(Occasion.allCases, id: \.self) { occasion in
@@ -577,6 +589,43 @@ struct AddItemView: View {
                         .stroke(isSelected ? Color.clear : Color(Theme.Colors.border), lineWidth: 1)
                 )
         }
+    }
+
+    // MARK: - Auto-detected indicator (Phase 8)
+    //
+    // Sparkle-badged section headers for fields that the attribute
+    // classifier pre-filled. The badge appears only while the live form
+    // value matches the snapshot recorded during pre-fill — any user
+    // edit drops the match and the badge vanishes. No explicit toggle
+    // state needed; SwiftUI re-derives the check on every render.
+
+    private func autoDetectedHeader(_ title: String, autoDetected: Bool) -> some View {
+        HStack(spacing: Theme.Spacing.xs) {
+            Text(title)
+                .font(Theme.Fonts.h3)
+                .foregroundStyle(Color(Theme.Colors.textPrimary))
+            if autoDetected {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color(Theme.Colors.primary))
+                    .accessibilityLabel("Auto-detected")
+            }
+        }
+    }
+
+    /// Scalar-field match: category, subcategory, texture, fit.
+    private func isAutoDetected(_ field: String, matching currentValue: String?) -> Bool {
+        guard let snap = viewModel.detectedAttributes[field], let currentValue else {
+            return false
+        }
+        return snap == currentValue
+    }
+
+    /// Multi-select match. The snapshot joins rawValues sorted + comma-
+    /// delimited, so we rebuild the same string from the live set.
+    private func isAutoDetected(_ field: String, matchingSortedJoined values: [String]) -> Bool {
+        guard let snap = viewModel.detectedAttributes[field] else { return false }
+        return snap == values.sorted().joined(separator: ",")
     }
 
     private func errorBanner(_ message: String) -> some View {

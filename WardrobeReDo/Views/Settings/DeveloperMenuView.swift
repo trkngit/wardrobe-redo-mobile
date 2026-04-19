@@ -8,6 +8,7 @@ import SwiftUI
 /// section is stripped from App Store binaries.
 struct DeveloperMenuView: View {
     @State private var multiGarmentEnabled: Bool = FeatureFlags.isMultiGarmentEnabled
+    @State private var attributeDetectionEnabled: Bool = FeatureFlags.isAttributeDetectionEnabled
 
     var body: some View {
         List {
@@ -51,6 +52,20 @@ struct DeveloperMenuView: View {
             .tint(Color(Theme.Colors.primary))
             .onChange(of: multiGarmentEnabled) { _, newValue in
                 FeatureFlags.isMultiGarmentEnabled = newValue
+            }
+
+            Toggle(isOn: $attributeDetectionEnabled) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Auto-Attribute Pre-fill")
+                        .font(Theme.Fonts.body)
+                    Text("Pre-select category, texture, fit, seasons, and occasions after capture. Off → legacy hard-reset defaults.")
+                        .font(Theme.Fonts.caption)
+                        .foregroundStyle(Color(Theme.Colors.textSecondary))
+                }
+            }
+            .tint(Color(Theme.Colors.primary))
+            .onChange(of: attributeDetectionEnabled) { _, newValue in
+                FeatureFlags.isAttributeDetectionEnabled = newValue
             }
         } header: {
             Text("Experimental Features")

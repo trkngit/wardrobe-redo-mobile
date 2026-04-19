@@ -15,241 +15,349 @@ import UIKit
 /// fill logic is the only thing under test. Service-layer integration
 /// lives in `ImageServiceProposalsTests` / `AutoAttributeE2ETests`.
 ///
+/// `@Suite(.serialized)` because every test flips
+/// `FeatureFlags.isAttributeDetectionEnabled` to on (Phase 8 gate).
+/// Cross-suite isolation is enforced via `FeatureFlagTestIsolation` —
+/// without it, other suites mutating the same flag could race our
+/// setup.
+///
 /// See [docs/plans/2026-04-19-auto-attribute-detection.md](../../docs/plans/2026-04-19-auto-attribute-detection.md)
-/// Phase 0 for the full spec.
+/// Phase 0 + Phase 8 for the full spec.
+@MainActor
+@Suite(.serialized)
+struct AddItemViewModelPrefillTests {
 
-// MARK: - Category threshold
+    // MARK: - Setup helper
+    //
+    // Every test needs the feature flag ON (Phase 8 gates pre-fill on it).
+    // Wrapping the acquire/reset/set/flag-release in a helper keeps each
+    // test readable. Returns a token whose `defer { finalize() }` closure
+    // unwinds the setup in reverse order.
 
-@Test @MainActor func addItemPrefillsCategoryWhenConfidenceAboveThreshold() {
-    let vm = AddItemViewModel()
-    let proposal = MaskProposalFixture.make(
-        predictedCategory: .outerwear,
-        predictedCategoryConfidence: 0.95
-    )
-    vm.proposals = [proposal]
-    vm.selectedProposalIDs = [proposal.id]
+    private struct FlagContext {
+        let finalize: () -> Void
+    }
 
-    vm.onMultiPickConfirmed()
+    private func enableAttributeDetection() async -> FlagContext {
+        await FeatureFlagTestIsolation.shared.acquire()
+        FeatureFlags.resetAll()
+        FeatureFlags.isAttributeDetectionEnabled = true
+        return FlagContext {
+            FeatureFlags.resetAll()
+            Task { await FeatureFlagTestIsolation.shared.release() }
+        }
+    }
 
-    #expect(vm.category == .outerwear)
-    #expect(vm.detectedAttributes["category"] == ClothingCategory.outerwear.rawValue)
-}
+    // MARK: - Category threshold
 
-@Test @MainActor func addItemSkipsCategoryPrefillWhenBelowThreshold() {
-    let vm = AddItemViewModel()
-    let proposal = MaskProposalFixture.make(
-        predictedCategory: .outerwear,
-        predictedCategoryConfidence: 0.50
-    )
-    vm.proposals = [proposal]
-    vm.selectedProposalIDs = [proposal.id]
+    @Test func addItemPrefillsCategoryWhenConfidenceAboveThreshold() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
 
-    vm.onMultiPickConfirmed()
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedCategory: .outerwear,
+            predictedCategoryConfidence: 0.95
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
 
-    #expect(vm.category == .top, "sub-threshold prediction should fall back to the default .top")
-    #expect(vm.detectedAttributes["category"] == nil, "snapshot should omit fields that weren't pre-filled")
-}
+        vm.onMultiPickConfirmed()
 
-@Test @MainActor func addItemSkipsCategoryPrefillWhenPredictionMissing() {
-    let vm = AddItemViewModel()
-    let proposal = MaskProposalFixture.make(
-        predictedCategory: nil,
-        predictedCategoryConfidence: 0.0
-    )
-    vm.proposals = [proposal]
-    vm.selectedProposalIDs = [proposal.id]
+        #expect(vm.category == .outerwear)
+        #expect(vm.detectedAttributes["category"] == ClothingCategory.outerwear.rawValue)
+    }
 
-    vm.onMultiPickConfirmed()
+    @Test func addItemSkipsCategoryPrefillWhenBelowThreshold() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
 
-    #expect(vm.category == .top)
-    #expect(vm.detectedAttributes["category"] == nil)
-}
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedCategory: .outerwear,
+            predictedCategoryConfidence: 0.50
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
 
-// MARK: - Subcategory
+        vm.onMultiPickConfirmed()
 
-@Test @MainActor func addItemUsesPredictedSubcategoryWhenCategoryMatches() {
-    let vm = AddItemViewModel()
-    let proposal = MaskProposalFixture.make(
-        predictedCategory: .top,
-        predictedCategoryConfidence: 0.95,
-        predictedSubcategory: .buttonDown
-    )
-    vm.proposals = [proposal]
-    vm.selectedProposalIDs = [proposal.id]
+        #expect(vm.category == .top, "sub-threshold prediction should fall back to the default .top")
+        #expect(vm.detectedAttributes["category"] == nil, "snapshot should omit fields that weren't pre-filled")
+    }
 
-    vm.onMultiPickConfirmed()
+    @Test func addItemSkipsCategoryPrefillWhenPredictionMissing() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
 
-    #expect(vm.subcategory == .buttonDown)
-    #expect(vm.detectedAttributes["subcategory"] == ClothingSubcategory.buttonDown.rawValue)
-}
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedCategory: nil,
+            predictedCategoryConfidence: 0.0
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
 
-@Test @MainActor func addItemDropsSubcategoryWhenCategoryMismatch() {
-    // Predicted subcategory .sneakers belongs to .shoe, but the category
-    // prediction falls below the threshold so the final category stays
-    // .top. The subcategory can't dangle on .top's picker, so the guard
-    // should drop the prediction and fall back to the .top default.
-    let vm = AddItemViewModel()
-    let proposal = MaskProposalFixture.make(
-        predictedCategory: .shoe,
-        predictedCategoryConfidence: 0.50, // below threshold, category stays .top
-        predictedSubcategory: .sneakers
-    )
-    vm.proposals = [proposal]
-    vm.selectedProposalIDs = [proposal.id]
+        vm.onMultiPickConfirmed()
 
-    vm.onMultiPickConfirmed()
+        #expect(vm.category == .top)
+        #expect(vm.detectedAttributes["category"] == nil)
+    }
 
-    #expect(vm.category == .top)
-    #expect(vm.subcategory == .tshirt, "mismatched subcategory should fall back to category default")
-    #expect(vm.detectedAttributes["subcategory"] == nil)
-}
+    // MARK: - Subcategory
 
-// MARK: - Texture threshold
+    @Test func addItemUsesPredictedSubcategoryWhenCategoryMatches() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
 
-@Test @MainActor func addItemPrefillsTextureWhenConfidenceAboveThreshold() {
-    let vm = AddItemViewModel()
-    let proposal = MaskProposalFixture.make(
-        predictedTexture: .leather,
-        predictedTextureConfidence: 0.85
-    )
-    vm.proposals = [proposal]
-    vm.selectedProposalIDs = [proposal.id]
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedCategory: .top,
+            predictedCategoryConfidence: 0.95,
+            predictedSubcategory: .buttonDown
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
 
-    vm.onMultiPickConfirmed()
+        vm.onMultiPickConfirmed()
 
-    #expect(vm.texture == .leather)
-    #expect(vm.detectedAttributes["texture"] == TextureType.leather.rawValue)
-}
+        #expect(vm.subcategory == .buttonDown)
+        #expect(vm.detectedAttributes["subcategory"] == ClothingSubcategory.buttonDown.rawValue)
+    }
 
-@Test @MainActor func addItemSkipsTexturePrefillWhenBelowThreshold() {
-    let vm = AddItemViewModel()
-    let proposal = MaskProposalFixture.make(
-        predictedTexture: .silk,
-        predictedTextureConfidence: 0.70
-    )
-    vm.proposals = [proposal]
-    vm.selectedProposalIDs = [proposal.id]
+    @Test func addItemDropsSubcategoryWhenCategoryMismatch() async {
+        // Predicted subcategory .sneakers belongs to .shoe, but the category
+        // prediction falls below the threshold so the final category stays
+        // .top. The subcategory can't dangle on .top's picker, so the guard
+        // should drop the prediction and fall back to the .top default.
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
 
-    vm.onMultiPickConfirmed()
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedCategory: .shoe,
+            predictedCategoryConfidence: 0.50, // below threshold, category stays .top
+            predictedSubcategory: .sneakers
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
 
-    #expect(vm.texture == nil)
-    #expect(vm.detectedAttributes["texture"] == nil)
-}
+        vm.onMultiPickConfirmed()
 
-// MARK: - Fit threshold
+        #expect(vm.category == .top)
+        #expect(vm.subcategory == .tshirt, "mismatched subcategory should fall back to category default")
+        #expect(vm.detectedAttributes["subcategory"] == nil)
+    }
 
-@Test @MainActor func addItemPrefillsFitWhenConfidenceAboveThreshold() {
-    let vm = AddItemViewModel()
-    let proposal = MaskProposalFixture.make(
-        predictedFit: .oversized,
-        predictedFitConfidence: 0.90
-    )
-    vm.proposals = [proposal]
-    vm.selectedProposalIDs = [proposal.id]
+    // MARK: - Texture threshold
 
-    vm.onMultiPickConfirmed()
+    @Test func addItemPrefillsTextureWhenConfidenceAboveThreshold() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
 
-    #expect(vm.fitAttribute == .oversized)
-    #expect(vm.detectedAttributes["fit"] == FitAttribute.oversized.rawValue)
-}
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedTexture: .leather,
+            predictedTextureConfidence: 0.85
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
 
-// MARK: - Seasons fallback
+        vm.onMultiPickConfirmed()
 
-@Test @MainActor func addItemFallsBackToAllSeasonsWhenPredictedSeasonsEmpty() {
-    let vm = AddItemViewModel()
-    let proposal = MaskProposalFixture.make(
-        predictedSeasons: []
-    )
-    vm.proposals = [proposal]
-    vm.selectedProposalIDs = [proposal.id]
+        #expect(vm.texture == .leather)
+        #expect(vm.detectedAttributes["texture"] == TextureType.leather.rawValue)
+    }
 
-    vm.onMultiPickConfirmed()
+    @Test func addItemSkipsTexturePrefillWhenBelowThreshold() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
 
-    #expect(vm.selectedSeasons == Set(Season.allCases),
-           "empty predictions must fall back to all-seasons, never leave the picker empty")
-    #expect(vm.detectedAttributes["seasons"] == nil, "fallback values aren't recorded as ML-driven")
-}
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedTexture: .silk,
+            predictedTextureConfidence: 0.70
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
 
-@Test @MainActor func addItemUsesPredictedSeasonsWhenProvided() {
-    let vm = AddItemViewModel()
-    let proposal = MaskProposalFixture.make(
-        predictedSeasons: [.fall, .winter]
-    )
-    vm.proposals = [proposal]
-    vm.selectedProposalIDs = [proposal.id]
+        vm.onMultiPickConfirmed()
 
-    vm.onMultiPickConfirmed()
+        #expect(vm.texture == nil)
+        #expect(vm.detectedAttributes["texture"] == nil)
+    }
 
-    #expect(vm.selectedSeasons == Set([Season.fall, Season.winter]))
-    #expect(vm.detectedAttributes["seasons"] == "fall,winter",
-           "snapshot joins season rawValues in sorted order")
-}
+    // MARK: - Fit threshold
 
-// MARK: - Occasions fallback
+    @Test func addItemPrefillsFitWhenConfidenceAboveThreshold() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
 
-@Test @MainActor func addItemFallsBackToCasualWhenPredictedOccasionsEmpty() {
-    let vm = AddItemViewModel()
-    let proposal = MaskProposalFixture.make(
-        predictedOccasions: []
-    )
-    vm.proposals = [proposal]
-    vm.selectedProposalIDs = [proposal.id]
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedFit: .oversized,
+            predictedFitConfidence: 0.90
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
 
-    vm.onMultiPickConfirmed()
+        vm.onMultiPickConfirmed()
 
-    #expect(vm.selectedOccasions == [.casual],
-           "empty predictions must fall back to [.casual], never leave the picker empty")
-    #expect(vm.detectedAttributes["occasions"] == nil)
-}
+        #expect(vm.fitAttribute == .oversized)
+        #expect(vm.detectedAttributes["fit"] == FitAttribute.oversized.rawValue)
+    }
 
-@Test @MainActor func addItemUsesPredictedOccasionsWhenProvided() {
-    let vm = AddItemViewModel()
-    let proposal = MaskProposalFixture.make(
-        predictedOccasions: [.work, .formal]
-    )
-    vm.proposals = [proposal]
-    vm.selectedProposalIDs = [proposal.id]
+    // MARK: - Seasons fallback
 
-    vm.onMultiPickConfirmed()
+    @Test func addItemFallsBackToAllSeasonsWhenPredictedSeasonsEmpty() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
 
-    #expect(vm.selectedOccasions == Set([Occasion.work, Occasion.formal]))
-    #expect(vm.detectedAttributes["occasions"] == "formal,work",
-           "snapshot joins occasion rawValues in sorted order")
-}
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedSeasons: []
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
 
-// MARK: - Snapshot lifecycle
+        vm.onMultiPickConfirmed()
 
-@Test @MainActor func addItemRecordsFullDetectedAttributesSnapshot() {
-    let vm = AddItemViewModel()
-    let proposal = MaskProposalFixture.make(
-        predictedCategory: .outerwear,
-        predictedCategoryConfidence: 0.95,
-        predictedSubcategory: .leatherJacket,
-        predictedTexture: .leather,
-        predictedTextureConfidence: 0.90,
-        predictedFit: .oversized,
-        predictedFitConfidence: 0.85,
-        predictedSeasons: [.fall, .winter],
-        predictedOccasions: [.casual, .date]
-    )
-    vm.proposals = [proposal]
-    vm.selectedProposalIDs = [proposal.id]
+        #expect(vm.selectedSeasons == Set(Season.allCases),
+               "empty predictions must fall back to all-seasons, never leave the picker empty")
+        #expect(vm.detectedAttributes["seasons"] == nil, "fallback values aren't recorded as ML-driven")
+    }
 
-    vm.onMultiPickConfirmed()
+    @Test func addItemUsesPredictedSeasonsWhenProvided() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
 
-    #expect(vm.detectedAttributes["category"] == "outerwear")
-    #expect(vm.detectedAttributes["subcategory"] == "leatherJacket")
-    #expect(vm.detectedAttributes["texture"] == "leather")
-    #expect(vm.detectedAttributes["fit"] == "oversized")
-    #expect(vm.detectedAttributes["seasons"] == "fall,winter")
-    #expect(vm.detectedAttributes["occasions"] == "casual,date")
-}
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedSeasons: [.fall, .winter]
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
 
-@Test @MainActor func addItemResetClearsDetectedAttributes() {
-    let vm = AddItemViewModel()
-    vm.detectedAttributes = ["category": "outerwear", "texture": "leather"]
+        vm.onMultiPickConfirmed()
 
-    vm.reset()
+        #expect(vm.selectedSeasons == Set([Season.fall, Season.winter]))
+        #expect(vm.detectedAttributes["seasons"] == "fall,winter",
+               "snapshot joins season rawValues in sorted order")
+    }
 
-    #expect(vm.detectedAttributes.isEmpty)
+    // MARK: - Occasions fallback
+
+    @Test func addItemFallsBackToCasualWhenPredictedOccasionsEmpty() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
+
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedOccasions: []
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
+
+        vm.onMultiPickConfirmed()
+
+        #expect(vm.selectedOccasions == [.casual],
+               "empty predictions must fall back to [.casual], never leave the picker empty")
+        #expect(vm.detectedAttributes["occasions"] == nil)
+    }
+
+    @Test func addItemUsesPredictedOccasionsWhenProvided() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
+
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedOccasions: [.work, .formal]
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
+
+        vm.onMultiPickConfirmed()
+
+        #expect(vm.selectedOccasions == Set([Occasion.work, Occasion.formal]))
+        #expect(vm.detectedAttributes["occasions"] == "formal,work",
+               "snapshot joins occasion rawValues in sorted order")
+    }
+
+    // MARK: - Snapshot lifecycle
+
+    @Test func addItemRecordsFullDetectedAttributesSnapshot() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
+
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedCategory: .outerwear,
+            predictedCategoryConfidence: 0.95,
+            predictedSubcategory: .leatherJacket,
+            predictedTexture: .leather,
+            predictedTextureConfidence: 0.90,
+            predictedFit: .oversized,
+            predictedFitConfidence: 0.85,
+            predictedSeasons: [.fall, .winter],
+            predictedOccasions: [.casual, .date]
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
+
+        vm.onMultiPickConfirmed()
+
+        #expect(vm.detectedAttributes["category"] == "outerwear")
+        #expect(vm.detectedAttributes["subcategory"] == "leatherJacket")
+        #expect(vm.detectedAttributes["texture"] == "leather")
+        #expect(vm.detectedAttributes["fit"] == "oversized")
+        #expect(vm.detectedAttributes["seasons"] == "fall,winter")
+        #expect(vm.detectedAttributes["occasions"] == "casual,date")
+    }
+
+    @Test func addItemResetClearsDetectedAttributes() {
+        let vm = AddItemViewModel()
+        vm.detectedAttributes = ["category": "outerwear", "texture": "leather"]
+
+        vm.reset()
+
+        #expect(vm.detectedAttributes.isEmpty)
+    }
+
+    // MARK: - Phase 8: feature-flag gate
+
+    @Test func addItemSkipsPrefillWhenFeatureFlagDisabled() async {
+        // Flag OFF should bypass every ML prediction and fall back to
+        // the legacy hard-reset pickers, even when the proposal carries
+        // confidence-cleared predictions.
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
+        FeatureFlags.resetAll()
+        FeatureFlags.isAttributeDetectionEnabled = false
+        defer { FeatureFlags.resetAll() }
+
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedCategory: .outerwear,
+            predictedCategoryConfidence: 0.95,
+            predictedTexture: .leather,
+            predictedTextureConfidence: 0.95,
+            predictedFit: .oversized,
+            predictedFitConfidence: 0.95,
+            predictedSeasons: [.fall, .winter],
+            predictedOccasions: [.work]
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
+
+        vm.onMultiPickConfirmed()
+
+        #expect(vm.category == .top, "flag off → legacy hard-reset category")
+        #expect(vm.subcategory == .tshirt)
+        #expect(vm.texture == nil)
+        #expect(vm.fitAttribute == nil)
+        #expect(vm.selectedSeasons == Set(Season.allCases))
+        #expect(vm.selectedOccasions == [.casual])
+        #expect(vm.detectedAttributes.isEmpty,
+               "no snapshot recorded when the flag short-circuits pre-fill")
+    }
 }

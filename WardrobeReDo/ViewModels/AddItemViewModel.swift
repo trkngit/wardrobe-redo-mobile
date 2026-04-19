@@ -702,7 +702,25 @@ final class AddItemViewModel {
     /// corrections. Fields whose confidence doesn't clear the bar (or
     /// whose proposal prediction is nil) fall back to the legacy
     /// defaults — identical behaviour to the pre-Phase-0 hard reset.
+    ///
+    /// Gated by `FeatureFlags.isAttributeDetectionEnabled`. When the
+    /// flag is off we short-circuit to the legacy hard-reset so a
+    /// classifier regression in the wild can be killed remotely without
+    /// an app update.
     private func applyPrefill(from proposal: MaskProposal) {
+        guard FeatureFlags.isAttributeDetectionEnabled else {
+            // Legacy behaviour: reset every picker to its hard-coded
+            // default. Matches the pre-Phase-0 `startNextProposal` logic.
+            category = .top
+            subcategory = .tshirt
+            texture = nil
+            fitAttribute = nil
+            selectedSeasons = Set(Season.allCases)
+            selectedOccasions = [.casual]
+            detectedAttributes = [:]
+            return
+        }
+
         var snapshot: [String: String] = [:]
 
         if let cat = proposal.predictedCategory,
