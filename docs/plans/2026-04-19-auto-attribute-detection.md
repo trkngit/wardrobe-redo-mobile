@@ -220,7 +220,7 @@ xcodebuild test -scheme WardrobeReDo -sdk iphonesimulator \
 
 ### Phase 1 — Fashionpedia attribute audit + taxonomy mapping
 
-**Status:** PROPOSED
+**Status:** DONE (2026-04-19) — taxonomy + rules engine shipped in `e67d14b`; full-train audit CSV in `9430ad2` (295 attribute types, 333,401 annotations, 61.9% texture coverage). Replaced the earlier val-only placeholder (`1b34071`).
 **Track:** B
 **Depends on:** nothing
 **Est. effort:** 1.5 days (plus ~1 hour of user review for the mapping)
@@ -337,7 +337,7 @@ xcodebuild test -scheme WardrobeReDo -sdk iphonesimulator \
 
 ### Phase 4 — Core ML export + iOS inference wiring
 
-**Status:** PROPOSED
+**Status:** PARTIAL — iOS scaffolding DONE (2026-04-19, `223dcf3`): `AttributeClassifying` protocol, `AttributeClassifierService`, `MockAttributeClassifier`, and the test suite all in place. **Real `AttributeClassifier.mlpackage` is not shipped yet** — it depends on Phase 3's trained checkpoint (pod work). Flag-gated (`FeatureFlags.isAttributeDetectionEnabled`, default off, Phase 8 wiring) so the app is ready to consume the package the moment it lands.
 **Track:** D
 **Depends on:** Phase 3 (at least first checkpoint) — but scaffolding can start earlier with a dummy mlpackage
 **Est. effort:** 2 days
@@ -381,7 +381,7 @@ xcodebuild test -scheme WardrobeReDo -sdk iphonesimulator \
 
 ### Phase 5 — Rules engine for seasons + occasions
 
-**Status:** PROPOSED
+**Status:** DONE (2026-04-19, `e67d14b`) — `AttributeRulesEngine.derive(...)` ships with exhaustive enum coverage + non-empty invariant + property-based tests. `RULES_TABLE.md` drafted in the artifacts dir.
 **Track:** E
 **Depends on:** Phase 1 taxonomy (uses `ClothingCategory`, `ClothingSubcategory`, `TextureType`)
 **Est. effort:** 1 day (plus ~1h user review of the rules table)
@@ -443,7 +443,7 @@ xcodebuild test -scheme WardrobeReDo -sdk iphonesimulator \
 
 ### Phase 6 — End-to-end pre-fill integration
 
-**Status:** PROPOSED
+**Status:** DONE (2026-04-19) — service composition shipped in `f79c540`; `AutoAttributeE2ETests` covers the wiring in `bb8eec7`. The pipeline currently runs against `MockAttributeClassifier` — flipping in the real mlpackage is a Phase 4 follow-up, no integration change.
 **Track:** F
 **Depends on:** Phase 0, Phase 4, Phase 5
 **Est. effort:** 1 day
@@ -479,7 +479,7 @@ xcodebuild test -scheme WardrobeReDo -sdk iphonesimulator \
 
 ### Phase 7 — Supabase schema + correction tracking
 
-**Status:** PROPOSED
+**Status:** DONE (2026-04-19, `b0d8f45`) — migration `00009_detected_attributes.sql` adds the `JSONB NOT NULL DEFAULT '{}'::jsonb` column; `WardrobeItem` / `NewWardrobeItem` carry the field. `AddItemViewModel.computeAttributeProvenance` (nonisolated static, 12 unit tests) diffs the snapshot vs final values and emits `{"category":"ai"|"user"|"user_changed_from_ai",...}` into the insert payload.
 **Track:** F
 **Depends on:** Phase 0 (the `detectedAttributes` snapshot on the VM)
 **Est. effort:** 1 day
@@ -514,7 +514,7 @@ xcodebuild test -scheme WardrobeReDo -sdk iphonesimulator \
 
 ### Phase 8 — UX polish ("AI detected" indicator)
 
-**Status:** PROPOSED
+**Status:** DONE (2026-04-19, `0f446d7`) — `AddItemView` section headers show a `sparkles` SF Symbol badge while the live form value still matches the pre-fill snapshot; any user edit drops the badge on next render with no explicit toggle state. Developer Menu gains an `isAttributeDetectionEnabled` toggle mirroring the multi-garment pattern. `applyPrefill` now short-circuits to the legacy hard-reset when the flag is off. Suite: 551 tests / 13 suites green.
 **Track:** F
 **Depends on:** Phase 6
 **Est. effort:** 0.5 day
@@ -540,7 +540,7 @@ xcodebuild test -scheme WardrobeReDo -sdk iphonesimulator \
 
 ### Phase 9 — Validation + rollout
 
-**Status:** PROPOSED
+**Status:** BLOCKED — waiting on Phase 3 training checkpoint + Phase 4 real `AttributeClassifier.mlpackage`. Everything downstream (iOS pipeline, provenance telemetry, sparkle UX, flag gate) is ready to flip once the classifier ships.
 **Track:** F
 **Depends on:** Phases 6, 7, 8
 **Est. effort:** 1–2 days
