@@ -278,17 +278,24 @@ each.
 - **Action:** Add `AttributeRulesEngineTests.realPairingsNeverFallBackToAllSeasons`
   as part of Phase 5 polish. Not a v1 blocker.
 
-### D-8 — Phase 9 dogfood must include an Option-C-aware correction analysis
+### D-8 — Phase 9 dogfood must include an Option-C-aware correction analysis — DONE
 
 - **Context:** Phase 9's 50-photo dogfood report was originally planned
   to measure texture pre-fill accuracy. Under Option C there's nothing
   to measure for texture. But the correction log will show users
   *manually* filling texture 100% of the time — which is the baseline
   v1.1 planning data.
-- **Action:** The `DOGFOOD_RESULTS.md` template must carry a
-  "texture manual-fill distribution" table (how often users pick
-  cotton vs silk vs denim), so v1.1's Option B dataset scope can be
-  evidence-driven. Not a blocker for v1.
+- **Resolved 2026-04-19** — template shipped at
+  [DOGFOOD_RESULTS.md](DOGFOOD_RESULTS.md). Includes:
+    - Per-field acceptance summary with `texture` row marked `n/a (Option C)`
+      and a forward-pointer to the manual-fill distribution table
+    - "Texture manual-fill distribution" table covering all 15 `TextureType`
+      cases + a "left blank" row — pulls from `wardrobe_items.texture`
+      (NOT `detected_attributes`, since the AI never predicts texture in v1)
+    - D-8-flagged note explaining the v1.1 prioritization use: top-5
+      textures by manual-fill count are the v1.1 training scope
+- All TBD cells fill in once the pod-side mlpackage lands and the
+  50-photo dogfood is run.
 
 ---
 
@@ -305,7 +312,7 @@ each.
 | D-5 | `TextureType` enum expansion | v1.1 |
 | D-6 | Rules engine follow-up | 5 (polish) |
 | D-7 | Rules engine property test | 5 (polish) |
-| D-8 | Dogfood report template | 9 |
+| D-8 | Dogfood report template — DONE | 9 |
 
 ## Next action
 

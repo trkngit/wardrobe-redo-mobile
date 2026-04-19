@@ -349,7 +349,7 @@ xcodebuild test -scheme WardrobeReDo -sdk iphonesimulator \
 
 ### Phase 4 — Core ML export + iOS inference wiring
 
-**Status:** PARTIAL — iOS scaffolding DONE (2026-04-19, `223dcf3`): `AttributeClassifying` protocol, `AttributeClassifierService`, `MockAttributeClassifier`, and the test suite all in place. Exporter `notebooks/training/scripts/export_attribute_classifier.py` shipped (Option C single-head, 6-bit palettization, ImageNet normalization + softmax baked into the traced graph, output renamed to `fit_probs`). **Real `AttributeClassifier.mlpackage` is not shipped yet** — depends on Phase 3's trained checkpoint (pod work). Flag-gated (`FeatureFlags.isAttributeDetectionEnabled`, default off, Phase 8 wiring) so the app is ready to consume the package the moment it lands.
+**Status:** PARTIAL — iOS scaffolding DONE (2026-04-19, `223dcf3`): `AttributeClassifying` protocol, `AttributeClassifierService`, `MockAttributeClassifier`, and the test suite all in place. Exporter `notebooks/training/scripts/export_attribute_classifier.py` shipped (`6d78da2`, Option C single-head, 6-bit palettization, ImageNet normalization + softmax baked into the traced graph, output renamed to `fit_probs`). D-3 single-head decode contract locked (`d829e1f`) — `decodeHandlesSingleHeadFitOnlyOutput` regression test + `fitLabels` shrunk to the 5-class trainable subset (latent shape-mismatch bug fixed before the real mlpackage lands). **Real `AttributeClassifier.mlpackage` is not shipped yet** — depends on Phase 3's trained checkpoint (pod work). Flag-gated (`FeatureFlags.isAttributeDetectionEnabled`, default off, Phase 8 wiring) so the app is ready to consume the package the moment it lands.
 **Track:** D
 **Depends on:** Phase 3 (at least first checkpoint) — but scaffolding can start earlier with a dummy mlpackage
 **Est. effort:** 2 days
@@ -578,7 +578,7 @@ xcodebuild test -scheme WardrobeReDo -sdk iphonesimulator \
   - Seasons / occasions ≥75% acceptance (rules are easy to tune).
 - Crash-free session rate unchanged vs baseline.
 
-**Next action:** Create the dogfood test plan doc, queue 50 varied photos for upload.
+**Next action:** Template ready at [DOGFOOD_RESULTS.md](./2026-04-19-auto-attribute-detection/DOGFOOD_RESULTS.md). Once the trained mlpackage is bundled, queue 50 photos per the composition table, run, fill the "TBD" cells, then decide on flag flip per the Decision checklist.
 
 ---
 
