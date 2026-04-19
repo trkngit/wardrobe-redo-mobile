@@ -258,46 +258,55 @@ xcodebuild test -scheme WardrobeReDo -sdk iphonesimulator \
 
 ### Phase 2 — Architecture decision + dataset prep v2
 
-**Status:** IN PROGRESS (Option C scope — fit-only, single-head; see [BLOCKERS.md § P2-1…P2-7](./2026-04-19-auto-attribute-detection/BLOCKERS.md))
+**Status:** IN PROGRESS — preparer + lookup + smoke tests + training plan shipped 2026-04-19 (commit e0b4e8b); pod run of full-dataset preparer still pending (12 GB Fashionpedia download required). See [ATTRIBUTE_TRAINING_PLAN.md](./2026-04-19-auto-attribute-detection/ATTRIBUTE_TRAINING_PLAN.md) + [BLOCKERS.md § P2-1…P2-7](./2026-04-19-auto-attribute-detection/BLOCKERS.md).
 **Track:** B
 **Depends on:** Phase 1
 **Est. effort:** 2 days
 
-**Goal.** Produce a training-ready dataset of cropped garments labeled with (texture, fit), and lock in the classifier architecture.
+**Goal.** Produce a training-ready dataset of cropped garments labeled with **fit** (Option C scope — texture deferred to v1.1), and lock in the classifier architecture.
 
-**Architecture lock-in:**
-- **Default: separate MobileNetV3-Small multi-head classifier** on cropped bounding-box regions.
+**Architecture lock-in (Option C):**
+- **Separate MobileNetV3-Small single-head classifier** on cropped bounding-box regions.
 - Alternative (rejected unless Phase 3 fails): add an attribute head to RF-DETR-Seg and retrain.
 - Input: 224×224 crop from the source photo using the bounding box `MultiGarmentProposalService` already produces.
-- Output: two softmax heads → `texture_logits[15]`, `fit_logits[6]`.
+- Output: one softmax head → `fit_logits[5]` (oversized / relaxed / regular / slim / cropped).
+- Texture head intentionally omitted — Fashionpedia v2 carries no main-fabric-type attributes ([ATTRIBUTE_TAXONOMY.md § Section 0](./2026-04-19-auto-attribute-detection/ATTRIBUTE_TAXONOMY.md)). iOS decode path is already nil-tolerant so the absence is safe ([BLOCKERS.md#D-3](./2026-04-19-auto-attribute-detection/BLOCKERS.md)).
 - Size budget: ≤5 MB mlpackage after 6-bit palettization (consistent with existing export pipeline's compression tricks).
 
 **Changes:**
 
-1. **`notebooks/training/scripts/prepare_attribute_dataset.py`** (NEW):
-   - Reads `instances_attributes_{train,val}2020.json`.
-   - For each annotation: crop the bbox, save to disk, emit a `(image_path, texture_label, fit_label)` CSV row.
-   - Uses `fashionpedia_attr_to_ios_enum.py` from Phase 1.
-   - Drops instances with no mappable texture AND no mappable fit (keep-if-either).
-   - Balanced-sampling option (for rare classes like `corduroy`, `tweed`).
+1. **`notebooks/training/scripts/fashionpedia_attr_to_ios_enum.py`** (SHIPPED, commit e0b4e8b):
+   - Python source of truth for attr-id → `FitAttribute.rawValue` mapping.
+   - Encodes P2-1 cropped gating (attr 146 only for top-like categories) and P2-2 multi-label tie-break (dual-snugness → drop; cropped beats snugness).
+   - `TRAINABLE_FIT_LABELS` ordering is the contract Core ML export + iOS decode both depend on.
 
-2. **Output layout:**
+2. **`notebooks/training/scripts/prepare_attribute_dataset.py`** (SHIPPED, commit e0b4e8b):
+   - Two-pass preparer: label resolution (pure CPU) → image crop (one-pass zip sweep).
+   - BBox filters: area ≥ 2% of image, aspect in `[0.25, 4.0]` (P2-5).
+   - Neutral-gray square padding before 224×224 resize.
+   - Portable relative `image_path` in manifest (P2-7).
+   - Emits `manifest.csv` (nine columns — see training plan § 3) + `manifest_meta.json` (class counts + filter constants for Phase 3 class-weight derivation, P2-3).
+   - Idempotent: re-runs skip already-written crop files.
+
+3. **`notebooks/training/scripts/test_prepare_attribute_dataset.py`** (SHIPPED, commit e0b4e8b):
+   - Pytest-free smoke harness. 11 test groups covering every P2-x contract plus a synthetic end-to-end `process_split` on a tempdir. All green 2026-04-19.
+
+4. **Output layout:**
    ```
    /workspace/training/attr-dataset/
-   ├── train/
-   │   ├── tex_cotton/ (images)
-   │   └── ...
-   ├── val/
-   └── manifest.csv
+   ├── train/<annotation_id>.jpg   # 224×224, RGB, padded
+   ├── val/<annotation_id>.jpg
+   ├── manifest.csv
+   └── manifest_meta.json
    ```
 
-3. **Documentation:** `ATTRIBUTE_TRAINING_PLAN.md` in the plan artifacts dir — records dataset stats, class imbalance, balanced-sampling strategy, model choice rationale.
+5. **Documentation:** [ATTRIBUTE_TRAINING_PLAN.md](./2026-04-19-auto-attribute-detection/ATTRIBUTE_TRAINING_PLAN.md) (SHIPPED, commit e0b4e8b) — Phase 3 handoff documenting dataset scope, expected class imbalance (37:1 regular vs oversized), target metrics (≥0.75 top-1, ≥0.55 macro-F1, ≥0.90 calibration @ conf≥0.80), export contract, and pod runbook.
 
 **Verification:**
-- Dataset sanity: ≥10K training crops with texture label; ≥5K with fit label.
+- Dataset sanity on pod run: `manifest_meta.total_crops ≥ 40,000`; oversized class survives with ≥400 crops.
 - Visualize 20 random samples per class in a notebook cell — no mislabels.
 
-**Next action:** After Phase 1 CSV lands, run `prepare_attribute_dataset.py --max-train 500 --max-val 100` locally as a smoke test before the full pod run.
+**Next action:** Pod operator — run `prepare_fashionpedia.py` (12 GB download) then `prepare_attribute_dataset.py --out /workspace/training/attr-dataset`. Sanity-check `manifest_meta.json` per training plan § 7 before starting Phase 3.
 
 ---
 
