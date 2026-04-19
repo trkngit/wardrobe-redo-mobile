@@ -198,19 +198,34 @@ each.
 - **Where tracked:** Update `docs/plans/2026-04-19-auto-attribute-detection.md`
   Phase 3 section when we get there.
 
-### D-3 — Phase 4 real-mlpackage decode must handle missing texture outputs
+### D-3 — Phase 4 real-mlpackage decode must handle missing texture outputs — DONE
 
 - **File:** [WardrobeReDo/Services/Extraction/AttributeClassifierService.swift](../../../WardrobeReDo/Services/Extraction/AttributeClassifierService.swift)
-- **Current state:** `multiArray(for: textureOutputKeys, ...)` returns
-  nil → `argmaxSoftmax` returns `(nil, 0.0)` → `AttributePrediction.texture`
-  stays nil. This is already the correct Option C behavior — no code
-  change.
-- **Action required in Phase 4:** Ship a regression test that feeds a
-  single-head `MLFeatureProvider` (no `texture_probs` output) into
-  `decode(prediction:)` and asserts the result has `texture == nil`
-  and `textureConfidence == 0.0`.
-- **Why deferred:** No test = no bug today, but we should lock the
-  contract before the real mlpackage lands.
+- **Resolved 2026-04-19** in Phase 4 D-3 work: shipped
+  `decodeHandlesSingleHeadFitOnlyOutput` regression test in
+  [WardrobeReDoTests/Services/AttributeClassifierServiceTests.swift](../../../WardrobeReDoTests/Services/AttributeClassifierServiceTests.swift)
+  that feeds a `fit_probs`-only `MLFeatureProvider` to
+  `AttributeClassifierService.decode(prediction:)` and asserts:
+    - `prediction.fit` decodes normally (e.g. `.regular` at 0.85)
+    - `prediction.texture == nil`
+    - `prediction.textureConfidence == 0.0` (exact equality, not `< threshold`)
+- **Latent bug surfaced + fixed during D-3 work:** the iOS `fitLabels`
+  array previously held all 6 `FitAttribute` cases including
+  `.structured`. The Phase 4 mlpackage emits a `(1, 5)` softmax (Option
+  C trainable subset). `argmaxSoftmax`'s `n == labelCount` shape guard
+  would have silently swallowed every fit prediction. Fix:
+    - Shrunk `fitLabels` to the 5-class trainable subset
+      `[.oversized, .relaxed, .regular, .slim, .cropped]`
+    - Mirrors `fashionpedia_attr_to_ios_enum.TRAINABLE_FIT_LABELS`
+      exactly
+    - New drift-guard test `fitLabelsLockOptionCTrainableSubset`
+      pins the subset and asserts the count is exactly one less than
+      `FitAttribute.allCases.count` (so growing the enum trips the
+      test, forcing an intentional decision about whether the new case
+      is trainable today)
+    - `AddItemView` picker still iterates `FitAttribute.allCases` so
+      users can manually pick `.structured` — only the auto-prediction
+      decode path is restricted
 
 ### D-4 — Fashionpedia license attribution
 
@@ -285,7 +300,7 @@ each.
 | P2-1 through P2-7 | `prepare_attribute_dataset.py` | 2 |
 | D-1 | Option C sign-off commit (comment header) | 1 (now) |
 | D-2 | `train_attributes.py` single-head | 3 |
-| D-3 | `AttributeClassifierServiceTests` regression | 4 |
+| D-3 | `AttributeClassifierServiceTests` regression — DONE | 4 |
 | D-4 | iOS About / Settings | 9 (pre-submit) |
 | D-5 | `TextureType` enum expansion | v1.1 |
 | D-6 | Rules engine follow-up | 5 (polish) |

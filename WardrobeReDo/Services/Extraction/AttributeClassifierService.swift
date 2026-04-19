@@ -173,10 +173,25 @@ final class AttributeClassifierService: AttributeClassifying, @unchecked Sendabl
         .satin, .chiffon, .tweed, .corduroy, .nylon
     ]
 
-    /// Fit labels in the order the training notebook emits them. Same
-    /// drift-guard comment as `textureLabels`.
+    /// Fit labels in the order the training notebook emits them. Mirrors
+    /// `fashionpedia_attr_to_ios_enum.TRAINABLE_FIT_LABELS` exactly — same
+    /// 5 entries, same order. Index `i` in the `(1, 5)` `fit_probs`
+    /// softmax corresponds to `fitLabels[i]`.
+    ///
+    /// **Option C scope.** `.structured` is intentionally absent: per
+    /// `BLOCKERS.md#D-6` the silhouette has no Fashionpedia label that
+    /// maps to it cleanly, so the v1 model never emits it. Picker UIs
+    /// (`AddItemView`) still iterate `FitAttribute.allCases` so the user
+    /// can pick `.structured` manually — only the auto-prediction path
+    /// is restricted to the trainable subset. v1.1 reactivates the full
+    /// 6-class head once a structured-fit signal is available.
+    ///
+    /// Drift guards: `fitLabelsLockOptionCTrainableSubset` test pins this
+    /// array; the Python side carries an identical list in
+    /// `fashionpedia_attr_to_ios_enum.TRAINABLE_FIT_LABELS` and the
+    /// exporter writes it into mlpackage metadata for runtime audit.
     static let fitLabels: [FitAttribute] = [
-        .oversized, .relaxed, .regular, .slim, .structured, .cropped
+        .oversized, .relaxed, .regular, .slim, .cropped
     ]
 
     private let modelLoader: @Sendable () -> MLModel?

@@ -83,9 +83,11 @@ struct AttributeClassifierServiceTests {
     // MARK: - Decode: happy path
 
     @Test func decodeReturnsExpectedTextureAndFit() throws {
-        // Texture: index 2 = .denim at 0.70; fit: index 5 = .cropped at 0.90
+        // Texture: index 2 = .denim at 0.70; fit: index 4 = .cropped at 0.90.
+        // Option C trainable fit subset = [oversized, relaxed, regular, slim, cropped]
+        // so .cropped lives at index 4 (was 5 in the dormant 6-class layout).
         let textureLogits = makeSoftmaxLogits(size: 15, peakIndex: 2, peakValue: 0.70)
-        let fitLogits = makeSoftmaxLogits(size: 6, peakIndex: 5, peakValue: 0.90)
+        let fitLogits = makeSoftmaxLogits(size: 5, peakIndex: 4, peakValue: 0.90)
         let provider = try MLDictionaryFeatureProvider(dictionary: [
             "texture_probs": MLFeatureValue(multiArray: textureLogits),
             "fit_probs": MLFeatureValue(multiArray: fitLogits)
@@ -105,7 +107,8 @@ struct AttributeClassifierServiceTests {
         // 0.30 is below AttributeClassifierService.minEnumConfidence (0.35).
         let textureLogits = makeSoftmaxLogits(size: 15, peakIndex: 4, peakValue: 0.30)
         // Give fit a healthy prediction to prove the two heads decouple.
-        let fitLogits = makeSoftmaxLogits(size: 6, peakIndex: 2, peakValue: 0.80)
+        // Index 2 in the Option C 5-class layout = .regular.
+        let fitLogits = makeSoftmaxLogits(size: 5, peakIndex: 2, peakValue: 0.80)
         let provider = try MLDictionaryFeatureProvider(dictionary: [
             "texture_probs": MLFeatureValue(multiArray: textureLogits),
             "fit_probs": MLFeatureValue(multiArray: fitLogits)
@@ -128,7 +131,7 @@ struct AttributeClassifierServiceTests {
         // Service returns the case + confidence; the VM layer is what
         // refuses to pre-fill, not this service.
         let textureLogits = makeSoftmaxLogits(size: 15, peakIndex: 0, peakValue: 0.75)
-        let fitLogits = makeSoftmaxLogits(size: 6, peakIndex: 0, peakValue: 0.75)
+        let fitLogits = makeSoftmaxLogits(size: 5, peakIndex: 0, peakValue: 0.75)
         let provider = try MLDictionaryFeatureProvider(dictionary: [
             "texture_probs": MLFeatureValue(multiArray: textureLogits),
             "fit_probs": MLFeatureValue(multiArray: fitLogits)
@@ -145,10 +148,11 @@ struct AttributeClassifierServiceTests {
     // MARK: - Decode: handles softmax vs raw logits
 
     @Test func decodeRunsSoftmaxOnRawLogits() throws {
-        // Build raw logits [5, 2, 0, 0, 0, 0] for fit — stable softmax
-        // should yield ~0.95 on index 0.
-        let rawLogits = try MLMultiArray(shape: [1, 6], dataType: .float32)
-        let values: [Float] = [5.0, 2.0, 0.0, 0.0, 0.0, 0.0]
+        // Build raw logits [5, 2, 0, 0, 0] for fit — stable softmax
+        // should yield ~0.95 on index 0 (.oversized in the Option C
+        // 5-class layout).
+        let rawLogits = try MLMultiArray(shape: [1, 5], dataType: .float32)
+        let values: [Float] = [5.0, 2.0, 0.0, 0.0, 0.0]
         for (i, v) in values.enumerated() {
             rawLogits[[0, NSNumber(value: i)]] = NSNumber(value: v)
         }
@@ -173,6 +177,42 @@ struct AttributeClassifierServiceTests {
         let empty = try MLDictionaryFeatureProvider(dictionary: [:])
         let prediction = AttributeClassifierService.decode(prediction: empty)
         #expect(prediction == .empty)
+    }
+
+    // MARK: - Decode: Option C single-head (D-3)
+
+    /// **D-3 contract.** The Phase 4 ship artifact emits ONLY `fit_probs`
+    /// — no `texture_probs` output (Fashionpedia v2 carries no main-fabric
+    /// attributes, so the texture head is dormant for v1; see
+    /// `docs/plans/2026-04-19-auto-attribute-detection/ATTRIBUTE_TAXONOMY.md`
+    /// § Section 0). When iOS receives that single-head feature provider,
+    /// the decode path MUST:
+    ///   • return the fit prediction normally
+    ///   • leave `texture` at `nil` and `textureConfidence` at `0.0`
+    ///     EXACTLY (not just below threshold)
+    /// so every downstream consumer (`AttributePrefill.shouldPrefill`,
+    /// `AddItemViewModel.startNextProposal`) short-circuits cleanly
+    /// instead of routing junk into the texture picker.
+    @Test func decodeHandlesSingleHeadFitOnlyOutput() throws {
+        // Production-shape output: only `fit_probs`, peak on index 2 = .regular.
+        let fitProbs = makeSoftmaxLogits(size: 5, peakIndex: 2, peakValue: 0.85)
+        let provider = try MLDictionaryFeatureProvider(dictionary: [
+            "fit_probs": MLFeatureValue(multiArray: fitProbs)
+        ])
+
+        let prediction = AttributeClassifierService.decode(prediction: provider)
+
+        // Fit head decodes normally.
+        #expect(prediction.fit == .regular)
+        #expect(abs(prediction.fitConfidence - 0.85) < 0.01)
+
+        // Texture head is dormant — must be exactly nil/0.0, not "low confidence
+        // index 0". Equality check (== 0.0) is intentional: anything else risks
+        // routing through `AttributePrefill` if the threshold drifts later.
+        #expect(prediction.texture == nil,
+                "Single-head Option C mlpackage MUST NOT leak a texture prediction")
+        #expect(prediction.textureConfidence == 0.0,
+                "Confidence must be EXACTLY 0 — non-zero would re-engage AttributePrefill")
     }
 
     // MARK: - Service: graceful missing-model fallback
@@ -211,11 +251,24 @@ struct AttributeClassifierServiceTests {
                 "textureLabels must be a permutation of TextureType.allCases")
     }
 
-    @Test func fitLabelsMatchEnumOrderAndCount() {
-        #expect(AttributeClassifierService.fitLabels.count == FitAttribute.allCases.count)
-        let covered = Set(AttributeClassifierService.fitLabels)
-        let expected = Set(FitAttribute.allCases)
-        #expect(covered == expected)
+    @Test func fitLabelsLockOptionCTrainableSubset() {
+        // Option C trains on 5 of the 6 FitAttribute cases. `.structured`
+        // has no Fashionpedia signal (BLOCKERS.md#D-6) so the v1 head
+        // intentionally never emits it. The Python side mirrors this
+        // exact list in `fashionpedia_attr_to_ios_enum.TRAINABLE_FIT_LABELS`.
+        // Picker UIs (`AddItemView`) still iterate `FitAttribute.allCases`
+        // so users can pick `.structured` manually — this constraint is
+        // ONLY for the auto-prediction decode path.
+        #expect(AttributeClassifierService.fitLabels == [
+            .oversized, .relaxed, .regular, .slim, .cropped
+        ])
+        #expect(!AttributeClassifierService.fitLabels.contains(.structured),
+                "Option C v1 trains a 5-class head; `.structured` reactivates with v1.1")
+        // If FitAttribute grows another case, this guard fires — forcing
+        // the dev to decide whether the new case is trainable today or
+        // joins `.structured` in the dormant set.
+        #expect(AttributeClassifierService.fitLabels.count + 1 == FitAttribute.allCases.count,
+                "Trainable subset should be exactly one less than the full enum (.structured reserved)")
     }
 
     // MARK: - Helpers
