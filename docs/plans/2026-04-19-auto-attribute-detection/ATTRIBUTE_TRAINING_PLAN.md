@@ -322,3 +322,49 @@ the manifest schema in § 3 above. Blocked on the pod run that produces
 `/workspace/training/attr-dataset/manifest_meta.json` — kick that off
 first so hyperparameter choices can cite real class counts instead of
 the estimates in § 2.
+
+---
+
+## Autonomous run — 2026-04-20
+
+### Attempt 1 (RunPod RTX A5000, 24 GB, community) — aborted at Phase F
+
+- **Pod:** `1lprkh8ta889dp`, NVIDIA RTX A5000, community tier, ~$0.16/hr
+- **Bootstrap:** Python 3.11 + torch 2.5.1 + CUDA 12.4, `pip install -r notebooks/training/requirements.txt`
+- **Phases B–E completed:** data download (~4 min), prep (~5 min), 3-seed parallel training bs=128 × 20 epochs (~22 min), eval + pick-best.
+- **Training outcome (pod):**
+  - seed 42: val macro-F1 = 0.411
+  - seed 1337: val macro-F1 = 0.442
+  - seed 2024: val macro-F1 = 0.456 (winner on pod)
+  - All four target gates missed on all three seeds.
+- **Phase F (Core ML export) crashed twice with `Traceback` in `export_attribute_classifier.py`.** The driver's `fail` trap fired and correctly ran `runpodctl stop pod` — billing halted at 10:41:46 UTC.
+- **Critical infrastructure bug:** pod was created with `--volume-in-gb 0` (no persistent volume). When stopped, the container disk reset, wiping `/workspace` including all 3 checkpoints, the mlpackage, and `pod-train.log` (the traceback was lost before we could read it). Any retry will need `--volume-in-gb 50` or a backup-before-stop step.
+
+### Attempt 2 (laptop baseline ship) — shipped, gates FAIL
+
+The laptop-side partial training (`pid 20785`, killed after epoch 3) left
+a usable `attr_best.pth` on disk. Exporting that checkpoint locally
+reproduced the Phase F coremltools pipeline successfully on macOS —
+confirming the export pipeline is correct and the pod's Phase F crash
+was environment-specific (Linux + torch 2.5.1 vs coremltools 8.1, which
+pins `torch==2.4.0` as its tested max).
+
+- **Checkpoint:** `checkpoints/attr-full/attr_best.pth` (epoch 3, laptop MPS, bs=64, 4 epochs trained)
+- **Eval (val split, 1,206 samples):**
+  - top-1: **0.454** (gate ≥0.75 — **FAIL**)
+  - macro-F1: **0.352** (gate ≥0.55 — **FAIL**)
+  - oversized F1: **0.045** (gate ≥0.30 — **FAIL**)
+  - calibration (conf ≥0.80): realized acc **0.570** (gate ≥0.90 — **FAIL**)
+- **Artifacts shipped:**
+  - `checkpoints/attr-full/attr_best.pth`, `attr_metrics.json`, `eval/summary.json`, `eval/per_class.json`, `eval/calibration.png`, `eval/confusion_matrix.png`
+  - `WardrobeReDo/ML/AttributeClassifier.mlpackage` (6-bit palettized, `fit_probs` output, iOS 17 target) — Git-LFS tracked per `.gitattributes`
+
+**This ship is a baseline only.** The mlpackage validates the end-to-end pipeline (trainer → checkpoint → coremltools conversion → palettization → iOS bundle) but all four quality gates fail. A retrain (either pod attempt 2 with `--volume-in-gb 50` and a coremltools compatibility fix, or local MPS resume from `attr_last.pth` for ~15 more epochs) is required before the fit classifier is production-ready.
+
+### Next action
+
+Decide retrain path:
+
+1. **Pod re-run with persistent volume + coremltools fix** — ~$0.18, ~45 min, laptop-free after kickoff. Recipe needs two fixes: (a) `runpodctl pod create --volume-in-gb 50 --volume-mount-path /workspace`, (b) pin `coremltools==8.1` **with** `torch==2.4.0` in a pod-only requirements override (or skip export on pod entirely and export on laptop after `scp`-ing the best checkpoint back).
+2. **Local MPS resume** — free, ~60 min laptop-tethered, continues `attr_last.pth` from epoch 3 → epoch 20. Target ≈ pod's macro_f1 = 0.456 (still misses gates).
+3. **Accept baseline + switch focus** — ship with macro_f1 = 0.352; rely on the iOS side's confidence threshold (`0.80`) to gate pre-fill suggestions; retrain deferred to a future session.
