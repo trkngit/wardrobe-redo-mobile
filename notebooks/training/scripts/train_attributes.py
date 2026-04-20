@@ -517,7 +517,10 @@ def main() -> int:
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(args.seed)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device(
+        "cuda" if torch.cuda.is_available()
+        else ("mps" if torch.backends.mps.is_available() else "cpu")
+    )
     use_amp = (not args.no_amp) and device.type == "cuda" and not args.smoke
 
     # Datasets

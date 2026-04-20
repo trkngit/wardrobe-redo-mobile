@@ -162,7 +162,10 @@ def main() -> int:
     args = parse_args()
     args.report_dir.mkdir(parents=True, exist_ok=True)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device(
+        "cuda" if torch.cuda.is_available()
+        else ("mps" if torch.backends.mps.is_available() else "cpu")
+    )
 
     transform = build_val_transform()
     dataset = FitManifestDataset(args.dataset_root, args.split, transform)
