@@ -69,6 +69,7 @@ try:
     import numpy as np
     import torch
     import torch.nn as nn
+    import torch.nn.functional as F
     from PIL import Image
     from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
     from torchvision import transforms
@@ -241,23 +242,115 @@ def build_model(num_classes: int = NUM_CLASSES) -> nn.Module:
 def compute_class_weights(
     label_counter: Counter,
     labels: list[str] = TRAINABLE_FIT_LABELS,
+    weight_max: float = WEIGHT_MAX,
 ) -> torch.Tensor:
-    """`max_count / class_count`, clipped to [WEIGHT_MIN, WEIGHT_MAX].
+    """`max_count / class_count`, clipped to [WEIGHT_MIN, weight_max].
 
     Returns a tensor indexed by the same order as `TRAINABLE_FIT_LABELS`.
-    Missing classes (count == 0) get WEIGHT_MAX so a truly empty class
+    Missing classes (count == 0) get `weight_max` so a truly empty class
     doesn't produce NaN gradients during training.
+
+    `weight_max` defaults to the module constant (10.0) but can be raised
+    at the CLI via `--weight-max` when a rare class needs a stronger pull
+    (e.g., oversized F1 collapsed at γ=0).
     """
     max_count = max(label_counter.values()) if label_counter else 0
     weights: list[float] = []
     for label in labels:
         count = label_counter.get(label, 0)
         if count == 0:
-            weights.append(WEIGHT_MAX)
+            weights.append(weight_max)
             continue
         w = max_count / count
-        weights.append(float(min(max(w, WEIGHT_MIN), WEIGHT_MAX)))
+        weights.append(float(min(max(w, WEIGHT_MIN), weight_max)))
     return torch.tensor(weights, dtype=torch.float32)
+
+
+class FocalCrossEntropy(nn.Module):
+    """Multi-class focal loss with per-class weights + label smoothing.
+
+    FL(p_t) = -α_t · (1 - p_t)^γ · log(p_t)
+
+    where p_t is the predicted probability for the true class, α_t is
+    the class weight, and γ modulates down-weighting of easy examples
+    (γ=0 recovers weighted cross-entropy; γ=2 is the Lin et al. focal
+    default that empirically lifts F1 on imbalanced classes).
+
+    Label smoothing ε redistributes ε/(C-1) mass from the true class to
+    each non-true class, fighting overconfidence on the majority class.
+    Smoothing interacts with focal modulation by acting on all classes
+    (not just the true one) so the soft-target path is used when ε > 0.
+
+    Normalization: weighted-mean (Σ per_sample / Σ w[t]) when `weight`
+    is set, plain-mean otherwise. This matches torch.nn.CrossEntropyLoss
+    at γ=0 + smoothing=0 so swapping in this module does not implicitly
+    rescale the effective LR (critical — the warmup + cosine schedule
+    was tuned against the weighted-mean scale).
+
+    With γ>0 or smoothing>0 the per-sample loss is a linear combination
+    of class-weighted terms; we keep the Σ w[t] denominator, which
+    tracks vanilla weighted CE within ~10% in scale.
+    """
+
+    def __init__(
+        self,
+        weight: torch.Tensor | None = None,
+        gamma: float = 0.0,
+        label_smoothing: float = 0.0,
+        reduction: str = "mean",
+    ) -> None:
+        super().__init__()
+        if weight is not None:
+            # Register as buffer so .to(device) moves it with the module.
+            self.register_buffer("weight", weight)
+        else:
+            self.weight = None  # type: ignore[assignment]
+        self.gamma = gamma
+        self.label_smoothing = label_smoothing
+        if reduction not in {"mean", "sum", "none"}:
+            raise ValueError(f"reduction must be mean|sum|none, got {reduction!r}")
+        self.reduction = reduction
+
+    def forward(
+        self, logits: torch.Tensor, targets: torch.Tensor
+    ) -> torch.Tensor:
+        log_probs = F.log_softmax(logits, dim=-1)
+        probs = log_probs.exp()
+        num_classes = logits.size(-1)
+
+        if self.label_smoothing > 0.0:
+            # Soft targets path — focal modulation applies per-class.
+            targets_onehot = F.one_hot(
+                targets, num_classes=num_classes
+            ).to(dtype=logits.dtype)
+            eps = self.label_smoothing
+            targets_smooth = (
+                targets_onehot * (1.0 - eps)
+                + (1.0 - targets_onehot) * (eps / max(num_classes - 1, 1))
+            )
+            focal = (1.0 - probs) ** self.gamma  # (N, C)
+            if self.weight is not None:
+                focal = focal * self.weight.to(logits.device).unsqueeze(0)
+            per_sample = -(targets_smooth * focal * log_probs).sum(dim=-1)
+        else:
+            # Hard targets — collapse to the true-class term only.
+            log_p_t = log_probs.gather(1, targets.unsqueeze(1)).squeeze(1)
+            p_t = log_p_t.exp()
+            focal = (1.0 - p_t) ** self.gamma
+            if self.weight is not None:
+                focal = focal * self.weight.to(logits.device)[targets]
+            per_sample = -focal * log_p_t
+
+        if self.reduction == "mean":
+            if self.weight is not None:
+                # Weighted-mean: Σ per_sample / Σ w[t_n]. Matches
+                # nn.CrossEntropyLoss(weight=…) at γ=0, smoothing=0.
+                w_t = self.weight.to(logits.device)[targets]
+                return per_sample.sum() / w_t.sum().clamp(min=1e-8)
+            return per_sample.mean()
+        if self.reduction == "sum":
+            return per_sample.sum()
+        return per_sample
 
 
 def build_sampler(
@@ -504,6 +597,38 @@ def parse_args() -> argparse.Namespace:
             "dataset (preparer with --max-train 500 --max-val 100)."
         ),
     )
+    p.add_argument(
+        "--focal-gamma",
+        type=float,
+        default=0.0,
+        help=(
+            "γ for the focal-loss modulator (Lin et al. 2017). 0 = plain "
+            "weighted cross-entropy (default). 2 is the canonical focal "
+            "default — use when rare classes (oversized) are collapsing "
+            "to F1 ~ 0. Interacts with --label-smoothing via soft targets."
+        ),
+    )
+    p.add_argument(
+        "--label-smoothing",
+        type=float,
+        default=0.0,
+        help=(
+            "ε for label smoothing — redistributes ε/(C-1) mass from the "
+            "true class to each other class. 0.05 is a typical fix for "
+            "overconfidence / poor high-confidence calibration."
+        ),
+    )
+    p.add_argument(
+        "--weight-max",
+        type=float,
+        default=WEIGHT_MAX,
+        help=(
+            f"Upper clamp for class-weight clip(max_count/class_count, "
+            f"{WEIGHT_MIN}, weight_max). Defaults to {WEIGHT_MAX}. Raise "
+            f"(e.g., 20.0) when combined with focal loss to restore some "
+            f"of the rare-class push that the focal modulator assumes."
+        ),
+    )
     return p.parse_args()
 
 
@@ -532,7 +657,9 @@ def main() -> int:
     # Class weights + sampler rely on the training split's label counts.
     train_counter = train_ds.label_counter()
     val_counter = val_ds.label_counter()
-    class_weights = compute_class_weights(train_counter).to(device)
+    class_weights = compute_class_weights(
+        train_counter, weight_max=args.weight_max
+    ).to(device)
     sampler = build_sampler(train_ds, train_counter)
 
     train_loader = DataLoader(
@@ -567,7 +694,15 @@ def main() -> int:
         return 0.5 * (1.0 + float(np.cos(np.pi * progress)))
 
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
-    criterion = nn.CrossEntropyLoss(weight=class_weights)
+    # γ=0 + smoothing=0 → equivalent to nn.CrossEntropyLoss(weight=…).
+    # γ>0 engages focal modulation; smoothing>0 uses soft targets.
+    # Keeping one loss module simplifies the mixed-precision path (no
+    # branching on autocast) and the checkpoint payload.
+    criterion = FocalCrossEntropy(
+        weight=class_weights,
+        gamma=args.focal_gamma,
+        label_smoothing=args.label_smoothing,
+    ).to(device)
 
     # GradScaler lives across epochs — its scale factor adapts with
     # training. Re-creating per-epoch throws that calibration away.
@@ -598,6 +733,9 @@ def main() -> int:
     print(f"  train counts   {dict(train_counter.most_common())}")
     print(f"  val counts     {dict(val_counter.most_common())}")
     print(f"  class weights  {[round(float(w), 3) for w in class_weights.tolist()]}")
+    print(f"  weight-max     {args.weight_max}")
+    print(f"  focal γ        {args.focal_gamma}")
+    print(f"  label smooth   {args.label_smoothing}")
     print(f"  epochs         {args.epochs} (start {start_epoch})")
     print(f"  batch size     {args.batch_size}")
     print(f"  lr             {args.lr} (warmup {args.warmup_epochs})")
@@ -683,6 +821,10 @@ def main() -> int:
         "epochs_run": args.epochs - start_epoch,
         "batch_size": args.batch_size,
         "lr": args.lr,
+        "weight_max": args.weight_max,
+        "focal_gamma": args.focal_gamma,
+        "label_smoothing": args.label_smoothing,
+        "seed": args.seed,
         "best_macro_f1": best_macro_f1,
         "duration_seconds": elapsed,
         "dataset_root": str(args.dataset_root),
