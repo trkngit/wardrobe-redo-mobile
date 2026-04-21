@@ -1,0 +1,23 @@
+{
+  "scope": "Option C (fit-only, single-head)",
+  "num_classes": 5,
+  "labels": [
+    "oversized",
+    "relaxed",
+    "regular",
+    "slim",
+    "cropped"
+  ],
+  "epochs_run": 40,
+  "batch_size": 128,
+  "lr": 0.0003,
+  "weight_max": 20.0,
+  "focal_gamma": 2.0,
+  "label_smoothing": 0.05,
+  "seed": 1337,
+  "best_macro_f1": 0.4468078929733828,
+  "duration_seconds": 1941.0357711315155,
+  "dataset_root": "data/fashionpedia/attr_crops",
+  "torch_version": "2.4.1+cu124",
+  "torchvision_version": "0.19.1+cu124"
+}

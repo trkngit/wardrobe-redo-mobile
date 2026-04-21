@@ -368,3 +368,6 @@ Decide retrain path:
 1. **Pod re-run with persistent volume + coremltools fix** — ~$0.18, ~45 min, laptop-free after kickoff. Recipe needs two fixes: (a) `runpodctl pod create --volume-in-gb 50 --volume-mount-path /workspace`, (b) pin `coremltools==8.1` **with** `torch==2.4.0` in a pod-only requirements override (or skip export on pod entirely and export on laptop after `scp`-ing the best checkpoint back).
 2. **Local MPS resume** — free, ~60 min laptop-tethered, continues `attr_last.pth` from epoch 3 → epoch 20. Target ≈ pod's macro_f1 = 0.456 (still misses gates).
 3. **Accept baseline + switch focus** — ship with macro_f1 = 0.352; rely on the iOS side's confidence threshold (`0.80`) to gate pre-fill suggestions; retrain deferred to a future session.
+
+## Autonomous pod run — 2026-04-21 05:07:47 UTC
+
