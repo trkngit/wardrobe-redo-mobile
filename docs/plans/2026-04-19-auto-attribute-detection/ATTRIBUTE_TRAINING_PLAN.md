@@ -371,3 +371,64 @@ Decide retrain path:
 
 ## Autonomous pod run — 2026-04-21 05:07:47 UTC
 
+Second autonomous pod run — this time with the "Option 3" recipe (focal loss γ=2, label smoothing 0.05, class-weight cap 20, 40 epochs per seed, 3 parallel seeds on one GPU). The goal was to beat the laptop baseline's `macro_f1 = 0.352` and, if possible, hit the `≥0.55` gate.
+
+**Pod configuration:**
+
+- RunPod ID `ibst2hdyz299cd`, RTX A4500 (20 GB), Community, `$0.19/hr`
+- Persistent volume `/workspace` (50 GB) — venv and deploy key stored here so they survive pod stop/start
+- Parallel: 3 `train_attributes.py` processes (seeds 42, 1337, 2024) sharing the GPU at `bs=128` each → ~6.4 GB VRAM total, 60–76% GPU util across the run
+- Export deferred to laptop (Linux + torch 2.5.1 + coremltools 8.1 still crashes in palettization; export was re-run on macOS from the pushed winner checkpoint)
+- Total wall clock: `32.35 min` per seed (all 3 ran concurrently → total pod time ≈ 35 min)
+
+**Gate status (winner = seed-1337 by macro_f1):**
+
+| Metric | Value | Gate | Status |
+| --- | --- | --- | --- |
+| val top-1 | **0.546** | ≥ 0.75 | **FAIL** |
+| val macro-F1 | **0.447** | ≥ 0.55 | **FAIL** |
+| oversized F1 | **0.154** | ≥ 0.30 | **FAIL** |
+| calibration @ conf ≥ 0.80 | **n/a** (count = 0) | ≥ 0.90 | **FAIL** |
+
+Per-seed final macro-F1 (val split, 1,206 samples):
+
+| Seed | top-1 | macro-F1 | high-conf count @ 0.80 | high-conf realized acc |
+| --- | --- | --- | --- | --- |
+| 42 | 0.541 | 0.446 | 2 | 1.000 |
+| **1337** | **0.546** | **0.447** | 0 | n/a |
+| 2024 | 0.522 | 0.440 | 7 | 0.571 |
+
+Per-class F1 (winner seed-1337):
+
+| Class | Precision | Recall | F1 | Support |
+| --- | --- | --- | --- | --- |
+| oversized | 0.097 | 0.375 | 0.154 | 16 |
+| relaxed | 0.422 | 0.365 | 0.391 | 170 |
+| regular | 0.468 | 0.372 | 0.415 | 352 |
+| slim | 0.545 | 0.590 | 0.567 | 205 |
+| cropped | 0.685 | 0.732 | **0.708** | 463 |
+
+**Takeaways:**
+
+1. **Focal loss + class-weight cap did help the tail class** — `oversized` F1 went from `0.045` (laptop baseline) → `0.154` (+3.4×). Still far below the `0.30` gate, but the signal is now non-trivial.
+2. **Overall macro-F1 improved `0.352 → 0.447` (+27%).** All four gates still fail, but the ship artifact is meaningfully better than baseline on every axis except calibration.
+3. **Calibration got worse, not better.** The focal loss (which sharpens the decision boundary away from easy examples) combined with `label_smoothing=0.05` (which regularizes confidence) leaves the winner producing **zero** predictions above the 0.80 confidence threshold. This is a UX regression — the iOS decode path uses `0.80` as the pre-fill threshold (see `AttributeClassifierService.decode`), so the user will now see suggestions less often than with the baseline. Seed-2024 produces 7 high-conf predictions at 57% acc, so if we care more about occasional confident predictions than about strict macro-F1 ordering we could promote s2024 instead; noting this for a future ship-decision revisit.
+4. **16 oversized val samples is the dataset bottleneck.** Even with perfect training, `support=16` means our per-class F1 for oversized has massive variance. A larger annotated oversized split (or synthetic augmentation) is the most leveraged next step.
+
+**Artifacts shipped:**
+
+- `checkpoints/attr-full-s{42,1337,2024}/` — per-seed `attr_best.pth`, `attr_metrics.json`, `run_summary.json`, `eval/summary.json`, `eval/per_class.json`, `eval/calibration.png`, `eval/confusion_matrix.png`
+- `checkpoints/attr-full/` — winner (seed-1337) promoted + `run_summary.json`
+- `WardrobeReDo/ML/AttributeClassifier.mlpackage` — 6-bit palettized (1.3 MB), `fit_probs` output, iOS 17 target, palettized locally on macOS from the pod's winning `attr_best.pth`
+
+**Cost:** ~$0.19/hr × (35 min pod + ~15 min idle after stop) ≈ **$0.16** for this run. Prior session racked up ~$3 of idle billing while I was debugging; total spend across both pod attempts is ~$3.16, leaving ~$47 credit.
+
+### Next action (attempt-2)
+
+Gates still fail, but every axis except calibration improved. Candidates for the next iteration:
+
+1. **Drop label smoothing** — restore `label_smoothing=0.0` and lower `focal_gamma` to `1.0`. Goal: recover calibration without giving back too much macro-F1 gain.
+2. **Ensemble the 3 seeds** — average softmax probs across the 3 trained checkpoints at inference time. Classical ~0.5–1.5 F1-point gain; higher value is that ensemble-averaged confidences tend to be better-calibrated. Would need an iOS-side change (3 mlpackages + averaging), so defer unless a retrain plateau shows 3-seed spread is too large to ignore.
+3. **Augment oversized class** — mine more oversized crops from Fashionpedia's unlabeled bounding boxes, or add copy-paste augmentation for the 16 known oversized instances. Biggest potential F1 unlock but most work.
+4. **Accept s1337 ship** — land this baseline now, open a tracking issue for the calibration regression + oversized F1, move on to other photo-extraction work. The `AttributeClassifier.mlpackage` is production-valid; the iOS side already handles low-confidence outputs gracefully (no suggestion shown). App still functions; only the auto-prefill success rate is diminished.
+
