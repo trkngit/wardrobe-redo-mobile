@@ -199,4 +199,86 @@ enum ClothingSubcategory: String, Codable, CaseIterable, Sendable {
     static func subcategories(for category: ClothingCategory) -> [ClothingSubcategory] {
         allCases.filter { $0.category == category }
     }
+
+    // MARK: - Fashionpedia mapping
+
+    /// Map a Fashionpedia main-class string to a subcategory hint when
+    /// the class commits to a specific subcategory. Returns `nil` for
+    /// genuinely ambiguous classes (e.g. `"pants"` — jeans vs chinos vs
+    /// dress pants can't be inferred from the label alone; `"jacket"` —
+    /// bomber vs leather vs puffer, same problem).
+    ///
+    /// Companion to [`ClothingCategory.fromFashionpediaClass`](ClothingCategory.swift):
+    /// category always resolves, subcategory only when the mapping is
+    /// unambiguous. `MaskProposal.predictedSubcategory` consumers should
+    /// fall back to the category's default subcategory when this returns
+    /// nil.
+    static func fromFashionpediaClass(_ raw: String) -> ClothingSubcategory? {
+        let normalized = raw.lowercased()
+        switch normalized {
+        // Tops
+        case "shirt":
+            return .buttonDown
+        case "blouse":
+            return .blouse
+        case "t-shirt":
+            return .tshirt
+        case "sweatshirt":
+            return .sweatshirt
+        case "sweater":
+            return .sweater
+        case "cardigan":
+            return .cardigan
+
+        // Bottoms
+        case "shorts":
+            return .shorts
+        case "skirt":
+            return .skirt
+
+        // Outerwear
+        case "blazer":
+            return .suitJacket
+
+        // Footwear
+        case "boot":
+            return .boots
+        case "sandal", "sandals":
+            return .sandals
+
+        // Accessories
+        case "glasses", "sunglasses":
+            return .sunglasses
+        case "hat":
+            return .hat
+        case "cap":
+            return .baseballCap
+        case "scarf":
+            return .scarf
+        case "bag", "purse", "bag_wallet":
+            return .bag
+        case "belt":
+            return .belt
+        case "watch":
+            return .watch
+        case "bracelet":
+            return .bracelet
+        case "earring", "earrings":
+            return .earrings
+        case "necklace":
+            return .necklace
+
+        // Ambiguous or unsupported (explicit nil for documentation):
+        // `pants` / `trousers` — jeans vs chinos vs dress pants
+        // `top` / `shirt_blouse` / `top_t-shirt_sweatshirt` — combined classes
+        // `dress` / `gown` — maxi vs mini vs cocktail, etc.
+        // `jumpsuit` / `romper` / `cape` / `vest` — no direct subcategory case
+        // `coat` / `jacket` — too many specific variants
+        // `shoe` — too generic (sneakers vs loafers vs heels vs …)
+        // `tights` / `stockings` — closest match `.leggings` is a different garment
+        // `tie` / `bow_tie` / `glove` / `ring` / `headband` / `wallet` — no subcategory case
+        default:
+            return nil
+        }
+    }
 }

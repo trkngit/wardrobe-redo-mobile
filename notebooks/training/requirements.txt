@@ -1,0 +1,49 @@
+# Pinned dependencies for the multi-garment training run.
+# Reproducibility > cutting-edge — bump deliberately, not opportunistically.
+#
+# Run once to bootstrap: pip install -r notebooks/training/requirements.txt
+# Assumes Python 3.11 (see README.md for why).
+
+# Core PyTorch stack. 2.5.1 is the latest paired with torchvision 0.20.1
+# that coremltools 8.1 has been tested against.
+torch==2.5.1
+torchvision==0.20.1
+
+# RF-DETR from Roboflow. 1.4 is the release that shipped the -Seg variant
+# used by this training run. Apache 2.0.
+rfdetr==1.4.0
+
+# HuggingFace ecosystem for Fashionpedia dataset loading + transformer
+# utility helpers. `datasets` handles the CVDF/HF mirror of Fashionpedia.
+transformers==4.46.0
+datasets==3.1.0
+huggingface-hub==0.26.2
+
+# COCO-format instance-segmentation evaluation.
+pycocotools==2.0.8
+
+# Image IO + array math.
+pillow==11.0.0
+numpy==1.26.4
+
+# CVDF download helper (prepare_fashionpedia.py streams from S3).
+# Usually pulled in transitively by `datasets`/`huggingface-hub`, but
+# pinning explicitly keeps the dep graph honest.
+requests==2.32.3
+
+# Apple's conversion pipeline. 8.1 has the transformer-friendly MIL ops
+# that RF-DETR's DINOv2 backbone requires, plus 6-bit palettization.
+coremltools==8.1
+
+# Notebook runtime + progress bars.
+jupyter==1.1.1
+tqdm==4.66.6
+
+# Experiment tracking (local-only by default; no remote dashboards).
+tensorboard==2.18.0
+
+# Quality of life: matplotlib for train-curve plots, seaborn for
+# confusion matrices, opencv for visualization utilities.
+matplotlib==3.9.2
+seaborn==0.13.2
+opencv-python==4.10.0.84

@@ -55,3 +55,42 @@ fastlane/test_output
 
 # Archive
 *.xcarchive
+
+# Benchmark scratch space (DeepFashion2 + dev reports)
+# The canonical location is ~/wardrobe-benchmark/, which is already under $HOME;
+# this rule is belt-and-suspenders in case anyone points the tool at the repo.
+wardrobe-benchmark/
+benchmark_results/
+scripts/benchmark-tool/.build/
+
+# Python bytecode (from local script runs)
+__pycache__/
+*.py[cod]
+
+# Python virtualenv (used by scripts/fetch_fixtures.py + scripts/build_benchmark.py)
+.venv/
+.venv-train/
+venv/
+
+# ML training artifacts — bulk binaries, not shipped
+notebooks/training/checkpoints-p2/
+notebooks/training/checkpoints/
+rf-detr-seg-small.pt
+*.pth
+# fp16 mlpackage is the un-palettized debug variant — 122MB, not shipped.
+# The production (palettized) RFDETRSegFashion.mlpackage IS committed.
+WardrobeReDo/Models/CoreML/RFDETRSegFashion_fp16.mlpackage/
+
+# Training scratch (per docs/SESSION_HANDOFF_BRIEF.md §13)
+# data/ is the Fashionpedia local mirror (~10 GB).
+# logs/ is autonomous train driver log output.
+# checkpoints/attr-smoke/ is the tiny local smoke run.
+# checkpoints/attr-full/export/ is the intermediate fp32 mlpackage; only the
+# palettized ship artifact (WardrobeReDo/ML/AttributeClassifier.mlpackage) is tracked.
+data/
+logs/
+checkpoints/attr-smoke/
+checkpoints/attr-full/export/
+
+# Claude Code ephemeral worktrees (main .claude/ settings file is handled above).
+.claude/worktrees/

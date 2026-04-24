@@ -1,0 +1,106 @@
+# Extraction Fixture Set
+
+This directory holds the committed ground-truth set that `SegmentationIoUTests`
+and `ExtractionPerformanceTests` run against on device. Twenty-seven photos +
+twenty-seven alpha masks, distributed across three scenarios:
+
+| Scenario             | Count | What it looks like                                                              | Scenario floor target |
+|----------------------|-------|---------------------------------------------------------------------------------|-----------------------|
+| `clean_bg_NN.jpg`    | 8     | One item against a plain wall / sheet / studio backdrop. The baseline.          | ≥ 0.82 (aspirational) |
+| `cluttered_NN.jpg`   | 10    | Item on a patterned couch, bookshelf, rug, or floor. Realistic home capture.    | ≥ 0.65 (aspirational) |
+| `on_person_NN.jpg`   | 9     | Clothing worn on a person or held up in a mirror.                               | ≥ 0.45 (aspirational) |
+
+The real regression gate is the **per-fixture `expected_iou_min`** in
+`manifest.json` — calibrated from the extractor's own score on that image
+minus a 5 pp safety margin. Scenario aggregates are guidance, not hard
+asserts. See `docs/EXTRACTION_BENCHMARK.md` for current means.
+
+Three slots from the original 30 picks are deliberately missing:
+`clean_bg_04` (transparent eyeglasses), `clean_bg_06` (cutout silhouette),
+and `on_person_02` (black-on-black sunglasses). Vision's
+`VNGenerateForegroundInstanceMaskRequest` returns no instance on those,
+so they produced test noise rather than signal. Pass the skip IDs back to
+`fetch_fixtures.py` via `--skip-ids` to keep the script from re-picking them.
+
+## How the fixtures get here
+
+Run `scripts/fetch_fixtures.py`. It pulls two **CC-BY 4.0** Roboflow Universe
+projects (StreetVision "Clothing" + Roboflow "Fashion Assistant Segmentation"),
+rasterises each COCO polygon annotation into an alpha PNG, buckets each image
+by background edge density, and writes the picks into this directory with
+the naming convention above. The committed set is 27 (after dropping the
+three Vision-hostile slots listed above); the script itself writes 30 if
+run cold, and the three drops are manual.
+
+See `scripts/fetch_fixtures.README.md` for setup (venv + either a Roboflow
+free-tier API key or pre-downloaded ZIPs) and troubleshooting.
+
+The script is idempotent — re-running it overwrites the same 30 files
+deterministically. DeepFashion2 and other research-only datasets stay on
+`~/wardrobe-benchmark/`, outside the repo — see `docs/EXTRACTION_BENCHMARK.md`.
+
+## File conventions
+
+* **Images:** `<scenario>_<nn>.jpg`, zero-padded two-digit index (`01`…`10`),
+  resized to ≤ 3000 px on the long edge, JPEG quality 90.
+* **Masks:** `ground_truth/<same_filename>.png`. RGBA PNG with alpha = 0 for
+  background pixels and alpha = 255 for clothing. The IoU rig thresholds at
+  alpha > 127, so anti-aliased edges are fine.
+
+## `manifest.json`
+
+Each fixture has an entry:
+
+```json
+{
+  "image": "clean_bg_01.jpg",
+  "mask": "ground_truth/clean_bg_01.png",
+  "category": "top",
+  "scenario": "clean_bg",
+  "source_dataset": "STREETVISION",
+  "source_image_id": "img_0001",
+  "expected_iou_min": 0.82,
+  "notes": "coverage=0.34, bg_edge=3.21, bg_var=14.8"
+}
+```
+
+`source_dataset` + `source_image_id` let you drop a bad pick with
+`--skip-ids <DATASET>:<id>` and re-run the script. `expected_iou_min`
+starts at the scenario floor; after the first run of `SegmentationIoUTests`
+on device you tune it: subtract 5 pp from the actual score and commit the
+adjusted threshold in the same PR as the fixture.
+
+## `ATTRIBUTIONS.md`
+
+Auto-generated on every `fetch_fixtures.py` run. Lists the uploader, source
+URL, SPDX tag, and ISO fetch date for every committed image. Required by
+CC-BY 4.0. Ships only inside the XCTest bundle — no App Store binary
+impact.
+
+## BYO override (when the script can't cover a category twice)
+
+The script reports category gaps at the end of a run. If a `ClothingCategory`
+appears fewer than twice across the committed picks, you have two options:
+
+1. **Accept it** — the IoU rig is category-signal, not perfectly balanced.
+2. **Add a BYO fixture** — drop your own photo + hand-traced alpha PNG into
+   the slot the script would have picked (e.g. `cluttered_07.jpg` +
+   `ground_truth/cluttered_07.png`), append a manifest entry by hand, and
+   use `--skip-ids` on future re-runs so the auto-picker stays out of that
+   slot.
+
+See `scripts/fetch_fixtures.README.md` → "When a category is
+under-represented" for the full workflow.
+
+## What this directory must NEVER contain
+
+- Images from research-only datasets (DeepFashion2, Fashionpedia, LIP, ATR)
+  or from HF re-uploads that claim a looser licence than the underlying data
+  (e.g. `mattmdjaga/human_parsing_dataset`, `SaffalPoosh/deepFashion-with-masks`).
+- Images larger than ~5 MB — the script resizes, but BYO drops must be
+  resized manually to ~3000 px on the long edge.
+- Thumbnails generated by macOS (`*.DS_Store` is already gitignored).
+- Unattributed BYO drops — if you add owner photos, add a manual section to
+  `ATTRIBUTIONS.md` (the script won't overwrite entries outside its
+  auto-generated block as long as you keep them in a clearly marked `## BYO
+  additions` section at the bottom — or edit the script to preserve them).
