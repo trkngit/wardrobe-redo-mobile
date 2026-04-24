@@ -2,6 +2,14 @@
 
 > Running plan: [AUTONOMOUS_IMPLEMENTATION_PLAN.md](./AUTONOMOUS_IMPLEMENTATION_PLAN.md). Updated after every commit.
 
+**v1 status:** SHIPPED — PR [#1](https://github.com/trkngit/wardrobe-redo-mobile/pull/1) squash-merged to `main` as `13bd5d7` (90 commits / 245 files / ~41.8k insertions). Phases 0-8 all complete. CI green on self-hosted macOS/ARM64 runner (run 24902269220).
+
+**v1.1 status:** IN PROGRESS — autonomous continuation window opened 2026-04-24. See [plans/2026-04-25-v1.1-post-ship/PLAN.md](./plans/2026-04-25-v1.1-post-ship/PLAN.md) for the 10-step execution sequence and per-step outcomes.
+
+---
+
+## v1 archive (phase details below preserved for reference)
+
 **Current phase:** 9 — Merge prep (complete)
 **Last commit:** `5884c21` — docs: add PR body draft for v1 resilience + ML + dogfood PR
 **Branch:** `feature/photo-extraction-engine` (pushed to origin)
