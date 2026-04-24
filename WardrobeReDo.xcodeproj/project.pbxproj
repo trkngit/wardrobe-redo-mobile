@@ -12,6 +12,7 @@
 		00ECCD4CE399864DE8CD876B /* ScoringDimensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19D1221EDB96B4AB6CA724D0 /* ScoringDimensionTests.swift */; };
 		01CF2C73F57350D1C1EF11F5 /* SAM2Extractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9E38CA3C5357EED1110F27E /* SAM2Extractor.swift */; };
 		02B38E62E8859EB8B180C951 /* cluttered_10.png in Resources */ = {isa = PBXBuildFile; fileRef = F285D443CD7B740422826C0E /* cluttered_10.png */; };
+		04BBFF75572177089A6EDD0C /* SnapshotTesting in Frameworks */ = {isa = PBXBuildFile; productRef = D401BE4A5EA920B16248B711 /* SnapshotTesting */; };
 		04D5C79B2D0CBD70C53D3677 /* cluttered_08.png in Resources */ = {isa = PBXBuildFile; fileRef = 7D5D6BAB7B5AE2B486AD8FFC /* cluttered_08.png */; };
 		07448277ECFD68774DFE6869 /* MaskDebug.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3436396E7184B779F62BC1D9 /* MaskDebug.swift */; };
 		097E7B034A058A9E66AE1B56 /* WardrobeReDoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 264BBB2F3E55F63315C0E1C1 /* WardrobeReDoApp.swift */; };
@@ -197,6 +198,7 @@
 		CFF9F51CE5A95F654775C2D4 /* TestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EE423B888AA21596E6F33BF /* TestFixtures.swift */; };
 		D1D30A113E77B2BCBABA3B07 /* WardrobeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B99F96027E9C62E61C3A9B8A /* WardrobeViewModel.swift */; };
 		D2378DFC394CF515AD188E5C /* StyleDataRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1D2EC01B9B367FB518263F5 /* StyleDataRepository.swift */; };
+		D29F3426DA8DCA0ED264C1B0 /* ItemFormViewSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF7FDEDFCF42DDE54D305E72 /* ItemFormViewSnapshotTests.swift */; };
 		D3191859BCE2C7A5BC8B58FF /* cluttered_08.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F74405C35E31E50E6116284E /* cluttered_08.jpg */; };
 		D41933CF9F004AE38286F6A0 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8436F78ED9DED40EAF50036F /* AuthService.swift */; };
 		D4E155A67ABF2F3B22983CCA /* SubcategoryAliases.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B362849ACB15A1FB7426DAC /* SubcategoryAliases.swift */; };
@@ -472,6 +474,7 @@
 		BB2E9896CA35BCF68F2B14C9 /* MaskProposal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskProposal.swift; sourceTree = "<group>"; };
 		BB4757937647AAB183B0BFE1 /* clean_bg_05.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = clean_bg_05.jpg; sourceTree = "<group>"; };
 		BD21A2357F081895EE58F691 /* ClothingExtractionChainingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingExtractionChainingTests.swift; sourceTree = "<group>"; };
+		BF7FDEDFCF42DDE54D305E72 /* ItemFormViewSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemFormViewSnapshotTests.swift; sourceTree = "<group>"; };
 		C15C1DB967C8683E7C7AD221 /* on_person_08.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = on_person_08.png; sourceTree = "<group>"; };
 		C26AE8FCF3555E5679A37082 /* on_person_06.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = on_person_06.png; sourceTree = "<group>"; };
 		C50A94F47C6C6A438C8EBAF9 /* StyleEngineServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleEngineServiceTests.swift; sourceTree = "<group>"; };
@@ -548,6 +551,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5F2184BA46A7A4C608F40260 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				04BBFF75572177089A6EDD0C /* SnapshotTesting in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -565,6 +576,14 @@
 				FE2B5F0EAC67F97B40E243D4 /* WardrobeViewModelTests.swift */,
 			);
 			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		00D92DFB18C050B38ED7E121 /* Snapshot */ = {
+			isa = PBXGroup;
+			children = (
+				BF7FDEDFCF42DDE54D305E72 /* ItemFormViewSnapshotTests.swift */,
+			);
+			path = Snapshot;
 			sourceTree = "<group>";
 		};
 		01582F3D52F2F5D535BE35E0 /* Camera */ = {
@@ -619,6 +638,7 @@
 				F620CA09C9981B8DA2994EAF /* Middleware */,
 				AD9BB7B70D004FBEF1FB3CA5 /* Models */,
 				11389A58AC6D92C3D66690FB /* Services */,
+				00D92DFB18C050B38ED7E121 /* Snapshot */,
 				B66004D62DDBB45964638920 /* StyleEngine */,
 				006A85D06A573F2AF6D6CF90 /* ViewModels */,
 				0AA53816577CFED27E2F4723 /* Views */,
@@ -1249,6 +1269,7 @@
 			buildPhases = (
 				AC1F640B06AD0837868091DF /* Sources */,
 				D7F9AA00D63FFB39716A4843 /* Resources */,
+				5F2184BA46A7A4C608F40260 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -1257,6 +1278,7 @@
 			);
 			name = WardrobeReDoTests;
 			packageProductDependencies = (
+				D401BE4A5EA920B16248B711 /* SnapshotTesting */,
 			);
 			productName = WardrobeReDoTests;
 			productReference = 447D38BBFB20DE3D11B5CEE5 /* WardrobeReDoTests.xctest */;
@@ -1312,6 +1334,7 @@
 			packageReferences = (
 				1996C93340A132A03876D8D2 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 				732FFDF43EC7CD973E2359EF /* XCRemoteSwiftPackageReference "sentry-cocoa" */,
+				95184F9D609D879AAEDC5C95 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
 				9379D8F10B61AD18B7665B7F /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -1551,6 +1574,7 @@
 				2387E890D02CCED5DD4EC658 /* FixtureLoader.swift in Sources */,
 				4E1F22CA44189DA7008C7C1C /* FormalityCoherenceScorerTests.swift in Sources */,
 				94B8BB1B211AFF8CE7281645 /* ImageServiceProposalsTests.swift in Sources */,
+				D29F3426DA8DCA0ED264C1B0 /* ItemFormViewSnapshotTests.swift in Sources */,
 				C7E0289C5DA0A563CA0E2A1B /* LocalCacheTests.swift in Sources */,
 				0B85B891EE71D4031086AC66 /* MLDiagnosticsStoreTests.swift in Sources */,
 				3BCA97B47D1F333CA45419B7 /* MLDiagnosticsTestIsolation.swift in Sources */,
@@ -1987,6 +2011,14 @@
 				minimumVersion = 2.0.0;
 			};
 		};
+		95184F9D609D879AAEDC5C95 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-snapshot-testing";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.19.2;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -2004,6 +2036,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 732FFDF43EC7CD973E2359EF /* XCRemoteSwiftPackageReference "sentry-cocoa" */;
 			productName = Sentry;
+		};
+		D401BE4A5EA920B16248B711 /* SnapshotTesting */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 95184F9D609D879AAEDC5C95 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
+			productName = SnapshotTesting;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
