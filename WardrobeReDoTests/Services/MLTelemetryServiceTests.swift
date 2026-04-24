@@ -25,19 +25,28 @@ import Testing
 ///
 /// Because `FeatureFlags` is UserDefaults-backed and `MLTelemetryService`
 /// reads it on every call, tests that mutate the flag run serially to
-/// avoid cross-contamination.
+/// avoid cross-contamination. `@Suite(.serialized)` handles the
+/// intra-suite ordering; `FeatureFlagTestIsolation` handles the
+/// cross-suite race where another suite's `resetAll()` can stomp our
+/// `isMLTelemetryEnabled = true` between the setter and the actor
+/// hop — the exact symptom that caused run 24903701479's flake on
+/// main (see `docs/plans/2026-04-25-v1.1-post-ship/PLAN.md` Step 8).
 @Suite(.serialized)
 struct MLTelemetryServiceTests {
 
     // MARK: - Gate semantics
 
     @Test @MainActor func flagDefaultsOff() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
         FeatureFlags.resetAll()
         let enabled = await MLTelemetryService.shared.isUploadEnabled()
         #expect(enabled == false)
     }
 
     @Test @MainActor func flagFlipsOnWithoutRestart() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
         FeatureFlags.resetAll()
         #expect(await MLTelemetryService.shared.isUploadEnabled() == false)
 
@@ -51,6 +60,8 @@ struct MLTelemetryServiceTests {
     }
 
     @Test @MainActor func logInferenceNoOpsWhenFlagOff() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
         FeatureFlags.resetAll()
         // If the gate fails, this call would try to hit Supabase auth and
         // throw — instead, it should return immediately without touching
