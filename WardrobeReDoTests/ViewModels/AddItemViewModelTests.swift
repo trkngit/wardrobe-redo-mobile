@@ -681,9 +681,20 @@ private final class StubSAM2Session: SAM2Session, @unchecked Sendable {
 struct AddItemViewModelUploadQueueTests {
 
     /// Reset the shared queue + our helper's state before each test.
+    ///
+    /// Installs a non-retryable handler so that the fire-and-forget auto-
+    /// drain kicked by `enqueue` can't remove our envelope before the
+    /// assertion runs. Without this, the sibling `UploadQueueTests` suite
+    /// leaves a no-op handler on the shared actor (see `UploadQueueTests`
+    /// line ~80) — the no-op would "succeed" and delete our envelope,
+    /// causing `pendingCount()` to return 0 on CI even though the save
+    /// path enqueued correctly. `CancellationError` trips the non-retryable
+    /// branch of `drain()`, which bumps `attempts` and `return`s without
+    /// removing the envelope.
     private func freshQueue() async -> UploadQueue {
         let queue = UploadQueue.shared
         await queue.clear()
+        await queue.setHandler { _ in throw CancellationError() }
         return queue
     }
 
@@ -702,6 +713,8 @@ struct AddItemViewModelUploadQueueTests {
     ///   * `deleteImagesCallCount == 0` — images MUST NOT be orphan-cleaned
     ///     (the background drain needs them to attach to the retried row)
     @Test @MainActor func saveEnqueuesOnRetryableInsertFailure() async {
+        await UploadQueueTestIsolation.shared.acquire()
+        defer { Task { await UploadQueueTestIsolation.shared.release() } }
         let queue = await freshQueue()
         let mockImage = MockImageService()
         let mockRepo = MockWardrobeRepository()
@@ -736,6 +749,8 @@ struct AddItemViewModelUploadQueueTests {
     /// save path instead takes the original error branch: cleans up orphan
     /// images + surfaces a user-visible error.
     @Test @MainActor func saveDoesNotEnqueueOnNonRetryableInsertFailure() async {
+        await UploadQueueTestIsolation.shared.acquire()
+        defer { Task { await UploadQueueTestIsolation.shared.release() } }
         let queue = await freshQueue()
         let mockImage = MockImageService()
         let mockRepo = MockWardrobeRepository()
