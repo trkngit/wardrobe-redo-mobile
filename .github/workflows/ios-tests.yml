@@ -1,0 +1,116 @@
+name: iOS
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  # Cancel superseded runs on the same ref (e.g. rapid pushes to a PR branch).
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build & Test (iOS Simulator)
+    # Self-hosted runner on the maintainer's Mac. Swap to `macos-15` and
+    # restore the `Select Xcode` / `-downloadPlatform iOS` steps (see git
+    # history for this file) once GitHub-hosted macOS minutes are
+    # available again.
+    runs-on: [self-hosted, macOS, ARM64, wardrobe-redo]
+    timeout-minutes: 45
+
+    env:
+      SCHEME: WardrobeReDo
+      # Matches the CLAUDE.md default. The self-hosted runner ships with
+      # the current Xcode (26.x) which has iPhone 17 Pro pre-installed.
+      DESTINATION: platform=iOS Simulator,name=iPhone 17 Pro
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          # The Core ML mlpackages (AttributeClassifier, RFDETRSegFashion,
+          # SAM2Tiny) are Git-LFS tracked. Without `lfs: true` the runner
+          # gets LFS pointer files and coremlc fails with:
+          # "Failed to read model package ... parse error at line 1,
+          # column 1: ... last read: 'v'" (the 'v' is the first char of
+          # the pointer file's "version https://git-lfs..." header).
+          # The explicit `git lfs pull` step below is a belt-and-braces
+          # guard: on a self-hosted runner with a persistent _work
+          # directory, `actions/checkout`'s built-in LFS handling doesn't
+          # always re-resolve pointer files left by prior runs.
+          lfs: true
+
+      - name: Resolve Git LFS
+        run: |
+          git lfs install --local --skip-smudge
+          git lfs pull
+          # Sanity check — the first byte of a real mlpackage Manifest.json
+          # is `{`. If LFS is still pointer-only we'll see `v` (from
+          # "version https://...") and this step fails fast with a clear
+          # message instead of failing opaquely at coremlc.
+          head -c 1 WardrobeReDo/ML/AttributeClassifier.mlpackage/Manifest.json \
+            | grep -q '{' \
+            || { echo "::error::Git LFS did not resolve mlpackage files (still a pointer)"; exit 1; }
+
+      - name: Show build environment
+        # Self-hosted runner: whatever `xcode-select -p` already points
+        # at is what we build against. The maintainer keeps Xcode current
+        # locally, so we don't need to hard-pin a path (as we did for
+        # macos-15, which shipped Xcode 16 at /Applications/Xcode_16.app).
+        run: |
+          xcodebuild -version
+          swift --version
+          echo "--- booted/available simulators (iPhone 1[5-9]) ---"
+          xcrun simctl list devices available | grep -E 'iPhone 1[5-9]' | head -10 || true
+
+      - name: Write stub Secrets.plist
+        # `Secrets.plist` is gitignored (carries real Supabase creds locally)
+        # but is declared as a bundle resource in the Xcode project, so the
+        # build fails if it's missing. Stub values are fine for a build +
+        # unit-test run — no test exercises the network against Supabase.
+        run: |
+          /usr/libexec/PlistBuddy -c "Clear dict" \
+            -c "Add :SUPABASE_URL string https://stub.supabase.co" \
+            -c "Add :SUPABASE_ANON_KEY string ci-stub-anon-key" \
+            WardrobeReDo/Secrets.plist
+
+      - name: Cache SwiftPM artifacts
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: |
+            ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved', '**/*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Build for testing
+        run: |
+          set -o pipefail
+          xcodebuild build-for-testing \
+            -scheme "$SCHEME" \
+            -sdk iphonesimulator \
+            -destination "$DESTINATION" \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Test
+        run: |
+          set -o pipefail
+          xcodebuild test-without-building \
+            -scheme "$SCHEME" \
+            -sdk iphonesimulator \
+            -destination "$DESTINATION" \
+            -derivedDataPath build \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload test result bundle on failure
+        if: failure()
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: TestResults-${{ github.run_id }}
+          path: TestResults.xcresult
+          retention-days: 7

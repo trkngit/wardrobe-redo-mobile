@@ -1,5 +1,8 @@
 import Foundation
-import UserNotifications
+// `UNNotificationSettings` isn't Sendable under Xcode 16's Swift 6
+// checker even though it's effectively immutable. Later Xcodes soften
+// this to a warning; `@preconcurrency` keeps both toolchains happy.
+@preconcurrency import UserNotifications
 
 /// Manages daily local notifications ("Your outfits are ready").
 /// Stores enabled state in UserDefaults.

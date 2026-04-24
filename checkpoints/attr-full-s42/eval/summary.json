@@ -1,0 +1,25 @@
+{
+  "checkpoint": "checkpoints/attr-full-s42/attr_best.pth",
+  "split": "val",
+  "num_samples": 1206,
+  "top1": 0.5414593698175788,
+  "macro_f1": 0.4462663939036844,
+  "high_conf": {
+    "threshold": 0.8,
+    "count": 2,
+    "realized_acc": 1.0
+  },
+  "labels": [
+    "oversized",
+    "relaxed",
+    "regular",
+    "slim",
+    "cropped"
+  ],
+  "calibration_bins": 20,
+  "artifacts": {
+    "confusion_matrix": "checkpoints/attr-full-s42/eval/confusion_matrix.png",
+    "calibration": "checkpoints/attr-full-s42/eval/calibration.png",
+    "per_class": "checkpoints/attr-full-s42/eval/per_class.json"
+  }
+}

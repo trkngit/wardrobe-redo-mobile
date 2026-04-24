@@ -1,5 +1,12 @@
 import Foundation
 import Supabase
+// PostgREST is imported transitively via `Supabase`. Xcode 16's Swift 6
+// toolchain flags its response types as non-Sendable when they cross the
+// main-actor boundary from inside this `@MainActor` repository. Later
+// Xcode releases relax this; `@preconcurrency` keeps the same source
+// building on both without us having to wait for the SDK to fully audit
+// its Sendable surface.
+@preconcurrency import PostgREST
 
 @MainActor
 final class UserRepository {

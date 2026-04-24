@@ -2,56 +2,170 @@ import UIKit
 import PhotosUI
 import SwiftUI
 import Supabase
+import os.log
 
 struct ProcessedImage: Sendable {
     let originalData: Data
     let thumbnailData: Data
+    /// Background-masked version as PNG (preserves alpha). Nil when
+    /// extraction failed — the UI falls back to `originalData` and the
+    /// row is treated as "legacy unmasked."
+    let maskedData: Data?
+    /// Synthetic confidence bucket for the extraction attempt. Nil
+    /// when extraction was skipped (e.g. simulator build).
+    let extractionConfidence: ExtractionConfidence?
+    /// Which pipeline stage produced the final mask. Drives UI affordances
+    /// (e.g. the "auto-cropped" badge in `MaskTouchupView`) and is logged
+    /// for benchmarking. Nil when extraction was skipped.
+    let extractionMethod: ExtractionMethod?
     let dominantColors: [ExtractedColor]
+    /// Multi-garment proposals detected in this photo, if the
+    /// `FeatureFlags.isMultiGarmentEnabled` gate was on and the Core ML
+    /// model produced any. Nil → detection skipped or failed; `count <=
+    /// 1` → downstream `AddItemViewModel` falls through to the existing
+    /// single-item `TapToSelectView`. `count >= 2` → present the
+    /// `MultiGarmentTapToSelectView` and queue per-item details.
+    let proposals: [MaskProposal]?
+
+    init(
+        originalData: Data,
+        thumbnailData: Data,
+        maskedData: Data?,
+        extractionConfidence: ExtractionConfidence?,
+        extractionMethod: ExtractionMethod?,
+        dominantColors: [ExtractedColor],
+        proposals: [MaskProposal]? = nil
+    ) {
+        self.originalData = originalData
+        self.thumbnailData = thumbnailData
+        self.maskedData = maskedData
+        self.extractionConfidence = extractionConfidence
+        self.extractionMethod = extractionMethod
+        self.dominantColors = dominantColors
+        self.proposals = proposals
+    }
 }
 
 @MainActor
 final class ImageService: ImageServiceProtocol {
     private let supabase = SupabaseManager.shared.client
     private let colorExtractor = ColorExtractionService()
+    private let clothingExtractor: any ClothingExtracting
+    private let multiGarmentExtractor: any MultiGarmentExtracting
+    private let logger = Logger(subsystem: "com.wardroberedo", category: "ImageService")
 
     private let maxOriginalDimension: CGFloat = 1200
     private let thumbnailDimension: CGFloat = 400
     private let compressionQuality: CGFloat = 0.8
 
+    init(
+        clothingExtractor: any ClothingExtracting = ClothingExtractionService(),
+        multiGarmentExtractor: any MultiGarmentExtracting = MultiGarmentProposalService()
+    ) {
+        self.clothingExtractor = clothingExtractor
+        self.multiGarmentExtractor = multiGarmentExtractor
+    }
+
     // MARK: - Process Image
 
-    /// Resize image, extract colors, prepare for upload.
+    /// Run background extraction, resize original + thumbnail, extract
+    /// colors from the masked image, prepare for upload.
+    ///
+    /// Color extraction runs on the MASKED image (or the original if
+    /// extraction failed) so the wardrobe palette reflects the clothing
+    /// itself, not the floor / wall / mirror behind it.
     func processImage(_ image: UIImage) async -> ProcessedImage? {
-        guard let originalResized = resize(image, maxDimension: maxOriginalDimension),
-              let thumbnailResized = resize(image, maxDimension: thumbnailDimension),
+        // Run the single-mask path and the multi-garment path in
+        // parallel. The single path is the hard requirement — its result
+        // always drives the "did extraction succeed" decisions below.
+        // Multi-garment is strictly additive; when it's disabled or the
+        // model is missing we still ship a perfectly good ProcessedImage
+        // with proposals=nil.
+        async let extractionTask = clothingExtractor.extract(image)
+        async let proposalsTask: [MaskProposal]? = detectProposalsIfEnabled(for: image)
+
+        let extraction = await extractionTask
+        let proposals = await proposalsTask
+
+        guard let originalResized = resize(extraction.originalImage, maxDimension: maxOriginalDimension),
+              let thumbnailResized = resize(extraction.originalImage, maxDimension: thumbnailDimension),
               let originalData = originalResized.jpegData(compressionQuality: compressionQuality),
               let thumbnailData = thumbnailResized.jpegData(compressionQuality: compressionQuality)
         else { return nil }
 
-        let colors = await colorExtractor.extractColors(from: image)
+        // Masked version goes to storage only when extraction succeeded
+        // (method != .none). PNG keeps the alpha channel so future UI
+        // improvements can render the clothing on a clean background.
+        let maskedData: Data?
+        if extraction.method != .none,
+           let maskedResized = resize(extraction.maskedImage, maxDimension: maxOriginalDimension) {
+            maskedData = maskedResized.pngData()
+        } else {
+            maskedData = nil
+        }
+
+        let colors = await colorExtractor.extractColors(from: extraction.maskedImage)
 
         return ProcessedImage(
             originalData: originalData,
             thumbnailData: thumbnailData,
-            dominantColors: colors
+            maskedData: maskedData,
+            extractionConfidence: extraction.confidence,
+            extractionMethod: extraction.method,
+            dominantColors: colors,
+            proposals: proposals
         )
+    }
+
+    /// Feature-flagged multi-garment proposal detection. Returns nil
+    /// when the flag is off, when the model isn't bundled yet, or when
+    /// inference threw — callers always see a valid ProcessedImage and
+    /// simply fall through to the single-item flow.
+    private func detectProposalsIfEnabled(for image: UIImage) async -> [MaskProposal]? {
+        guard FeatureFlags.isMultiGarmentEnabled else { return nil }
+        do {
+            let proposals = try await multiGarmentExtractor.detectProposals(in: image)
+            // Require at least 2 proposals to trigger multi-pick UX —
+            // single-proposal outputs fall through to the existing
+            // single-item flow so users don't get a one-item "batch."
+            return proposals.count >= 2 ? proposals : nil
+        } catch {
+            logger.error("multi-garment detection failed: \(error.localizedDescription, privacy: .public)")
+            return nil
+        }
     }
 
     // MARK: - Upload to Supabase Storage
 
-    /// Upload original + thumbnail to Supabase Storage. Returns (imagePath, thumbnailPath).
+    /// Upload original, thumbnail, and (when extraction succeeded) the
+    /// masked PNG to Supabase Storage. Returns the four paths — the
+    /// masked path is nil when we didn't produce a masked image, and the
+    /// source path is nil for single-item captures (`sourcePhotoId ==
+    /// nil`) or echoed back unchanged when the caller passed an
+    /// `existingSourcePhotoPath`.
+    ///
+    /// The source-photo upload reuses `processed.originalData`: the
+    /// unmasked JPEG we already resized for the per-item `image_path`
+    /// also doubles as the unmasked "source of truth" for every garment
+    /// row extracted from the same capture. So this costs one extra
+    /// Storage write on the *first* save per capture, and zero writes on
+    /// garments 2..N.
     func upload(
         processed: ProcessedImage,
         userId: UUID,
-        itemId: UUID
-    ) async throws -> (imagePath: String, thumbnailPath: String) {
+        itemId: UUID,
+        sourcePhotoId: UUID?,
+        existingSourcePhotoPath: String?
+    ) async throws -> (imagePath: String, thumbnailPath: String, maskedImagePath: String?, sourcePhotoPath: String?) {
         // Lowercase to match Postgres auth.uid()::text in the storage RLS policy.
         // Swift's UUID.uuidString returns uppercase; the policy comparison
         // `auth.uid()::text = (storage.foldername(name))[1]` is case-sensitive,
         // so uppercase folder names get rejected as RLS violations.
-        let basePath = "\(userId.uuidString.lowercased())/\(itemId.uuidString.lowercased())"
+        let userFolder = userId.uuidString.lowercased()
+        let basePath = "\(userFolder)/\(itemId.uuidString.lowercased())"
         let imagePath = "\(basePath)/original.jpg"
         let thumbnailPath = "\(basePath)/thumb.jpg"
+        let maskedPath = "\(basePath)/masked.png"
 
         try await supabase.storage
             .from("wardrobe-images")
@@ -69,7 +183,45 @@ final class ImageService: ImageServiceProtocol {
                 options: FileOptions(contentType: "image/jpeg")
             )
 
-        return (imagePath, thumbnailPath)
+        let uploadedMaskedPath: String?
+        if let maskedData = processed.maskedData {
+            try await supabase.storage
+                .from("wardrobe-images")
+                .upload(
+                    maskedPath,
+                    data: maskedData,
+                    options: FileOptions(contentType: "image/png")
+                )
+            uploadedMaskedPath = maskedPath
+        } else {
+            uploadedMaskedPath = nil
+        }
+
+        // Source-photo upload. Only runs when the caller is participating
+        // in the multi-garment loop (non-nil sourcePhotoId) AND this is the
+        // first save of that capture (no existingSourcePhotoPath). On
+        // garments 2..N we echo the same path back so the NewWardrobeItem
+        // row still gets populated but no extra Storage write fires.
+        let resolvedSourcePath: String?
+        if let sourcePhotoId {
+            if let existing = existingSourcePhotoPath {
+                resolvedSourcePath = existing
+            } else {
+                let sourcePath = "\(userFolder)/source/\(sourcePhotoId.uuidString.lowercased())/original.jpg"
+                try await supabase.storage
+                    .from("wardrobe-images")
+                    .upload(
+                        sourcePath,
+                        data: processed.originalData,
+                        options: FileOptions(contentType: "image/jpeg")
+                    )
+                resolvedSourcePath = sourcePath
+            }
+        } else {
+            resolvedSourcePath = nil
+        }
+
+        return (imagePath, thumbnailPath, uploadedMaskedPath, resolvedSourcePath)
     }
 
     /// Get a signed URL for an image in storage.
@@ -79,11 +231,41 @@ final class ImageService: ImageServiceProtocol {
             .createSignedURL(path: path, expiresIn: expiresIn)
     }
 
+    /// Re-encode a user-edited mask on top of an already-processed image
+    /// and re-run color extraction. Leaves `originalData` + `thumbnailData`
+    /// untouched — only the masked PNG and the color palette change.
+    /// Called by `AddItemViewModel.onTouchupDone(_:)` after the user
+    /// finishes brushing in `MaskTouchupView`.
+    func updateMasked(
+        processed: ProcessedImage,
+        editedMask: UIImage
+    ) async -> ProcessedImage? {
+        guard let resized = resize(editedMask, maxDimension: maxOriginalDimension),
+              let data = resized.pngData()
+        else { return nil }
+        let colors = await colorExtractor.extractColors(from: editedMask)
+        return ProcessedImage(
+            originalData: processed.originalData,
+            thumbnailData: processed.thumbnailData,
+            maskedData: data,
+            extractionConfidence: processed.extractionConfidence,
+            extractionMethod: processed.extractionMethod,
+            dominantColors: colors,
+            proposals: processed.proposals
+        )
+    }
+
     /// Delete images for an item from storage using the stored paths.
-    func deleteImages(imagePath: String, thumbnailPath: String) async throws {
+    /// `maskedImagePath` is optional — pre-migration-00007 rows don't have
+    /// a masked file, so nothing to clean up for them.
+    func deleteImages(imagePath: String, thumbnailPath: String, maskedImagePath: String?) async throws {
+        var paths = [imagePath, thumbnailPath]
+        if let maskedImagePath {
+            paths.append(maskedImagePath)
+        }
         _ = try await supabase.storage
             .from("wardrobe-images")
-            .remove(paths: [imagePath, thumbnailPath])
+            .remove(paths: paths)
     }
 
     // MARK: - Resize

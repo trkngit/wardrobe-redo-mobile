@@ -25,51 +25,67 @@ struct ExtractedColor: Sendable {
 
 final class ColorExtractionService: Sendable {
 
-    /// Extract dominant colors from a UIImage using k-means clustering on downsampled pixels.
+    /// Extract dominant colors from a UIImage using k-means clustering
+    /// on downsampled pixels.
+    ///
+    /// When the image carries an alpha channel (e.g. the masked output
+    /// of `ClothingExtractionService`), pixels with alpha < 128 are
+    /// treated as background and skipped — the palette is sampled only
+    /// from the clothing region. Regular JPEG input (no alpha or alpha
+    /// = 255 everywhere) behaves identically to the pre-Phase-1 version.
     func extractColors(from image: UIImage, maxColors: Int = 5) async -> [ExtractedColor] {
         guard let cgImage = image.cgImage else { return [] }
 
-        // Downsample to 50x50 for performance
+        // Downsample to 50x50 for performance, into a known RGBA8
+        // premultiplied-last buffer so pixel offsets are predictable
+        // regardless of the input image's native format.
         let sampleSize = 50
-        let context = CIContext()
-        let ciImage = CIImage(cgImage: cgImage)
+        guard let buffer = downsampleToRGBA(
+            cgImage: cgImage,
+            width: sampleSize,
+            height: sampleSize
+        ) else { return [] }
 
-        let scaleX = Double(sampleSize) / Double(cgImage.width)
-        let scaleY = Double(sampleSize) / Double(cgImage.height)
-        let scaled = ciImage.transformed(by: CGAffineTransform(scaleX: scaleX, y: scaleY))
-
-        guard let sampledCG = context.createCGImage(scaled, from: scaled.extent) else { return [] }
-
-        // Extract pixel data
-        let width = sampledCG.width
-        let height = sampledCG.height
-        let totalPixels = width * height
-
-        guard let data = sampledCG.dataProvider?.data,
-              let ptr = CFDataGetBytePtr(data) else { return [] }
-
-        let bytesPerPixel = sampledCG.bitsPerPixel / 8
+        let totalPixels = sampleSize * sampleSize
         var pixels: [(r: Double, g: Double, b: Double)] = []
         pixels.reserveCapacity(totalPixels)
 
         for i in 0..<totalPixels {
-            let offset = i * bytesPerPixel
-            let r = Double(ptr[offset]) / 255.0
-            let g = Double(ptr[offset + 1]) / 255.0
-            let b = Double(ptr[offset + 2]) / 255.0
+            let offset = i * 4
+            let alphaByte = buffer[offset + 3]
+            // Alpha < 128 = masked-out background pixel. Skip so the
+            // k-means palette doesn't include transparent-black noise.
+            guard alphaByte >= 128 else { continue }
+
+            // Un-premultiply so clustering operates on the actual
+            // clothing colors, not alpha-scaled versions.
+            let alpha = Double(alphaByte) / 255.0
+            let rp = Double(buffer[offset]) / 255.0
+            let gp = Double(buffer[offset + 1]) / 255.0
+            let bp = Double(buffer[offset + 2]) / 255.0
+            let r = alpha > 0 ? min(rp / alpha, 1.0) : rp
+            let g = alpha > 0 ? min(gp / alpha, 1.0) : gp
+            let b = alpha > 0 ? min(bp / alpha, 1.0) : bp
             pixels.append((r, g, b))
         }
+
+        // If the mask was so aggressive that no foreground pixels
+        // remain, the color palette would be empty — surface that as
+        // an empty result rather than crash. Callers already handle
+        // zero-color results.
+        guard !pixels.isEmpty else { return [] }
 
         // K-means clustering
         let clusters = kMeans(pixels: pixels, k: maxColors, maxIterations: 20)
 
         // Sort by coverage (largest cluster first)
         let sorted = clusters.sorted { $0.count > $1.count }
+        let sampledCount = pixels.count
 
         return sorted.map { cluster in
             let (h, s, l) = rgbToHSL(r: cluster.center.r, g: cluster.center.g, b: cluster.center.b)
             let hex = rgbToHex(r: cluster.center.r, g: cluster.center.g, b: cluster.center.b)
-            let percentage = (Double(cluster.count) / Double(totalPixels)) * 100.0
+            let percentage = (Double(cluster.count) / Double(sampledCount)) * 100.0
             let family = colorFamily(hue: h, saturation: s, lightness: l)
             let neutral = isNeutral(saturation: s, lightness: l)
 
@@ -83,6 +99,39 @@ final class ColorExtractionService: Sendable {
                 isNeutral: neutral
             )
         }
+    }
+
+    // MARK: - Pixel Downsampling
+
+    /// Draw `cgImage` into a fresh RGBA8 premultiplied-last bitmap at
+    /// the requested size and return the raw byte buffer. Returns nil
+    /// if the CGContext couldn't be created. Result length is always
+    /// `width * height * 4` bytes.
+    private func downsampleToRGBA(
+        cgImage: CGImage,
+        width: Int,
+        height: Int
+    ) -> [UInt8]? {
+        let bytesPerRow = width * 4
+        var pixelData = [UInt8](repeating: 0, count: width * height * 4)
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue
+        let context = pixelData.withUnsafeMutableBytes { buffer -> CGContext? in
+            guard let base = buffer.baseAddress else { return nil }
+            return CGContext(
+                data: base,
+                width: width,
+                height: height,
+                bitsPerComponent: 8,
+                bytesPerRow: bytesPerRow,
+                space: colorSpace,
+                bitmapInfo: bitmapInfo
+            )
+        }
+        guard let context else { return nil }
+        context.interpolationQuality = .medium
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+        return pixelData
     }
 
     // MARK: - K-Means

@@ -197,7 +197,11 @@ final class OutfitGenerationService: @unchecked Sendable {
                 date: dateString,
                 score: candidate.score.totalScore,
                 scoreBreakdown: candidate.score.toScoreBreakdown(),
-                isWorn: false
+                isWorn: false,
+                // Idempotency key dedupes this insert if the retry path
+                // kicks in after a lost-response network timeout. See
+                // migration 00010.
+                idempotencyKey: UUID()
             )
 
             let newSlots = candidate.slots.map { assignment in

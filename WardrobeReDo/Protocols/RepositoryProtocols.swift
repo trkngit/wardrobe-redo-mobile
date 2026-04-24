@@ -13,6 +13,11 @@ protocol WardrobeRepositoryProtocol: Sendable {
     func archiveItem(id: UUID) async throws
     func deleteItem(id: UUID) async throws
     func insertItem(_ item: NewWardrobeItem) async throws -> WardrobeItem
+    /// Updates a row with the set of `WardrobeItemUpdate` columns the
+    /// caller chose to pass (nils are treated as "don't touch"). Returns
+    /// the updated row so VMs can re-drive UI from the server's view
+    /// rather than assume local state is authoritative.
+    func updateItem(id: UUID, updates: WardrobeItemUpdate) async throws -> WardrobeItem
 }
 
 extension WardrobeRepositoryProtocol {
@@ -39,17 +44,65 @@ extension OutfitRepositoryProtocol {
 }
 
 /// ImageService interface for ViewModels.
+///
+/// `upload` returns four storage paths. `maskedImagePath` is nil when
+/// background extraction was skipped (simulator / legacy path) — callers
+/// must handle that case and pass nil through to `NewWardrobeItem`.
+/// `sourcePhotoPath` is populated iff the caller supplied a
+/// `sourcePhotoId` (i.e. a multi-garment capture). See migration 00008
+/// for the provenance column the path backs.
 @MainActor
 protocol ImageServiceProtocol: Sendable {
     func signedURL(for path: String, expiresIn: Int) async throws -> URL
-    func deleteImages(imagePath: String, thumbnailPath: String) async throws
-    func upload(processed: ProcessedImage, userId: UUID, itemId: UUID) async throws -> (imagePath: String, thumbnailPath: String)
+    func deleteImages(imagePath: String, thumbnailPath: String, maskedImagePath: String?) async throws
+    /// Upload the per-item artifacts (original + thumbnail + optional
+    /// masked PNG). When `sourcePhotoId` is non-nil, also uploads the
+    /// unmasked original to `{userId}/source/{sourcePhotoId}/original.jpg`
+    /// on the *first* call for that capture; subsequent calls pass the
+    /// previously-returned path back via `existingSourcePhotoPath` so
+    /// storage usage stays proportional to *captures*, not garments.
+    func upload(
+        processed: ProcessedImage,
+        userId: UUID,
+        itemId: UUID,
+        sourcePhotoId: UUID?,
+        existingSourcePhotoPath: String?
+    ) async throws -> (imagePath: String, thumbnailPath: String, maskedImagePath: String?, sourcePhotoPath: String?)
     func processImage(_ image: UIImage) async -> ProcessedImage?
     func loadImage(from item: PhotosPickerItem) async -> UIImage?
+    /// Apply a user-edited mask on top of an already-processed image and
+    /// re-run color extraction. Used by the MaskTouchupView flow to fold
+    /// brush strokes into the saved palette without re-running Vision.
+    func updateMasked(processed: ProcessedImage, editedMask: UIImage) async -> ProcessedImage?
 }
 
 extension ImageServiceProtocol {
     func signedURL(for path: String) async throws -> URL {
         try await signedURL(for: path, expiresIn: 3600)
+    }
+
+    /// Convenience shim for call sites that don't have a masked path
+    /// (e.g. archiving a legacy item whose row predates migration 00007).
+    func deleteImages(imagePath: String, thumbnailPath: String) async throws {
+        try await deleteImages(imagePath: imagePath, thumbnailPath: thumbnailPath, maskedImagePath: nil)
+    }
+
+    /// Back-compat shim for single-item capture callers. Skips the
+    /// source-photo upload entirely and returns the 3-tuple the pre-00008
+    /// API used. New code in the multi-garment loop calls the 5-arg
+    /// version directly.
+    func upload(
+        processed: ProcessedImage,
+        userId: UUID,
+        itemId: UUID
+    ) async throws -> (imagePath: String, thumbnailPath: String, maskedImagePath: String?) {
+        let paths = try await upload(
+            processed: processed,
+            userId: userId,
+            itemId: itemId,
+            sourcePhotoId: nil,
+            existingSourcePhotoPath: nil
+        )
+        return (paths.imagePath, paths.thumbnailPath, paths.maskedImagePath)
     }
 }

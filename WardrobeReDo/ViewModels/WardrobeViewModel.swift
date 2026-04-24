@@ -80,9 +80,15 @@ final class WardrobeViewModel {
             try await wardrobeRepository.deleteItem(id: item.id)
             items.removeAll { $0.id == item.id }
 
-            // Best-effort image cleanup — don't fail the delete if this errors
+            // Best-effort image cleanup — don't fail the delete if this errors.
+            // Masked path is nil on legacy (pre-00007) rows; the protocol
+            // overload treats nil as "nothing to clean up here."
             do {
-                try await imageService.deleteImages(imagePath: item.imagePath, thumbnailPath: item.thumbnailPath)
+                try await imageService.deleteImages(
+                    imagePath: item.imagePath,
+                    thumbnailPath: item.thumbnailPath,
+                    maskedImagePath: item.maskedImagePath
+                )
             } catch {
                 // Storage leak is acceptable; item is already deleted from DB
                 errorMessage = "Item deleted, but image cleanup failed."
