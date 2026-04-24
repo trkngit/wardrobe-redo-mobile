@@ -8,6 +8,107 @@
 > doc so the dogfooder isn't building the report skeleton at the same
 > time as judging the model. The structure here is fixed; only the values
 > are TBD.
+>
+> **Two audiences, two shapes.** The Daily Journal below is the live
+> running log kept during the week — terse, in-the-moment notes. The
+> aggregate tables further down are the final rollup filled in once at
+> the end of the window so the decision gate (§ Decision) has hard
+> numbers, not vibes.
+
+---
+
+## Daily Journal (7-day window)
+
+> Fill in at the end of each day in the dogfood window. Short is fine —
+> one or two lines per row. Anything a stranger reading this a month
+> later would need to reconstruct the day.
+
+Populate these as the run progresses. Keep each day's row under ~8
+lines of notes. Promote anything chronic (crash, same correction 3 days
+running, perf regression) into the § Rule-table iteration log or a new
+issue before the aggregate rollup.
+
+### Day 1 — YYYY-MM-DD
+
+- **Build / flags**: git sha = `TBD`; `isAttributeDetectionEnabled` = `TBD`; `isMLTelemetryEnabled` = `TBD`.
+- **Photos added**: `TBD` (list categories, e.g. "2 tops flat lay, 1 dress, 1 outerwear").
+- **Pre-fill fire rate (qualitative)**: `TBD` — did it surface on most adds, some, or almost never?
+- **Corrections made**: `TBD` — which fields did you retype (category / subcategory / fit / seasons / occasions)?
+- **Bugs / crashes**: `TBD` — if any, dump the Report-issue share output here.
+- **Perf**: `TBD` — any visible lag during the Add flow? Rough ms if the ML Diagnostics screen shows it.
+- **Notes**: `TBD` — anything surprising, annoying, or delightful.
+
+### Day 2 — YYYY-MM-DD
+
+- **Build / flags**: `TBD`.
+- **Photos added**: `TBD`.
+- **Pre-fill fire rate (qualitative)**: `TBD`.
+- **Corrections made**: `TBD`.
+- **Bugs / crashes**: `TBD`.
+- **Perf**: `TBD`.
+- **Notes**: `TBD`.
+
+### Day 3 — YYYY-MM-DD
+
+- **Build / flags**: `TBD`.
+- **Photos added**: `TBD`.
+- **Pre-fill fire rate (qualitative)**: `TBD`.
+- **Corrections made**: `TBD`.
+- **Bugs / crashes**: `TBD`.
+- **Perf**: `TBD`.
+- **Notes**: `TBD`.
+
+### Day 4 — YYYY-MM-DD
+
+- **Build / flags**: `TBD`.
+- **Photos added**: `TBD`.
+- **Pre-fill fire rate (qualitative)**: `TBD`.
+- **Corrections made**: `TBD`.
+- **Bugs / crashes**: `TBD`.
+- **Perf**: `TBD`.
+- **Notes**: `TBD`.
+
+### Day 5 — YYYY-MM-DD
+
+- **Build / flags**: `TBD`.
+- **Photos added**: `TBD`.
+- **Pre-fill fire rate (qualitative)**: `TBD`.
+- **Corrections made**: `TBD`.
+- **Bugs / crashes**: `TBD`.
+- **Perf**: `TBD`.
+- **Notes**: `TBD`.
+
+### Day 6 — YYYY-MM-DD
+
+- **Build / flags**: `TBD`.
+- **Photos added**: `TBD`.
+- **Pre-fill fire rate (qualitative)**: `TBD`.
+- **Corrections made**: `TBD`.
+- **Bugs / crashes**: `TBD`.
+- **Perf**: `TBD`.
+- **Notes**: `TBD`.
+
+### Day 7 — YYYY-MM-DD
+
+- **Build / flags**: `TBD`.
+- **Photos added**: `TBD`.
+- **Pre-fill fire rate (qualitative)**: `TBD`.
+- **Corrections made**: `TBD`.
+- **Bugs / crashes**: `TBD`.
+- **Perf**: `TBD`.
+- **Notes**: `TBD`.
+
+### End-of-week reflection
+
+- **Cumulative photo count**: `TBD` (target 50 by end of week — fewer is fine, more is welcome).
+- **Top 3 wins**: `TBD`.
+- **Top 3 pain points**: `TBD`.
+- **Decision to flip `isAttributeDetectionEnabled` in prod**: `TBD` — pending aggregate tables below.
+
+After writing the end-of-week reflection, populate the aggregate tables
+below (Per-field acceptance summary, Calibration sanity, etc.) from the
+`detected_attributes` JSONB column + `ml_inference_telemetry` table. The
+journal captures signal; the aggregate rolls it up for the gate.
 
 ---
 

@@ -64,6 +64,33 @@ enum SentryService {
         #endif
     }
 
+    /// Fire a non-fatal `message`-level event through Sentry as a smoke
+    /// test. Used by the DEBUG Developer menu to verify crash-reporting
+    /// plumbing end-to-end — per the Tier A1 verification criteria
+    /// ("trigger a caught event in DEBUG dev menu → event appears in
+    /// Sentry dashboard within 60 s").
+    ///
+    /// Safe to call whether or not Sentry was initialized. Returns `true`
+    /// if an event was submitted, `false` if the SDK is disabled (missing
+    /// DSN, or module unavailable at compile time). Caller can surface
+    /// that to the dev so they know to provision the DSN before expecting
+    /// dashboard activity.
+    @discardableResult
+    static func captureSmokeEvent(note: String = "manual smoke") -> Bool {
+        #if canImport(Sentry)
+        guard SentrySDK.isEnabled else {
+            log.info("Sentry smoke requested but SDK is disabled (no DSN?)")
+            return false
+        }
+        SentrySDK.capture(message: "wardroberedo dev-menu smoke — \(note)")
+        log.info("Sentry smoke event fired (note=\(note, privacy: .public))")
+        return true
+        #else
+        log.info("Sentry smoke requested but module unavailable at compile time")
+        return false
+        #endif
+    }
+
     // MARK: - Private
 
     /// Read `SENTRY_DSN` from the same `Secrets.plist` Supabase uses.
