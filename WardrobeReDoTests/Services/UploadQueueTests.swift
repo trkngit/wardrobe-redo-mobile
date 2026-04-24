@@ -92,6 +92,8 @@ struct UploadQueueTests {
     // MARK: - Happy path
 
     @Test func successfulDrainRemovesEnvelope() async throws {
+        await UploadQueueTestIsolation.shared.acquire()
+        defer { Task { await UploadQueueTestIsolation.shared.release() } }
         await resetQueue()
         let queue = UploadQueue.shared
         let counter = InvocationCounter()
@@ -114,6 +116,8 @@ struct UploadQueueTests {
     // MARK: - Retryable failure
 
     @Test func retryableFailureKeepsEnvelopeForNextDrain() async throws {
+        await UploadQueueTestIsolation.shared.acquire()
+        defer { Task { await UploadQueueTestIsolation.shared.release() } }
         await resetQueue()
         let queue = UploadQueue.shared
 
@@ -133,6 +137,8 @@ struct UploadQueueTests {
     // MARK: - Drop after max attempts
 
     @Test func envelopeIsDroppedAfterMaxAttempts() async throws {
+        await UploadQueueTestIsolation.shared.acquire()
+        defer { Task { await UploadQueueTestIsolation.shared.release() } }
         await resetQueue()
         let queue = UploadQueue.shared
 
@@ -157,6 +163,8 @@ struct UploadQueueTests {
     // MARK: - Non-retryable stops cycle
 
     @Test func nonRetryableErrorStopsCycleAndPreservesLaterEnvelopes() async throws {
+        await UploadQueueTestIsolation.shared.acquire()
+        defer { Task { await UploadQueueTestIsolation.shared.release() } }
         await resetQueue()
         let queue = UploadQueue.shared
 
@@ -179,6 +187,8 @@ struct UploadQueueTests {
     // MARK: - No handler wired
 
     @Test func enqueueWithoutHandlerPersistsEnvelope() async throws {
+        await UploadQueueTestIsolation.shared.acquire()
+        defer { Task { await UploadQueueTestIsolation.shared.release() } }
         await resetQueue()
         // Detach by setting a never-succeeding handler would count as
         // "wired" — we instead clear + re-seed with nil via a fresh
@@ -205,6 +215,8 @@ struct UploadQueueTests {
     // MARK: - Payload round-trip
 
     @Test func payloadRoundTripsThroughEnvelope() async throws {
+        await UploadQueueTestIsolation.shared.acquire()
+        defer { Task { await UploadQueueTestIsolation.shared.release() } }
         await resetQueue()
         let queue = UploadQueue.shared
         let sink = EnvelopeSink()
@@ -231,6 +243,8 @@ struct UploadQueueTests {
     // MARK: - Sequential idempotency
 
     @Test func sequentialDrainsHandleEnvelopeOnce() async throws {
+        await UploadQueueTestIsolation.shared.acquire()
+        defer { Task { await UploadQueueTestIsolation.shared.release() } }
         await resetQueue()
         let queue = UploadQueue.shared
         let counter = InvocationCounter()
@@ -258,6 +272,8 @@ struct UploadQueueTests {
     // MARK: - Parallel drains
 
     @Test func parallelDrainsConvergeToEmptyQueue() async throws {
+        await UploadQueueTestIsolation.shared.acquire()
+        defer { Task { await UploadQueueTestIsolation.shared.release() } }
         await resetQueue()
         let queue = UploadQueue.shared
 
