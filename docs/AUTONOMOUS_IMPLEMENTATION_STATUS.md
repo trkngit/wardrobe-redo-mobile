@@ -2,9 +2,10 @@
 
 > Running plan: [AUTONOMOUS_IMPLEMENTATION_PLAN.md](./AUTONOMOUS_IMPLEMENTATION_PLAN.md). Updated after every commit.
 
-**Current phase:** 9 — Merge prep
-**Last commit:** `53ce16d` — feat(dev): add dogfood plumbing to Developer menu
-**Branch:** `feature/photo-extraction-engine`
+**Current phase:** 9 — Merge prep (complete)
+**Last commit:** `5884c21` — docs: add PR body draft for v1 resilience + ML + dogfood PR
+**Branch:** `feature/photo-extraction-engine` (pushed to origin)
+**PR:** [#1](https://github.com/trkngit/wardrobe-redo-mobile/pull/1) — body updated with full Phase 0-8 scope
 **Session started:** 2026-04-24
 
 ---
@@ -92,4 +93,25 @@ _(none)_
 
 ## Session summary
 
-_(written at end of session)_
+- **Commits:** 15 on this autonomous session (Phase 0 setup → Phase 9 PR update), plus 75 pre-existing commits already on the branch from the multi-garment + attribute-training arc. Branch total: 91 commits ahead of `origin/main`.
+- **Phases done:** 9 / 9. Phases 0 (hygiene), 1 (Sentry), 2 (RetryPolicy + LocalCache), 3 (UploadQueue + idempotency), 4 (ML telemetry), 5 (Edit Item form), 6 (seed script), 7 (integration tests), 8 (dogfood plumbing), 9 (PR body + push).
+- **Build state:** green. `xcodebuild build -scheme WardrobeReDo -sdk iphonesimulator` ends with `** BUILD SUCCEEDED **`.
+- **Test state:** 598 / 598 green. 595 unit tests across 18 suites + 3 integration tests (`GoldenPathTests`) in 1 suite. Unit suite runs in ~23 s on iPhone 17 Pro sim; integration suite under 10 ms.
+- **PR status:** [#1](https://github.com/trkngit/wardrobe-redo-mobile/pull/1) title + body updated to cover all 91 commits. The PR is currently `isDraft: false` (was set to ready-for-review before the autonomous session began; not flipped back to draft without user input — see "Next action" below).
+
+### Deferred work with precise resume paths
+
+Each item is in the "Deferred to v1.1" section above with context. Quick summary:
+
+| Deferral | What the user needs to do |
+|---|---|
+| `supabase db push` for migrations 00010, 00011 | `cd supabase && supabase db push` against the prod project |
+| `SENTRY_DSN` provisioning | Create Sentry project, add `SENTRY_DSN` key to `Secrets.plist` |
+| Attempt-3 classifier retrain | Export RunPod API key, run `scripts/autonomous_attr_train.sh --focal-gamma 1 --label-smoothing 0.0` (~45 min, ~$0.20) |
+| Full Supabase seed run | Export `SUPABASE_SERVICE_ROLE_KEY`, run `python3 scripts/seed_supabase.py` (once per environment) |
+| TestFlight distribution | Apple Developer Portal setup, then Xcode Organizer upload |
+| Live Supabase integration tests | Create a `supabase db branch`, thread credentials into `WardrobeReDoIntegrationTests` |
+
+### Next action for user
+
+**Review PR [#1](https://github.com/trkngit/wardrobe-redo-mobile/pull/1) and decide merge timing.** The PR is in ready-for-review state because it was already marked ready before the autonomous session began — if you want it back in draft while you read through the newer phases, run `gh pr ready --undo 1`. If you're good to merge as-is, `gh pr merge 1 --squash` with the updated title as the squash-commit subject is the clean path. After merge, run the two `supabase db push` migrations + provision `SENTRY_DSN` to light up the crash reporting and telemetry pipelines that shipped in this PR.
