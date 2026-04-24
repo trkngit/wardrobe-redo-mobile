@@ -80,3 +80,17 @@ rf-detr-seg-small.pt
 # fp16 mlpackage is the un-palettized debug variant — 122MB, not shipped.
 # The production (palettized) RFDETRSegFashion.mlpackage IS committed.
 WardrobeReDo/Models/CoreML/RFDETRSegFashion_fp16.mlpackage/
+
+# Training scratch (per docs/SESSION_HANDOFF_BRIEF.md §13)
+# data/ is the Fashionpedia local mirror (~10 GB).
+# logs/ is autonomous train driver log output.
+# checkpoints/attr-smoke/ is the tiny local smoke run.
+# checkpoints/attr-full/export/ is the intermediate fp32 mlpackage; only the
+# palettized ship artifact (WardrobeReDo/ML/AttributeClassifier.mlpackage) is tracked.
+data/
+logs/
+checkpoints/attr-smoke/
+checkpoints/attr-full/export/
+
+# Claude Code ephemeral worktrees (main .claude/ settings file is handled above).
+.claude/worktrees/
