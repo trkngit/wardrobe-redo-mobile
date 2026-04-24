@@ -3,7 +3,7 @@
 > Running plan: [AUTONOMOUS_IMPLEMENTATION_PLAN.md](./AUTONOMOUS_IMPLEMENTATION_PLAN.md). Updated after every commit.
 
 **Current phase:** 5 — Edit Item form
-**Last commit:** _pending_ — feat(telemetry): add opt-in ML inference telemetry + migration 00011
+**Last commit:** `f3964bf` — feat(telemetry): add opt-in ML inference telemetry + migration 00011
 **Branch:** `feature/photo-extraction-engine`
 **Session started:** 2026-04-24
 
@@ -26,7 +26,7 @@
   - Unit tests: `UploadQueueTests` covering happy drain, retryable failure, max-attempts drop, non-retryable stop, no-handler persistence, payload round-trip, sequential idempotency, parallel convergence (8 tests green).
   - AddItemViewModel + OutfitGenerationService call sites now pass `idempotencyKey: UUID()`.
   - **Scope trimmed vs. plan:** did not refactor `AddItemViewModel.save` to route through `UploadQueue` (960-line file, multi-garment state made it 3-strike risk). Idempotency keys already cover the "retry after network timeout" case. Full offline-first capture flow deferred to v1.1.
-- [x] **Phase 4** — ML inference telemetry (commit _pending_):
+- [x] **Phase 4** — ML inference telemetry (commit `f3964bf`):
   - Migration `00011_ml_inference_telemetry.sql` creates `public.ml_inference_telemetry` with timing, label, confidence, pre-fill/correction flags. `auth.uid() = user_id` INSERT policy, no SELECT policy (service role only). `ON DELETE CASCADE` for GDPR right-to-erasure.
   - `FeatureFlags.isMLTelemetryEnabled` (default `false`, opt-in via Developer menu).
   - `MLTelemetryService` actor resolves userId via `supabase.auth.session.user.id` at upload time so call sites don't thread identity. Fire-and-forget: errors logged at `.info` and swallowed — telemetry never bubbles into user-visible surfaces.
