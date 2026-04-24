@@ -52,9 +52,14 @@ Pick any phase heading and pull the commit(s) under it for a focused review. All
 
 **Not yet pushed.** User runs `supabase db push` when ready — see deferred items below.
 
+## CI status
+
+GitHub Actions is currently blocked at the account level ("job was not started because recent account payments have failed or your spending limit needs to be increased") — the red check on run `24892885839` is a billing gate, not a test failure. The workflow itself is unchanged and was last green on this branch. Once billing is resolved, re-running the job (or pushing any commit) will execute it cleanly; `Secrets.plist` stub path (`WardrobeReDo/Secrets.plist`) matches the Xcode bundle resource reference so no code change is needed.
+
 ## Test plan
 
-- [ ] `xcodebuild test -scheme WardrobeReDo -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` → 598/598 green
+- [x] Local: `xcodebuild test -scheme WardrobeReDo -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` → 598/598 green
+- [ ] CI: `.github/workflows/ios-tests.yml` → 598/598 green (blocked on GitHub billing, see above)
 - [ ] Manual: Open Profile → Developer → toggle ML Telemetry → add a new item → verify `ml_inference_telemetry` row appears (needs migrations pushed + user opted in)
 - [ ] Manual: Profile → Developer → "Fire Sentry smoke event" → verify event in Sentry dashboard within 60 s (needs SENTRY_DSN in Secrets.plist first)
 - [ ] Manual: Profile → Developer → "Report issue (share diagnostics)" → verify bundle includes build info, flag state, last 10 inferences

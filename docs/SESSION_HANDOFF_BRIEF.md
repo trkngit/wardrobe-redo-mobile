@@ -409,7 +409,7 @@ All Python 3.11/3.12 compatible. Run via the `.venv/bin/python` from the repo ro
 | --- | --- |
 | `WardrobeReDo/App/` | `@main` entry, `AppState`, `ContentView` |
 | `WardrobeReDo/Config/FeatureFlags.swift` | `isMultiGarmentEnabled`, `isAttributeDetectionEnabled` |
-| `WardrobeReDo/Config/Secrets.plist` | Supabase URL + anon key (gitignored) |
+| `WardrobeReDo/Secrets.plist` | Supabase URL + anon key (gitignored; bundled as a resource via Xcode project) |
 | `WardrobeReDo/Services/ImageService.swift` | Pipeline entry point |
 | `WardrobeReDo/Services/Extraction/MultiGarmentProposalService.swift` | Multi-garment orchestration |
 | `WardrobeReDo/Services/Extraction/AttributeClassifierService.swift` | Fit-classifier decode (Option C) |
@@ -567,7 +567,7 @@ Deploy key handling: generate on pod (`ssh-keygen` in `/workspace/ssh-repo/`), r
 ## 12. Secrets inventory
 
 **In-repo, gitignored:**
-- `WardrobeReDo/Config/Secrets.plist` — Supabase URL + anon key. Verified in `.gitignore`.
+- `WardrobeReDo/Secrets.plist` — Supabase URL + anon key (and optional `SENTRY_DSN`). Verified in `.gitignore`; path matches the Xcode bundle resource reference and the CI stub in `.github/workflows/ios-tests.yml`.
 
 **Outside the repo:**
 - `~/.runpod/config.toml` — RunPod API key `rpa_8G...dh7t`. Never written to the repo. Passed to the pod once via `--env` at creation, available on the pod as `$RUNPOD_API_KEY`.
