@@ -663,6 +663,104 @@ private final class StubSAM2Session: SAM2Session, @unchecked Sendable {
     #expect(vm.isShowingTapToSelect == false)
 }
 
+// MARK: - UploadQueue integration (Step 9)
+
+/// Verify the retryable-vs-non-retryable fork in the save path's
+/// UploadQueue fallback. Grouped under `@Suite(.serialized)` because
+/// `UploadQueue` persists to a shared JSON file in `Library/Caches/`
+/// — two parallel tests creating their own queue instances would still
+/// step on each other's state because the on-disk file is shared. The
+/// same reason `UploadQueueTests` is serialized in the adjacent suite.
+///
+/// Cross-suite isolation relative to the other UploadQueue-touching
+/// suites happens the same way it does for `FeatureFlagsTests` +
+/// `MLTelemetryServiceTests` — the queue's disk state is cleared at the
+/// start of every test here, so the last-wins semantics resolve cleanly
+/// even when a sibling suite is mid-write.
+@Suite(.serialized)
+struct AddItemViewModelUploadQueueTests {
+
+    /// Reset the shared queue + our helper's state before each test.
+    private func freshQueue() async -> UploadQueue {
+        let queue = UploadQueue.shared
+        await queue.clear()
+        return queue
+    }
+
+    /// When `WardrobeRepository.insertItem` throws a *retryable* error —
+    /// after the repo's own in-process `withRetry` has already exhausted,
+    /// so this is the class of error that typically clears on a later
+    /// network foreground — the save path enqueues the pending insert on
+    /// the injected `UploadQueue` and reports success to the user. A later
+    /// drain (wired at app startup) replays the envelope against Supabase.
+    ///
+    /// The assertion surface:
+    ///   * `insertItemCallCount == 1` — the synchronous attempt still ran
+    ///   * `didSave == true` — UX contract: user sees a success
+    ///   * `errorMessage == nil` — no user-visible failure
+    ///   * `UploadQueue.pendingCount() == 1` — the envelope is persisted
+    ///   * `deleteImagesCallCount == 0` — images MUST NOT be orphan-cleaned
+    ///     (the background drain needs them to attach to the retried row)
+    @Test @MainActor func saveEnqueuesOnRetryableInsertFailure() async {
+        let queue = await freshQueue()
+        let mockImage = MockImageService()
+        let mockRepo = MockWardrobeRepository()
+        // Pick a URLError the top-level `isRetryableError(_:)` classifier
+        // actually accepts (see `Services/Network/RetryPolicy.swift`).
+        mockRepo.insertItemResult = .failure(URLError(.networkConnectionLost))
+
+        let vm = AddItemViewModel(
+            imageService: mockImage,
+            wardrobeRepository: mockRepo,
+            uploadQueue: queue
+        )
+        vm.processedImage = makeProcessedImage(maskedData: Data([0xAB]))
+
+        await vm.save(userId: UUID())
+
+        #expect(mockRepo.insertItemCallCount == 1, "synchronous insert still ran before falling back")
+        #expect(vm.didSave == true, "retryable failure must surface as success to the user")
+        #expect(vm.errorMessage == nil)
+        #expect(await queue.pendingCount() == 1, "envelope must be persisted for background retry")
+        #expect(mockImage.deleteImagesCallCount == 0, "orphan cleanup must NOT run — the queued retry needs the images")
+
+        // Clean up so sibling tests (and the next run) don't inherit our
+        // envelope. The shared queue is a process-wide singleton + disk
+        // file, so leaking state is a real risk.
+        await queue.clear()
+    }
+
+    /// Non-retryable insert errors (auth failures, 4xx client errors,
+    /// cancellations) must NOT be enqueued — the envelope would just churn
+    /// through its attempt budget against the same permanent failure. The
+    /// save path instead takes the original error branch: cleans up orphan
+    /// images + surfaces a user-visible error.
+    @Test @MainActor func saveDoesNotEnqueueOnNonRetryableInsertFailure() async {
+        let queue = await freshQueue()
+        let mockImage = MockImageService()
+        let mockRepo = MockWardrobeRepository()
+        // `CancellationError` is explicitly rejected by `isRetryableError`.
+        mockRepo.insertItemResult = .failure(CancellationError())
+
+        let vm = AddItemViewModel(
+            imageService: mockImage,
+            wardrobeRepository: mockRepo,
+            uploadQueue: queue
+        )
+        vm.processedImage = makeProcessedImage(maskedData: Data([0xAB]))
+
+        await vm.save(userId: UUID())
+
+        #expect(mockRepo.insertItemCallCount == 1)
+        #expect(vm.didSave == false, "non-retryable failures must stay visible to the user")
+        #expect(vm.errorMessage != nil)
+        #expect(await queue.pendingCount() == 0, "non-retryable errors must not enqueue")
+        #expect(mockImage.deleteImagesCallCount == 1, "orphan cleanup runs on the failure path as before")
+
+        await queue.clear()
+    }
+}
+
 @Test @MainActor func addItemCancelProcessingResetsToPhotoStep() {
     let vm = AddItemViewModel()
     // Simulate the state the ViewModel is in mid-processing: the
