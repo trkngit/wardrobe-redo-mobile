@@ -136,14 +136,33 @@ final class OutfitRepository: OutfitRepositoryProtocol {
     /// so a network timeout followed by a retry yields the same row
     /// rather than a duplicate.
     func saveOutfit(_ newOutfit: NewOutfit, slots: [NewOutfitSlot]) async throws -> Outfit {
-        let outfit: Outfit = try await withRetry(.interactive) {
-            try await self.supabase
-                .from("outfits")
-                .insert(newOutfit)
-                .select()
-                .single()
-                .execute()
-                .value
+        let outfit: Outfit
+        do {
+            outfit = try await withRetry(.interactive) {
+                try await self.supabase
+                    .from("outfits")
+                    .insert(newOutfit)
+                    .select()
+                    .single()
+                    .execute()
+                    .value
+            }
+        } catch {
+            if newOutfit.idempotencyKey != nil, isDuplicateKeyError(error) {
+                // First attempt succeeded server-side; fetch by id.
+                // (We know the id because it's client-generated.)
+                outfit = try await withRetry(.interactive) {
+                    try await self.supabase
+                        .from("outfits")
+                        .select()
+                        .eq("id", value: newOutfit.id)
+                        .single()
+                        .execute()
+                        .value
+                }
+            } else {
+                throw error
+            }
         }
 
         if !slots.isEmpty {
@@ -284,6 +303,12 @@ struct NewOutfit: Codable, Sendable {
     let score: Double
     let scoreBreakdown: ScoreBreakdown?
     let isWorn: Bool
+    /// Client-generated UUID that dedupes retried saves. When the
+    /// first save succeeded server-side but the response was lost
+    /// mid-flight, the retry with the same key trips the partial
+    /// unique index (migration 00010) and the caller fetches the
+    /// already-inserted row by `id`. Nil on legacy call sites.
+    let idempotencyKey: UUID?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -294,6 +319,7 @@ struct NewOutfit: Codable, Sendable {
         case date, score
         case scoreBreakdown = "score_breakdown"
         case isWorn = "is_worn"
+        case idempotencyKey = "idempotency_key"
     }
 }
 

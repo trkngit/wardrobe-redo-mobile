@@ -65,6 +65,22 @@ public struct RetryPolicy: Sendable {
     )
 }
 
+/// Detect a Postgres unique-constraint violation (SQLSTATE 23505)
+/// surfaced through PostgREST. Used by the idempotency-aware insert
+/// path in `WardrobeRepository.insertItem` / `OutfitRepository.saveOutfit`
+/// to translate "you already inserted this" into a fetch of the
+/// existing row instead of an error.
+///
+/// PostgREST encodes the code in a JSON envelope; the Supabase-swift
+/// SDK bubbles it up as a typed error whose `String(describing:)`
+/// contains `"code":"23505"`. We match on that substring rather than
+/// depend on PostgREST internals so this keeps working across SDK
+/// upgrades.
+public func isDuplicateKeyError(_ error: Error) -> Bool {
+    let desc = String(describing: error)
+    return desc.contains("23505") || desc.lowercased().contains("duplicate key")
+}
+
 /// Classify whether an error is worth retrying. Network transients and
 /// 5xx server errors are retryable; auth failures, 4xx client errors,
 /// and cancellations are not.

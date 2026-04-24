@@ -34,45 +34,57 @@ struct RetryPolicyTests {
         jitter: 0
     )
 
+    /// `@Sendable` closures can't capture mutable locals under Swift 6,
+    /// and `withRetry`'s operation is `@Sendable` so inter-iteration
+    /// state has to live behind a reference. `withRetry` runs the
+    /// operation serially (one iteration waits on the previous), so
+    /// unsynchronized reads/writes are safe in practice — we opt out
+    /// of concurrency checking via `@unchecked Sendable` rather than
+    /// adding a lock we don't need.
+    private final class AttemptCounter: @unchecked Sendable {
+        var count: Int = 0
+        func increment() { count += 1 }
+    }
+
     // MARK: - Happy path
 
     @Test func firstTrySuccessReturnsImmediately() async throws {
-        var attempts = 0
+        let attempts = AttemptCounter()
         let value = try await withRetry(Self.testPolicy) {
-            attempts += 1
+            attempts.increment()
             return 42
         }
         #expect(value == 42)
-        #expect(attempts == 1)
+        #expect(attempts.count == 1)
     }
 
     // MARK: - Transient retry
 
     @Test func timeoutRetriesThenSucceeds() async throws {
-        var attempts = 0
+        let attempts = AttemptCounter()
         let value = try await withRetry(Self.testPolicy) { () -> Int in
-            attempts += 1
-            if attempts == 1 {
+            attempts.increment()
+            if attempts.count == 1 {
                 throw URLError(.timedOut)
             }
             return 7
         }
         #expect(value == 7)
-        #expect(attempts == 2)
+        #expect(attempts.count == 2)
     }
 
     // MARK: - Non-retryable short-circuit
 
     @Test func cancellationErrorShortCircuits() async {
-        var attempts = 0
+        let attempts = AttemptCounter()
         do {
             _ = try await withRetry(Self.testPolicy) { () -> Int in
-                attempts += 1
+                attempts.increment()
                 throw CancellationError()
             }
             Issue.record("expected throw")
         } catch is CancellationError {
-            #expect(attempts == 1)
+            #expect(attempts.count == 1)
         } catch {
             Issue.record("unexpected error: \(error)")
         }
@@ -80,15 +92,15 @@ struct RetryPolicyTests {
 
     @Test func nonRetryableDomainErrorShortCircuits() async {
         struct DomainError: Error {}
-        var attempts = 0
+        let attempts = AttemptCounter()
         do {
             _ = try await withRetry(Self.testPolicy) { () -> Int in
-                attempts += 1
+                attempts.increment()
                 throw DomainError()
             }
             Issue.record("expected throw")
         } catch is DomainError {
-            #expect(attempts == 1)
+            #expect(attempts.count == 1)
         } catch {
             Issue.record("unexpected error: \(error)")
         }
@@ -97,17 +109,17 @@ struct RetryPolicyTests {
     // MARK: - Exhaustion
 
     @Test func exhaustionThrowsLastError() async {
-        var attempts = 0
+        let attempts = AttemptCounter()
         do {
             _ = try await withRetry(Self.testPolicy) { () -> Int in
-                attempts += 1
+                attempts.increment()
                 throw URLError(.networkConnectionLost)
             }
             Issue.record("expected throw")
         } catch let urlError as URLError {
             #expect(urlError.code == .networkConnectionLost)
             // maxAttempts = 3 → one initial + two retries = three runs.
-            #expect(attempts == 3)
+            #expect(attempts.count == 3)
         } catch {
             Issue.record("unexpected error: \(error)")
         }

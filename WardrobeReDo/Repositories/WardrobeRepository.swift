@@ -84,15 +84,48 @@ final class WardrobeRepository: WardrobeRepositoryProtocol {
         }
     }
 
+    /// Insert with idempotency-aware retry.
+    ///
+    /// Flow on a network partition:
+    ///   1. First POST succeeds server-side but the response is lost.
+    ///   2. `withRetry` classifies the timeout as retryable and re-sends.
+    ///   3. Server hits the partial unique index on
+    ///      `(user_id, idempotency_key)` and returns Postgres 23505.
+    ///   4. We catch the duplicate-key error, re-fetch the already-
+    ///      inserted row by `(user_id, idempotency_key)`, and return it.
+    ///
+    /// Legacy call sites that pass `idempotencyKey == nil` keep the
+    /// old behavior: retries on duplicate would re-insert. That's a
+    /// non-regression against pre-migration-00010 code.
     func insertItem(_ item: NewWardrobeItem) async throws -> WardrobeItem {
-        let inserted: WardrobeItem = try await withRetry {
-            try await self.supabase
-                .from("wardrobe_items")
-                .insert(item)
-                .select()
-                .single()
-                .execute()
-                .value
+        let inserted: WardrobeItem
+        do {
+            inserted = try await withRetry {
+                try await self.supabase
+                    .from("wardrobe_items")
+                    .insert(item)
+                    .select()
+                    .single()
+                    .execute()
+                    .value
+            }
+        } catch {
+            if let key = item.idempotencyKey, isDuplicateKeyError(error) {
+                // First attempt actually succeeded — fetch the row.
+                let existing: WardrobeItem = try await withRetry {
+                    try await self.supabase
+                        .from("wardrobe_items")
+                        .select()
+                        .eq("user_id", value: item.userId)
+                        .eq("idempotency_key", value: key)
+                        .single()
+                        .execute()
+                        .value
+                }
+                await cache.invalidateItems(userId: existing.userId)
+                return existing
+            }
+            throw error
         }
         // Insert may add a row not present in the cached bucket; cheapest
         // correct move is to drop the bucket and let the next fetch
@@ -203,6 +236,13 @@ struct NewWardrobeItem: Codable, Sendable {
     /// about a column they don't yet have — Postgres' `DEFAULT '{}'`
     /// still fills the cell on insert.
     let detectedAttributes: [String: String]?
+    /// Client-generated UUID that dedupes retried inserts. Stored in
+    /// the `idempotency_key` column (see migration 00010). Pre-00010
+    /// databases simply receive it as an unrecognized column; PostgREST
+    /// returns a 400 that the client treats as a soft error (the item
+    /// is saved next run once the migration lands). Set nil on this
+    /// struct to opt-out (e.g. legacy tests that never retry).
+    let idempotencyKey: UUID?
 
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
@@ -218,6 +258,7 @@ struct NewWardrobeItem: Codable, Sendable {
         case fitAttribute = "fit_attribute"
         case seasons, occasions
         case detectedAttributes = "detected_attributes"
+        case idempotencyKey = "idempotency_key"
     }
 }
 

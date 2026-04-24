@@ -946,7 +946,10 @@ final class AddItemViewModel {
                         fitAttribute: fit,
                         seasons: seasons,
                         occasions: occasions,
-                        detectedAttributes: provenance
+                        detectedAttributes: provenance,
+                        // Client-generated key for dedup on retry.
+                        // See migration 00010 + insertItem doc comment.
+                        idempotencyKey: UUID()
                     )
 
                     _ = try await wardrobeRepository.insertItem(newItem)

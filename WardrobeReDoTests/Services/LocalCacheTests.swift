@@ -35,8 +35,8 @@ struct LocalCacheTests {
             category: .top,
             subcategory: .tshirt,
             dominantColors: [],
-            seasons: [.allSeason],
-            occasions: [.everyday],
+            seasons: [.spring],
+            occasions: [.casual],
             createdAt: Date(),
             updatedAt: Date()
         )
