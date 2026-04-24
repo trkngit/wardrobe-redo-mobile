@@ -27,6 +27,9 @@ packages:
   Sentry:
     url: https://github.com/getsentry/sentry-cocoa
     majorVersion: 8.0.0
+  SnapshotTesting:
+    url: https://github.com/pointfreeco/swift-snapshot-testing
+    majorVersion: 1.19.2
 
 targets:
   WardrobeReDo:
@@ -102,6 +105,8 @@ targets:
       - WardrobeReDoTests
     dependencies:
       - target: WardrobeReDo
+      - package: SnapshotTesting
+        product: SnapshotTesting
     settings:
       base:
         SWIFT_VERSION: "6.0"
