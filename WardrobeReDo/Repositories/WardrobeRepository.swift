@@ -8,89 +8,157 @@ import Supabase
 @MainActor
 final class WardrobeRepository: WardrobeRepositoryProtocol {
     private let supabase = SupabaseManager.shared.client
+    private let cache: LocalCache
 
+    /// `nonisolated` so non-MainActor callers (e.g. `OutfitGenerationService`
+    /// in its persistence bridge) can instantiate the repo without a
+    /// `await MainActor.run`. The init only writes the `cache` property,
+    /// which is Sendable — the class body's MainActor isolation still
+    /// applies to every method call.
+    nonisolated init(cache: LocalCache = .shared) {
+        self.cache = cache
+    }
+
+    /// Fetch items with cache-aware fallback:
+    /// 1. Hit Supabase (wrapped in retry for transient failures).
+    /// 2. On success → write through to local cache for offline reuse.
+    /// 3. On error → if cache has a fresh bucket for this user, return
+    ///    it as a last-resort; otherwise re-throw the original error.
+    ///
+    /// Category filters bypass the cache: the cache stores the user's
+    /// full unfiltered list and letting the call site filter in-memory
+    /// would leak implementation detail here.
     func fetchItems(userId: UUID, category: ClothingCategory? = nil) async throws -> [WardrobeItem] {
-        var query = supabase
-            .from("wardrobe_items")
-            .select()
-            .eq("user_id", value: userId)
-            .eq("is_archived", value: false)
+        do {
+            let items: [WardrobeItem] = try await withRetry {
+                var query = self.supabase
+                    .from("wardrobe_items")
+                    .select()
+                    .eq("user_id", value: userId)
+                    .eq("is_archived", value: false)
 
-        if let category {
-            query = query.eq("category", value: category.rawValue)
+                if let category {
+                    query = query.eq("category", value: category.rawValue)
+                }
+
+                return try await query
+                    .order("created_at", ascending: false)
+                    .execute()
+                    .value
+            }
+            // Only write through when unfiltered — filtered lists would
+            // overwrite the authoritative full-wardrobe bucket.
+            if category == nil {
+                await cache.storeItems(items, userId: userId)
+            }
+            return items
+        } catch {
+            if category == nil, let cached = await cache.cachedItems(userId: userId) {
+                return cached
+            }
+            throw error
         }
-
-        return try await query
-            .order("created_at", ascending: false)
-            .execute()
-            .value
     }
 
     func fetchItems(ids: [UUID]) async throws -> [WardrobeItem] {
         guard !ids.isEmpty else { return [] }
-        return try await supabase
-            .from("wardrobe_items")
-            .select()
-            .in("id", values: ids)
-            .execute()
-            .value
+        return try await withRetry {
+            try await self.supabase
+                .from("wardrobe_items")
+                .select()
+                .in("id", values: ids)
+                .execute()
+                .value
+        }
     }
 
     func fetchItem(id: UUID) async throws -> WardrobeItem {
-        try await supabase
-            .from("wardrobe_items")
-            .select()
-            .eq("id", value: id)
-            .single()
-            .execute()
-            .value
+        try await withRetry {
+            try await self.supabase
+                .from("wardrobe_items")
+                .select()
+                .eq("id", value: id)
+                .single()
+                .execute()
+                .value
+        }
     }
 
     func insertItem(_ item: NewWardrobeItem) async throws -> WardrobeItem {
-        try await supabase
-            .from("wardrobe_items")
-            .insert(item)
-            .select()
-            .single()
-            .execute()
-            .value
+        let inserted: WardrobeItem = try await withRetry {
+            try await self.supabase
+                .from("wardrobe_items")
+                .insert(item)
+                .select()
+                .single()
+                .execute()
+                .value
+        }
+        // Insert may add a row not present in the cached bucket; cheapest
+        // correct move is to drop the bucket and let the next fetch
+        // repopulate. (Optimistically appending would miss server-side
+        // derived fields like formality_computed.)
+        await cache.invalidateItems(userId: inserted.userId)
+        return inserted
     }
 
     func updateItem(id: UUID, updates: WardrobeItemUpdate) async throws -> WardrobeItem {
-        try await supabase
-            .from("wardrobe_items")
-            .update(updates)
-            .eq("id", value: id)
-            .select()
-            .single()
-            .execute()
-            .value
+        let updated: WardrobeItem = try await withRetry {
+            try await self.supabase
+                .from("wardrobe_items")
+                .update(updates)
+                .eq("id", value: id)
+                .select()
+                .single()
+                .execute()
+                .value
+        }
+        await cache.invalidateItems(userId: updated.userId)
+        return updated
     }
 
     func archiveItem(id: UUID) async throws {
-        try await supabase
-            .from("wardrobe_items")
-            .update(["is_archived": true])
-            .eq("id", value: id)
-            .execute()
+        // Archive doesn't return the row; we look it up first to know
+        // which user's cache to invalidate. Failing that lookup is not
+        // worth a second retry loop — we archive anyway and only skip
+        // the targeted invalidation.
+        let userId = try? await fetchItem(id: id).userId
+        try await withRetry {
+            try await self.supabase
+                .from("wardrobe_items")
+                .update(["is_archived": true])
+                .eq("id", value: id)
+                .execute()
+        }
+        if let userId {
+            await cache.invalidateItems(userId: userId)
+        }
     }
 
     func deleteItem(id: UUID) async throws {
-        try await supabase
-            .from("wardrobe_items")
-            .delete()
-            .eq("id", value: id)
-            .execute()
+        let userId = try? await fetchItem(id: id).userId
+        try await withRetry {
+            try await self.supabase
+                .from("wardrobe_items")
+                .delete()
+                .eq("id", value: id)
+                .execute()
+        }
+        if let userId {
+            await cache.invalidateItems(userId: userId)
+        }
     }
 
     func itemCount(userId: UUID) async throws -> Int {
-        let items: [WardrobeItem] = try await supabase
-            .from("wardrobe_items")
-            .select()
-            .eq("user_id", value: userId)
-            .eq("is_archived", value: false)
-            .execute()
-            .value
+        let items: [WardrobeItem] = try await withRetry {
+            try await self.supabase
+                .from("wardrobe_items")
+                .select()
+                .eq("user_id", value: userId)
+                .eq("is_archived", value: false)
+                .execute()
+                .value
+        }
         return items.count
     }
 }

@@ -8,71 +8,118 @@ import Supabase
 @MainActor
 final class OutfitRepository: OutfitRepositoryProtocol {
     private let supabase = SupabaseManager.shared.client
+    private let cache: LocalCache
+
+    /// `nonisolated` so non-MainActor callers (`OutfitGenerationService`'s
+    /// persistence bridge instantiates `OutfitRepository()` from an
+    /// async but non-isolated context) can construct the repo without
+    /// hopping to MainActor just for init. The MainActor isolation of
+    /// the rest of the class is unaffected.
+    nonisolated init(cache: LocalCache = .shared) {
+        self.cache = cache
+    }
 
     // MARK: - Fetch by Date (Daily Outfits)
 
-    /// Fetch outfits for a specific date, sorted by score descending.
+    /// Fetch outfits for a given date with cache-aware fallback.
+    /// Write-through on success, cache read on error.
     func fetchOutfitsByDate(userId: UUID, date: String) async throws -> [Outfit] {
-        try await supabase
-            .from("outfits")
-            .select()
-            .eq("user_id", value: userId)
-            .eq("date", value: date)
-            .order("score", ascending: false)
-            .execute()
-            .value
+        do {
+            let outfits: [Outfit] = try await withRetry {
+                try await self.supabase
+                    .from("outfits")
+                    .select()
+                    .eq("user_id", value: userId)
+                    .eq("date", value: date)
+                    .order("score", ascending: false)
+                    .execute()
+                    .value
+            }
+            await cache.storeOutfits(outfits, userId: userId, date: date)
+            return outfits
+        } catch {
+            if let cached = await cache.cachedOutfits(userId: userId, date: date) {
+                return cached
+            }
+            throw error
+        }
     }
 
     // MARK: - Fetch History
 
     /// Fetch recent outfits across all dates.
     func fetchOutfits(userId: UUID, limit: Int = 50) async throws -> [Outfit] {
-        try await supabase
-            .from("outfits")
-            .select()
-            .eq("user_id", value: userId)
-            .order("date", ascending: false)
-            .order("score", ascending: false)
-            .limit(limit)
-            .execute()
-            .value
+        try await withRetry {
+            try await self.supabase
+                .from("outfits")
+                .select()
+                .eq("user_id", value: userId)
+                .order("date", ascending: false)
+                .order("score", ascending: false)
+                .limit(limit)
+                .execute()
+                .value
+        }
     }
 
     /// Fetch a single outfit by ID.
     func fetchOutfit(id: UUID) async throws -> Outfit {
-        try await supabase
-            .from("outfits")
-            .select()
-            .eq("id", value: id)
-            .single()
-            .execute()
-            .value
+        try await withRetry {
+            try await self.supabase
+                .from("outfits")
+                .select()
+                .eq("id", value: id)
+                .single()
+                .execute()
+                .value
+        }
     }
 
     // MARK: - Outfit Slots
 
     /// Fetch all slots for a single outfit.
     func fetchSlots(outfitId: UUID) async throws -> [OutfitSlot] {
-        try await supabase
-            .from("outfit_slots")
-            .select()
-            .eq("outfit_id", value: outfitId)
-            .execute()
-            .value
+        try await withRetry {
+            try await self.supabase
+                .from("outfit_slots")
+                .select()
+                .eq("outfit_id", value: outfitId)
+                .execute()
+                .value
+        }
     }
 
-    /// Batch-fetch slots for multiple outfits, grouped by outfit ID.
+    /// Batch-fetch slots for multiple outfits. Write-through on success
+    /// and fall back to cache on error so the daily view still renders
+    /// offline.
     func fetchSlotsForOutfits(outfitIds: [UUID]) async throws -> [UUID: [OutfitSlot]] {
         guard !outfitIds.isEmpty else { return [:] }
 
-        let slots: [OutfitSlot] = try await supabase
-            .from("outfit_slots")
-            .select()
-            .in("outfit_id", values: outfitIds)
-            .execute()
-            .value
+        do {
+            let slots: [OutfitSlot] = try await withRetry {
+                try await self.supabase
+                    .from("outfit_slots")
+                    .select()
+                    .in("outfit_id", values: outfitIds)
+                    .execute()
+                    .value
+            }
 
-        return Dictionary(grouping: slots, by: \.outfitId)
+            let grouped = Dictionary(grouping: slots, by: \.outfitId)
+            // Ensure outfits without slots still have a cached empty
+            // array so the cache "knows" we fetched them.
+            var withEmpties = grouped
+            for id in outfitIds where withEmpties[id] == nil {
+                withEmpties[id] = []
+            }
+            await cache.storeSlots(withEmpties)
+            return grouped
+        } catch {
+            if let cached = await cache.cachedSlots(outfitIds: outfitIds) {
+                return cached
+            }
+            throw error
+        }
     }
 
     // MARK: - Insert
@@ -80,21 +127,33 @@ final class OutfitRepository: OutfitRepositoryProtocol {
     /// Save a generated outfit and its slot assignments.
     /// The outfit ID is client-generated so slots can reference it in a single pass.
     /// If slot insertion fails, the outfit is rolled back (deleted) to prevent orphans.
+    ///
+    /// Retries are applied per-hop (insert outfit, insert slots) rather
+    /// than around the whole sequence — retrying the outer sequence on
+    /// a slot failure would try to re-insert the outfit under a fresh
+    /// ID and drift from the client-generated `newOutfit.id`. Outfit
+    /// inserts carry the client `idempotency_key` (migration 00010)
+    /// so a network timeout followed by a retry yields the same row
+    /// rather than a duplicate.
     func saveOutfit(_ newOutfit: NewOutfit, slots: [NewOutfitSlot]) async throws -> Outfit {
-        let outfit: Outfit = try await supabase
-            .from("outfits")
-            .insert(newOutfit)
-            .select()
-            .single()
-            .execute()
-            .value
+        let outfit: Outfit = try await withRetry(.interactive) {
+            try await self.supabase
+                .from("outfits")
+                .insert(newOutfit)
+                .select()
+                .single()
+                .execute()
+                .value
+        }
 
         if !slots.isEmpty {
             do {
-                try await supabase
-                    .from("outfit_slots")
-                    .insert(slots)
-                    .execute()
+                try await withRetry(.interactive) {
+                    try await self.supabase
+                        .from("outfit_slots")
+                        .insert(slots)
+                        .execute()
+                }
             } catch {
                 // Rollback: delete the orphaned outfit to keep DB consistent.
                 // Discard the response explicitly — the `try?` return is an
@@ -109,6 +168,8 @@ final class OutfitRepository: OutfitRepositoryProtocol {
             }
         }
 
+        // Cached outfits/slots for this user+date are stale now.
+        await cache.invalidateOutfits(userId: outfit.userId, date: outfit.date)
         return outfit
     }
 
@@ -126,33 +187,39 @@ final class OutfitRepository: OutfitRepositoryProtocol {
 
     /// Save the user's reaction (love/like/skip) to an outfit.
     func updateReaction(outfitId: UUID, reaction: String?) async throws {
-        try await supabase
-            .from("outfits")
-            .update(ReactionUpdate(reaction: reaction))
-            .eq("id", value: outfitId)
-            .execute()
+        try await withRetry(.interactive) {
+            try await self.supabase
+                .from("outfits")
+                .update(ReactionUpdate(reaction: reaction))
+                .eq("id", value: outfitId)
+                .execute()
+        }
     }
 
     // MARK: - Mark as Worn
 
     /// Toggle whether the user wore this outfit.
     func markAsWorn(outfitId: UUID, isWorn: Bool) async throws {
-        try await supabase
-            .from("outfits")
-            .update(WornUpdate(isWorn: isWorn))
-            .eq("id", value: outfitId)
-            .execute()
+        try await withRetry(.interactive) {
+            try await self.supabase
+                .from("outfits")
+                .update(WornUpdate(isWorn: isWorn))
+                .eq("id", value: outfitId)
+                .execute()
+        }
     }
 
     // MARK: - Delete
 
     /// Delete an outfit. Slots are cascade-deleted by the database.
     func deleteOutfit(id: UUID) async throws {
-        try await supabase
-            .from("outfits")
-            .delete()
-            .eq("id", value: id)
-            .execute()
+        try await withRetry {
+            try await self.supabase
+                .from("outfits")
+                .delete()
+                .eq("id", value: id)
+                .execute()
+        }
     }
 
     // MARK: - Recent Item Tracking
