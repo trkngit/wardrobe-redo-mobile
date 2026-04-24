@@ -54,12 +54,14 @@ Pick any phase heading and pull the commit(s) under it for a focused review. All
 
 ## CI status
 
-GitHub Actions is currently blocked at the account level ("job was not started because recent account payments have failed or your spending limit needs to be increased") — the red check on run `24892885839` is a billing gate, not a test failure. The workflow itself is unchanged and was last green on this branch. Once billing is resolved, re-running the job (or pushing any commit) will execute it cleanly; `Secrets.plist` stub path (`WardrobeReDo/Secrets.plist`) matches the Xcode bundle resource reference so no code change is needed.
+CI is green on [run 24902269220](https://github.com/trkngit/wardrobe-redo-mobile/actions/runs/24902269220) (5m31s end-to-end).
+
+GitHub-hosted `macos-15` minutes are blocked at the account-billing level on this repo right now, so the workflow runs on a self-hosted macOS/ARM64 runner on the maintainer's Mac instead. To revert to hosted: flip `runs-on` back to `macos-15`, restore the `Select Xcode` / `-downloadPlatform iOS` steps (see git history for `.github/workflows/ios-tests.yml`), and drop the explicit `Resolve Git LFS` step. The Git-LFS fix is worth keeping in either world — `actions/checkout`'s built-in `lfs: true` didn't re-resolve pointer files on a persistent self-hosted `_work` directory, so an explicit `git lfs pull` plus a Manifest.json `{`-vs-`v` sanity check now guards against that cryptic failure mode.
 
 ## Test plan
 
 - [x] Local: `xcodebuild test -scheme WardrobeReDo -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17 Pro'` → 598/598 green
-- [ ] CI: `.github/workflows/ios-tests.yml` → 598/598 green (blocked on GitHub billing, see above)
+- [x] CI: `.github/workflows/ios-tests.yml` → green on run 24902269220 (self-hosted macOS/ARM64)
 - [ ] Manual: Open Profile → Developer → toggle ML Telemetry → add a new item → verify `ml_inference_telemetry` row appears (needs migrations pushed + user opted in)
 - [ ] Manual: Profile → Developer → "Fire Sentry smoke event" → verify event in Sentry dashboard within 60 s (needs SENTRY_DSN in Secrets.plist first)
 - [ ] Manual: Profile → Developer → "Report issue (share diagnostics)" → verify bundle includes build info, flag state, last 10 inferences
