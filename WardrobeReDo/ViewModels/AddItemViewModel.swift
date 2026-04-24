@@ -175,16 +175,28 @@ final class AddItemViewModel {
     /// same extractor instance as the rest of the pipeline (no duplicate
     /// model loads, no cold-starts per tap).
     let clothingExtractor: any ClothingExtracting
+    /// Persistent retry queue for server-side inserts. On the happy path
+    /// `wardrobeRepository.insertItem` runs synchronously and the queue is
+    /// never touched. If the insert throws a *retryable* error after the
+    /// repo's own in-process `withRetry` has exhausted, we enqueue the
+    /// pending item here so a later `drain()` (triggered on next app
+    /// foreground / cold start) can replay it. Non-retryable errors
+    /// bypass the queue and surface to the user as today. Default is the
+    /// process-wide shared singleton so test instances can inject their
+    /// own queue without leaking state.
+    private let uploadQueue: UploadQueue
     private let logger = Logger(subsystem: "com.wardroberedo", category: "AddItem")
 
     init(
         imageService: any ImageServiceProtocol = ImageService(),
         wardrobeRepository: any WardrobeRepositoryProtocol = WardrobeRepository(),
-        clothingExtractor: any ClothingExtracting = ClothingExtractionService()
+        clothingExtractor: any ClothingExtracting = ClothingExtractionService(),
+        uploadQueue: UploadQueue = UploadQueue.shared
     ) {
         self.imageService = imageService
         self.wardrobeRepository = wardrobeRepository
         self.clothingExtractor = clothingExtractor
+        self.uploadQueue = uploadQueue
     }
 
     // MARK: - Computed
@@ -910,7 +922,7 @@ final class AddItemViewModel {
         let outcome: (success: Bool, sourcePath: String?) = await withTaskGroup(
             of: (Bool, String?).self
         ) { group in
-            group.addTask { [imageService, wardrobeRepository, logger] in
+            group.addTask { [imageService, wardrobeRepository, uploadQueue, logger] in
                 var uploadedPaths: (imagePath: String, thumbnailPath: String, maskedImagePath: String?)?
 
                 do {
@@ -952,9 +964,32 @@ final class AddItemViewModel {
                         idempotencyKey: UUID()
                     )
 
-                    _ = try await wardrobeRepository.insertItem(newItem)
-                    logger.info("save: insert complete")
-                    return (true, paths.sourcePhotoPath)
+                    // Primary path: hit the repo synchronously so the UX
+                    // contract (spinner → saved confirmation) stays the
+                    // same. The repo already wraps `withRetry`, so by the
+                    // time this throws the in-process retry budget is
+                    // exhausted. If the error is still retryable (e.g.
+                    // the phone came back online after we gave up, or a
+                    // 503 that might clear by morning), persist the
+                    // insert via UploadQueue so a later drain on next
+                    // foreground / cold start can replay it. The queue's
+                    // envelope payload is the same `NewWardrobeItem` DTO
+                    // with the same `idempotencyKey`, so a delayed
+                    // replay resolves naturally if the first attempt
+                    // actually landed but we lost the ack.
+                    do {
+                        _ = try await wardrobeRepository.insertItem(newItem)
+                        logger.info("save: insert complete")
+                        return (true, paths.sourcePhotoPath)
+                    } catch let error where isRetryableError(error) {
+                        logger.warning("save: retryable insert failure, enqueueing for background retry: \(error.localizedDescription)")
+                        try await uploadQueue.enqueue(.wardrobeItem, payload: newItem)
+                        logger.info("save: enqueued for background retry")
+                        return (true, paths.sourcePhotoPath)
+                    }
+                    // Non-retryable insert errors (auth / 4xx / cancellation)
+                    // fall through to the outer catch and hit the
+                    // existing orphan-cleanup + user-visible error path.
                 } catch {
                     logger.error("save: failed — \(error.localizedDescription)")
 
