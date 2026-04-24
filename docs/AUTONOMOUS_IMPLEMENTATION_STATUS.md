@@ -2,14 +2,14 @@
 
 > Running plan: [AUTONOMOUS_IMPLEMENTATION_PLAN.md](./AUTONOMOUS_IMPLEMENTATION_PLAN.md). Updated after every commit.
 
-**Current phase:** 7 — Integration tests
-**Last commit:** `eb33147` — chore(seed): add scripts/seed_supabase.py for full 50 archetypes + 200 rules
+**Current phase:** 8 — Dogfood plumbing
+**Last commit:** `_pending_` — test(integration): add WardrobeReDoIntegrationTests target + 3 golden-path tests
 **Branch:** `feature/photo-extraction-engine`
 **Session started:** 2026-04-24
 
 ---
 
-## Completed (7)
+## Completed (8)
 
 - [x] **Phase 0** — repo hygiene (commit `7bcd061`): `.gitignore` extended, `scripts/autonomous_attr_train.sh` tracked.
 - [x] **Phase 1** — Sentry crash reporting (commit `fc1ae14`): DSN-gated init in `WardrobeReDoApp.init()` before any other work. Privacy-first defaults. SPM 8.x added. Graceful no-op when `SENTRY_DSN` missing.
@@ -47,6 +47,14 @@
   - Pre-flight validation: every row carries all required keys; every rule's `archetype_id` is in `archetypes.json` (FK integrity) — both catch JSON corruption before hitting the wire.
   - `--dry-run` prints the plan without network calls. `--only archetypes|rules` limits a re-run after a surgical JSON fix. Dry run verified locally (1 chunk archetypes + 4 chunks rules).
   - **Execution deferred to v1.1** — needs `SUPABASE_SERVICE_ROLE_KEY` (not the anon key; bypasses RLS). Script committed for reproducibility; user runs once per environment when canonical JSON changes. Usage docs in the module docstring. After this runs against prod, the `StyleDataRepository` bundled-JSON fallback becomes true DR, not the primary source.
+- [x] **Phase 7** — Integration test target (commit `_pending_`):
+  - New `WardrobeReDoIntegrationTests` target in `project.yml`. Re-uses `WardrobeReDoTests/Helpers` (fixtures, mocks, isolation) so the integration bar stays consistent with the unit suite.
+  - `GoldenPathTests` — 3 tests exercising multi-component contracts that unit tests don't:
+    - `addThenRefetchSurfacesTheNewItem` — insert → mock re-armed to reflect the server view → fetch returns the row. Proves the insert→fetch round-trip contract the Wardrobe grid depends on.
+    - `editSaveRefreshFlowPersistsChangeEndToEnd` — `EditItemViewModel` hydrates from fetch, mutates texture, saves, baseline advances; a second fetch returns the updated row.
+    - `multiGarmentBatchSharesSourcePhotoIdAcrossInserts` — 3 garments from one capture all reach the repo with matching `sourcePhotoId` (regression guard for migration-00008 grouping queries).
+  - Full matrix 598/598 (595 unit + 3 integration). Integration suite runs in under 10 ms.
+  - **Live-Supabase harness deferred to v1.1** — needs a dedicated Supabase test branch + credentials. Mock-backed tests land the scaffolding; swapping mocks for a real `WardrobeRepository` is the follow-up.
 
 ---
 

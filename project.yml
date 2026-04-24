@@ -106,3 +106,20 @@ targets:
       base:
         SWIFT_VERSION: "6.0"
         GENERATE_INFOPLIST_FILE: YES
+
+  WardrobeReDoIntegrationTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: WardrobeReDoIntegrationTests
+      # Integration tests re-use the same fixtures, mocks, and isolation
+      # helpers as the unit target. Duplicating them would drift; including
+      # the helper directory gives the target access to TestFixtures +
+      # MockWardrobeRepository + friends without a separate copy.
+      - path: WardrobeReDoTests/Helpers
+    dependencies:
+      - target: WardrobeReDo
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
