@@ -24,6 +24,9 @@ packages:
   Kingfisher:
     url: https://github.com/onevcat/Kingfisher
     majorVersion: 8.0.0
+  Sentry:
+    url: https://github.com/getsentry/sentry-cocoa
+    majorVersion: 8.0.0
 
 targets:
   WardrobeReDo:
@@ -49,6 +52,8 @@ targets:
       - package: Supabase
         product: Supabase
       - package: Kingfisher
+      - package: Sentry
+        product: Sentry
       - sdk: AuthenticationServices.framework
       - target: WardrobeReDoWidget
     info:
