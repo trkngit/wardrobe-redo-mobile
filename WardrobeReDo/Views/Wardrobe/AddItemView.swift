@@ -341,122 +341,41 @@ struct AddItemView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
 
-            // Category + Subcategory
-            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                autoDetectedHeader(
-                    "Category",
-                    autoDetected: isAutoDetected("category", matching: viewModel.category.rawValue)
-                        || isAutoDetected("subcategory", matching: viewModel.subcategory.rawValue)
-                )
-
-                Picker("Category", selection: $viewModel.category) {
-                    ForEach(ClothingCategory.allCases, id: \.self) { cat in
-                        Text(cat.displayName).tag(cat)
+            // Shared form body. Same fields the Edit screen renders — the
+            // only Add-specific wiring is the sparkle badge, which lights
+            // up for sections the attribute classifier pre-filled while
+            // the live value still matches the snapshot.
+            ItemFormView(
+                category: $viewModel.category,
+                subcategory: $viewModel.subcategory,
+                texture: $viewModel.texture,
+                fitAttribute: $viewModel.fitAttribute,
+                selectedSeasons: $viewModel.selectedSeasons,
+                selectedOccasions: $viewModel.selectedOccasions,
+                availableSubcategories: viewModel.availableSubcategories,
+                onCategoryChanged: viewModel.onCategoryChanged,
+                isSectionAutoDetected: { section in
+                    switch section {
+                    case .category:
+                        return isAutoDetected("category", matching: viewModel.category.rawValue)
+                            || isAutoDetected("subcategory", matching: viewModel.subcategory.rawValue)
+                    case .texture:
+                        return isAutoDetected("texture", matching: viewModel.texture?.rawValue)
+                    case .fit:
+                        return isAutoDetected("fit", matching: viewModel.fitAttribute?.rawValue)
+                    case .seasons:
+                        return isAutoDetected(
+                            "seasons",
+                            matchingSortedJoined: viewModel.selectedSeasons.map { $0.rawValue }
+                        )
+                    case .occasions:
+                        return isAutoDetected(
+                            "occasions",
+                            matchingSortedJoined: viewModel.selectedOccasions.map { $0.rawValue }
+                        )
                     }
                 }
-                .pickerStyle(.segmented)
-                .onChange(of: viewModel.category) {
-                    viewModel.onCategoryChanged()
-                }
-
-                Picker("Subcategory", selection: $viewModel.subcategory) {
-                    ForEach(viewModel.availableSubcategories, id: \.self) { sub in
-                        Text(sub.displayName).tag(sub)
-                    }
-                }
-                .pickerStyle(.menu)
-                .tint(Color(Theme.Colors.primary))
-            }
-
-            // Texture
-            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                autoDetectedHeader(
-                    "Texture",
-                    autoDetected: isAutoDetected("texture", matching: viewModel.texture?.rawValue)
-                )
-
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: Theme.Spacing.sm) {
-                    ForEach(TextureType.allCases, id: \.self) { tex in
-                        chipButton(
-                            tex.displayName,
-                            isSelected: viewModel.texture == tex
-                        ) {
-                            viewModel.texture = viewModel.texture == tex ? nil : tex
-                        }
-                    }
-                }
-            }
-
-            // Fit
-            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                autoDetectedHeader(
-                    "Fit",
-                    autoDetected: isAutoDetected("fit", matching: viewModel.fitAttribute?.rawValue)
-                )
-
-                HStack(spacing: Theme.Spacing.sm) {
-                    ForEach(FitAttribute.allCases, id: \.self) { fit in
-                        chipButton(
-                            fit.displayName,
-                            isSelected: viewModel.fitAttribute == fit
-                        ) {
-                            viewModel.fitAttribute = viewModel.fitAttribute == fit ? nil : fit
-                        }
-                    }
-                }
-            }
-
-            // Seasons
-            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                autoDetectedHeader(
-                    "Seasons",
-                    autoDetected: isAutoDetected(
-                        "seasons",
-                        matchingSortedJoined: viewModel.selectedSeasons.map { $0.rawValue }
-                    )
-                )
-
-                HStack(spacing: Theme.Spacing.sm) {
-                    ForEach(Season.allCases, id: \.self) { season in
-                        chipButton(
-                            season.displayName,
-                            isSelected: viewModel.selectedSeasons.contains(season)
-                        ) {
-                            if viewModel.selectedSeasons.contains(season) {
-                                viewModel.selectedSeasons.remove(season)
-                            } else {
-                                viewModel.selectedSeasons.insert(season)
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Occasions
-            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                autoDetectedHeader(
-                    "Occasions",
-                    autoDetected: isAutoDetected(
-                        "occasions",
-                        matchingSortedJoined: viewModel.selectedOccasions.map { $0.rawValue }
-                    )
-                )
-
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: Theme.Spacing.sm) {
-                    ForEach(Occasion.allCases, id: \.self) { occasion in
-                        chipButton(
-                            occasion.displayName,
-                            isSelected: viewModel.selectedOccasions.contains(occasion)
-                        ) {
-                            if viewModel.selectedOccasions.contains(occasion) {
-                                viewModel.selectedOccasions.remove(occasion)
-                            } else {
-                                viewModel.selectedOccasions.insert(occasion)
-                            }
-                        }
-                    }
-                }
-            }
+            )
 
             if let error = viewModel.errorMessage {
                 errorBanner(error)
@@ -573,45 +492,14 @@ struct AddItemView: View {
         .frame(maxHeight: .infinity)
     }
 
-    // MARK: - Helpers
-
-    private func chipButton(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(Theme.Fonts.caption)
-                .foregroundStyle(isSelected ? .white : Color(Theme.Colors.textPrimary))
-                .padding(.horizontal, Theme.Spacing.md)
-                .padding(.vertical, Theme.Spacing.sm)
-                .background(isSelected ? Color(Theme.Colors.primary) : Color(Theme.Colors.surface))
-                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.chip))
-                .overlay(
-                    RoundedRectangle(cornerRadius: Theme.Radius.chip)
-                        .stroke(isSelected ? Color.clear : Color(Theme.Colors.border), lineWidth: 1)
-                )
-        }
-    }
-
     // MARK: - Auto-detected indicator (Phase 8)
     //
-    // Sparkle-badged section headers for fields that the attribute
-    // classifier pre-filled. The badge appears only while the live form
-    // value matches the snapshot recorded during pre-fill — any user
-    // edit drops the match and the badge vanishes. No explicit toggle
-    // state needed; SwiftUI re-derives the check on every render.
-
-    private func autoDetectedHeader(_ title: String, autoDetected: Bool) -> some View {
-        HStack(spacing: Theme.Spacing.xs) {
-            Text(title)
-                .font(Theme.Fonts.h3)
-                .foregroundStyle(Color(Theme.Colors.textPrimary))
-            if autoDetected {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color(Theme.Colors.primary))
-                    .accessibilityLabel("Auto-detected")
-            }
-        }
-    }
+    // Snapshot comparison for fields the attribute classifier pre-filled.
+    // The live `ItemFormView` lights up a sparkle badge via its
+    // `isSectionAutoDetected` hook only while the form value still
+    // matches the snapshot — any user edit drops the match and the badge
+    // vanishes. No explicit toggle state needed; SwiftUI re-derives the
+    // check on every render.
 
     /// Scalar-field match: category, subcategory, texture, fit.
     private func isAutoDetected(_ field: String, matching currentValue: String?) -> Bool {
