@@ -3,7 +3,7 @@
 > Running plan: [AUTONOMOUS_IMPLEMENTATION_PLAN.md](./AUTONOMOUS_IMPLEMENTATION_PLAN.md). Updated after every commit.
 
 **Current phase:** 8 — Dogfood plumbing
-**Last commit:** `_pending_` — test(integration): add WardrobeReDoIntegrationTests target + 3 golden-path tests
+**Last commit:** `02d5bca` — test(integration): add WardrobeReDoIntegrationTests target + 3 golden-path tests
 **Branch:** `feature/photo-extraction-engine`
 **Session started:** 2026-04-24
 
@@ -47,7 +47,7 @@
   - Pre-flight validation: every row carries all required keys; every rule's `archetype_id` is in `archetypes.json` (FK integrity) — both catch JSON corruption before hitting the wire.
   - `--dry-run` prints the plan without network calls. `--only archetypes|rules` limits a re-run after a surgical JSON fix. Dry run verified locally (1 chunk archetypes + 4 chunks rules).
   - **Execution deferred to v1.1** — needs `SUPABASE_SERVICE_ROLE_KEY` (not the anon key; bypasses RLS). Script committed for reproducibility; user runs once per environment when canonical JSON changes. Usage docs in the module docstring. After this runs against prod, the `StyleDataRepository` bundled-JSON fallback becomes true DR, not the primary source.
-- [x] **Phase 7** — Integration test target (commit `_pending_`):
+- [x] **Phase 7** — Integration test target (commit `02d5bca`):
   - New `WardrobeReDoIntegrationTests` target in `project.yml`. Re-uses `WardrobeReDoTests/Helpers` (fixtures, mocks, isolation) so the integration bar stays consistent with the unit suite.
   - `GoldenPathTests` — 3 tests exercising multi-component contracts that unit tests don't:
     - `addThenRefetchSurfacesTheNewItem` — insert → mock re-armed to reflect the server view → fetch returns the row. Proves the insert→fetch round-trip contract the Wardrobe grid depends on.
