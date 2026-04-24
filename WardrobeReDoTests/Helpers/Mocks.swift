@@ -22,12 +22,16 @@ final class MockWardrobeRepository: WardrobeRepositoryProtocol {
     var archiveItemError: Error?
     var deleteItemError: Error?
     var insertItemResult: Result<WardrobeItem, Error> = .success(TestFixtures.makeWardrobeItem())
+    var updateItemResult: Result<WardrobeItem, Error> = .success(TestFixtures.makeWardrobeItem())
 
     var fetchItemsCallCount = 0
     var archiveItemCallCount = 0
     var deleteItemCallCount = 0
     var insertItemCallCount = 0
+    var updateItemCallCount = 0
     var lastInsertedItem: NewWardrobeItem?
+    var lastUpdatedId: UUID?
+    var lastUpdate: WardrobeItemUpdate?
 
     func fetchItems(userId: UUID, category: ClothingCategory?) async throws -> [WardrobeItem] {
         fetchItemsCallCount += 1
@@ -52,6 +56,13 @@ final class MockWardrobeRepository: WardrobeRepositoryProtocol {
         insertItemCallCount += 1
         lastInsertedItem = item
         return try insertItemResult.get()
+    }
+
+    func updateItem(id: UUID, updates: WardrobeItemUpdate) async throws -> WardrobeItem {
+        updateItemCallCount += 1
+        lastUpdatedId = id
+        lastUpdate = updates
+        return try updateItemResult.get()
     }
 }
 

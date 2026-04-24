@@ -13,6 +13,11 @@ protocol WardrobeRepositoryProtocol: Sendable {
     func archiveItem(id: UUID) async throws
     func deleteItem(id: UUID) async throws
     func insertItem(_ item: NewWardrobeItem) async throws -> WardrobeItem
+    /// Updates a row with the set of `WardrobeItemUpdate` columns the
+    /// caller chose to pass (nils are treated as "don't touch"). Returns
+    /// the updated row so VMs can re-drive UI from the server's view
+    /// rather than assume local state is authoritative.
+    func updateItem(id: UUID, updates: WardrobeItemUpdate) async throws -> WardrobeItem
 }
 
 extension WardrobeRepositoryProtocol {

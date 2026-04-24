@@ -47,6 +47,19 @@ struct ItemDetailView: View {
         .background(Color(Theme.Colors.background))
         .navigationTitle(item.subcategory.displayName)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            // Edit button lives in the trailing slot so the iOS-standard
+            // back-chevron stays leading. Pushing `EditItemView` rather
+            // than sheet-presenting it keeps the user's tap-and-go
+            // navigation consistent with the rest of the app.
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    EditItemView(item: item)
+                } label: {
+                    Text("Edit")
+                }
+            }
+        }
         .task {
             imageURL = try? await imageService.signedURL(for: item.imagePath)
         }

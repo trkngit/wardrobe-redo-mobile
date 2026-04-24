@@ -2,14 +2,14 @@
 
 > Running plan: [AUTONOMOUS_IMPLEMENTATION_PLAN.md](./AUTONOMOUS_IMPLEMENTATION_PLAN.md). Updated after every commit.
 
-**Current phase:** 5 — Edit Item form
-**Last commit:** `f3964bf` — feat(telemetry): add opt-in ML inference telemetry + migration 00011
+**Current phase:** 6 — Supabase seed script
+**Last commit:** `_pending_` — feat(wardrobe): add Edit Item form + shared ItemFormView
 **Branch:** `feature/photo-extraction-engine`
 **Session started:** 2026-04-24
 
 ---
 
-## Completed (5)
+## Completed (6)
 
 - [x] **Phase 0** — repo hygiene (commit `7bcd061`): `.gitignore` extended, `scripts/autonomous_attr_train.sh` tracked.
 - [x] **Phase 1** — Sentry crash reporting (commit `fc1ae14`): DSN-gated init in `WardrobeReDoApp.init()` before any other work. Privacy-first defaults. SPM 8.x added. Graceful no-op when `SENTRY_DSN` missing.
@@ -34,6 +34,13 @@
   - Privacy posture: no image bytes, no crops, no colors — only `latency_ms`, `top_class_raw`, `top_score`, `threw`, and pre-fill correction flags. Enforced at the service layer (the `Observation` struct has no image field).
   - Unit tests: `MLTelemetryServiceTests` (8 tests — gate default off, flag-flips-live, flag-off no-op, Observation field round-trip, surface heuristic, compute-unit banding).
   - Static helpers `MLDiagnosticsStore.surface(for:)` + `inferredComputeUnit(forLatencyMs:)` so telemetry callers label without racing the ring buffer.
+- [x] **Phase 5** — Edit Item form (commit `_pending_`):
+  - `WardrobeRepositoryProtocol.updateItem(id:updates:)` + production implementation hits `wardrobe_items` via `.update(...).eq("id", ...).single()`. Cache invalidates the user's bucket on success so the grid refresh picks up the diff.
+  - `ItemFormView` — shared SwiftUI form with 6 bindings (category, subcategory, texture, fitAttribute, seasons, occasions). Section-level auto-detected badge hook reserved for the Add side (not wired yet — Add migration deferred, see below).
+  - `EditItemViewModel` — `@MainActor @Observable`; hydrates every user-editable field from the item, exposes `hasChanges`/`buildUpdate()`/`save()`. Diff is column-precise: `nil` fields skipped at Postgres so server-managed columns (`wear_count`, etc.) never get clobbered. `texture = nil` emits explicit null; season/occasion diff is set-based so storage ordering can't produce phantom payloads. Baseline replaces after successful save.
+  - `EditItemView` — push-navigated from `ItemDetailView` toolbar. Cancel + Save toolbar slots; Save disabled via `!hasChanges`; error banner under the form. Posts `.wardrobeDidChange` on success so the grid refreshes, matching archive/delete paths.
+  - Unit tests: `EditItemViewModelTests` (11 tests — hydration, no-op diff, per-field diffs incl. texture→nil, set-based seasons, multi-field, save happy/failure/no-op, subcategory clamp). `MockWardrobeRepository` extended with `updateItemResult` / `updateItemCallCount` / `lastUpdate`. Full suite 595/595 green.
+  - **Scope trimmed vs. plan:** did not extract `AddItemView.detailsStep` into `ItemFormView` — `AddItemView` still owns its own detail form. Lower-risk landing for the Edit surface (which is the user-visible gap); consolidation can follow in v1.1 when Add-side auto-detect badges are stable.
 
 ---
 
@@ -43,9 +50,10 @@ _(none)_
 
 ---
 
-## Skipped (1)
+## Skipped (2)
 
 - **UploadQueue integration into `AddItemViewModel.save`** — the queue ships as a tested scaffold but the save path still runs synchronously. Re-visiting in v1.1 once the photo-upload side of the save is moved off-main. Idempotency keys prevent the known duplicate-insert failure mode in the meantime.
+- **`AddItemView.detailsStep` → `ItemFormView` migration** — the new shared form ships against the Edit surface only. Add keeps its own detail form (with live auto-detect badges pre-wired) until the consolidation can be done against a stable auto-fill UX. Purely a DRY cleanup; no user-visible gap.
 
 ---
 
