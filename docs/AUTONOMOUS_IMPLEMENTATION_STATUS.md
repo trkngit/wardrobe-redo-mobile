@@ -3,7 +3,7 @@
 > Running plan: [AUTONOMOUS_IMPLEMENTATION_PLAN.md](./AUTONOMOUS_IMPLEMENTATION_PLAN.md). Updated after every commit.
 
 **Current phase:** 7 — Integration tests
-**Last commit:** `_pending_` — chore(seed): add scripts/seed_supabase.py for full 50 archetypes + 200 rules
+**Last commit:** `eb33147` — chore(seed): add scripts/seed_supabase.py for full 50 archetypes + 200 rules
 **Branch:** `feature/photo-extraction-engine`
 **Session started:** 2026-04-24
 
@@ -41,7 +41,7 @@
   - `EditItemView` — push-navigated from `ItemDetailView` toolbar. Cancel + Save toolbar slots; Save disabled via `!hasChanges`; error banner under the form. Posts `.wardrobeDidChange` on success so the grid refreshes, matching archive/delete paths.
   - Unit tests: `EditItemViewModelTests` (11 tests — hydration, no-op diff, per-field diffs incl. texture→nil, set-based seasons, multi-field, save happy/failure/no-op, subcategory clamp). `MockWardrobeRepository` extended with `updateItemResult` / `updateItemCallCount` / `lastUpdate`. Full suite 595/595 green.
   - **Scope trimmed vs. plan:** did not extract `AddItemView.detailsStep` into `ItemFormView` — `AddItemView` still owns its own detail form. Lower-risk landing for the Edit surface (which is the user-visible gap); consolidation can follow in v1.1 when Add-side auto-detect badges are stable.
-- [x] **Phase 6** — Supabase seed script (commit `_pending_`):
+- [x] **Phase 6** — Supabase seed script (commit `eb33147`):
   - `scripts/seed_supabase.py` upserts the full 50 archetypes + 200 rules from `WardrobeReDo/Resources/SeedData/*.json` into `public.style_archetypes` + `public.style_rules` via PostgREST `Prefer: resolution=merge-duplicates`.
   - Stdlib-only (`urllib.request` + `json`) — no pip deps beyond Python 3.10+. Chunked 50 rows at a time so partial failures report a specific range.
   - Pre-flight validation: every row carries all required keys; every rule's `archetype_id` is in `archetypes.json` (FK integrity) — both catch JSON corruption before hitting the wire.
