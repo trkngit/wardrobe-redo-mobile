@@ -81,6 +81,12 @@ final class MLDiagnosticsStore {
 
     /// Record a successful inference. Called from
     /// `MultiGarmentProposalService.detectProposals` after success.
+    ///
+    /// Also forwards a sanitized `MLTelemetryService.Observation` to the
+    /// opt-in Supabase telemetry pipeline (gated on
+    /// `FeatureFlags.isMLTelemetryEnabled`; no-ops when off). Fire-and-forget
+    /// via `Task` — the upload failing or being skipped must never block
+    /// the DEBUG diagnostic surface.
     func record(
         latencyMs: Double,
         proposals: [MaskProposal],
@@ -102,10 +108,23 @@ final class MLDiagnosticsStore {
             threw: false
         )
         insertAndTrim(entry)
+
+        let observation = MLTelemetryService.Observation(
+            modelName: modelName,
+            surface: Self.surface(for: modelName),
+            latencyMs: latencyMs,
+            computeUnit: Self.inferredComputeUnit(forLatencyMs: latencyMs),
+            proposalCount: proposals.count,
+            topClassRaw: top.first?.rawClass,
+            topScore: top.first?.score,
+            threw: false
+        )
+        Task { await MLTelemetryService.shared.logInference(observation) }
     }
 
     /// Record a failed inference. Keeps the failure in the timeline so
     /// developers can see how often the model is throwing and why.
+    /// Same telemetry forwarding posture as the success path.
     func recordFailure(
         latencyMs: Double,
         modelName: String
@@ -120,6 +139,18 @@ final class MLDiagnosticsStore {
             threw: true
         )
         insertAndTrim(entry)
+
+        let observation = MLTelemetryService.Observation(
+            modelName: modelName,
+            surface: Self.surface(for: modelName),
+            latencyMs: latencyMs,
+            computeUnit: Self.inferredComputeUnit(forLatencyMs: latencyMs),
+            proposalCount: 0,
+            topClassRaw: nil,
+            topScore: nil,
+            threw: true
+        )
+        Task { await MLTelemetryService.shared.logInference(observation) }
     }
 
     func setSmokeTestStatus(_ status: SmokeTestStatus) {
@@ -143,9 +174,28 @@ final class MLDiagnosticsStore {
     /// fallback is almost always > 900 ms.
     var inferredComputeUnit: String {
         guard let latest = records.first?.latencyMs else { return "—" }
-        if latest < 250 { return "ANE (likely)" }
-        if latest < 900 { return "GPU (likely)" }
+        return Self.inferredComputeUnit(forLatencyMs: latest)
+    }
+
+    /// Static form of the compute-unit heuristic so telemetry callers can
+    /// label an individual observation without reading the ring buffer
+    /// (which may already have moved on by the time the `Task` fires).
+    static func inferredComputeUnit(forLatencyMs latencyMs: Double) -> String {
+        if latencyMs < 250 { return "ANE (likely)" }
+        if latencyMs < 900 { return "GPU (likely)" }
         return "CPU (likely)"
+    }
+
+    /// Map a model name to a telemetry surface string. Matches the
+    /// surfaces documented in migration 00011 (`multi_garment`,
+    /// `attribute_classifier`). Keep this in sync with any new model we
+    /// start recording — the free-form column intentionally allows new
+    /// surfaces without a schema migration but the analysis dashboards
+    /// pre-filter on these known values.
+    static func surface(for modelName: String) -> String {
+        let lower = modelName.lowercased()
+        if lower.contains("attribute") { return "attribute_classifier" }
+        return "multi_garment"
     }
 
     /// Median latency of recorded inferences, or nil if none recorded.

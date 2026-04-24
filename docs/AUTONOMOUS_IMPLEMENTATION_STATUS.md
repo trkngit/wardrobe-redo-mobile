@@ -2,14 +2,14 @@
 
 > Running plan: [AUTONOMOUS_IMPLEMENTATION_PLAN.md](./AUTONOMOUS_IMPLEMENTATION_PLAN.md). Updated after every commit.
 
-**Current phase:** 4 — ML telemetry
-**Last commit:** `<phase-3>` — feat(resilience): add upload queue + idempotency keys + migration 00010
+**Current phase:** 5 — Edit Item form
+**Last commit:** _pending_ — feat(telemetry): add opt-in ML inference telemetry + migration 00011
 **Branch:** `feature/photo-extraction-engine`
 **Session started:** 2026-04-24
 
 ---
 
-## Completed (4)
+## Completed (5)
 
 - [x] **Phase 0** — repo hygiene (commit `7bcd061`): `.gitignore` extended, `scripts/autonomous_attr_train.sh` tracked.
 - [x] **Phase 1** — Sentry crash reporting (commit `fc1ae14`): DSN-gated init in `WardrobeReDoApp.init()` before any other work. Privacy-first defaults. SPM 8.x added. Graceful no-op when `SENTRY_DSN` missing.
@@ -18,7 +18,7 @@
   - `LocalCache` actor with 7-day TTL backing `Library/Caches/wardrobe-cache.json`. Chose actor+JSON over SwiftData to keep Swift 6 strict-concurrency story simple.
   - Cache-first reads + retry-wrapped calls in `WardrobeRepository` + `OutfitRepository`. Writes invalidate affected buckets.
   - Unit tests: `RetryPolicyTests` (happy path, transient, cancellation, exhaustion, classifier, jitter), `LocalCacheTests` (round-trip, TTL, invalidation, partial-hit guard).
-- [x] **Phase 3** — Upload queue + idempotency (commit `<phase-3>`):
+- [x] **Phase 3** — Upload queue + idempotency (commit `8a6cd7e`):
   - `UploadQueue` actor singleton with persistent JSON backing (`Library/Caches/upload-queue.json`). Handler injection avoids repo import cycle. Drops envelopes after 6 failed attempts; stops drain cycle on non-retryable errors.
   - `isDuplicateKeyError(_:)` helper on `RetryPolicy.swift` detects Postgres 23505.
   - Added `idempotencyKey: UUID?` to `NewWardrobeItem` and `NewOutfit` DTOs. `WardrobeRepository.insertItem` + `OutfitRepository.saveOutfit` catch dup-key errors after retry and re-fetch the already-inserted row.
@@ -26,6 +26,14 @@
   - Unit tests: `UploadQueueTests` covering happy drain, retryable failure, max-attempts drop, non-retryable stop, no-handler persistence, payload round-trip, sequential idempotency, parallel convergence (8 tests green).
   - AddItemViewModel + OutfitGenerationService call sites now pass `idempotencyKey: UUID()`.
   - **Scope trimmed vs. plan:** did not refactor `AddItemViewModel.save` to route through `UploadQueue` (960-line file, multi-garment state made it 3-strike risk). Idempotency keys already cover the "retry after network timeout" case. Full offline-first capture flow deferred to v1.1.
+- [x] **Phase 4** — ML inference telemetry (commit _pending_):
+  - Migration `00011_ml_inference_telemetry.sql` creates `public.ml_inference_telemetry` with timing, label, confidence, pre-fill/correction flags. `auth.uid() = user_id` INSERT policy, no SELECT policy (service role only). `ON DELETE CASCADE` for GDPR right-to-erasure.
+  - `FeatureFlags.isMLTelemetryEnabled` (default `false`, opt-in via Developer menu).
+  - `MLTelemetryService` actor resolves userId via `supabase.auth.session.user.id` at upload time so call sites don't thread identity. Fire-and-forget: errors logged at `.info` and swallowed — telemetry never bubbles into user-visible surfaces.
+  - Wired into `MLDiagnosticsStore.record()`/`recordFailure()` (multi-garment path) and `AttributeClassifierService.predict(crop:)` (classifier path). Both emit a single observation per inference, with `ContinuousClock` wall-time.
+  - Privacy posture: no image bytes, no crops, no colors — only `latency_ms`, `top_class_raw`, `top_score`, `threw`, and pre-fill correction flags. Enforced at the service layer (the `Observation` struct has no image field).
+  - Unit tests: `MLTelemetryServiceTests` (8 tests — gate default off, flag-flips-live, flag-off no-op, Observation field round-trip, surface heuristic, compute-unit banding).
+  - Static helpers `MLDiagnosticsStore.surface(for:)` + `inferredComputeUnit(forLatencyMs:)` so telemetry callers label without racing the ring buffer.
 
 ---
 

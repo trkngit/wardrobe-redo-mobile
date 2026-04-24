@@ -21,6 +21,7 @@ enum FeatureFlags {
     private enum Key {
         static let multiGarmentEnabled = "feature.multiGarment.enabled"
         static let attributeDetectionEnabled = "feature.attributeDetection.enabled"
+        static let mlTelemetryEnabled = "feature.mlTelemetry.enabled"
     }
 
     // MARK: - Flags
@@ -64,6 +65,31 @@ enum FeatureFlags {
         }
     }
 
+    /// Gate for uploading on-device ML inference telemetry to the
+    /// Supabase `ml_inference_telemetry` table (migration 00011).
+    ///
+    /// Default: `false`. Opt-in per device via the Developer menu.
+    /// When off, `MLTelemetryService.logInference(...)` no-ops and no
+    /// network call is made — the in-memory `MLDiagnosticsStore` ring
+    /// buffer is unaffected so developers still get their DEBUG
+    /// surface.
+    ///
+    /// When on, each inference (multi-garment detector + attribute
+    /// classifier) fires a single INSERT with timing + top class +
+    /// pre-fill correction flags. No image bytes leave the device —
+    /// see `supabase/migrations/00011_ml_inference_telemetry.sql` for
+    /// the full privacy rationale.
+    static var isMLTelemetryEnabled: Bool {
+        get {
+            if defaults.object(forKey: Key.mlTelemetryEnabled) == nil { return false }
+            return defaults.bool(forKey: Key.mlTelemetryEnabled)
+        }
+        set {
+            defaults.set(newValue, forKey: Key.mlTelemetryEnabled)
+            logger.info("mlTelemetry toggled -> \(newValue, privacy: .public)")
+        }
+    }
+
     // MARK: - Test / Preview helpers
 
     /// Reset every flag to its compiled-in default. Used by tests so the
@@ -71,6 +97,7 @@ enum FeatureFlags {
     static func resetAll() {
         defaults.removeObject(forKey: Key.multiGarmentEnabled)
         defaults.removeObject(forKey: Key.attributeDetectionEnabled)
+        defaults.removeObject(forKey: Key.mlTelemetryEnabled)
         logger.debug("all flags reset")
     }
 }

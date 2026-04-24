@@ -210,9 +210,41 @@ final class AttributeClassifierService: AttributeClassifying, @unchecked Sendabl
     // MARK: - Public API
 
     func predict(crop: UIImage) async throws -> AttributePrediction {
+        // Start the clock before any work so telemetry reflects real
+        // wall-time including model load, preprocessing, and the Core ML
+        // call — that's what dashboards care about for "slow on cellular"
+        // or "ANE-missed" diagnosis.
+        let clock = ContinuousClock()
+        let start = clock.now
+
+        func elapsedMs() -> Double {
+            let elapsed = clock.now - start
+            return Double(elapsed.components.seconds) * 1000
+                + Double(elapsed.components.attoseconds) / 1e15
+        }
+
+        // Report a single telemetry row per predict call, so fire rate
+        // and correction rate can be joined on the same primary key
+        // downstream. Uses `Self.bundledModelName` so the surface string
+        // is inferred consistently with the multi-garment path.
+        func report(prediction: AttributePrediction?, threw: Bool) {
+            let observation = MLTelemetryService.Observation(
+                modelName: Self.bundledModelName,
+                surface: "attribute_classifier",
+                latencyMs: elapsedMs(),
+                computeUnit: nil,
+                proposalCount: nil,
+                topClassRaw: prediction?.fit.map(\.rawValue),
+                topScore: prediction?.fitConfidence,
+                threw: threw
+            )
+            Task { await MLTelemetryService.shared.logInference(observation) }
+        }
+
         guard let model = loadModelIfAvailable() else {
             let path = Self.defaultModelURL()?.lastPathComponent
             logger.error("predict.modelLoadFailed modelPath=\(path ?? "nil", privacy: .public)")
+            report(prediction: nil, threw: true)
             throw AttributeClassifierError.modelLoadFailed(
                 reason: "Core ML attribute model could not be loaded (missing from bundle or compile failed)",
                 modelPath: path
@@ -223,6 +255,7 @@ final class AttributeClassifierService: AttributeClassifying, @unchecked Sendabl
 
         guard let pixelBuffer = Self.preprocessedPixelBuffer(for: normalized) else {
             logger.error("predict.preprocessingFailed")
+            report(prediction: nil, threw: true)
             throw AttributeClassifierError.preprocessingFailed(
                 reason: "Could not convert crop to 224×224 pixel buffer"
             )
@@ -236,6 +269,7 @@ final class AttributeClassifierService: AttributeClassifying, @unchecked Sendabl
             ])
         } catch {
             logger.error("predict.providerFailed \(error.localizedDescription, privacy: .public)")
+            report(prediction: nil, threw: true)
             throw AttributeClassifierError.preprocessingFailed(reason: error.localizedDescription)
         }
 
@@ -244,10 +278,13 @@ final class AttributeClassifierService: AttributeClassifying, @unchecked Sendabl
             prediction = try await model.prediction(from: provider)
         } catch {
             logger.error("predict.inferenceFailed \(error.localizedDescription, privacy: .public)")
+            report(prediction: nil, threw: true)
             throw AttributeClassifierError.inferenceFailed(reason: error.localizedDescription)
         }
 
-        return Self.decode(prediction: prediction)
+        let decoded = Self.decode(prediction: prediction)
+        report(prediction: decoded, threw: false)
+        return decoded
     }
 
     func prewarm() async {
