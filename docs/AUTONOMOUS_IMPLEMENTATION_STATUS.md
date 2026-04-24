@@ -3,7 +3,7 @@
 > Running plan: [AUTONOMOUS_IMPLEMENTATION_PLAN.md](./AUTONOMOUS_IMPLEMENTATION_PLAN.md). Updated after every commit.
 
 **Current phase:** 6 — Supabase seed script
-**Last commit:** `_pending_` — feat(wardrobe): add Edit Item form + shared ItemFormView
+**Last commit:** `3d4fbab` — feat(wardrobe): add Edit Item form + shared ItemFormView
 **Branch:** `feature/photo-extraction-engine`
 **Session started:** 2026-04-24
 
@@ -34,7 +34,7 @@
   - Privacy posture: no image bytes, no crops, no colors — only `latency_ms`, `top_class_raw`, `top_score`, `threw`, and pre-fill correction flags. Enforced at the service layer (the `Observation` struct has no image field).
   - Unit tests: `MLTelemetryServiceTests` (8 tests — gate default off, flag-flips-live, flag-off no-op, Observation field round-trip, surface heuristic, compute-unit banding).
   - Static helpers `MLDiagnosticsStore.surface(for:)` + `inferredComputeUnit(forLatencyMs:)` so telemetry callers label without racing the ring buffer.
-- [x] **Phase 5** — Edit Item form (commit `_pending_`):
+- [x] **Phase 5** — Edit Item form (commit `3d4fbab`):
   - `WardrobeRepositoryProtocol.updateItem(id:updates:)` + production implementation hits `wardrobe_items` via `.update(...).eq("id", ...).single()`. Cache invalidates the user's bucket on success so the grid refresh picks up the diff.
   - `ItemFormView` — shared SwiftUI form with 6 bindings (category, subcategory, texture, fitAttribute, seasons, occasions). Section-level auto-detected badge hook reserved for the Add side (not wired yet — Add migration deferred, see below).
   - `EditItemViewModel` — `@MainActor @Observable`; hydrates every user-editable field from the item, exposes `hasChanges`/`buildUpdate()`/`save()`. Diff is column-precise: `nil` fields skipped at Postgres so server-managed columns (`wear_count`, etc.) never get clobbered. `texture = nil` emits explicit null; season/occasion diff is set-based so storage ordering can't produce phantom payloads. Baseline replaces after successful save.
