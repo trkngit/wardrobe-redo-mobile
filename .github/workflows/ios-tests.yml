@@ -36,7 +36,23 @@ jobs:
           # "Failed to read model package ... parse error at line 1,
           # column 1: ... last read: 'v'" (the 'v' is the first char of
           # the pointer file's "version https://git-lfs..." header).
+          # The explicit `git lfs pull` step below is a belt-and-braces
+          # guard: on a self-hosted runner with a persistent _work
+          # directory, `actions/checkout`'s built-in LFS handling doesn't
+          # always re-resolve pointer files left by prior runs.
           lfs: true
+
+      - name: Resolve Git LFS
+        run: |
+          git lfs install --local --skip-smudge
+          git lfs pull
+          # Sanity check — the first byte of a real mlpackage Manifest.json
+          # is `{`. If LFS is still pointer-only we'll see `v` (from
+          # "version https://...") and this step fails fast with a clear
+          # message instead of failing opaquely at coremlc.
+          head -c 1 WardrobeReDo/ML/AttributeClassifier.mlpackage/Manifest.json \
+            | grep -q '{' \
+            || { echo "::error::Git LFS did not resolve mlpackage files (still a pointer)"; exit 1; }
 
       - name: Show build environment
         # Self-hosted runner: whatever `xcode-select -p` already points
