@@ -29,6 +29,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          # The Core ML mlpackages (AttributeClassifier, RFDETRSegFashion,
+          # SAM2Tiny) are Git-LFS tracked. Without `lfs: true` the runner
+          # gets LFS pointer files and coremlc fails with:
+          # "Failed to read model package ... parse error at line 1,
+          # column 1: ... last read: 'v'" (the 'v' is the first char of
+          # the pointer file's "version https://git-lfs..." header).
+          lfs: true
 
       - name: Show build environment
         # Self-hosted runner: whatever `xcode-select -p` already points
