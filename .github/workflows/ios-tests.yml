@@ -13,39 +13,33 @@ concurrency:
 jobs:
   test:
     name: Build & Test (iOS Simulator)
-    runs-on: macos-15
-    timeout-minutes: 30
+    # Self-hosted runner on the maintainer's Mac. Swap to `macos-15` and
+    # restore the `Select Xcode` / `-downloadPlatform iOS` steps (see git
+    # history for this file) once GitHub-hosted macOS minutes are
+    # available again.
+    runs-on: [self-hosted, macOS, ARM64, wardrobe-redo]
+    timeout-minutes: 45
 
     env:
       SCHEME: WardrobeReDo
-      # No OS pin — pick whatever iOS runtime the runner ships with.
-      # The CLAUDE.md default is iPhone 17 Pro, but runners lag Apple's releases;
-      # iPhone 16 Pro is always present on macos-15.
-      DESTINATION: platform=iOS Simulator,name=iPhone 16 Pro
+      # Matches the CLAUDE.md default. The self-hosted runner ships with
+      # the current Xcode (26.x) which has iPhone 17 Pro pre-installed.
+      DESTINATION: platform=iOS Simulator,name=iPhone 17 Pro
 
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Select Xcode
-        # macos-15 ships Xcode 16.x at this path by default.
-        run: sudo xcode-select -s /Applications/Xcode_16.app
-
       - name: Show build environment
+        # Self-hosted runner: whatever `xcode-select -p` already points
+        # at is what we build against. The maintainer keeps Xcode current
+        # locally, so we don't need to hard-pin a path (as we did for
+        # macos-15, which shipped Xcode 16 at /Applications/Xcode_16.app).
         run: |
           xcodebuild -version
           swift --version
-          echo "--- installed simulator runtimes ---"
-          xcrun simctl list runtimes | cat
-
-      - name: Ensure iOS simulator runtime is installed
-        # macos-15 runners ship Xcode 16 but not always a matching iOS
-        # simulator runtime. `-downloadPlatform iOS` is a no-op when the
-        # latest iOS runtime is already present and pulls it otherwise.
-        run: sudo xcodebuild -downloadPlatform iOS
-
-      - name: Show installed simulators after download
-        run: xcrun simctl list devices available | grep -E 'iPhone 1[5-9]' | head -10
+          echo "--- booted/available simulators (iPhone 1[5-9]) ---"
+          xcrun simctl list devices available | grep -E 'iPhone 1[5-9]' | head -10 || true
 
       - name: Write stub Secrets.plist
         # `Secrets.plist` is gitignored (carries real Supabase creds locally)
