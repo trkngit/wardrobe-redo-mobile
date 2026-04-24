@@ -2,14 +2,14 @@
 
 > Running plan: [AUTONOMOUS_IMPLEMENTATION_PLAN.md](./AUTONOMOUS_IMPLEMENTATION_PLAN.md). Updated after every commit.
 
-**Current phase:** 8 — Dogfood plumbing
-**Last commit:** `02d5bca` — test(integration): add WardrobeReDoIntegrationTests target + 3 golden-path tests
+**Current phase:** 9 — Merge prep
+**Last commit:** `53ce16d` — feat(dev): add dogfood plumbing to Developer menu
 **Branch:** `feature/photo-extraction-engine`
 **Session started:** 2026-04-24
 
 ---
 
-## Completed (8)
+## Completed (9)
 
 - [x] **Phase 0** — repo hygiene (commit `7bcd061`): `.gitignore` extended, `scripts/autonomous_attr_train.sh` tracked.
 - [x] **Phase 1** — Sentry crash reporting (commit `fc1ae14`): DSN-gated init in `WardrobeReDoApp.init()` before any other work. Privacy-first defaults. SPM 8.x added. Graceful no-op when `SENTRY_DSN` missing.
@@ -55,6 +55,14 @@
     - `multiGarmentBatchSharesSourcePhotoIdAcrossInserts` — 3 garments from one capture all reach the repo with matching `sourcePhotoId` (regression guard for migration-00008 grouping queries).
   - Full matrix 598/598 (595 unit + 3 integration). Integration suite runs in under 10 ms.
   - **Live-Supabase harness deferred to v1.1** — needs a dedicated Supabase test branch + credentials. Mock-backed tests land the scaffolding; swapping mocks for a real `WardrobeRepository` is the follow-up.
+- [x] **Phase 8** — Dogfood plumbing (commit `53ce16d`):
+  - `DeveloperMenuView` gets three new affordances wrapped in `#if DEBUG`-scoped `ProfileView.developerSection`:
+    - **ML Inference Telemetry toggle** in the Experimental Features section, bound to `FeatureFlags.isMLTelemetryEnabled` (closes a Phase-4 UI gap — the flag existed in `FeatureFlags.swift` since `f3964bf` but had no developer-menu control until now).
+    - **"Report issue (share diagnostics)" ShareLink** in a new Dogfood section. Exports a plaintext bundle with build config, version/build, bundle ID, feature-flag state, ML smoke-test status, median latency, and the last 10 inferences from `MLDiagnosticsStore`. No image bytes, crops, or colors — same privacy posture as the telemetry pipeline.
+    - **"Fire Sentry smoke event"** button calling new `SentryService.captureSmokeEvent(note:)`. Returns `true` when submitted, `false` when SDK is disabled (no DSN or module unavailable) so the button can surface a "Sentry disabled" hint rather than silently no-op. Satisfies the Tier A1 verification bullet: "trigger a caught event in DEBUG dev menu → event appears in Sentry dashboard within 60 s".
+  - `docs/plans/2026-04-19-auto-attribute-detection/DOGFOOD_RESULTS.md` gets a new **Daily Journal (7-day window)** section prepended to the existing Phase-9 aggregate template. Journal captures in-the-moment notes (build, photos added, pre-fill fire rate, corrections, bugs, perf) during the week; the aggregate rolls up for the flag-flip decision gate.
+  - Build + full test matrix green (598/598, no regressions).
+  - **Scope trimmed vs. plan:** plan called for "last 10 os.log errors captured by a ring buffer" in the diagnostics bundle. We already surface the last 10 ML inferences via `MLDiagnosticsStore` — adding a second parallel ring buffer for generic `os.log` output is new scope with its own capture/filter story. Deferred to v1.1; the bundle's MLDiagnostics slice covers the model-side failure modes that cause the dogfood issues we're likely to hit first.
 
 ---
 
