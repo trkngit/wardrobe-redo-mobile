@@ -26,7 +26,7 @@ Every plan file has:
 | [2026-04-18-autonomous-5hr-window](./2026-04-18-autonomous-5hr-window.md) | SHIPPED P1+P2 (bbox AP@0.5=0.65 / segm=0.64); P3 SHIPPED with PR [#1](https://github.com/trkngit/wardrobe-redo-mobile/pull/1) squash-commit `13bd5d7` | 2026-04-18 | 2026-04-18 | Autonomous Phase-1 finish + pre-authorized Phase-2 full train with guardrails, budget caps, and phone push dispatch |
 | [2026-04-19-multi-garment-crash-recovery](./2026-04-19-multi-garment-crash-recovery.md) | PROPOSED (v1.1 punch-list item) | — | — | Persist `pendingProposalQueue` to SwiftData so a mid-batch jetsam doesn't lose unsaved garments |
 | [2026-04-19-auto-attribute-detection](./2026-04-19-auto-attribute-detection.md) | SHIPPED — merged in PR [#1](https://github.com/trkngit/wardrobe-redo-mobile/pull/1) as squash-commit `13bd5d7`; flag-flip + dogfood aggregation still pending | 2026-04-19 | 2026-04-24 | Auto-detect category / texture / fit / seasons / occasions from the capture and pre-select them on the Add Item form; user-editable; correction tracking via new `detected_attributes` JSONB column |
-| [2026-04-25-v1.1-post-ship](./2026-04-25-v1.1-post-ship/PLAN.md) | IN PROGRESS — autonomous 10-step continuation post-PR #1 | 2026-04-24 | — | Apply pending migrations + seed prod + bump CI pins + snapshot baseline + gated UploadQueue / ItemFormView refactors |
+| [2026-04-25-v1.1-post-ship](./2026-04-25-v1.1-post-ship/PLAN.md) | SHIPPED — 10 of 10 steps; PRs #3–#7 all squash-merged | 2026-04-24 | 2026-04-25 | Apply pending migrations + seed prod + bump CI pins + snapshot baseline + UploadQueue + ItemFormView consolidation |
 
 ## Memory pointer
 

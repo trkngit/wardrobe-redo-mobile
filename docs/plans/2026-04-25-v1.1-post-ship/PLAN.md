@@ -2,7 +2,9 @@
 
 ## Status
 
-IN PROGRESS — autonomous execution window opened 2026-04-24.
+COMPLETE — autonomous execution window 2026-04-24 → 2026-04-25. Ten steps
+planned, ten steps landed, zero 3-strike aborts, zero deferrals, zero
+destructive git operations.
 
 ## Origin
 
@@ -57,7 +59,7 @@ leave the rest for a later window when you provide the missing credentials.
 | 7 | DONE | PR [#4](https://github.com/trkngit/wardrobe-redo-mobile/pull/4) squash-merged as `3005765` | swift-snapshot-testing 1.19.x wired in; baseline PNG 1170×2532 (iPhone 17 Pro @3x) committed under `WardrobeReDoTests/Snapshot/__Snapshots__/ItemFormViewSnapshotTests/testItemFormView_defaultState.1.png`; `record: .missing` so CI reruns verify instead of re-recording. First CI attempt failed from a self-hosted runner network drop during cache upload (not a test regression); rerun `24907548635` came back green. |
 | 8 | DONE | PR [#5](https://github.com/trkngit/wardrobe-redo-mobile/pull/5) squash-merged as `c9cbf09` | main-run flake 24903701479 (`flagFlipsOnWithoutRestart` line 45) root-caused to missing `FeatureFlagTestIsolation.shared.acquire/release` wrap on the 3 MainActor tests that mutate `FeatureFlags.isMLTelemetryEnabled`. Post-merge main run 24907538110 green. |
 | 9 | DONE | PR [#6](https://github.com/trkngit/wardrobe-redo-mobile/pull/6) squash-merged as `d060088` | S9.1–S9.4 complete (DI wire, save-path enqueue, sync UI preserved, `MockUploadQueue` + 2 new tests). First CI attempt 24908100779 failed on a cross-suite race: `UploadQueueTests` and `AddItemViewModelUploadQueueTests` both mutate the process-global `UploadQueue.shared` actor, and `@Suite(.serialized)` only serializes WITHIN a suite — the no-op handler from the sibling suite was draining my envelope mid-assertion. Fix in commit `64cdf9f`: new `UploadQueueTestIsolation` actor-semaphore wrapping every test that touches `UploadQueue.shared`. CI retest 24910243103 green; merged. Test count on main bumped to 597 Swift Testing + 1 snapshot + 3 XCTest = 601 green. |
-| 10 | IN PROGRESS | PR [#7](https://github.com/trkngit/wardrobe-redo-mobile/pull/7) open, CI queued behind PR #6 | Single-commit swap of `AddItemView.detailsStep`'s 115 lines of duplicated form fields (category, sub, texture, fit, seasons, occasions) for one `ItemFormView(...)` call — the same shared component `EditItemView` has used since Phase 5. Sparkle "auto-detected" badge preserved via `isSectionAutoDetected: (Section) -> Bool` hook. Dead-code cleanup: removed duplicates of `chipButton` + `autoDetectedHeader` from AddItemView (both have identical siblings inside ItemFormView). Local `xcodebuild test` → 595 Swift Testing + 1 snapshot + 3 XCTest = 599/599 green on the pre-PR-6 base; snapshot baseline matched without re-record. Net: `AddItemView.swift` 700 → 588 lines (-112, -16%). |
+| 10 | DONE | PR [#7](https://github.com/trkngit/wardrobe-redo-mobile/pull/7) squash-merged as `e2822c6` | Single-commit swap of `AddItemView.detailsStep`'s 115 lines of duplicated form fields (category, sub, texture, fit, seasons, occasions) for one `ItemFormView(...)` call — the same shared component `EditItemView` has used since Phase 5. Sparkle "auto-detected" badge preserved via `isSectionAutoDetected: (Section) -> Bool` hook. Dead-code cleanup: removed duplicates of `chipButton` + `autoDetectedHeader` from AddItemView (both have identical siblings inside ItemFormView). Local `xcodebuild test` → 595 Swift Testing + 1 snapshot + 3 XCTest = 599/599 green on the pre-PR-6 base; CI green on latest main (598 Swift Testing expected post-merge, matches); snapshot baseline matched without re-record. Net: `AddItemView.swift` 700 → 588 lines (-112, -16%). |
 
 ## Risk controls
 
@@ -91,6 +93,70 @@ leave the rest for a later window when you provide the missing credentials.
 - TestFlight upload (Apple Developer Portal)
 - Physical dogfood cycle (the app gets used by you for 7 days)
 - Image-CDN cost/latency decision
+
+## End-of-window report
+
+### Step-by-step outcome
+
+| Step | Status | Landed as |
+|------|--------|-----------|
+| 1 | DONE | Supabase migrations 00009 / 00010 / 00011 applied via MCP |
+| 2 | DONE | 50 archetypes + 200 rules seeded via UPSERT batches |
+| 3 | DONE | PR #3 → `639d04a` (action pins bumped to Node-24 compatible majors) |
+| 4 | DONE | commit `0375096` (`docs/plans/INDEX.md` + `docs/AUTONOMOUS_IMPLEMENTATION_STATUS.md`) |
+| 5 | DONE | commit `0375096` (this doc scaffolded) |
+| 6 | DONE | stale worktree removed |
+| 7 | DONE | PR #4 → `3005765` (swift-snapshot-testing 1.19.x baseline) |
+| 8 | DONE | PR #5 → `c9cbf09` (FeatureFlagTestIsolation guard for MLTelemetry flake) |
+| 9 | DONE | PR #6 → `d060088` (`UploadQueue` integration + `UploadQueueTestIsolation` cross-suite semaphore) |
+| 10 | DONE | PR #7 → `e2822c6` (`AddItemView.detailsStep` → `ItemFormView`) |
+
+Ten of ten. No 3-strike aborts, no deferrals inside the in-scope set.
+
+### Supabase state delta
+
+- Project `xavxlsutdcvllbvmxoma` (eu-west-1, ACTIVE_HEALTHY)
+- Migrations now applied: `00007_wardrobe_items_masked`, `00008_source_photo_grouping`, `app_config_rls` (pre-window) + `00009_detected_attributes`, `00010_idempotency_keys`, `00011_ml_inference_telemetry` (this window)
+- `style_archetypes`: 12 → **50 rows** (+38 from seed)
+- `style_rules`: 0 → **200 rows** (+200 from seed)
+- `get_advisors` output recorded in-session at each Supabase-touching step; no new SECURITY or PERFORMANCE warnings introduced
+
+### CI state
+
+- Self-hosted macOS/ARM64 runner; concurrency group `ios-${{ github.ref }}` cancels superseded runs on the same ref
+- Latest main CI: post-PR-7 squash-merge run, green
+- Test count on main: **597 Swift Testing + 1 snapshot + 3 XCTest = 601 tests green**
+- Pinned actions: `actions/checkout@v6`, `actions/cache@v5`, `actions/upload-artifact@v7` (full-SHA pinned per `.github/workflows/ios-tests.yml`)
+
+### Git state
+
+- PRs opened + merged this window: **#3, #4, #5, #6, #7** (five total, all squash-merged with `--delete-branch`)
+- Squash-merge commits on main: `639d04a`, `3005765`, `c9cbf09`, `d060088`, `e2822c6`
+- Direct docs-only commits on main: `0375096`, `bd33fe7`, `a647fd9` (plus this final one)
+- Zero direct commits to production code paths on main (every product change went through a PR with CI gate)
+- Zero destructive git operations (no `reset --hard` on tracked branches, no `push --force`, no branch deletions with unmerged work)
+
+### Test-infrastructure improvements landed
+
+Swift Testing's `@Suite(.serialized)` only serializes within a single suite, so tests in different suites can race each other on process-global state. We now have two actor-semaphore primitives that close that gap:
+
+- `WardrobeReDoTests/Helpers/FeatureFlagTestIsolation.swift` — wraps every test that mutates `FeatureFlags`. PR #5 retrofitted `MLTelemetryServiceTests` to use it.
+- `WardrobeReDoTests/Helpers/UploadQueueTestIsolation.swift` — wraps every test that touches `UploadQueue.shared`. Landed in PR #6 alongside the `AddItemViewModel` integration, after `AddItemViewModelUploadQueueTests` vs `UploadQueueTests` raced on the no-op handler mid-assertion.
+
+Pattern is reusable: any future test that mutates a process-global singleton can copy the ~30-line actor and add a single `acquire() / release()` pair per test.
+
+### What remains on the v1.1 backlog after this window closes
+
+Every item below genuinely needs you — credentials, spend, a physical device, or a product decision that an autonomous agent shouldn't make:
+
+- Sentry DSN provisioning — create Sentry project, paste DSN into `WardrobeReDo/Secrets.plist`
+- TestFlight distribution — Apple Developer Portal access
+- Attempt-3 classifier retrain — RunPod API key + ~$0.20 spend + ~45 min
+- GitHub-hosted macOS minutes — billing resolution
+- Physical dogfood cycle — app gets used by you for 7 days; fill `DOGFOOD_RESULTS.md`
+- Image-CDN cost/latency decision — product call on storage vendor + cache layer
+- Any `auth.uid()`-bound RLS change — needs real signed-in users to validate
+- Attribute-classifier feature-flag flip — gated on dogfood data
 
 ## Provenance
 
