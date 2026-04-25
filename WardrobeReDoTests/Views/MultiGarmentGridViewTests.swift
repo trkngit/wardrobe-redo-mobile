@@ -83,6 +83,82 @@ struct MultiGarmentGridViewTests {
         #expect(view.confirmButtonTitle == "Save 0 items")
     }
 
+    // MARK: - shouldShowLayeredLookHint
+
+    /// A large `.top` proposal — t-shirt + open overshirt photographed
+    /// together typically detects as a single torso-spanning blob — should
+    /// flip the layered-look hint on so the user knows to re-shoot.
+    @Test func layeredLookHintShowsForLargeTopProposal() {
+        let bigTop = MaskProposalFixture.make(
+            predictedCategory: .top,
+            boundingBox: CGRect(x: 0.05, y: 0.05, width: 0.9, height: 0.5)
+        )
+        let view = makeView(proposals: [bigTop], selectedIDs: [])
+        #expect(view.shouldShowLayeredLookHint)
+    }
+
+    /// A small / well-cropped `.top` (a single t-shirt photographed at
+    /// arm's length) shouldn't trigger the hint — the common case stays
+    /// quiet.
+    @Test func layeredLookHintHiddenForSmallTopProposal() {
+        let smallTop = MaskProposalFixture.make(
+            predictedCategory: .top,
+            boundingBox: CGRect(x: 0.3, y: 0.3, width: 0.4, height: 0.4)
+        )
+        let view = makeView(proposals: [smallTop], selectedIDs: [])
+        #expect(!view.shouldShowLayeredLookHint)
+    }
+
+    /// A large bottom or outerwear shouldn't trigger the hint — it only
+    /// fires for `.top` proposals because that's where layering ambiguity
+    /// happens.
+    @Test func layeredLookHintIgnoresLargeNonTopProposal() {
+        let bigBottom = MaskProposalFixture.make(
+            predictedCategory: .bottom,
+            boundingBox: CGRect(x: 0.0, y: 0.4, width: 1.0, height: 0.6)
+        )
+        let view = makeView(proposals: [bigBottom], selectedIDs: [])
+        #expect(!view.shouldShowLayeredLookHint)
+    }
+
+    /// Threshold is strict-greater-than 0.30 — exactly 30% of the frame
+    /// is treated as "not large enough" and stays quiet. We pin the
+    /// bbox width to the threshold itself (height = 1.0) to dodge
+    /// floating-point ambiguity from a bare 0.5 × 0.6 multiplication.
+    @Test func layeredLookHintHiddenAtThresholdBoundary() {
+        let exactlyThreshold = MaskProposalFixture.make(
+            predictedCategory: .top,
+            boundingBox: CGRect(
+                x: 0.0,
+                y: 0.0,
+                width: MultiGarmentGridView.layeredLookAreaThreshold,
+                height: 1.0
+            )
+        )
+        let view = makeView(proposals: [exactlyThreshold], selectedIDs: [])
+        #expect(!view.shouldShowLayeredLookHint)
+    }
+
+    /// One large `.top` mixed with otherwise small proposals is enough
+    /// to trip the hint — the heuristic is "any" not "all".
+    @Test func layeredLookHintFiresWhenAnyTopExceedsThreshold() {
+        let smallShoe = MaskProposalFixture.make(
+            predictedCategory: .shoe,
+            boundingBox: CGRect(x: 0.1, y: 0.8, width: 0.15, height: 0.1)
+        )
+        let bigTop = MaskProposalFixture.make(
+            predictedCategory: .top,
+            boundingBox: CGRect(x: 0.05, y: 0.05, width: 0.9, height: 0.5)
+        )
+        let view = makeView(proposals: [smallShoe, bigTop], selectedIDs: [])
+        #expect(view.shouldShowLayeredLookHint)
+    }
+
+    @Test func layeredLookHintHiddenWhenNoProposals() {
+        let view = makeView(proposals: [], selectedIDs: [])
+        #expect(!view.shouldShowLayeredLookHint)
+    }
+
     // MARK: - Helpers
 
     private func makeView(

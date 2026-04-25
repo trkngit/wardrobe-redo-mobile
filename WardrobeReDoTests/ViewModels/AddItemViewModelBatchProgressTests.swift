@@ -31,7 +31,7 @@ struct AddItemViewModelBatchProgressTests {
         vm.proposals = proposals
         vm.selectedProposalIDs = Set(proposals.map(\.id))
 
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
         #expect(vm.batchTotalCount == 3)
         #expect(vm.batchSkippedCount == 0)
@@ -48,7 +48,7 @@ struct AddItemViewModelBatchProgressTests {
         // Only 2 of 5 selected.
         vm.selectedProposalIDs = Set(proposals.prefix(2).map(\.id))
 
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
         #expect(vm.batchTotalCount == 2)
     }
@@ -64,12 +64,12 @@ struct AddItemViewModelBatchProgressTests {
         let proposals = (0..<3).map { _ in MaskProposalFixture.make() }
         vm.proposals = proposals
         vm.selectedProposalIDs = Set(proposals.map(\.id))
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
-        vm.onSkipCurrentProposal()
+        await vm.onSkipCurrentProposal()
         #expect(vm.batchSkippedCount == 1)
 
-        vm.onSkipCurrentProposal()
+        await vm.onSkipCurrentProposal()
         #expect(vm.batchSkippedCount == 2)
     }
 
@@ -84,8 +84,8 @@ struct AddItemViewModelBatchProgressTests {
         let proposals = (0..<3).map { _ in MaskProposalFixture.make() }
         vm.proposals = proposals
         vm.selectedProposalIDs = Set(proposals.map(\.id))
-        vm.onMultiPickConfirmed()
-        vm.onSkipCurrentProposal()
+        await vm.onMultiPickConfirmed()
+        await vm.onSkipCurrentProposal()
 
         // Confirm the cancel path zeros everything so the next photo
         // opens with the bar hidden.

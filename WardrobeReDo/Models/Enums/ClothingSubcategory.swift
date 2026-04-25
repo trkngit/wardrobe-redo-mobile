@@ -281,4 +281,30 @@ enum ClothingSubcategory: String, Codable, CaseIterable, Sendable {
             return nil
         }
     }
+
+    /// Rescue mapping for accessory-class Fashionpedia labels that
+    /// `fromFashionpediaClass` returns nil for, but where the raw class
+    /// gives an unambiguous hint (vs. defaulting blindly to .hat).
+    ///
+    /// Used by `AddItemViewModel.applyPrefill` exclusively for the
+    /// `.accessory` category so that, e.g., a belt detection still
+    /// pre-fills as `.belt` even when the upstream
+    /// `fromFashionpediaClass` mapping is bypassed (low confidence,
+    /// missing prediction, etc.). Returning nil signals "no rescue
+    /// available — fall through to the category default."
+    static func accessorySubcategoryFromRawClass(_ raw: String) -> ClothingSubcategory? {
+        switch raw.lowercased() {
+        case "glasses", "sunglasses": return .sunglasses
+        case "belt": return .belt
+        case "watch": return .watch
+        case "scarf": return .scarf
+        case "necklace": return .necklace
+        case "bracelet": return .bracelet
+        case "earring", "earrings": return .earrings
+        case "bag", "purse", "bag_wallet": return .bag
+        case "hat", "headband": return .hat
+        case "baseballcap", "cap": return .baseballCap
+        default: return nil
+        }
+    }
 }

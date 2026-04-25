@@ -131,14 +131,47 @@ final class OutfitGenerationService: @unchecked Sendable {
             if results.count >= preDedupTarget { break }
         }
 
+        // Hard occasion filter — the OccasionContextScorer's 0.10
+        // weight is too small to reorder outfits between subtabs
+        // against ColorHarmony's 0.25, so the same "Nordic Clean"
+        // candidate surfaced on every subtab. Filtering candidates to
+        // those with at least one item explicitly tagged for the
+        // selected occasion guarantees subtabs differ. Small-wardrobe
+        // rescue: fall back to the unfiltered ranking when the strict
+        // filter would drop us below `dailyOutfitCount` so the user
+        // never sees an empty carousel.
+        let pool = filteredByOccasion(
+            candidates: results,
+            occasion: occasion,
+            minimum: dailyOutfitCount
+        )
+
         // Dedup by item-set to collapse "Saturday Refined" + "The
         // Capsule" with identical items into a single card, keeping
         // the higher-scoring version. Falls back gracefully when the
         // wardrobe is small enough that fewer than `dailyOutfitCount`
         // distinct outfits exist — better to show 1-2 real options
         // than 3 cards where two are duplicates.
-        let sorted = results.sorted { $0.score.totalScore > $1.score.totalScore }
+        let sorted = pool.sorted { $0.score.totalScore > $1.score.totalScore }
         return deduplicateCandidates(sorted, limit: dailyOutfitCount)
+    }
+
+    // MARK: - Occasion Filter
+
+    /// Filter candidates to outfits where at least one item carries the
+    /// selected occasion in its `occasions` array. Falls back to the
+    /// unfiltered list when the strict filter would yield fewer than
+    /// `minimum` candidates — small wardrobes never surface an empty
+    /// carousel even when no item is tagged for the active subtab.
+    func filteredByOccasion(
+        candidates: [OutfitCandidate],
+        occasion: Occasion,
+        minimum: Int
+    ) -> [OutfitCandidate] {
+        let strictlyFiltered = candidates.filter { candidate in
+            candidate.items.contains { $0.occasions.contains(occasion) }
+        }
+        return strictlyFiltered.count >= minimum ? strictlyFiltered : candidates
     }
 
     // MARK: - Hero Piece Matching
@@ -611,10 +644,37 @@ final class OutfitGenerationService: @unchecked Sendable {
 
     // MARK: - Editorial Description
 
-    /// Generate a short editorial description from the outfit's items and score.
+    /// Generate a short editorial description from the outfit's items and
+    /// score. Prepends the highest-scoring scoring dimension's reasoning
+    /// so users see WHY an outfit works (e.g. "Cohesive navy palette
+    /// anchors this look") instead of only WHAT it contains. Falls back
+    /// to the legacy item+color summary when no dimension populated
+    /// reasoning text.
     func generateDescription(
         items: [WardrobeItem],
         archetype: StyleArchetype,
+        score: OutfitScore
+    ) -> String {
+        let topReasoning = score.breakdown
+            .filter { !$0.reasoning.trimmingCharacters(in: .whitespaces).isEmpty }
+            .max(by: { $0.value < $1.value })?
+            .reasoning
+            .trimmingCharacters(in: .whitespaces) ?? ""
+
+        let baseCopy = legacyDescription(items: items, score: score)
+
+        if topReasoning.isEmpty {
+            return baseCopy
+        }
+        return "\(topReasoning) — \(baseCopy)"
+    }
+
+    /// Item + color + score-tier summary that previously lived inside
+    /// `generateDescription`. Kept as a private helper so the new
+    /// dimension-reasoning prefix can prepend on top without losing the
+    /// existing copy when reasoning is empty.
+    private func legacyDescription(
+        items: [WardrobeItem],
         score: OutfitScore
     ) -> String {
         let itemNames = items.map { $0.subcategory.displayName.lowercased() }
