@@ -23,6 +23,16 @@ import Foundation
 /// docs/plans/2026-04-19-auto-attribute-detection/RULES_TABLE.md for the
 /// reviewable rules source.
 enum AttributeRulesEngine {
+    /// Confidence stamped on rules-derived textures. Sits just above
+    /// the 0.80 pre-fill gate in `AttributePrefill.minConfidence` so
+    /// the form will pre-fill, while staying clearly distinguishable
+    /// from a real ML score in the `detected_attributes` JSONB
+    /// telemetry. When the v1.1 classifier ships a real texture head,
+    /// any prediction with confidence ≥ 0.80 will win because the
+    /// pipeline (`MultiGarmentProposalService.applyAttributesAndRules`)
+    /// only consults `deriveTexture` when the ML prediction is nil.
+    static let rulesTextureConfidence: Float = 0.85
+
     /// Derive season + occasion pre-fills from a predicted triple.
     ///
     /// - Parameters:
@@ -51,5 +61,26 @@ enum AttributeRulesEngine {
             seasons.isEmpty ? Set(Season.allCases) : seasons,
             occasions.isEmpty ? [.casual] : occasions
         )
+    }
+
+    /// Stop-gap texture inference until the v1.1 attribute classifier
+    /// ships a real texture head. Returns a `TextureType` only when the
+    /// subcategory commits unambiguously to a fabric (jeans → denim,
+    /// sweater → knit, hoodie → fleece, …). Returns `nil` for generic
+    /// subcategories so the picker stays empty rather than show a
+    /// low-confidence guess.
+    ///
+    /// - Parameters:
+    ///   - category: included for symmetry with `derive(...)` but not
+    ///     used by the current rule set — every rule keys on
+    ///     subcategory alone. Kept in the signature so callers don't
+    ///     have to refactor when category-conditional rules ship.
+    ///   - subcategory: the only field the rules consult today.
+    static func deriveTexture(
+        category: ClothingCategory,
+        subcategory: ClothingSubcategory
+    ) -> TextureType? {
+        _ = category   // reserved for future category-conditional rules
+        return RulesTable.texture(for: subcategory)
     }
 }
