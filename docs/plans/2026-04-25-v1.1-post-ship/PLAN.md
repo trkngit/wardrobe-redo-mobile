@@ -158,6 +158,52 @@ Every item below genuinely needs you — credentials, spend, a physical device, 
 - Any `auth.uid()`-bound RLS change — needs real signed-in users to validate
 - Attribute-classifier feature-flag flip — gated on dogfood data
 
+---
+
+## Post-window addendum — Step 11: RLS initplan subquery wrap
+
+> Landed 2026-04-25, after the v1.1 window's official close at `14921c3`. This step was not in the original 10-step plan. It came out of the post-window advisor pass when we ran `get_advisors` and saw 10 `auth_rls_initplan` WARN-level findings — 1 introduced by the v1.1 window itself (migration 00011's `ml_inference_telemetry` policy), 9 pre-existing across the app since `00001_initial_schema`. Wrapping each `auth.uid()` / `auth.role()` call in `(select ...)` lets the PostgreSQL planner cache the value once per query instead of re-evaluating per row. RLS semantics are unchanged.
+
+### Migration applied
+
+- File: `supabase/migrations/00012_rls_initplan_subquery_wrap.sql` (125 lines)
+- Applied to prod via MCP `apply_migration` → version `20260425000503`
+- PR: [#8](https://github.com/trkngit/wardrobe-redo-mobile/pull/8) — squash-merged as commit `5f6c28c`
+- CI: run [24917491714](https://github.com/trkngit/wardrobe-redo-mobile/actions/runs/24917491714), green in 11m48s on self-hosted macOS/ARM64
+
+### Advisor delta
+
+| Advisor finding | Before | After |
+|-----------------|--------|-------|
+| `auth_rls_initplan` (WARN) | 10 | 0 |
+| `unindexed_foreign_keys` (INFO) | 1 | 1 |
+| `unused_index` (INFO) | 4 | 4 |
+
+### Policies rewritten (10)
+
+| Table | Policy | Cmd | Original predicate | Rewritten as |
+|-------|--------|-----|--------------------|--------------|
+| profiles | Users can view own profile | SELECT | `auth.uid() = id` | `(select auth.uid()) = id` |
+| profiles | Users can update own profile | UPDATE | `auth.uid() = id` | `(select auth.uid()) = id` |
+| profiles | Users can insert own profile | INSERT | `auth.uid() = id` (CHECK) | `(select auth.uid()) = id` |
+| wardrobe_items | Users can CRUD own items | ALL | `auth.uid() = user_id` | `(select auth.uid()) = user_id` |
+| item_style_tags | Users can access own item tags | ALL | `EXISTS (… auth.uid())` | `EXISTS (… (select auth.uid()))` |
+| outfits | Users can CRUD own outfits | ALL | `auth.uid() = user_id` | `(select auth.uid()) = user_id` |
+| outfit_slots | Users can access own outfit slots | ALL | `EXISTS (… auth.uid())` | `EXISTS (… (select auth.uid()))` |
+| style_archetypes | Authenticated users can read archetypes | SELECT | `auth.role() = 'authenticated'` | `(select auth.role()) = 'authenticated'` |
+| style_rules | Authenticated users can read rules | SELECT | `auth.role() = 'authenticated'` | `(select auth.role()) = 'authenticated'` |
+| ml_inference_telemetry | Users insert their own ML telemetry | INSERT | `auth.uid() = user_id` (CHECK) | `(select auth.uid()) = user_id` |
+
+### Verification
+
+- `pg_policies` post-migration shows all 10 affected policies with predicate normalized to `( SELECT auth.uid() AS uid)` / `( SELECT auth.role() AS role)`
+- Smoke test under MCP service-role connection: `count(*)` returns expected values for `style_archetypes` (50), `style_rules` (200), `wardrobe_items` (2), `profiles` (2), `outfits` (3), `outfit_slots` (0), `item_style_tags` (0), `ml_inference_telemetry` (0)
+- No deferrals — every flagged policy was rewritten in the same migration
+
+### Why this still goes through CI even though it's SQL-only
+
+The self-hosted runner runs the full Swift test suite (599 tests) on every PR. The migration file doesn't touch any Swift code, so the test count is unchanged — but the run still gates the merge against accidental file-system or workflow regressions. CI took 11m48s, well within the existing run-time envelope.
+
 ## Provenance
 
 Originating user request — verbatim:
