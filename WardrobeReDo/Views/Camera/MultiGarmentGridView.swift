@@ -170,21 +170,31 @@ private struct GridCard: View {
     }
 
     private var imageThumbnail: some View {
-        ZStack(alignment: .topTrailing) {
-            // Square image area. The proposal's masked cutout has
-            // transparency outside the garment so it renders cleanly
-            // on the surface color — no tint, no opacity tricks.
-            Image(uiImage: proposal.maskedImage)
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: .infinity)
-                .aspectRatio(1, contentMode: .fit)
-                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card - 4))
-
-            // Selection indicator overlaid in the corner.
-            checkmarkBadge
-                .padding(Theme.Spacing.xs)
-        }
+        // The previous chain — `.scaledToFit()` then
+        // `.aspectRatio(1, .fit)` — applied the square constraint AFTER
+        // SwiftUI had already sized the image to its natural aspect
+        // ratio, so cards rendered at different heights (a tall jeans
+        // card next to a short shoe card on the same row).
+        //
+        // Wrapping a square `Color` placeholder via `.aspectRatio(1)`
+        // FIRST forces a uniform square frame; the masked cutout then
+        // renders inside via overlay + scaledToFit + padding so the
+        // image is always centered, never cropped, and every card in
+        // the grid has the same dimensions regardless of cutout
+        // aspect ratio.
+        Color(Theme.Colors.background)
+            .aspectRatio(1, contentMode: .fit)
+            .overlay(
+                Image(uiImage: proposal.maskedImage)
+                    .resizable()
+                    .scaledToFit()
+                    .padding(Theme.Spacing.sm)
+            )
+            .overlay(alignment: .topTrailing) {
+                checkmarkBadge
+                    .padding(Theme.Spacing.xs)
+            }
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card - 4))
     }
 
     private var checkmarkBadge: some View {

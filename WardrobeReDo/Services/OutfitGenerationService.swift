@@ -73,16 +73,24 @@ final class OutfitGenerationService: @unchecked Sendable {
             recentItemIds: recentItemIds
         )
 
-        // Over-select so we have fallback candidates
+        // Over-select 3× so the post-loop item-set dedup has enough
+        // headroom: family-uniqueness alone doesn't prevent two
+        // archetypes from picking IDENTICAL items at slightly
+        // different scores, which the user sees as visually-duplicate
+        // outfit cards on a small wardrobe.
         let selectedArchetypes = selectDiverseArchetypes(
             archetypes: archetypes,
             context: context,
-            count: dailyOutfitCount * 2,
+            count: dailyOutfitCount * 3,
             seed: seed
         )
 
         var results: [OutfitCandidate] = []
         var usedFamilies: Set<String> = []
+        // Larger early-exit threshold than `dailyOutfitCount` so the
+        // dedup pass below has duplicates to discard before falling
+        // back to a smaller-than-target list.
+        let preDedupTarget = dailyOutfitCount * 2
 
         for archetype in selectedArchetypes {
             guard !usedFamilies.contains(archetype.family) else { continue }
@@ -110,10 +118,17 @@ final class OutfitGenerationService: @unchecked Sendable {
                 usedFamilies.insert(archetype.family)
             }
 
-            if results.count >= dailyOutfitCount { break }
+            if results.count >= preDedupTarget { break }
         }
 
-        return results.sorted { $0.score.totalScore > $1.score.totalScore }
+        // Dedup by item-set to collapse "Saturday Refined" + "The
+        // Capsule" with identical items into a single card, keeping
+        // the higher-scoring version. Falls back gracefully when the
+        // wardrobe is small enough that fewer than `dailyOutfitCount`
+        // distinct outfits exist — better to show 1-2 real options
+        // than 3 cards where two are duplicates.
+        let sorted = results.sorted { $0.score.totalScore > $1.score.totalScore }
+        return deduplicateCandidates(sorted, limit: dailyOutfitCount)
     }
 
     // MARK: - Hero Piece Matching
