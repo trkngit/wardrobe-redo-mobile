@@ -217,10 +217,12 @@ struct AddItemView: View {
 
     @ViewBuilder
     private var multiPickCover: some View {
-        if let source = viewModel.selectedImage,
-           let proposals = viewModel.proposals {
-            MultiGarmentTapToSelectView(
-                sourceImage: source,
+        if let proposals = viewModel.proposals {
+            // 2-column grid of detected garments — each card shows ONE
+            // proposal cleanly on a neutral surface. Replaces the old
+            // overlay-on-photo design (`MultiGarmentTapToSelectView`)
+            // which became unreadable when items overlapped on the body.
+            MultiGarmentGridView(
                 proposals: proposals,
                 selectedIDs: Binding(
                     get: { viewModel.selectedProposalIDs },
@@ -232,8 +234,8 @@ struct AddItemView: View {
             )
         } else {
             // Defensive fallback — the cover shouldn't open without
-            // these, but closing it rather than showing a blank screen
-            // recovers gracefully if state ever diverges.
+            // proposals, but closing it rather than showing a blank
+            // screen recovers gracefully if state ever diverges.
             Color.clear
                 .onAppear { viewModel.onMultiPickCancelled() }
         }
