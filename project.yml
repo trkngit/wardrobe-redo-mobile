@@ -66,7 +66,7 @@ targets:
         CFBundleName: Wardrobe
         CFBundleDisplayName: Wardrobe
         CFBundleShortVersionString: "1.0.0"
-        CFBundleVersion: "1"
+        CFBundleVersion: "2"
         UILaunchScreen:
           UIColorName: ""
         UIAppFonts:
