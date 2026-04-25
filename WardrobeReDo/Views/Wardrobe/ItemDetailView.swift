@@ -13,6 +13,7 @@ struct ItemDetailView: View {
 
     @State private var imageURL: URL?
     @State private var showDeleteConfirm = false
+    @State private var showArchiveConfirm = false
     @State private var isArchiving = false
     @State private var errorMessage: String?
 
@@ -87,6 +88,29 @@ struct ItemDetailView: View {
             }
         } message: {
             Text("This will permanently remove the item and its photos.")
+        }
+        .confirmationDialog(
+            "Archive this item?",
+            isPresented: $showArchiveConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Archive") {
+                Task {
+                    isArchiving = true
+                    errorMessage = nil
+                    do {
+                        let repo = WardrobeRepository()
+                        try await repo.archiveItem(id: item.id)
+                        NotificationCenter.default.post(name: .wardrobeDidChange, object: nil)
+                        dismiss()
+                    } catch {
+                        errorMessage = "Failed to archive item."
+                    }
+                    isArchiving = false
+                }
+            }
+        } message: {
+            Text("Archived items hide from your wardrobe and outfit suggestions. You can restore them later from the archive view.")
         }
     }
 
@@ -167,19 +191,7 @@ struct ItemDetailView: View {
     private var actionsSection: some View {
         VStack(spacing: Theme.Spacing.sm) {
             Button {
-                Task {
-                    isArchiving = true
-                    errorMessage = nil
-                    do {
-                        let repo = WardrobeRepository()
-                        try await repo.archiveItem(id: item.id)
-                        NotificationCenter.default.post(name: .wardrobeDidChange, object: nil)
-                        dismiss()
-                    } catch {
-                        errorMessage = "Failed to archive item."
-                    }
-                    isArchiving = false
-                }
+                showArchiveConfirm = true
             } label: {
                 HStack(spacing: Theme.Spacing.sm) {
                     if isArchiving {
