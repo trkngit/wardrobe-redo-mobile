@@ -1209,6 +1209,14 @@ final class AddItemViewModel {
         let capturedSourcePhotoId = sourcePhotoId
         let existingSourcePath = sourcePhotoPath
         let shouldLoopAfter = wantsAnotherGarment
+        // Capture the proposal's normalized bbox once so the detached
+        // upload Task doesn't need to read MainActor state. Multi-pick
+        // garments carry a non-nil `currentProposal`; single-photo
+        // captures end up with `currentProposal == nil` and stamp a
+        // nil bbox — matches the "no bbox was ever computed" semantics
+        // baked into `BoundingBoxCodable?` on `wardrobe_items` (see
+        // migration 00013).
+        let capturedBoundingBox = currentProposal.map { BoundingBoxCodable($0.boundingBox) }
 
         logger.info("save: starting upload for itemId=\(itemId) sourcePhotoId=\(capturedSourcePhotoId?.uuidString ?? "nil") savedSoFar=\(self.savedItemsFromSource)")
 
@@ -1260,7 +1268,13 @@ final class AddItemViewModel {
                         detectedAttributes: provenance,
                         // Client-generated key for dedup on retry.
                         // See migration 00010 + insertItem doc comment.
-                        idempotencyKey: UUID()
+                        idempotencyKey: UUID(),
+                        // Persist the multi-pick proposal's normalized
+                        // bbox so the item detail view can dim every-
+                        // thing outside this garment's rect when
+                        // rendering the source photo. Nil for single-
+                        // item captures (no proposal was ever computed).
+                        boundingBox: capturedBoundingBox
                     )
 
                     // Primary path: hit the repo synchronously so the UX

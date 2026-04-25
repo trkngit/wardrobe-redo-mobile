@@ -663,6 +663,61 @@ private final class StubSAM2Session: SAM2Session, @unchecked Sendable {
     #expect(vm.isShowingTapToSelect == false)
 }
 
+// MARK: - PR #21: bounding-box persistence on save (multi-pick)
+
+/// Multi-pick path: when the save runs while `currentProposal` is set
+/// (the user is iterating through a queue of detected garments), the
+/// proposal's normalized bbox should round-trip into the
+/// `NewWardrobeItem` payload so migration-00013's `bounding_box`
+/// JSONB column gets populated.
+@Test @MainActor func saveWritesBoundingBoxFromCurrentProposal() async {
+    let mockImage = MockImageService()
+    let mockRepo = MockWardrobeRepository()
+    let vm = AddItemViewModel(
+        imageService: mockImage,
+        wardrobeRepository: mockRepo
+    )
+    vm.processedImage = makeProcessedImage(maskedData: Data([0xAB]))
+    let bbox = CGRect(x: 0.1, y: 0.4, width: 0.3, height: 0.5)
+    vm.currentProposal = MaskProposalFixture.make(boundingBox: bbox)
+
+    await vm.save(userId: UUID())
+
+    #expect(mockRepo.insertItemCallCount == 1)
+    let inserted = mockRepo.lastInsertedItem
+    #expect(inserted?.boundingBox != nil, "multi-pick saves must persist the proposal bbox")
+    #expect(inserted?.boundingBox?.x == 0.1)
+    #expect(inserted?.boundingBox?.y == 0.4)
+    #expect(inserted?.boundingBox?.width == 0.3)
+    #expect(inserted?.boundingBox?.height == 0.5)
+}
+
+/// Single-item path: `currentProposal` is nil for captures that
+/// bypass the multi-garment grid (single-photo flow, "Use full
+/// photo" escape hatch, legacy save-and-add-another). The save
+/// must persist `boundingBox == nil` — matches the shape of
+/// pre-migration-00013 rows and keeps the detail view's overlay
+/// fallback ("no bbox → plain image") intact.
+@Test @MainActor func saveWritesNilBoundingBoxWhenNoCurrentProposal() async {
+    let mockImage = MockImageService()
+    let mockRepo = MockWardrobeRepository()
+    let vm = AddItemViewModel(
+        imageService: mockImage,
+        wardrobeRepository: mockRepo
+    )
+    vm.processedImage = makeProcessedImage(maskedData: Data([0xAB]))
+    // Precondition: this VM was never routed through the multi-pick
+    // queue, so `currentProposal` stays nil through save. Mirrors the
+    // shape of `addItemSavePassesSourcePhotoIdThroughToInsert` above.
+    #expect(vm.currentProposal == nil)
+
+    await vm.save(userId: UUID())
+
+    #expect(mockRepo.insertItemCallCount == 1)
+    #expect(mockRepo.lastInsertedItem?.boundingBox == nil,
+            "single-item captures have no bbox to persist")
+}
+
 // MARK: - UploadQueue integration (Step 9)
 
 /// Verify the retryable-vs-non-retryable fork in the save path's

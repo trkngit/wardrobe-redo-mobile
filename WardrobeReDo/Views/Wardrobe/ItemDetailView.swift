@@ -19,6 +19,13 @@ struct ItemDetailView: View {
 
     private let imageService = ImageService()
 
+    /// True when the item has a non-nil bounding box, so the source photo
+    /// renders with a dim-everything-but-the-bbox overlay. Exposed for
+    /// tests; the view body is not directly inspected.
+    var shouldShowBoundingBoxOverlay: Bool {
+        item.boundingBox != nil
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: Theme.Spacing.lg) {
@@ -117,25 +124,58 @@ struct ItemDetailView: View {
     // MARK: - Image
 
     private var imageSection: some View {
-        KFImage(imageURL)
-            .placeholder {
-                Rectangle()
-                    .fill(Color(Theme.Colors.muted).opacity(0.3))
-                    .overlay {
-                        VStack(spacing: Theme.Spacing.sm) {
-                            ProgressView()
-                                .tint(Color(Theme.Colors.primary))
-                            Text("Loading image...")
-                                .font(Theme.Fonts.caption)
-                                .foregroundStyle(Color(Theme.Colors.textSecondary))
+        // For multi-pick items the source photo holds multiple garments
+        // (e.g. shirt + pants from one mirror selfie). Without a per-item
+        // overlay the user can't tell which garment this row represents.
+        // When `boundingBox` is present we dim everything outside the
+        // bbox and outline it; otherwise the photo renders plainly so
+        // legacy / single-item rows look unchanged.
+        ZStack {
+            KFImage(imageURL)
+                .placeholder {
+                    Rectangle()
+                        .fill(Color(Theme.Colors.muted).opacity(0.3))
+                        .overlay {
+                            VStack(spacing: Theme.Spacing.sm) {
+                                ProgressView()
+                                    .tint(Color(Theme.Colors.primary))
+                                Text("Loading image...")
+                                    .font(Theme.Fonts.caption)
+                                    .foregroundStyle(Color(Theme.Colors.textSecondary))
+                            }
                         }
-                    }
+                }
+                .resizable()
+                .scaledToFit()
+
+            if let bbox = item.boundingBox?.cgRect {
+                GeometryReader { geo in
+                    let pixelRect = bbox.scaled(to: geo.size)
+
+                    // Dim the area outside the bbox using an even-odd
+                    // fill (outer rect minus inner hole).
+                    Rectangle()
+                        .fill(Color.black.opacity(0.45))
+                        .mask(
+                            BoundingBoxHoleShape(rect: pixelRect)
+                                .fill(style: FillStyle(eoFill: true))
+                        )
+                        .allowsHitTesting(false)
+
+                    // Outline the bbox so the highlighted region reads
+                    // as deliberate framing rather than a punched-out
+                    // hole.
+                    Rectangle()
+                        .stroke(Color.white, lineWidth: 2)
+                        .frame(width: pixelRect.width, height: pixelRect.height)
+                        .offset(x: pixelRect.minX, y: pixelRect.minY)
+                        .allowsHitTesting(false)
+                }
             }
-            .resizable()
-            .scaledToFit()
-            .frame(maxHeight: 400)
-            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
-            .cardShadow()
+        }
+        .frame(maxHeight: 400)
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+        .cardShadow()
     }
 
     // MARK: - Colors
@@ -350,5 +390,37 @@ struct FlowLayout: Layout {
     private struct LayoutResult {
         let positions: [CGPoint]
         let size: CGSize
+    }
+}
+
+// MARK: - Bounding Box Overlay
+
+/// Shape composed of an outer rectangle (the full image bounds) and an
+/// inner rectangle (the bbox). Filled with an even-odd rule, the inner
+/// rect punches a hole — so masking a black-tinted Rectangle with this
+/// shape dims everything *outside* the bbox while leaving the garment
+/// itself untouched.
+private struct BoundingBoxHoleShape: Shape {
+    let rect: CGRect
+
+    func path(in pathRect: CGRect) -> Path {
+        var path = Path(pathRect)
+        path.addRect(rect)
+        return path
+    }
+}
+
+private extension CGRect {
+    /// Scales a normalized [0, 1] rect into a pixel rect for the given
+    /// size. `BoundingBoxCodable.cgRect` returns normalized coords; the
+    /// detail-view overlay multiplies by the rendered image size at the
+    /// call site.
+    func scaled(to size: CGSize) -> CGRect {
+        CGRect(
+            x: minX * size.width,
+            y: minY * size.height,
+            width: width * size.width,
+            height: height * size.height
+        )
     }
 }
