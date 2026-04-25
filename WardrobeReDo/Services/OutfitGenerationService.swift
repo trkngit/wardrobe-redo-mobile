@@ -98,7 +98,13 @@ final class OutfitGenerationService: @unchecked Sendable {
             let archetypeRules = rules.filter { $0.archetypeId == archetype.id }
             guard !archetypeRules.isEmpty else { continue }
 
-            // Best candidate across all rules for this archetype
+            // Best candidate across all rules for this archetype.
+            // The `if let best = bestCandidate` form replaces the
+            // earlier `bestCandidate!.score.totalScore` force-unwrap
+            // — currently safe via the `bestCandidate == nil ||`
+            // short-circuit, but a future refactor reordering the
+            // condition would silently land a crash hazard. The let-
+            // binding makes the safety load-bearing.
             var bestCandidate: OutfitCandidate?
             for rule in archetypeRules {
                 let candidates = beamSearch(
@@ -107,8 +113,12 @@ final class OutfitGenerationService: @unchecked Sendable {
                     rule: rule,
                     context: context
                 )
-                if let top = candidates.first,
-                   bestCandidate == nil || top.score.totalScore > bestCandidate!.score.totalScore {
+                guard let top = candidates.first else { continue }
+                if let best = bestCandidate {
+                    if top.score.totalScore > best.score.totalScore {
+                        bestCandidate = top
+                    }
+                } else {
                     bestCandidate = top
                 }
             }
