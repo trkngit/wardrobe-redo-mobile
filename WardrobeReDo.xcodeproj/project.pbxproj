@@ -105,6 +105,7 @@
 		673173AFD7A79D706E7E6AE6 /* OutfitFormulaScorerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A843300BF6B185DAEFCDC024 /* OutfitFormulaScorerTests.swift */; };
 		68FB0EFF557C5039BE89B908 /* MultiGarmentProposalServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D36414C7C1815048C85CF8 /* MultiGarmentProposalServiceTests.swift */; };
 		6A8D1D1930FBA7A07CF0F44E /* StyleArchetype.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25C01BB3FED8903F9F539095 /* StyleArchetype.swift */; };
+		6A9B3C35EF942D25A7308070 /* testItemFormView_defaultState.1.png in Resources */ = {isa = PBXBuildFile; fileRef = A917E05A57655B6F4A453F19 /* testItemFormView_defaultState.1.png */; };
 		6AB299037B8305474F4CBB62 /* RetryPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DEA433ABEE8727A6DB54528 /* RetryPolicyTests.swift */; };
 		6B3161B163AA4EF7EA448529 /* AttributeClassifier.mlpackage in Sources */ = {isa = PBXBuildFile; fileRef = 307933CEB602AED8C7ACD99B /* AttributeClassifier.mlpackage */; };
 		6C1F50AEBF7A3C4612F85528 /* CameraOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408DF6F4637E0C85BF985D68 /* CameraOverlay.swift */; };
@@ -455,6 +456,7 @@
 		A6960F83174F2F13B838C90C /* on_person_05.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = on_person_05.jpg; sourceTree = "<group>"; };
 		A77AC489FED071A22EFD1085 /* ColorExtractionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorExtractionService.swift; sourceTree = "<group>"; };
 		A843300BF6B185DAEFCDC024 /* OutfitFormulaScorerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitFormulaScorerTests.swift; sourceTree = "<group>"; };
+		A917E05A57655B6F4A453F19 /* testItemFormView_defaultState.1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testItemFormView_defaultState.1.png; sourceTree = "<group>"; };
 		AA70C9920FDBA0E83F03097A /* UploadQueueTestIsolation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadQueueTestIsolation.swift; sourceTree = "<group>"; };
 		AB9128E432CF0044E15761A5 /* cluttered_06.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = cluttered_06.jpg; sourceTree = "<group>"; };
 		AC6055EA11189510E148635B /* FormalityCoherenceScorerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormalityCoherenceScorerTests.swift; sourceTree = "<group>"; };
@@ -585,6 +587,7 @@
 			isa = PBXGroup;
 			children = (
 				BF7FDEDFCF42DDE54D305E72 /* ItemFormViewSnapshotTests.swift */,
+				2DD6A3C288C5E6668BF6B5B2 /* __Snapshots__ */,
 			);
 			path = Snapshot;
 			sourceTree = "<group>";
@@ -768,6 +771,14 @@
 			path = ground_truth;
 			sourceTree = "<group>";
 		};
+		232FF299CCCFBBE823D52430 /* ItemFormViewSnapshotTests */ = {
+			isa = PBXGroup;
+			children = (
+				A917E05A57655B6F4A453F19 /* testItemFormView_defaultState.1.png */,
+			);
+			path = ItemFormViewSnapshotTests;
+			sourceTree = "<group>";
+		};
 		260131920231FB7FB73A9ED4 /* Views */ = {
 			isa = PBXGroup;
 			children = (
@@ -803,6 +814,14 @@
 				264BBB2F3E55F63315C0E1C1 /* WardrobeReDoApp.swift */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		2DD6A3C288C5E6668BF6B5B2 /* __Snapshots__ */ = {
+			isa = PBXGroup;
+			children = (
+				232FF299CCCFBBE823D52430 /* ItemFormViewSnapshotTests */,
+			);
+			path = __Snapshots__;
 			sourceTree = "<group>";
 		};
 		2E18974A2E616CD5B4B5FC8A /* Frameworks */ = {
@@ -1321,8 +1340,17 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
+					155DB0512B30EC734C06DE1B = {
+						DevelopmentTeam = SCX8LHNYXZ;
+					};
+					2567EE05430C835A8AE16822 = {
+						DevelopmentTeam = SCX8LHNYXZ;
+					};
+					3A7299374FFBDB0666DC59C9 = {
+						DevelopmentTeam = SCX8LHNYXZ;
+					};
 					F5EDDA5CEB4501A88B3E9790 = {
-						DevelopmentTeam = "";
+						DevelopmentTeam = SCX8LHNYXZ;
 					};
 				};
 			};
@@ -1416,6 +1444,7 @@
 				110339A6DB625B3B6EA0C23D /* on_person_09.png in Resources */,
 				1061A903ACCC1C8A22C4EF87 /* on_person_10.jpg in Resources */,
 				3AA674651906FB44C9619BDA /* on_person_10.png in Resources */,
+				6A9B3C35EF942D25A7308070 /* testItemFormView_defaultState.1.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1681,7 +1710,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = SCX8LHNYXZ;
 				INFOPLIST_FILE = WardrobeReDo/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1732,6 +1761,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = SCX8LHNYXZ;
 				ENABLE_MODULE_VERIFIER = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -1858,6 +1888,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = SCX8LHNYXZ;
 				ENABLE_MODULE_VERIFIER = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -1928,7 +1959,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = SCX8LHNYXZ;
 				INFOPLIST_FILE = WardrobeReDo/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
