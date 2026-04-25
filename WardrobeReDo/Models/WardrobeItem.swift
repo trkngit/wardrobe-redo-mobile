@@ -44,6 +44,14 @@ struct WardrobeItem: Codable, Identifiable, Sendable {
     /// Empty (not nil) on legacy rows saved before migration 00009 —
     /// Postgres defaults the column to `'{}'::jsonb`.
     var detectedAttributes: [String: String]
+    /// Normalized [0, 1] bounding box of the detected garment within
+    /// `sourcePhotoPath`. Used by the item detail view to dim
+    /// everything outside the bbox so two items extracted from the
+    /// same multi-garment capture render distinctly. Nil for legacy
+    /// items predating migration 00013 OR for single-item captures
+    /// where no bbox was recorded — the detail view falls back to a
+    /// plain image render in that case.
+    var boundingBox: BoundingBoxCodable?
     let createdAt: Date
     var updatedAt: Date
 
@@ -68,6 +76,7 @@ struct WardrobeItem: Codable, Identifiable, Sendable {
         case lastWornAt = "last_worn_at"
         case isArchived = "is_archived"
         case detectedAttributes = "detected_attributes"
+        case boundingBox = "bounding_box"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
@@ -95,6 +104,7 @@ struct WardrobeItem: Codable, Identifiable, Sendable {
         lastWornAt: Date? = nil,
         isArchived: Bool = false,
         detectedAttributes: [String: String] = [:],
+        boundingBox: BoundingBoxCodable? = nil,
         createdAt: Date,
         updatedAt: Date
     ) {
@@ -120,6 +130,7 @@ struct WardrobeItem: Codable, Identifiable, Sendable {
         self.lastWornAt = lastWornAt
         self.isArchived = isArchived
         self.detectedAttributes = detectedAttributes
+        self.boundingBox = boundingBox
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -151,6 +162,10 @@ struct WardrobeItem: Codable, Identifiable, Sendable {
         // happens to omit the column (shouldn't occur post-00009 but
         // keeps old test fixtures + pre-migration restores decodable).
         detectedAttributes = try c.decodeIfPresent([String: String].self, forKey: .detectedAttributes) ?? [:]
+        // Nil for rows predating migration 00013, for legacy rows
+        // where the column is null, and for single-item captures where
+        // no bbox was recorded.
+        boundingBox = try c.decodeIfPresent(BoundingBoxCodable.self, forKey: .boundingBox)
         createdAt = try c.decode(Date.self, forKey: .createdAt)
         updatedAt = try c.decode(Date.self, forKey: .updatedAt)
     }
@@ -183,5 +198,43 @@ struct FormalityComponents: Codable, Sendable {
         case textureSmoothness = "texture_smoothness"
         case patternScale = "pattern_scale"
         case structuralScore = "structural_score"
+    }
+}
+
+/// Normalized [0, 1] bounding box of a detected garment within a
+/// source photo. Persisted as JSONB on `wardrobe_items.bounding_box`
+/// (migration 00013). Coordinates survive any future image resize /
+/// re-encode without recomputation.
+///
+/// Example payload:
+///
+///     {"x": 0.1, "y": 0.4, "width": 0.3, "height": 0.5}
+struct BoundingBoxCodable: Codable, Sendable, Equatable, Hashable {
+    let x: Double
+    let y: Double
+    let width: Double
+    let height: Double
+
+    /// CGRect projection of the normalized box. Multiply by the
+    /// rendered image size at the call site to get a pixel rect.
+    var cgRect: CGRect {
+        CGRect(x: x, y: y, width: width, height: height)
+    }
+
+    init(x: Double, y: Double, width: Double, height: Double) {
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+    }
+
+    /// Convenience round-trip from a CGRect produced by the on-device
+    /// extraction pipeline. Inputs are expected to already be in
+    /// normalized [0, 1] coordinates — this initializer doesn't clamp.
+    init(_ rect: CGRect) {
+        self.x = Double(rect.minX)
+        self.y = Double(rect.minY)
+        self.width = Double(rect.width)
+        self.height = Double(rect.height)
     }
 }
