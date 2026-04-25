@@ -14,7 +14,15 @@ struct AddItemView: View {
 
                 ScrollView {
                     VStack(spacing: Theme.Spacing.lg) {
-                        // Progress indicator
+                        // Per-batch progress bar — only visible when
+                        // the user is mid-way through a multi-pick
+                        // queue (Save N items → details form repeated
+                        // N times). Shows "Item X of N" + a filled
+                        // capsule that advances on every save AND skip.
+                        batchProgressBar
+
+                        // Progress indicator (4-step photo → analysis
+                        // → details → saving)
                         progressBar
 
                         switch viewModel.currentStep {
@@ -274,6 +282,47 @@ struct AddItemView: View {
         }
     }
 
+    // MARK: - Per-batch Progress Bar
+    //
+    // Visible only during a multi-pick batch (the user tapped
+    // "Save N items" on the grid view and is now cycling through the
+    // per-item details form). Hidden in the single-item flow because
+    // `viewModel.batchTotalCount == 0` then. Both saves and skips
+    // advance the bar — the user gets feedback even when they opt out
+    // of an item.
+
+    @ViewBuilder
+    private var batchProgressBar: some View {
+        if viewModel.batchTotalCount > 0 {
+            let total = viewModel.batchTotalCount
+            let processed = viewModel.savedItemsFromSource + viewModel.batchSkippedCount
+            // Show "Item N of T" where N counts the *current* item the
+            // user is detailing (1-indexed). Capped at total so the
+            // last save flips it to "Item T of T" briefly before the
+            // sheet dismisses, never "Item T+1 of T".
+            let current = min(processed + 1, total)
+            let progress = min(Double(processed) / Double(max(total, 1)), 1.0)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Item \(current) of \(total)")
+                    .font(Theme.Fonts.caption)
+                    .foregroundStyle(Color(Theme.Colors.textSecondary))
+                    .accessibilityIdentifier("AddItem.BatchProgress.Label")
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color(Theme.Colors.muted).opacity(0.3))
+                        Capsule()
+                            .fill(Color(Theme.Colors.primary))
+                            .frame(width: geo.size.width * progress)
+                    }
+                }
+                .frame(height: 4)
+                .accessibilityIdentifier("AddItem.BatchProgress.Bar")
+            }
+        }
+    }
+
     // MARK: - Step 1: Photo Selection
 
     private var photoStep: some View {
@@ -323,8 +372,15 @@ struct AddItemView: View {
 
     private var detailsStep: some View {
         VStack(spacing: Theme.Spacing.lg) {
-            // Image preview with extracted colors
-            if let image = viewModel.selectedImage {
+            // Image preview with extracted colors.
+            //
+            // During a multi-pick batch we want the per-proposal masked
+            // cutout, NOT the full source photo — otherwise every item
+            // in the queue renders the same selfie/full-body shot and
+            // the user can't tell which garment they're detailing right
+            // now. Falls back to `selectedImage` for the single-item
+            // flow where `currentProposal` is nil.
+            if let image = viewModel.currentProposal?.maskedImage ?? viewModel.selectedImage {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFit()
