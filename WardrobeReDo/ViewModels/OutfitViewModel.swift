@@ -90,6 +90,18 @@ final class OutfitViewModel {
 
             guard !outfits.isEmpty else {
                 dailyOutfits = []
+                // Proactive empty-wardrobe nudge: if there's nothing
+                // cached for today AND the wardrobe is too small to
+                // generate anything, surface the actionable copy from
+                // GenerationFailure now instead of waiting for the
+                // user to tap "Generate" and hit the same wall. Skips
+                // the network call when wardrobe is rich (count >= 2)
+                // since the generic empty-state is fine then.
+                let wardrobeItems = (try? await wardrobeRepository.fetchItems(userId: userId)) ?? []
+                let activeCount = wardrobeItems.filter { !$0.isArchived }.count
+                if activeCount < 2 {
+                    applyFailure(.wardrobeTooSmall(itemCount: activeCount))
+                }
                 return
             }
 

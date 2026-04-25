@@ -142,16 +142,23 @@ struct DailyOutfitsView: View {
             occasionPicker
                 .padding(.top, Theme.Spacing.sm)
 
-            GoldButton(
-                viewModel.lastFailure == nil ? "Generate Today's Outfits" : "Try Again",
-                isLoading: viewModel.isGenerating
-            ) {
-                guard !viewModel.isGenerating else { return }
-                guard let userId = appState.currentUser?.id else { return }
-                Task { await viewModel.generateDailyOutfits(userId: userId) }
+            // Hide the Generate / Try-Again CTA when the failure
+            // explicitly suggests adding items first — tapping it
+            // would just re-hit the same wardrobe-too-small failure.
+            // The failureBanner copy already nudges toward the
+            // Wardrobe tab, which is the action that helps.
+            if viewModel.lastFailure?.suggestsAddingItems != true {
+                GoldButton(
+                    viewModel.lastFailure == nil ? "Generate Today's Outfits" : "Try Again",
+                    isLoading: viewModel.isGenerating
+                ) {
+                    guard !viewModel.isGenerating else { return }
+                    guard let userId = appState.currentUser?.id else { return }
+                    Task { await viewModel.generateDailyOutfits(userId: userId) }
+                }
+                .disabled(viewModel.isGenerating)
+                .padding(.horizontal, Theme.Spacing.xxl)
             }
-            .disabled(viewModel.isGenerating)
-            .padding(.horizontal, Theme.Spacing.xxl)
         }
         .padding(Theme.Spacing.lg)
     }
