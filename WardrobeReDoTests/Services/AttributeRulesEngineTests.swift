@@ -224,13 +224,14 @@ import Testing
 }
 
 @Test func cottonTshirtReturnsAllSeasons() {
-    // Rule 34: top default. cotton doesn't match rules 32/33, so the
-    // catch-all fires.
+    // Rule 34: top default. Cotton doesn't match rules 32/33, so the
+    // catch-all fires for seasons. Occasions follow rule 130
+    // (broadened) — t-shirts now slide casual / date / lounge.
     let (seasons, occasions) = AttributeRulesEngine.derive(
         category: .top, subcategory: .tshirt, texture: .cotton
     )
     #expect(seasons == Set(Season.allCases))
-    #expect(occasions == [.casual])
+    #expect(occasions == [.casual, .date, .lounge])
 }
 
 @Test func summerBottomsReturnSpringSummer() {
@@ -328,14 +329,61 @@ import Testing
     #expect(occasions == [.work, .date, .formal])
 }
 
-@Test func suitJacketReturnsWorkFormal() {
-    // Rule 103: formal outerwear.
-    for sub: ClothingSubcategory in [.suitJacket, .trench, .overcoat] {
+@Test func suitJacketReturnsWorkDateFormal() {
+    // Rule 103a (broadened): suit jacket adds date alongside work +
+    // formal so the Date subtab isn't empty for users with a single
+    // formal jacket in rotation.
+    let (_, occasions) = AttributeRulesEngine.derive(
+        category: .outerwear, subcategory: .suitJacket, texture: .wool
+    )
+    #expect(occasions == [.work, .date, .formal])
+}
+
+@Test func trenchAndOvercoatSpanAllFormalOccasions() {
+    // Rule 103b: trench + overcoat are universal layers — they read
+    // casual through formal depending on what's underneath.
+    for sub: ClothingSubcategory in [.trench, .overcoat] {
         let (_, occasions) = AttributeRulesEngine.derive(
             category: .outerwear, subcategory: sub, texture: .wool
         )
-        #expect(occasions == [.work, .formal], "expected work/formal for .\(sub)")
+        #expect(
+            occasions == [.casual, .work, .date, .formal],
+            "expected casual/work/date/formal for .\(sub)"
+        )
     }
+}
+
+@Test func poloSpansCasualWorkDateLounge() {
+    // Rule 106: polo is the smart-casual classic — works for casual,
+    // work, date, and lounge.
+    let (_, occasions) = AttributeRulesEngine.derive(
+        category: .top, subcategory: .polo, texture: .cotton
+    )
+    #expect(occasions == [.casual, .work, .date, .lounge])
+}
+
+@Test func buttonDownAndDressShirtSpanCasualWorkDate() {
+    // Rule 107: button-down + dress shirt — work + casual + date.
+    for sub: ClothingSubcategory in [.buttonDown, .dressShirt] {
+        let (_, occasions) = AttributeRulesEngine.derive(
+            category: .top, subcategory: sub, texture: .cotton
+        )
+        #expect(
+            occasions == [.casual, .work, .date],
+            "expected casual/work/date for .\(sub)"
+        )
+    }
+}
+
+@Test func blazerSpansAllPrimaryOccasions() {
+    // Rule 108: blazer (categorized as a top here) reads as a primary
+    // occasion-spanning piece. Tested with a non-wool texture so the
+    // earlier rule 105 (wool tops → casual/work/date) doesn't shadow
+    // the more specific blazer rule.
+    let (_, occasions) = AttributeRulesEngine.derive(
+        category: .top, subcategory: .blazer, texture: .cotton
+    )
+    #expect(occasions == [.casual, .work, .date, .formal])
 }
 
 @Test func cocktailDressReturnsDressyOccasions() {
@@ -364,13 +412,18 @@ import Testing
     }
 }
 
-@Test func sneakersReturnAthleticCasual() {
-    // Rule 111: athletic shoes.
+@Test func sneakersSpanCasualAthleticDateLounge() {
+    // Rule 111 (broadened): sneakers cross every "casual-ish" subtab so
+    // a sneaker-only wardrobe doesn't render an empty Date or Lounge
+    // subtab in the Outfits feed.
     for sub: ClothingSubcategory in [.sneakers, .sneakerLow, .sneakerHigh, .highTops, .runningShoe, .designerSneakers] {
         let (_, occasions) = AttributeRulesEngine.derive(
             category: .shoe, subcategory: sub, texture: nil
         )
-        #expect(occasions == [.casual, .athletic], "expected casual/athletic for .\(sub)")
+        #expect(
+            occasions == [.casual, .athletic, .date, .lounge],
+            "expected casual/athletic/date/lounge for .\(sub)"
+        )
     }
 }
 
@@ -394,19 +447,42 @@ import Testing
     }
 }
 
-@Test func basicTopsReturnCasualOnly() {
-    // Rule 130: basic top family.
-    for sub: ClothingSubcategory in [.tshirt, .tankTop, .tank, .camisole, .cropTop, .graphicTee, .henley, .polo] {
+@Test func basicShortSleeveTopsSpanCasualDateLounge() {
+    // Rule 130 (broadened): t-shirts, tanks, henleys, etc. now also
+    // serve date and lounge — a t-shirt wardrobe should populate all
+    // three of those subtabs. Polo, blazer, button-down, and
+    // dress-shirt are intentionally excluded — they have their own,
+    // wider rules above.
+    for sub: ClothingSubcategory in [.tshirt, .tankTop, .tank, .camisole, .cropTop, .graphicTee, .henley] {
         let (_, occasions) = AttributeRulesEngine.derive(
             category: .top, subcategory: sub, texture: nil
         )
-        #expect(occasions == [.casual], "expected casual-only for .\(sub)")
+        #expect(
+            occasions == [.casual, .date, .lounge],
+            "expected casual/date/lounge for .\(sub)"
+        )
     }
 }
 
-@Test func jeansAndChinosReturnCasualDate() {
-    // Rule 131: casual bottoms.
-    for sub: ClothingSubcategory in [.jeans, .shorts, .cargo, .chinos] {
+@Test func chinosSpanCasualWorkDate() {
+    // Rule 131a: chinos cross into work — the most versatile bottom.
+    let (_, occasions) = AttributeRulesEngine.derive(
+        category: .bottom, subcategory: .chinos, texture: nil
+    )
+    #expect(occasions == [.casual, .work, .date])
+}
+
+@Test func jeansSpanCasualDateLounge() {
+    // Rule 131b: jeans don't read work but do read lounge.
+    let (_, occasions) = AttributeRulesEngine.derive(
+        category: .bottom, subcategory: .jeans, texture: nil
+    )
+    #expect(occasions == [.casual, .date, .lounge])
+}
+
+@Test func shortsAndCargoStayCasualDate() {
+    // Rule 131c: shorts + cargo don't expand beyond casual + date.
+    for sub: ClothingSubcategory in [.shorts, .cargo] {
         let (_, occasions) = AttributeRulesEngine.derive(
             category: .bottom, subcategory: sub, texture: nil
         )
@@ -414,12 +490,13 @@ import Testing
     }
 }
 
-@Test func sandalsReturnCasualOnlyOccasion() {
-    // Rule 132: sandals.
+@Test func sandalsReturnCasualLounge() {
+    // Rule 132 (broadened): sandals add lounge so summer-only feet
+    // still match the Lounge subtab.
     let (_, occasions) = AttributeRulesEngine.derive(
         category: .shoe, subcategory: .sandals, texture: nil
     )
-    #expect(occasions == [.casual])
+    #expect(occasions == [.casual, .lounge])
 }
 
 @Test func casualOuterwearReturnsCasualDate() {
@@ -432,13 +509,18 @@ import Testing
     }
 }
 
-@Test func casualDressesReturnCasualDate() {
-    // Rule 134: sundress + casualDress.
+@Test func casualDressesReturnCasualDateLounge() {
+    // Rule 134 (broadened): sundress + casualDress also slide into
+    // lounge so a sundress-only summer wardrobe doesn't render an
+    // empty Lounge subtab.
     for sub: ClothingSubcategory in [.sundress, .casualDress] {
         let (_, occasions) = AttributeRulesEngine.derive(
             category: .dress, subcategory: sub, texture: .cotton
         )
-        #expect(occasions == [.casual, .date], "expected casual/date for .\(sub)")
+        #expect(
+            occasions == [.casual, .date, .lounge],
+            "expected casual/date/lounge for .\(sub)"
+        )
     }
 }
 
@@ -456,17 +538,17 @@ import Testing
     // Canonical-case coverage: probe each TextureType against a top and
     // confirm SOME rule fires (i.e. the result differs from a reasonable
     // "untouched by texture" baseline OR matches one of the texture-
-    // keyed rules). In practice the baseline for `(.top, .buttonDown, _)`
-    // is rule 34 → Season.allCases, occasions → rule 130 doesn't match
-    // buttonDown so the default [.casual] fires. Any texture-driven rule
-    // must change one of those two sets.
+    // keyed rules). The baseline for `(.top, .buttonDown, _)` is now
+    // rule 34 → Season.allCases for seasons, and rule 107 (broadened
+    // smart-casual rule) → [.casual, .work, .date] for occasions. Any
+    // texture-driven rule must change one of those two sets.
     //
     // Rationale: if a TextureType is never mentioned in RulesTable, the
     // pre-fill silently degrades to the category defaults. That's not
     // catastrophic — the user just doesn't get ML-driven seasons/
     // occasions for that fabric — but it's worth catching explicitly.
     let baselineSeasons = Set(Season.allCases)
-    let baselineOccasions: Set<Occasion> = [.casual]
+    let baselineOccasions: Set<Occasion> = [.casual, .work, .date]
     var uncovered: [TextureType] = []
     for texture in TextureType.allCases {
         let (seasons, occasions) = AttributeRulesEngine.derive(

@@ -64,7 +64,29 @@ struct DailyOutfitsView: View {
 
             // Occasion selector
             occasionPicker
+
+            // Regenerate button — re-rolls today's outfits with a fresh
+            // seed so the user gets a different combination on demand.
+            // Lives below the picker so it's adjacent to the occasion
+            // they may have just changed.
+            regenerateButton
         }
+    }
+
+    // MARK: - Regenerate Button
+
+    private var regenerateButton: some View {
+        GoldButton(
+            viewModel.isRegenerating ? "Generating…" : "Generate New Outfits",
+            isLoading: viewModel.isRegenerating
+        ) {
+            guard !viewModel.isRegenerating else { return }
+            guard let userId = appState.currentUser?.id else { return }
+            Task { await viewModel.regenerateDailyOutfits(userId: userId) }
+        }
+        .disabled(viewModel.isRegenerating)
+        .padding(.horizontal, Theme.Spacing.lg)
+        .padding(.bottom, Theme.Spacing.md)
     }
 
     // MARK: - Date Header

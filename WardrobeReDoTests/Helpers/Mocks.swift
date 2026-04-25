@@ -77,15 +77,23 @@ final class MockOutfitRepository: OutfitRepositoryProtocol {
     var markAsWornError: Error?
 
     var hasOutfitsForDateResult: Bool = false
+    var deleteOutfitsError: Error?
 
     var updateReactionCallCount = 0
     var markAsWornCallCount = 0
     var hasOutfitsForDateCallCount = 0
+    var deleteOutfitsCallCount = 0
     var lastReaction: String??
     var lastIsWorn: Bool?
     var lastOutfitId: UUID?
+    var lastDeleteOutfitsUserId: UUID?
+    var lastDeleteOutfitsDate: String?
+    /// Records every delete/insert-shaped call in arrival order so tests
+    /// can assert the regenerate flow deletes BEFORE re-fetching.
+    var callLog: [String] = []
 
     func fetchOutfitsByDate(userId: UUID, date: String) async throws -> [Outfit] {
+        callLog.append("fetchOutfitsByDate")
         return try fetchOutfitsByDateResult.get()
     }
 
@@ -113,7 +121,16 @@ final class MockOutfitRepository: OutfitRepositoryProtocol {
 
     func hasOutfitsForDate(userId: UUID, date: String) async throws -> Bool {
         hasOutfitsForDateCallCount += 1
+        callLog.append("hasOutfitsForDate")
         return hasOutfitsForDateResult
+    }
+
+    func deleteOutfits(userId: UUID, date: String) async throws {
+        deleteOutfitsCallCount += 1
+        lastDeleteOutfitsUserId = userId
+        lastDeleteOutfitsDate = date
+        callLog.append("deleteOutfits")
+        if let error = deleteOutfitsError { throw error }
     }
 }
 
