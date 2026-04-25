@@ -29,6 +29,49 @@ import Foundation
 /// and (3) reactivating them takes zero code change. See
 /// `BLOCKERS.md#D-1`.
 enum RulesTable {
+    // MARK: - Texture (subcategory → fabric inference)
+    //
+    // High-confidence subcategory → texture inferences. Used by
+    // `AttributeRulesEngine.deriveTexture` as a stop-gap until the
+    // Phase 3 attribute classifier ships a real texture head.
+    //
+    // The intent is conservative: only return a texture when the
+    // subcategory's name implies it unambiguously. Generic subcategories
+    // (`.tshirt`, `.buttonDown`, `.hat`) return `nil` so the picker
+    // stays empty rather than show a low-confidence guess the user
+    // would have to immediately correct.
+
+    static func texture(for subcategory: ClothingSubcategory) -> TextureType? {
+        switch subcategory {
+        // Denim — name commits to fabric.
+        case .jeans, .denimJacket:
+            return .denim
+
+        // Leather — same.
+        case .leatherJacket:
+            return .leather
+
+        // Knit — sweaters and the explicit knit subcategory, plus
+        // sweatshirts and hoodies which map to `.knit` for consistency
+        // with the season rules (rule 31 already groups them as
+        // fall/winter knitwear). The `TextureType` enum doesn't have a
+        // dedicated `.fleece` bucket today; if it ever splits out we can
+        // route hoodies + sweatshirts there.
+        case .sweater, .knitSweater, .turtleneck, .cardigan,
+             .sweatshirt, .hoodie:
+            return .knit
+
+        // Suede / corduroy / linen / wool / silk / cotton are all
+        // texture-implied but the subcategory enum doesn't carry that
+        // signal — we keep them as `nil` so the user picks. Future
+        // additions: a `.linenShirt` or `.silkBlouse` enum case would
+        // map cleanly here.
+
+        default:
+            return nil
+        }
+    }
+
     // MARK: - Seasons
 
     static func seasons(
