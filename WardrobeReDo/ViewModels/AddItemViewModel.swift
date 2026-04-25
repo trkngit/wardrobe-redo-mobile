@@ -761,6 +761,18 @@ final class AddItemViewModel {
            AttributePrefill.shouldPrefill(proposal.predictedTextureConfidence) {
             texture = tex
             snapshot["texture"] = tex.rawValue
+            // Tag the source so the dogfood telemetry can separate
+            // correction stats per origin. Rules-derived textures stamp
+            // a 0.85 sentinel confidence (see
+            // `AttributeRulesEngine.rulesTextureConfidence`); ML
+            // predictions land at the classifier's actual softmax. We
+            // use exact equality on the rules sentinel — false-positive
+            // matches require a coincidentally-equal ML score, which
+            // for a softmax over 15 classes is vanishingly unlikely.
+            let rulesSentinel = AttributeRulesEngine.rulesTextureConfidence
+            snapshot["texture_source"] = (proposal.predictedTextureConfidence == rulesSentinel)
+                ? "rules"
+                : "ml"
         } else {
             texture = nil
         }

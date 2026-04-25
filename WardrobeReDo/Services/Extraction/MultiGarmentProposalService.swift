@@ -618,10 +618,34 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             ?? ClothingSubcategory.subcategories(for: category).first
             ?? .tshirt
 
+        // Texture: prefer the ML prediction when present. When the
+        // classifier didn't predict (texture head still dormant in v1
+        // — Fashionpedia v2 lacks main-fabric-type attributes), fall
+        // back to the deterministic subcategory→texture rule (jeans →
+        // denim, sweater → knit, …). Rules-derived textures stamp a
+        // 0.85 confidence sentinel — just above the 0.80 prefill gate
+        // in `AttributePrefill`, so they pass the gate while remaining
+        // distinguishable from any future ML score in the
+        // `detected_attributes` JSONB telemetry.
+        let resolvedTexture: TextureType?
+        let resolvedTextureConfidence: Float
+        if let mlTexture = prediction.texture {
+            resolvedTexture = mlTexture
+            resolvedTextureConfidence = prediction.textureConfidence
+        } else if let rulesTexture = AttributeRulesEngine.deriveTexture(
+            category: category, subcategory: subcategory
+        ) {
+            resolvedTexture = rulesTexture
+            resolvedTextureConfidence = AttributeRulesEngine.rulesTextureConfidence
+        } else {
+            resolvedTexture = nil
+            resolvedTextureConfidence = 0.0
+        }
+
         let rules = AttributeRulesEngine.derive(
             category: category,
             subcategory: subcategory,
-            texture: prediction.texture
+            texture: resolvedTexture
         )
 
         return MaskProposal(
@@ -632,8 +656,8 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             predictedCategory: proposal.predictedCategory,
             predictedCategoryConfidence: proposal.predictedCategoryConfidence,
             predictedSubcategory: proposal.predictedSubcategory,
-            predictedTexture: prediction.texture,
-            predictedTextureConfidence: prediction.textureConfidence,
+            predictedTexture: resolvedTexture,
+            predictedTextureConfidence: resolvedTextureConfidence,
             predictedFit: prediction.fit,
             predictedFitConfidence: prediction.fitConfidence,
             predictedSeasons: Array(rules.seasons).sorted { $0.rawValue < $1.rawValue },
