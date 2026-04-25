@@ -152,6 +152,23 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
         "sock", "leg_warmer", "umbrella"
     ]
 
+    /// Working-image cap for proposal cutouts.
+    ///
+    /// Source photos at iPhone capture resolution (e.g. 4032×3024)
+    /// decoded to bitmap consume ~48 MB; a multi-garment capture with 4
+    /// detected items therefore holds ~250 MB of UIImage data plus the
+    /// model in RAM, which has been observed to trigger watchdog
+    /// terminations on devices with 4-6 GB total RAM (e.g. iPhone 15
+    /// Plus / iOS 26.4 — see Sentry WARDROBE-REDO-IOS-1).
+    ///
+    /// Downscaling the source to ≤1280 px on the longest side before
+    /// cropping cutouts cuts per-image RAM by ~6× while staying well
+    /// above the grid view's display resolution. The model still gets
+    /// the same fidelity it always did because its own preprocess step
+    /// resizes to 1024×1024 before inference — going through the
+    /// downscaled image is a near-no-op there.
+    static let workingImageMaxDimension: CGFloat = 1280
+
     private let modelLoader: @Sendable () -> MLModel?
     private let confidenceThreshold: Float
     private let nmsThreshold: Float
@@ -163,6 +180,12 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
     private var loadedModel: MLModel?
     private var modelLoadAttempted = false
 
+    /// Token returned by `NotificationCenter.addObserver(forName:…)`
+    /// for the memory-warning observer. Stored so `deinit` can remove
+    /// it deterministically — block-form observers don't accept the
+    /// older `removeObserver(self)` pattern.
+    private var memoryWarningObserver: NSObjectProtocol?
+
     init(
         modelLoader: (@Sendable () -> MLModel?)? = nil,
         confidenceThreshold: Float = MultiGarmentProposalService.defaultConfidenceThreshold,
@@ -173,6 +196,35 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
         self.confidenceThreshold = confidenceThreshold
         self.nmsThreshold = nmsThreshold
         self.attributeClassifier = attributeClassifier
+
+        // Free the loaded model when iOS warns we're tight on RAM. The
+        // next inference call reloads it — model load is ~50ms and
+        // acceptable as the cost of avoiding a watchdog termination
+        // mid-capture.
+        memoryWarningObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] _ in
+            self?.evictLoadedModel()
+        }
+    }
+
+    deinit {
+        if let observer = memoryWarningObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    /// Drops the loaded `MLModel` so the next call has to reload it.
+    /// Wired to `UIApplication.didReceiveMemoryWarningNotification`
+    /// in `init`, also exposed as `internal` so tests can drive the
+    /// reload-after-evict path without posting fake notifications.
+    func evictLoadedModel() {
+        modelLock.lock()
+        defer { modelLock.unlock() }
+        loadedModel = nil
+        modelLoadAttempted = false
     }
 
     // MARK: - Public API
@@ -191,9 +243,18 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             )
         }
 
-        let normalized = OrientationUtil.normalized(image)
+        // Orient + downscale in a single autoreleasepool so the
+        // full-resolution `normalized` UIImage is released the moment
+        // the smaller `working` copy exists. Without this, ARC could
+        // hold both for the lifetime of the function — that's the
+        // 50+ MB peak that contributed to watchdog kills on
+        // memory-tight devices.
+        let working: UIImage = autoreleasepool {
+            let normalized = OrientationUtil.normalized(image)
+            return Self.downscaledForCutouts(normalized)
+        }
 
-        guard let pixelBuffer = Self.preprocessedPixelBuffer(for: normalized, model: model) else {
+        guard let pixelBuffer = Self.preprocessedPixelBuffer(for: working, model: model) else {
             logger.error("detectProposals.preprocessingFailed")
             await recordFailure(start: start)
             throw MultiGarmentError.preprocessingFailed(
@@ -240,7 +301,7 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             .prefix(Self.maxProposals))
 
         let baseProposals = capped.compactMap { raw -> MaskProposal? in
-            Self.makeProposal(from: raw, sourceImage: normalized)
+            Self.makeProposal(from: raw, sourceImage: working)
         }
 
         // Per-proposal attribute enrichment (Phase 6 of the
@@ -666,6 +727,40 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             detectionScore: proposal.detectionScore,
             modelClassRaw: proposal.modelClassRaw
         )
+    }
+
+    // MARK: - Working-image downscale
+
+    /// Returns a downscaled copy of `image` whose longest side is at
+    /// most `workingImageMaxDimension` px. Returns the input unchanged
+    /// when it's already small enough — no allocation, no work.
+    ///
+    /// Render scale is forced to 1 so the resulting bitmap memory is
+    /// exactly `width × height × 4` bytes; a `UIImage` constructed at
+    /// the device's native scale would silently use 4-9× more RAM
+    /// because the renderer would multiply the pixel count by
+    /// `UIScreen.main.scale²`.
+    ///
+    /// `static` so unit tests can verify the resize behaviour without
+    /// instantiating the service or hitting the model bundle.
+    static func downscaledForCutouts(_ image: UIImage) -> UIImage {
+        let maxDim = max(image.size.width, image.size.height)
+        guard maxDim > workingImageMaxDimension else { return image }
+
+        let scale = workingImageMaxDimension / maxDim
+        let target = CGSize(
+            width: floor(image.size.width * scale),
+            height: floor(image.size.height * scale)
+        )
+        guard target.width > 0, target.height > 0 else { return image }
+
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = false
+        let renderer = UIGraphicsImageRenderer(size: target, format: format)
+        return renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: target))
+        }
     }
 
     private static func cropped(_ image: UIImage, to normalizedBox: CGRect) -> UIImage? {

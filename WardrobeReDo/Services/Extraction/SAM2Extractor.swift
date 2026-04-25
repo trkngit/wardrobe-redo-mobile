@@ -132,12 +132,45 @@ final class SAM2Extractor: SAM2Extracting, @unchecked Sendable {
     private var loadedModel: MLModel?
     private var modelLoadAttempted = false
 
+    /// Token returned by `NotificationCenter.addObserver(forName:…)`
+    /// for the memory-warning observer. See
+    /// `MultiGarmentProposalService` for the rationale — same eviction
+    /// pattern, kept in sync across the three Core ML services.
+    private var memoryWarningObserver: NSObjectProtocol?
+
     init(
         ciContext: CIContext = CIContext(options: nil),
         modelLoader: (@Sendable () -> MLModel?)? = nil
     ) {
         self.ciContext = ciContext
         self.modelLoader = modelLoader ?? SAM2Extractor.defaultModelLoader
+
+        // Drop the loaded SAM2 model on memory warning so iOS can
+        // reclaim ~30 MB. Next call reloads transparently.
+        memoryWarningObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] _ in
+            self?.evictLoadedModel()
+        }
+    }
+
+    deinit {
+        if let observer = memoryWarningObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+
+    /// Drops the loaded `MLModel`. Wired to memory-warning
+    /// notifications in `init`; exposed as `internal` so tests can
+    /// drive the reload-after-evict path without posting fake
+    /// notifications.
+    func evictLoadedModel() {
+        modelLock.lock()
+        defer { modelLock.unlock() }
+        loadedModel = nil
+        modelLoadAttempted = false
     }
 
     // MARK: - Public API
