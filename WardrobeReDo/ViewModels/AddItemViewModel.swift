@@ -435,6 +435,8 @@ final class AddItemViewModel {
         routeAfterProcessing(processed: processed)
     }
 
+    // MARK: - Photo-processing timeout (Phase 1 polish)
+
     /// Outcome of `processWithTimeout` — distinguishes a real
     /// completion (whose payload may itself be nil = "couldn't
     /// process") from a hung-pipeline timeout. Without this, the user
@@ -491,6 +493,121 @@ final class AddItemViewModel {
         currentStep = .photo
         isProcessing = false
         logger.warning("photo.processing.timedOut after \(Self.photoProcessingTimeoutSeconds, privacy: .public)s")
+    }
+
+    // MARK: - Batch persistence (multi-pick crash recovery)
+
+    /// Marker so the AddItemView's onAppear knows the VM was just
+    /// restored from disk vs freshly initialised. Cleared by the
+    /// view after it shows the resume toast (or the user takes any
+    /// action). UI-only signal — not persisted.
+    var didJustRestoreBatch: Bool = false
+
+    /// Snapshot the current batch to disk. Called from inside
+    /// `startNextProposal` (post-mutation) so every queue movement
+    /// is captured atomically. No-op when no batch is in flight
+    /// (`batchTotalCount == 0` and `currentProposal == nil`).
+    private func persistBatchSnapshot() {
+        guard batchTotalCount > 0,
+              currentProposal != nil || !pendingProposalQueue.isEmpty
+        else {
+            return
+        }
+        guard let userId = currentUserIdForPersistence else { return }
+        guard let sourcePhotoId else { return }
+
+        let queue: [PersistedProposal] = pendingProposalQueue.compactMap { PersistedProposal(from: $0) }
+        let current: PersistedProposal? = currentProposal.flatMap { PersistedProposal(from: $0) }
+        let sourcePNG = selectedImage?.pngData()
+
+        let snapshot = BatchSnapshot(
+            userId: userId,
+            sourcePhotoId: sourcePhotoId,
+            sourcePhotoPath: sourcePhotoPath,
+            sourcePhotoPNG: sourcePNG,
+            createdAt: Date(),
+            total: batchTotalCount,
+            savedCount: savedItemsFromSource,
+            skippedCount: batchSkippedCount,
+            queue: queue,
+            currentProposal: current
+        )
+        BatchPersistenceService.save(snapshot)
+    }
+
+    /// Restore an in-flight multi-pick batch from disk if one exists,
+    /// belongs to the current user, and isn't stale. Called from
+    /// `AddItemView.onAppear`. Returns `true` when a batch was
+    /// restored so the view can show the "Resumed your batch" toast.
+    /// Idempotent — calling twice in a row finds nothing the second
+    /// time because the first call consumes (or clears) the snapshot.
+    func restorePersistedBatchIfNeeded(currentUserId: UUID) -> Bool {
+        guard let snapshot = BatchPersistenceService.load() else { return false }
+        guard snapshot.userId == currentUserId else {
+            logger.info("batch.restore.skipped: signed-in user mismatch")
+            BatchPersistenceService.clear()
+            return false
+        }
+
+        // Hydrate the queue + current proposal back from PNG bytes.
+        let queue = snapshot.queue.compactMap { $0.toProposal() }
+        guard let current = snapshot.currentProposal?.toProposal() else {
+            // Without a current proposal there's nothing to detail
+            // — treat as a corrupt snapshot.
+            logger.warning("batch.restore.skipped: no current proposal in snapshot")
+            BatchPersistenceService.clear()
+            return false
+        }
+
+        // Restore VM state. Order matters: counters first so the
+        // progress bar shows correct values when `currentStep`
+        // changes; then queue + currentProposal; then the picker
+        // state via applyPrefill.
+        sourcePhotoId = snapshot.sourcePhotoId
+        sourcePhotoPath = snapshot.sourcePhotoPath
+        savedItemsFromSource = snapshot.savedCount
+        batchTotalCount = snapshot.total
+        batchSkippedCount = snapshot.skippedCount
+        pendingProposalQueue = queue
+        currentProposal = current
+
+        // Restore the source photo (used as the fallback image when
+        // currentProposal.maskedImage hasn't loaded yet, plus the
+        // upload path for garments 2..N).
+        if let sourceData = snapshot.sourcePhotoPNG, let img = UIImage(data: sourceData) {
+            selectedImage = img
+        }
+
+        // Pre-fill the form from the restored proposal — same path
+        // a fresh batch follows.
+        applyPrefill(from: current)
+
+        // Land on the details step so the user picks up where they
+        // left off.
+        currentStep = .details
+        isShowingMultiPick = false
+        isShowingTapToSelect = false
+        didJustRestoreBatch = true
+
+        logger.info("batch.restore.success: \(queue.count, privacy: .public) pending, \(snapshot.savedCount, privacy: .public) already saved")
+        return true
+    }
+
+    /// Captured from the auth layer at runtime — the persistence
+    /// service stamps this onto each snapshot so a later sign-in as
+    /// a different user discards the prior batch instead of
+    /// resurrecting it. Set via `setCurrentUserIdForPersistence(_:)`
+    /// from the view layer where `AppState` is in scope. Defaults to
+    /// nil so single-item flows (no batch) bypass persistence
+    /// entirely without needing the user id.
+    private(set) var currentUserIdForPersistence: UUID?
+
+    /// Stamp the VM with the current authenticated user's ID so
+    /// `persistBatchSnapshot` can include it. Called from
+    /// `AddItemView.onAppear` once `AppState.currentUser` is
+    /// available.
+    func setCurrentUserIdForPersistence(_ userId: UUID?) {
+        currentUserIdForPersistence = userId
     }
 
     /// Single routing gate for post-processing: when ≥2 proposals came
@@ -704,6 +821,9 @@ final class AddItemViewModel {
         batchTotalCount = pendingProposalQueue.count
         batchSkippedCount = 0
         logger.info("multiGarment.confirm: \(self.pendingProposalQueue.count) items queued")
+        // `startNextProposal` calls `persistBatchSnapshot()` itself,
+        // so a force-quit between confirm and the first save still
+        // preserves the queue. See `BatchPersistenceService`.
         startNextProposal()
     }
 
@@ -734,6 +854,8 @@ final class AddItemViewModel {
         currentProposal = nil
         batchTotalCount = 0
         batchSkippedCount = 0
+        // Discard any persisted batch — user explicitly bailed.
+        BatchPersistenceService.clear()
         currentStep = .photo
     }
 
@@ -748,6 +870,8 @@ final class AddItemViewModel {
         // via `savedItemsFromSource` in `save(userId:)`.)
         batchSkippedCount += 1
         logger.info("multiGarment.skip: skipping current proposal, \(self.pendingProposalQueue.count) remaining")
+        // `startNextProposal` re-persists or clears the snapshot
+        // based on whether the queue still has items.
         startNextProposal()
     }
 
@@ -764,6 +888,10 @@ final class AddItemViewModel {
             isShowingMultiPick = false
             isShowingTapToSelect = false
             currentProposal = nil
+            // End-of-queue: clear the persisted batch since it's
+            // either fully consumed (every item saved or skipped) or
+            // the user is bouncing back to the photo step.
+            BatchPersistenceService.clear()
             if savedItemsFromSource > 0 {
                 // At least one garment landed — treat the batch as done
                 // and dismiss the sheet like any normal save flow.
@@ -778,6 +906,10 @@ final class AddItemViewModel {
         }
         let next = pendingProposalQueue.removeFirst()
         currentProposal = next
+        // Persist the new queue position to disk so a crash or
+        // jetsam between here and the next user action loses at most
+        // one item of work.
+        persistBatchSnapshot()
         // Splice the proposal's cutout into processedImage so the
         // details preview renders the right garment. PNG preserves the
         // transparent background — JPEG would flatten it.

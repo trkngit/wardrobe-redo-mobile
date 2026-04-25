@@ -71,6 +71,18 @@ struct AddItemView: View {
             .onChange(of: viewModel.didSave) {
                 if viewModel.didSave { dismiss() }
             }
+            .onAppear {
+                // Restore an in-progress multi-pick batch if iOS
+                // jetsamed the app between items. The check stamps
+                // the user ID for future saves and, if a batch is
+                // restorable, lands the user on the details step
+                // for the proposal they were on. See
+                // `BatchPersistenceService` for storage details.
+                viewModel.setCurrentUserIdForPersistence(appState.currentUser?.id)
+                if let userId = appState.currentUser?.id {
+                    _ = viewModel.restorePersistedBatchIfNeeded(currentUserId: userId)
+                }
+            }
             .fullScreenCover(isPresented: $viewModel.isShowingCamera) {
                 cameraCover
             }
@@ -124,9 +136,46 @@ struct AddItemView: View {
                         .accessibilityAddTraits(.isStaticText)
                 }
             }
+            .overlay(alignment: .top) {
+                // Resume toast — visible briefly after a multi-pick
+                // batch is restored from disk (iOS jetsamed the app
+                // mid-batch and the user just reopened the sheet).
+                // Auto-dismisses after ~3s. See
+                // `restorePersistedBatchIfNeeded` for the trigger.
+                if viewModel.didJustRestoreBatch {
+                    resumeToast
+                        .padding(.top, Theme.Spacing.md)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .accessibilityAddTraits(.isStaticText)
+                        .task {
+                            try? await Task.sleep(for: .seconds(3))
+                            viewModel.didJustRestoreBatch = false
+                        }
+                }
+            }
             .animation(.easeInOut(duration: 0.2), value: viewModel.isProcessing)
             .animation(.spring(duration: 0.3), value: viewModel.cancellationToastVisible)
+            .animation(.spring(duration: 0.3), value: viewModel.didJustRestoreBatch)
         }
+    }
+
+    // MARK: - Resume Toast
+
+    private var resumeToast: some View {
+        HStack(spacing: Theme.Spacing.sm) {
+            Image(systemName: "arrow.clockwise")
+                .foregroundStyle(Color(Theme.Colors.primary))
+            Text("Resumed your batch")
+                .font(Theme.Fonts.bodySmall.weight(.medium))
+                .foregroundStyle(Color(Theme.Colors.textPrimary))
+        }
+        .padding(.horizontal, Theme.Spacing.lg)
+        .padding(.vertical, Theme.Spacing.md)
+        .background(
+            Capsule()
+                .fill(Color(Theme.Colors.surface))
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 2)
+        )
     }
 
     // MARK: - Camera fullscreen cover
