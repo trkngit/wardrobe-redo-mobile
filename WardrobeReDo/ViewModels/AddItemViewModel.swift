@@ -130,6 +130,20 @@ final class AddItemViewModel {
     /// safe to show the loop affordances.
     var savedItemsFromSource: Int = 0
 
+    /// Total number of proposals queued for the current multi-pick
+    /// batch. Stamped once when the user taps "Save N items" on the
+    /// grid view and stays constant for the duration of the batch
+    /// (saved + skipped + still-pending). Drives the per-batch
+    /// progress bar at the top of `AddItemView`. Zero when no batch
+    /// is in flight (single-item flow).
+    var batchTotalCount: Int = 0
+
+    /// Number of proposals the user explicitly skipped via "Skip this
+    /// item" during the current batch. Combined with
+    /// `savedItemsFromSource` to compute progress through the queue
+    /// (saved + skipped = processed; total - processed = remaining).
+    var batchSkippedCount: Int = 0
+
     /// Set by `onSaveAndAddAnother(userId:)` immediately before
     /// `save(userId:)` runs. The save-success branch reads this to
     /// decide whether to loop back into tap-to-select or dismiss.
@@ -451,6 +465,10 @@ final class AddItemViewModel {
         pendingProposalQueue = []
         currentProposal = nil
         isShowingMultiPick = false
+        // Reset the batch progress denominator + skipped counter so
+        // the per-batch progress bar hides when no batch is in flight.
+        batchTotalCount = 0
+        batchSkippedCount = 0
     }
 
     /// User cancelled out of the camera view without capturing anything.
@@ -606,6 +624,12 @@ final class AddItemViewModel {
         pendingProposalQueue = proposals
             .filter { selectedProposalIDs.contains($0.id) }
             .sorted { $0.detectionScore > $1.detectionScore }
+        // Stamp the batch denominator so the progress bar in
+        // `AddItemView` knows how many items the user committed to.
+        // Stays stable across the queue iteration; reset to 0 only
+        // when the batch ends (all-saved, all-skipped, or cancelled).
+        batchTotalCount = pendingProposalQueue.count
+        batchSkippedCount = 0
         logger.info("multiGarment.confirm: \(self.pendingProposalQueue.count) items queued")
         startNextProposal()
     }
@@ -635,6 +659,8 @@ final class AddItemViewModel {
         selectedProposalIDs = []
         pendingProposalQueue = []
         currentProposal = nil
+        batchTotalCount = 0
+        batchSkippedCount = 0
         currentStep = .photo
     }
 
@@ -644,6 +670,10 @@ final class AddItemViewModel {
     /// empty this becomes a no-save finish like the user just tapped
     /// Cancel on the last item.
     func onSkipCurrentProposal() {
+        // Bump the skipped counter so the progress bar advances even
+        // for items the user opts out of. (Saved items advance the bar
+        // via `savedItemsFromSource` in `save(userId:)`.)
+        batchSkippedCount += 1
         logger.info("multiGarment.skip: skipping current proposal, \(self.pendingProposalQueue.count) remaining")
         startNextProposal()
     }

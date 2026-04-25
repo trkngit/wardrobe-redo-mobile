@@ -49,14 +49,17 @@ enum FeatureFlags {
     /// via the rules engine while the attribute classifier is still
     /// baking in Phase 3 training.
     ///
-    /// Default: `false` until Phase 9 validation completes — see
-    /// `docs/plans/2026-04-19-auto-attribute-detection.md` Phase 9 for
-    /// the flip criteria. When off, `MaskProposal` attribute fields are
-    /// populated but the VM layer ignores them, so flipping the flag is
-    /// a runtime switch rather than a rebuild.
+    /// Default: `true`. Phase 9 flip — the rules engine ships in the
+    /// bundle, the attribute classifier gracefully no-ops when its
+    /// model file is missing, and the rules-derived seasons / occasions
+    /// (PR #10) and texture (PR #11) are validated end-to-end. Existing
+    /// users who explicitly toggled the flag off in the Developer menu
+    /// keep their setting because the persisted value wins; the default
+    /// only applies when the key has never been written (clean install
+    /// or first launch after this change).
     static var isAttributeDetectionEnabled: Bool {
         get {
-            if defaults.object(forKey: Key.attributeDetectionEnabled) == nil { return false }
+            if defaults.object(forKey: Key.attributeDetectionEnabled) == nil { return true }
             return defaults.bool(forKey: Key.attributeDetectionEnabled)
         }
         set {
