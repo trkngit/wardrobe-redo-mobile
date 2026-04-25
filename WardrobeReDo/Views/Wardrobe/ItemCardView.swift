@@ -5,6 +5,16 @@ struct ItemCardView: View {
     let item: WardrobeItem
     let thumbnailURL: URL?
 
+    /// Storage path the card prefers to render. Items extracted via the
+    /// post-00007 pipeline carry a transparent-background cutout at
+    /// `maskedImagePath` — using that instead of the framed thumbnail is
+    /// what makes two items from the same mirror selfie look distinct
+    /// (each card shows just the garment, not the full source photo).
+    /// Legacy rows where extraction never ran fall back to `thumbnailPath`.
+    static func displayPath(for item: WardrobeItem) -> String {
+        item.maskedImagePath ?? item.thumbnailPath
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Thumbnail
