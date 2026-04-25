@@ -267,17 +267,25 @@ final class AddItemViewModel {
         // button can preempt it via `cancelProcessing()`. The public
         // method still awaits the task's value so existing test
         // contracts (post-conditions visible after the call returns)
-        // are preserved on the happy path.
+        // are preserved on the happy path. The timeout race inside
+        // `processWithTimeout` ensures a hung Vision/SAM2 stack
+        // surfaces an error after 30s instead of stranding the user
+        // on an infinite spinner.
         processingTask?.cancel()
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
-            let processed = await self.imageService.processImage(image)
+            let outcome = await self.processWithTimeout(image)
             guard !Task.isCancelled else {
                 sessionTask.cancel()
                 self.sessionLoadTask = nil
                 return
             }
-            await self.applyProcessedFromLibrary(processed, sessionTask: sessionTask)
+            switch outcome {
+            case .completed(let processed):
+                await self.applyProcessedFromLibrary(processed, sessionTask: sessionTask)
+            case .timedOut:
+                self.handleProcessingTimeout(sessionTask: sessionTask)
+            }
         }
         processingTask = task
         await task.value
@@ -374,16 +382,23 @@ final class AddItemViewModel {
 
         // See `onPhotoSelected()` for the rationale of the wrapping
         // `processingTask` — same cancel-via-popup mechanism applies.
+        // The timeout race inside `processWithTimeout` matches the
+        // library path so a hung capture also surfaces an error.
         processingTask?.cancel()
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
-            let processed = await self.imageService.processImage(image)
+            let outcome = await self.processWithTimeout(image)
             guard !Task.isCancelled else {
                 sessionTask.cancel()
                 self.sessionLoadTask = nil
                 return
             }
-            await self.applyProcessedFromCamera(processed, sessionTask: sessionTask)
+            switch outcome {
+            case .completed(let processed):
+                await self.applyProcessedFromCamera(processed, sessionTask: sessionTask)
+            case .timedOut:
+                self.handleProcessingTimeout(sessionTask: sessionTask)
+            }
         }
         processingTask = task
         await task.value
@@ -418,6 +433,64 @@ final class AddItemViewModel {
         }
         isProcessing = false
         routeAfterProcessing(processed: processed)
+    }
+
+    /// Outcome of `processWithTimeout` — distinguishes a real
+    /// completion (whose payload may itself be nil = "couldn't
+    /// process") from a hung-pipeline timeout. Without this, the user
+    /// sees the same generic "Couldn't process that photo" message in
+    /// both cases — so the analyzing popup looks like it failed
+    /// instantly even though it spun for 30 seconds first.
+    enum PhotoProcessingOutcome: Sendable {
+        case completed(ProcessedImage?)
+        case timedOut
+    }
+
+    /// Default ceiling for image processing. 30 seconds is comfortably
+    /// past the 99th-percentile success path on real devices and well
+    /// under the iOS watchdog budget.
+    static let photoProcessingTimeoutSeconds: Int = 30
+
+    /// Race the async `imageService.processImage(_:)` call against a
+    /// configurable timeout. The Vision/SAM2 framework path can hang
+    /// in rare cases (memory pressure, corrupt model, malformed
+    /// orientation metadata) — without this race the user sees an
+    /// infinite spinner with no error and no escape except force-quit.
+    /// On timeout, the inner processing task continues in the
+    /// background but its eventual result is discarded; we surface the
+    /// `.timedOut` outcome so the caller can show an actionable error.
+    private func processWithTimeout(
+        _ image: UIImage,
+        seconds: Int = AddItemViewModel.photoProcessingTimeoutSeconds
+    ) async -> PhotoProcessingOutcome {
+        let imageService = self.imageService
+        return await withTaskGroup(of: PhotoProcessingOutcome.self) { group in
+            group.addTask {
+                let processed = await imageService.processImage(image)
+                return .completed(processed)
+            }
+            group.addTask {
+                try? await Task.sleep(for: .seconds(seconds))
+                return .timedOut
+            }
+            let result = await group.next() ?? .timedOut
+            group.cancelAll()
+            return result
+        }
+    }
+
+    /// Shared timeout-handler for both library + camera paths: cancels
+    /// the SAM2 session load (so memory isn't held), surfaces an
+    /// actionable error message that names the underlying cause, and
+    /// drops the user back to the photo step where a retry is one tap
+    /// away.
+    private func handleProcessingTimeout(sessionTask: Task<(any SAM2Session)?, Never>) {
+        sessionTask.cancel()
+        sessionLoadTask = nil
+        errorMessage = "Analysis took too long. Try a clearer photo or smaller capture."
+        currentStep = .photo
+        isProcessing = false
+        logger.warning("photo.processing.timedOut after \(Self.photoProcessingTimeoutSeconds, privacy: .public)s")
     }
 
     /// Single routing gate for post-processing: when ≥2 proposals came
