@@ -130,6 +130,7 @@
 		7E0EC91832C7D631E0781D01 /* MatchingViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 981E83DE652A3B46BBC9D8B5 /* MatchingViewModelTests.swift */; };
 		7FF6EDD480ACBB768C0600F1 /* SlotRequirementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28FAF5086E748AB81EBAFBFE /* SlotRequirementTests.swift */; };
 		80B3E51782E1270031F0FC30 /* ShimmerPlaceholders.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADBC6710093A4394EA43447 /* ShimmerPlaceholders.swift */; };
+		824ABB7D88A3A6ACDEE05AEC /* MultiGarmentTextureRulesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8768CBE4BDF16CF8DF19F29 /* MultiGarmentTextureRulesTests.swift */; };
 		827D93FA5B6BC5ECBFE43636 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = BCFD6F3B934E9ED2E443CA5F /* Sentry */; };
 		82B139FEDA1B0C6D0B72518A /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90334A1885AC99F617DF15A3 /* HapticManager.swift */; };
 		838D1708A8B4F155B9114A67 /* capture-brief.md in Resources */ = {isa = PBXBuildFile; fileRef = 15B1D86258537D306181311C /* capture-brief.md */; };
@@ -199,6 +200,7 @@
 		CC7B9386852290B9E78D088D /* MultiGarmentTapToSelectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EDDED2469DB3705CBADE9A2 /* MultiGarmentTapToSelectView.swift */; };
 		CCFDE2FC7EF34F21CB777A9D /* ClothingExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99FD5C0ED7995AAE927B8E99 /* ClothingExtractionService.swift */; };
 		CE1318DB750121C0E6E1D00D /* clean_bg_02.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 48FE68206EDDD56ED1169A9E /* clean_bg_02.jpg */; };
+		CE41F0AC8A86D11A48EFB5ED /* AttributeRulesTextureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28744FFBF1B30B244946F594 /* AttributeRulesTextureTests.swift */; };
 		CF783DBD59E6885D705E375F /* MultiGarmentSmokeTestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0835F2304A69C3DD167609EF /* MultiGarmentSmokeTestTests.swift */; };
 		CFD1E570998FC11D7ED85969 /* on_person_01.png in Resources */ = {isa = PBXBuildFile; fileRef = 5F75D8C022912CE998851492 /* on_person_01.png */; };
 		CFF9F51CE5A95F654775C2D4 /* TestFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EE423B888AA21596E6F33BF /* TestFixtures.swift */; };
@@ -337,6 +339,7 @@
 		27579C9FB42F8D72B0DFB9FD /* MLDiagnosticsTestIsolation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLDiagnosticsTestIsolation.swift; sourceTree = "<group>"; };
 		2852392E1C43C8F0995299C7 /* BackgroundQualityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundQualityMonitor.swift; sourceTree = "<group>"; };
 		2869F1610C0A845EE9693D4B /* AddItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddItemView.swift; sourceTree = "<group>"; };
+		28744FFBF1B30B244946F594 /* AttributeRulesTextureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributeRulesTextureTests.swift; sourceTree = "<group>"; };
 		28FAF5086E748AB81EBAFBFE /* SlotRequirementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlotRequirementTests.swift; sourceTree = "<group>"; };
 		2938D1D6CB9CA6DE1AE88379 /* MaskIoU.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskIoU.swift; sourceTree = "<group>"; };
 		2C365457507CDA72533F93B0 /* ModelCodingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelCodingTests.swift; sourceTree = "<group>"; };
@@ -528,6 +531,7 @@
 		F59D6751BCDAEA4175966DDA /* on_person_07.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = on_person_07.jpg; sourceTree = "<group>"; };
 		F74405C35E31E50E6116284E /* cluttered_08.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = cluttered_08.jpg; sourceTree = "<group>"; };
 		F798A065F76E9F7634F316B8 /* on_person_08.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = on_person_08.jpg; sourceTree = "<group>"; };
+		F8768CBE4BDF16CF8DF19F29 /* MultiGarmentTextureRulesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiGarmentTextureRulesTests.swift; sourceTree = "<group>"; };
 		F8B53A45BACA6F4F63824A9E /* StyleEnumsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleEnumsTests.swift; sourceTree = "<group>"; };
 		F95DCABBC06D01FFED0605C8 /* UploadQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadQueue.swift; sourceTree = "<group>"; };
 		F9E38CA3C5357EED1110F27E /* SAM2Extractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAM2Extractor.swift; sourceTree = "<group>"; };
@@ -664,6 +668,7 @@
 				FFBC2C72B08F2488E16E6127 /* AttributeBackfillServiceTests.swift */,
 				81173F3CBD353EF3BB728DAA /* AttributeClassifierServiceTests.swift */,
 				8D8A7C6AB9FD9CE98C1D829F /* AttributeRulesEngineTests.swift */,
+				28744FFBF1B30B244946F594 /* AttributeRulesTextureTests.swift */,
 				60476B2C5B7C794922058FC9 /* AutoAttributeE2ETests.swift */,
 				6516D881877F3E114CD98C0D /* BackgroundQualityClassifierTests.swift */,
 				4F40AC0023AD2F0F9891FB74 /* CameraOverlayTests.swift */,
@@ -674,6 +679,7 @@
 				F2ABA92ABCACBB6A6A319017 /* LocalCacheTests.swift */,
 				3D847AE4E7FD3651DC2D3B08 /* MLTelemetryServiceTests.swift */,
 				0835F2304A69C3DD167609EF /* MultiGarmentSmokeTestTests.swift */,
+				F8768CBE4BDF16CF8DF19F29 /* MultiGarmentTextureRulesTests.swift */,
 				F385FCB8D1419E716DE8E394 /* OutfitGenerationServiceTests.swift */,
 				96A1564CD534196B24209DA0 /* OutfitRepositoryDateTests.swift */,
 				B314090F16673654A10AD71F /* RepositoryEdgeCaseTests.swift */,
@@ -1605,6 +1611,7 @@
 				A779C5B88A871E5EEC296742 /* AttributeBackfillServiceTests.swift in Sources */,
 				DFE23D899F2944276DA98C76 /* AttributeClassifierServiceTests.swift in Sources */,
 				4AC96ED017FF5DBEE90D6FE0 /* AttributeRulesEngineTests.swift in Sources */,
+				CE41F0AC8A86D11A48EFB5ED /* AttributeRulesTextureTests.swift in Sources */,
 				C53B931792C24B363FAD1E3F /* AuthViewModelTests.swift in Sources */,
 				FEC315620069CE051D2964B1 /* AutoAttributeE2ETests.swift in Sources */,
 				5FAF592255871F5D421A5402 /* BackgroundQualityClassifierTests.swift in Sources */,
@@ -1640,6 +1647,7 @@
 				68FB0EFF557C5039BE89B908 /* MultiGarmentProposalServiceTests.swift in Sources */,
 				CF783DBD59E6885D705E375F /* MultiGarmentSmokeTestTests.swift in Sources */,
 				43663D2EECCB23BDE2DCD0F2 /* MultiGarmentTapToSelectViewTests.swift in Sources */,
+				824ABB7D88A3A6ACDEE05AEC /* MultiGarmentTextureRulesTests.swift in Sources */,
 				2F6F8B327F1BDB8289458931 /* NetworkResilienceTests.swift in Sources */,
 				D597C68645ADD88B464BFD69 /* OccasionContextScorerTests.swift in Sources */,
 				673173AFD7A79D706E7E6AE6 /* OutfitFormulaScorerTests.swift in Sources */,
