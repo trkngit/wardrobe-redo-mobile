@@ -146,7 +146,7 @@ final class AddItemViewModel {
     /// `count >= 2` is the trigger for `isShowingMultiPick`.
     var proposals: [MaskProposal]?
 
-    /// IDs the user has currently checked on `MultiGarmentTapToSelectView`.
+    /// IDs the user has currently checked on `MultiGarmentGridView`.
     /// Seeded to "all selected" when proposals first arrive — most users
     /// will want most items, so unchecking is cheaper than checking.
     var selectedProposalIDs: Set<MaskProposal.ID> = []
@@ -162,7 +162,7 @@ final class AddItemViewModel {
     /// toolbar action's visibility.
     var currentProposal: MaskProposal?
 
-    /// Controls the full-screen `MultiGarmentTapToSelectView` cover.
+    /// Controls the full-screen `MultiGarmentGridView` cover.
     /// Raised when ≥2 proposals land and the feature flag is on;
     /// lowered by confirm / escape / cancel / start-next.
     var isShowingMultiPick: Bool = false
@@ -597,7 +597,7 @@ final class AddItemViewModel {
 
     // MARK: - Phase 5 multi-garment multi-pick
 
-    /// User tapped "Save N items" on `MultiGarmentTapToSelectView`. Takes
+    /// User tapped "Save N items" on `MultiGarmentGridView`. Takes
     /// the current checkbox selection, orders it score-descending so the
     /// most confident garment is detailed first (matching the display
     /// order), and starts the sequential details loop.

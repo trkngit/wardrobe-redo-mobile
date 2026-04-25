@@ -24,7 +24,7 @@ struct ProcessedImage: Sendable {
     /// model produced any. Nil → detection skipped or failed; `count <=
     /// 1` → downstream `AddItemViewModel` falls through to the existing
     /// single-item `TapToSelectView`. `count >= 2` → present the
-    /// `MultiGarmentTapToSelectView` and queue per-item details.
+    /// `MultiGarmentGridView` and queue per-item details.
     let proposals: [MaskProposal]?
 
     init(
