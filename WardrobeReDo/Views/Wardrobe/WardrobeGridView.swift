@@ -1,9 +1,14 @@
 import SwiftUI
+import Kingfisher
 
 struct WardrobeGridView: View {
     @Environment(AppState.self) private var appState
     @State private var viewModel = WardrobeViewModel()
     @State private var thumbnailURLs: [UUID: URL] = [:]
+    /// Signed URLs keyed by `sourcePhotoPath` — sessions share the same
+    /// source photo across N items, so we resolve once per path. Cleared
+    /// alongside `thumbnailURLs` whenever the wardrobe reloads.
+    @State private var sourcePhotoURLs: [String: URL] = [:]
 
     private let columns = [
         GridItem(.flexible(), spacing: Theme.Spacing.md),
@@ -24,7 +29,7 @@ struct WardrobeGridView: View {
                     VStack(spacing: Theme.Spacing.md) {
                         categoryFilters
                         itemCount
-                        itemGrid
+                        sessionList
                     }
                     .padding(.horizontal, Theme.Spacing.md)
                     .padding(.top, Theme.Spacing.sm)
@@ -72,6 +77,11 @@ struct WardrobeGridView: View {
             Task {
                 await viewModel.loadItems(userId: userId)
                 await loadThumbnails()
+            }
+        }
+        .navigationDestination(for: UUID.self) { itemId in
+            if let item = viewModel.items.first(where: { $0.id == itemId }) {
+                ItemDetailView(item: item)
             }
         }
     }
@@ -136,24 +146,100 @@ struct WardrobeGridView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Grid
+    // MARK: - Session List
+    //
+    // Sessions of >1 garment render with a header showing the source
+    // photo + N-item count + relative date, followed by a 2-column grid
+    // of cutouts beneath. Sessions of exactly 1 garment render as a
+    // single full-width card with no header — we don't want the wardrobe
+    // to look like "all sessions of 1 item." Section collapse is
+    // deliberately deferred to a follow-up: keeping every session
+    // expanded means less local state to manage and less risk of
+    // regressions while the feature beds in.
 
-    private var itemGrid: some View {
+    private var sessionList: some View {
+        LazyVStack(spacing: Theme.Spacing.lg) {
+            ForEach(Array(viewModel.sessions.enumerated()), id: \.element.id) { index, session in
+                if session.items.count == 1 {
+                    singleItemRow(session.items[0], staggerIndex: index)
+                } else {
+                    sessionBlock(session, staggerIndex: index)
+                }
+            }
+        }
+    }
+
+    private func singleItemRow(_ item: WardrobeItem, staggerIndex: Int) -> some View {
+        // Single-item captures keep the existing 2-column grid feel by
+        // sitting in the same LazyVGrid as multi-item sessions would —
+        // but as a "grid of one" so they take a half-width card and
+        // align with the rest of the wardrobe visually.
         LazyVGrid(columns: columns, spacing: Theme.Spacing.md) {
-            ForEach(Array(viewModel.filteredItems.enumerated()), id: \.element.id) { index, item in
+            NavigationLink(value: item.id) {
+                ItemCardView(
+                    item: item,
+                    thumbnailURL: thumbnailURLs[item.id]
+                )
+                .staggeredFadeIn(index: staggerIndex)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func sessionBlock(_ session: WardrobeSession, staggerIndex: Int) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            sessionHeader(session)
+            sessionGrid(session, staggerIndex: staggerIndex)
+        }
+    }
+
+    private func sessionHeader(_ session: WardrobeSession) -> some View {
+        HStack(spacing: Theme.Spacing.sm) {
+            sessionThumbnail(session)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(sessionItemCountText(for: session))
+                    .font(Theme.Fonts.bodySmall)
+                    .foregroundStyle(Color(Theme.Colors.textPrimary))
+                Text(relativeDateText(for: session.createdAt))
+                    .font(Theme.Fonts.caption)
+                    .foregroundStyle(Color(Theme.Colors.textSecondary))
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, Theme.Spacing.xs)
+    }
+
+    private func sessionThumbnail(_ session: WardrobeSession) -> some View {
+        let url: URL? = session.sourcePhotoPath.flatMap { sourcePhotoURLs[$0] }
+        return KFImage(url)
+            .placeholder {
+                RoundedRectangle(cornerRadius: Theme.Radius.card)
+                    .fill(Color(Theme.Colors.muted).opacity(0.3))
+                    .overlay {
+                        Image(systemName: "photo.on.rectangle")
+                            .font(.system(size: 16, weight: .light))
+                            .foregroundStyle(Color(Theme.Colors.textSecondary))
+                    }
+            }
+            .resizable()
+            .scaledToFill()
+            .frame(width: 44, height: 44)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+    }
+
+    private func sessionGrid(_ session: WardrobeSession, staggerIndex: Int) -> some View {
+        LazyVGrid(columns: columns, spacing: Theme.Spacing.md) {
+            ForEach(Array(session.items.enumerated()), id: \.element.id) { itemIndex, item in
                 NavigationLink(value: item.id) {
                     ItemCardView(
                         item: item,
                         thumbnailURL: thumbnailURLs[item.id]
                     )
-                    .staggeredFadeIn(index: index)
+                    .staggeredFadeIn(index: staggerIndex + itemIndex)
                 }
                 .buttonStyle(.plain)
-            }
-        }
-        .navigationDestination(for: UUID.self) { itemId in
-            if let item = viewModel.items.first(where: { $0.id == itemId }) {
-                ItemDetailView(item: item)
             }
         }
     }
@@ -215,6 +301,32 @@ struct WardrobeGridView: View {
                 thumbnailURLs[item.id] = url
             }
         }
+        // Resolve session-header source-photo URLs once per unique path —
+        // a 4-garment session shares the same sourcePhotoPath across all
+        // items, so resolving per-path (not per-item) keeps API calls
+        // proportional to captures.
+        let uniqueSourcePaths = Set(
+            viewModel.items.compactMap { $0.sourcePhotoPath }
+        )
+        for path in uniqueSourcePaths where sourcePhotoURLs[path] == nil {
+            if let url = await viewModel.sourcePhotoURL(for: path) {
+                sourcePhotoURLs[path] = url
+            }
+        }
+    }
+
+    private func sessionItemCountText(for session: WardrobeSession) -> String {
+        let n = session.items.count
+        return n == 1 ? "1 item" : "\(n) items"
+    }
+
+    /// Lightweight relative-time formatter mirroring iOS Mail's "5m ago,
+    /// 2h ago, Yesterday, 3d ago" style. Falls back to a short date for
+    /// captures older than a week so the header stays compact on phones.
+    private func relativeDateText(for date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
     }
 }
 
