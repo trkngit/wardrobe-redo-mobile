@@ -96,8 +96,21 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
     static let bundledModelName = "RFDETRSegFashion"
 
     /// Keep only this many proposals in the UI. Above this cap the
-    /// multi-pick view routes surplus items into a "+N more" sheet.
-    static let maxProposals = 8
+    /// lowest-score detections are dropped before the grid renders.
+    /// Lowered from 8 → 6 in the multi-pick quality pass: the rug /
+    /// non-clothing false-positive risk grows linearly with the cap,
+    /// and 6 is enough headroom for any realistic full-body capture
+    /// (top + bottom + 1-2 outerwear + 1-2 accessories + 1 shoe pair).
+    static let maxProposals = 6
+
+    /// Confidence floor for proposals whose Fashionpedia class doesn't
+    /// map to a `ClothingCategory` (i.e., the model is "uncertain" what
+    /// kind of item it found). The base `defaultConfidenceThreshold`
+    /// of 0.5 admits enough rug/wallpaper/non-clothing patterns that
+    /// they leak into the grid; raising the bar to 0.85 for unknown
+    /// classes drops most of those without affecting confidently-classed
+    /// real garments.
+    static let ambiguousClassConfidenceFloor: Float = 0.85
 
     /// Drop any raw detection below this objectness score before the
     /// per-category argmax. Conservative on purpose — false positives
@@ -284,7 +297,19 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
         }
 
         let rawDetections = Self.decodeDETROutput(from: prediction)
-        let thresholded = rawDetections.filter { $0.score >= confidenceThreshold }
+        // Two-stage threshold: confidently-classed detections clear
+        // the lower bar; ambiguous-class detections (classes that don't
+        // map to a ClothingCategory — typically the model finding
+        // fabric-like patterns in non-clothing) need the higher
+        // ambiguous-class floor. This is what drops rugs / wallpaper
+        // patterns / phones-in-mirror without touching real garments.
+        let thresholded = rawDetections.filter { raw in
+            guard raw.score >= confidenceThreshold else { return false }
+            if ClothingCategory.fromFashionpediaClass(raw.rawClass) == nil {
+                return raw.score >= Self.ambiguousClassConfidenceFloor
+            }
+            return true
+        }
 
         guard !thresholded.isEmpty else {
             logger.notice("detectProposals.noValidPredictions raw=\(rawDetections.count, privacy: .public) threshold=\(self.confidenceThreshold, privacy: .public)")
@@ -295,7 +320,24 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             return []
         }
 
-        let suppressed = Self.applyNMS(thresholded, threshold: nmsThreshold)
+        // Per-class NMS — the old single-pass NMS was class-agnostic
+        // and only suppressed when IoU ≥ threshold globally. Two shoe
+        // detections with low IoU (left foot + right foot) survived,
+        // so the user saw both shoes of the same pair as separate
+        // proposals. Grouping by class first means we can then run a
+        // class-specific merge for footwear.
+        let byClass = Dictionary(grouping: thresholded, by: \.rawClass)
+        var suppressed: [RawDetection] = byClass.values.flatMap { perClass in
+            Self.applyNMS(perClass, threshold: nmsThreshold)
+        }
+        // Smart shoe-pair merge — collapse two `.shoe`-class
+        // detections into one when they look like a left/right pair
+        // (vertically aligned, similar size, horizontally adjacent).
+        // The user explicitly opted into this over a blanket cap so
+        // legitimate two-pair photos (rare) keep both. See the
+        // `looksLikeShoePair` doc-comment for the exact heuristic.
+        suppressed = Self.collapseShoePairs(suppressed)
+
         let capped = Array(suppressed
             .sorted { $0.score > $1.score }
             .prefix(Self.maxProposals))
@@ -598,6 +640,76 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
         guard !intersection.isNull, intersection.area > 0 else { return 0 }
         let union = a.area + b.area - intersection.area
         return intersection.area / union
+    }
+
+    // MARK: - Smart shoe-pair merge
+
+    /// Heuristic for "these two shoe boxes look like the left and right
+    /// shoe of the same pair." Tuned for selfie / full-body captures
+    /// where both feet are visible side-by-side. Returns false when the
+    /// two boxes are stacked vertically, are very different sizes, or
+    /// are too far apart horizontally — those configurations are more
+    /// likely to be two distinct pairs of shoes laid out in a flat-lay.
+    ///
+    /// Rules (all must hold):
+    ///   * Vertical mid-points within 10% of each other (same band)
+    ///   * Width and height ratios both < 1.5× (similar size)
+    ///   * Horizontal gap between the inner edges < average shoe width
+    ///     (they're touching or close to touching, not "across the room")
+    ///
+    /// Both bounding boxes are expected in normalized [0,1] image
+    /// coordinates — same convention the rest of post-processing uses.
+    /// `static` so unit tests can verify against synthetic CGRects.
+    static func looksLikeShoePair(_ a: CGRect, _ b: CGRect) -> Bool {
+        let yDelta = abs(a.midY - b.midY)
+        guard yDelta < 0.10 else { return false }
+
+        let widthRatio = max(a.width, b.width) / max(min(a.width, b.width), 0.0001)
+        guard widthRatio < 1.5 else { return false }
+        let heightRatio = max(a.height, b.height) / max(min(a.height, b.height), 0.0001)
+        guard heightRatio < 1.5 else { return false }
+
+        let (left, right) = a.minX < b.minX ? (a, b) : (b, a)
+        let gap = right.minX - left.maxX
+        let avgWidth = (left.width + right.width) / 2
+        return gap < avgWidth
+    }
+
+    /// Reduces same-class shoe detections that look like a pair down
+    /// to one box, keeping the higher-scored side. Three+ shoe boxes
+    /// fall through to the natural per-class NMS / cap path so a
+    /// flat-lay of multiple pairs still surfaces each pair.
+    ///
+    /// Treats every shoe-family Fashionpedia label (`shoe`, `boot`,
+    /// `sandal`) as the same class for pair purposes — left and right
+    /// are mirror images regardless of subtype.
+    static func collapseShoePairs(_ detections: [RawDetection]) -> [RawDetection] {
+        let shoeLabels: Set<String> = ["shoe", "boot", "sandal"]
+        var nonShoes: [RawDetection] = []
+        var shoes: [RawDetection] = []
+        for d in detections {
+            if shoeLabels.contains(d.rawClass) {
+                shoes.append(d)
+            } else {
+                nonShoes.append(d)
+            }
+        }
+
+        guard shoes.count == 2 else {
+            // 0, 1, or 3+ shoes — nothing to collapse. The 3+ case
+            // intentionally falls through (could be a flat-lay of
+            // multiple pairs); the per-photo cap will trim from there.
+            return detections
+        }
+
+        if looksLikeShoePair(shoes[0].boundingBox, shoes[1].boundingBox) {
+            // Keep the higher-scored detection — the user can re-take
+            // the photo to see both feet if they want them split.
+            let winner = shoes[0].score >= shoes[1].score ? shoes[0] : shoes[1]
+            return nonShoes + [winner]
+        } else {
+            return detections
+        }
     }
 
     // MARK: - Proposal construction
