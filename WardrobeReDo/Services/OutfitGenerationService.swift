@@ -49,10 +49,17 @@ final class OutfitGenerationService: @unchecked Sendable {
     /// 2. Enforce family diversity — one archetype per family.
     /// 3. For each archetype, run beam search across all its rules.
     /// 4. Return the top `dailyOutfitCount` results sorted by score.
+    ///
+    /// - Parameter seed: Optional deterministic seed for the archetype
+    ///   tie-break random factor. Pass `nil` (default) for live behaviour
+    ///   — `Double.random` runs unseeded so daily picks vary naturally.
+    ///   Pass a concrete `UInt64` from "Generate New Outfits" so the
+    ///   re-roll yields a different ordering than the previous attempt.
     func generateDailyOutfits(
         items: [WardrobeItem],
         occasion: Occasion = .casual,
-        recentItemIds: Set<UUID> = []
+        recentItemIds: Set<UUID> = [],
+        seed: UInt64? = nil
     ) async -> [OutfitCandidate] {
         let activeItems = items.filter { !$0.isArchived }
         guard activeItems.count >= 2 else { return [] }
@@ -70,7 +77,8 @@ final class OutfitGenerationService: @unchecked Sendable {
         let selectedArchetypes = selectDiverseArchetypes(
             archetypes: archetypes,
             context: context,
-            count: dailyOutfitCount * 2
+            count: dailyOutfitCount * 2,
+            seed: seed
         )
 
         var results: [OutfitCandidate] = []
@@ -478,18 +486,45 @@ final class OutfitGenerationService: @unchecked Sendable {
 
     /// Select archetypes matching the current context, preferring family diversity.
     /// Adds a small random factor so daily results vary across days.
+    ///
+    /// - Parameter seed: When non-nil, the random tie-break uses a
+    ///   `SystemRandomNumberGenerator`-flavoured seedable RNG so the
+    ///   ordering is reproducible inside a single generation but
+    ///   different from any other seed. The generator produces a uniform
+    ///   `[0, 0.2)` value per archetype, identical in distribution to
+    ///   the unseeded `Double.random(in: 0...0.2)` used otherwise.
     func selectDiverseArchetypes(
         archetypes: [StyleArchetype],
         context: ScoringContext,
-        count: Int
+        count: Int,
+        seed: UInt64? = nil
     ) -> [StyleArchetype] {
-        let scored = archetypes.map { archetype -> (archetype: StyleArchetype, score: Double) in
-            var s = 0.0
-            if archetype.seasons.contains(context.season.rawValue) { s += 0.4 }
-            if archetype.occasions.contains(context.occasion.rawValue) { s += 0.4 }
-            // Small random factor for day-to-day variety
-            s += Double.random(in: 0...0.2)
-            return (archetype: archetype, score: s)
+        // Score each archetype with the context bonuses + a small random
+        // factor for day-to-day / re-roll variety. The seeded path uses a
+        // deterministic RNG so the same `seed` reproduces the same
+        // ordering, while different seeds produce different orderings.
+        // The unseeded branch is intentionally left bit-identical to the
+        // pre-seed implementation so existing tests + production callers
+        // pass through unchanged.
+        let scored: [(archetype: StyleArchetype, score: Double)]
+        if let seed = seed {
+            var rng = SeededRNG(seed: seed)
+            scored = archetypes.map { archetype -> (archetype: StyleArchetype, score: Double) in
+                var s = 0.0
+                if archetype.seasons.contains(context.season.rawValue) { s += 0.4 }
+                if archetype.occasions.contains(context.occasion.rawValue) { s += 0.4 }
+                s += Double.random(in: 0..<0.2, using: &rng)
+                return (archetype: archetype, score: s)
+            }
+        } else {
+            scored = archetypes.map { archetype -> (archetype: StyleArchetype, score: Double) in
+                var s = 0.0
+                if archetype.seasons.contains(context.season.rawValue) { s += 0.4 }
+                if archetype.occasions.contains(context.occasion.rawValue) { s += 0.4 }
+                // Small random factor for day-to-day variety
+                s += Double.random(in: 0...0.2)
+                return (archetype: archetype, score: s)
+            }
         }
 
         let sorted = scored.sorted { $0.score > $1.score }
@@ -601,6 +636,39 @@ final class OutfitGenerationService: @unchecked Sendable {
         }
 
         return unique
+    }
+}
+
+// MARK: - Seedable RNG
+
+/// SplitMix64 PRNG — small, fast, deterministic. Used as the seeded
+/// random tie-break in `selectDiverseArchetypes` so calling
+/// `generateDailyOutfits(seed:)` with the same value produces the same
+/// archetype ordering, and different seeds produce different orderings.
+///
+/// SplitMix64 is the canonical "splittable" generator from
+/// http://prng.di.unimi.it/splitmix64.c — 64 bits of state, no warm-up,
+/// passes BigCrush, distribution is indistinguishable from uniform for
+/// our use case (a handful of `Double.random` calls per generation).
+///
+/// Lives next to `OutfitGenerationService` because it's the only consumer
+/// today; if other services start needing seeded variation, lift it into
+/// its own file under `WardrobeReDo/Services/Util/`.
+struct SeededRNG: RandomNumberGenerator {
+    private var state: UInt64
+
+    init(seed: UInt64) {
+        // Avoid an all-zero state — the SplitMix64 mixing function
+        // emits 0 forever from state 0. Any non-zero salt does.
+        self.state = seed == 0 ? 0x9E3779B97F4A7C15 : seed
+    }
+
+    mutating func next() -> UInt64 {
+        state &+= 0x9E3779B97F4A7C15
+        var z = state
+        z = (z ^ (z &>> 30)) &* 0xBF58476D1CE4E5B9
+        z = (z ^ (z &>> 27)) &* 0x94D049BB133111EB
+        return z ^ (z &>> 31)
     }
 }
 

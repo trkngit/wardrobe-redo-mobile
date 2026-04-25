@@ -241,6 +241,26 @@ final class OutfitRepository: OutfitRepositoryProtocol {
         }
     }
 
+    /// Delete every outfit row for a `(userId, date)` pair. Slot rows
+    /// cascade. Used by the "Generate New Outfits" re-roll flow so the
+    /// `hasOutfitsForDate` guard in `OutfitViewModel.generateDailyOutfits`
+    /// no longer short-circuits to the cached batch.
+    ///
+    /// Local outfit + slot caches are invalidated on success so the next
+    /// `fetchOutfitsByDate` always hits the network and observes the
+    /// freshly-generated rows rather than returning the deleted ones.
+    func deleteOutfits(userId: UUID, date: String) async throws {
+        try await withRetry(.interactive) {
+            try await self.supabase
+                .from("outfits")
+                .delete()
+                .eq("user_id", value: userId)
+                .eq("date", value: date)
+                .execute()
+        }
+        await cache.invalidateOutfits(userId: userId, date: date)
+    }
+
     // MARK: - Recent Item Tracking
 
     /// Fetch wardrobe item IDs worn in the last N days.

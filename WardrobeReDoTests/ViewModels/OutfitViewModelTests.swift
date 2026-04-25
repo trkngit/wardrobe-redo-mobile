@@ -64,6 +64,51 @@ import Testing
     #expect(vm.dailyOutfits.first?.outfit.reaction == "like")
 }
 
+// MARK: - regenerateDailyOutfits
+
+@Test @MainActor func regenerateDailyOutfitsDeletesBeforeFetching() async {
+    // Confirms the "Generate New Outfits" path:
+    //   1. Calls deleteOutfits FIRST so the cache check inside the
+    //      shared generation path returns false.
+    //   2. Then proceeds through the generation path. With the wardrobe
+    //      empty (default mock state), the shared path short-circuits
+    //      to a wardrobeTooSmall failure — that's fine for ordering.
+    //
+    // The single assertion that matters: `deleteOutfits` is the FIRST
+    // call recorded by the mock. Anything else proves the regenerate
+    // path bypassed the delete and would render the same stale batch.
+    let userId = UUID()
+    let mockRepo = MockOutfitRepository()
+    let mockWardrobe = MockWardrobeRepository()
+    let vm = OutfitViewModel(
+        outfitRepository: mockRepo,
+        wardrobeRepository: mockWardrobe
+    )
+
+    await vm.regenerateDailyOutfits(userId: userId)
+
+    #expect(mockRepo.deleteOutfitsCallCount == 1)
+    #expect(mockRepo.lastDeleteOutfitsUserId == userId)
+    #expect(mockRepo.callLog.first == "deleteOutfits")
+    // dailyOutfits should be cleared right after delete so the UI
+    // doesn't briefly render the stale cards.
+    #expect(vm.dailyOutfits.isEmpty)
+    #expect(vm.isRegenerating == false)
+}
+
+@Test @MainActor func regenerateDailyOutfitsSurfacesDeleteFailure() async {
+    let userId = UUID()
+    let mockRepo = MockOutfitRepository()
+    mockRepo.deleteOutfitsError = MockError.simulated
+    let vm = OutfitViewModel(outfitRepository: mockRepo)
+
+    await vm.regenerateDailyOutfits(userId: userId)
+
+    #expect(mockRepo.deleteOutfitsCallCount == 1)
+    #expect(vm.lastFailure != nil)
+    #expect(vm.isRegenerating == false)
+}
+
 @Test @MainActor func outfitToggleWornFlipsState() async {
     let mockOutfitRepo = MockOutfitRepository()
     let vm = OutfitViewModel(outfitRepository: mockOutfitRepo)

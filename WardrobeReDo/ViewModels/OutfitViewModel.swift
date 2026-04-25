@@ -20,6 +20,12 @@ final class OutfitViewModel {
     var dailyOutfits: [DailyOutfit] = []
     var isLoading = false
     var isGenerating = false
+    /// True while the "Generate New Outfits" button is mid-flight: the
+    /// VM is deleting today's cached batch and regenerating against a
+    /// fresh seed. Distinct from `isGenerating` so views can show a
+    /// button-local spinner without flipping the whole-screen
+    /// "Curating your outfits…" state.
+    var isRegenerating = false
     var errorMessage: String?
     /// Reason the most recent generation attempt failed.
     /// `nil` after a successful run, or before the first attempt.
@@ -66,6 +72,15 @@ final class OutfitViewModel {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
+
+        // One-shot legacy-tag backfill. No-op on subsequent launches
+        // (UserDefaults flag). Runs BEFORE the fetch so the user sees
+        // the broader occasion / season tags reflected in the picks
+        // produced by the current generate cycle.
+        await AttributeBackfillService.runIfNeeded(
+            userId: userId,
+            wardrobeRepository: wardrobeRepository
+        )
 
         do {
             let dateString = todayDateString
@@ -122,13 +137,50 @@ final class OutfitViewModel {
     /// (preferred) so the empty-state can render reason-specific copy
     /// and a Try-Again button.
     func generateDailyOutfits(userId: UUID) async {
+        await runGeneration(userId: userId, seed: nil)
+    }
+
+    /// "Generate New Outfits" — explicitly delete today's cached batch
+    /// and regenerate against a fresh `seed`. Distinct from
+    /// `generateDailyOutfits(userId:)` because it bypasses the
+    /// `hasOutfitsForDate` guard (which would otherwise short-circuit
+    /// to the cached results) AND drives a different archetype ordering
+    /// via the seeded RNG in `OutfitGenerationService`.
+    ///
+    /// Sets `isRegenerating` (button-local spinner) instead of
+    /// `isGenerating` (whole-screen "Curating…" state).
+    func regenerateDailyOutfits(userId: UUID) async {
+        isRegenerating = true
+        defer { isRegenerating = false }
+
+        let dateString = todayDateString
+        do {
+            try await outfitRepository.deleteOutfits(userId: userId, date: dateString)
+        } catch {
+            applyFailure(.unknown(String(describing: error)))
+            return
+        }
+
+        // Drop the old DailyOutfit cards immediately so the UI doesn't
+        // briefly show stale results between delete and reload.
+        dailyOutfits = []
+
+        await runGeneration(userId: userId, seed: UInt64.random(in: .min ... .max))
+    }
+
+    /// Shared generation path for both the first-time and regenerate
+    /// flows. The two callers differ only in whether they pre-clear the
+    /// cache and what seed they supply.
+    private func runGeneration(userId: UUID, seed: UInt64?) async {
         isGenerating = true
         errorMessage = nil
         lastFailure = nil
         defer { isGenerating = false }
 
         do {
-            // Guard: don't regenerate if outfits already exist for today
+            // Guard: don't regenerate if outfits already exist for today.
+            // Bypassed implicitly by `regenerateDailyOutfits` because
+            // it deletes the cached batch first.
             let dateString = todayDateString
             let alreadyExists = try await outfitRepository.hasOutfitsForDate(
                 userId: userId, date: dateString
@@ -151,7 +203,7 @@ final class OutfitViewModel {
             // Race generation against a 60-second timeout. The outcome
             // enum lets us distinguish empty results from real timeouts.
             let outcome: GenerationOutcome = await withTaskGroup(of: GenerationOutcome.self) {
-                [outfitRepository, generationService, selectedOccasion, wardrobeItems] group in
+                [outfitRepository, generationService, selectedOccasion, wardrobeItems, seed] group in
                 group.addTask {
                     do {
                         let recentIds = try await outfitRepository.fetchRecentItemIds(userId: userId)
@@ -159,7 +211,8 @@ final class OutfitViewModel {
                         let candidates = await generationService.generateDailyOutfits(
                             items: wardrobeItems,
                             occasion: selectedOccasion,
-                            recentItemIds: recentIds
+                            recentItemIds: recentIds,
+                            seed: seed
                         )
 
                         if candidates.isEmpty { return .empty }

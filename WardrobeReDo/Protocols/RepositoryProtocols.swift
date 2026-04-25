@@ -35,6 +35,11 @@ protocol OutfitRepositoryProtocol: Sendable {
     func updateReaction(outfitId: UUID, reaction: String?) async throws
     func markAsWorn(outfitId: UUID, isWorn: Bool) async throws
     func hasOutfitsForDate(userId: UUID, date: String) async throws -> Bool
+    /// Delete every outfit a user has on a given date (cascade-deletes
+    /// `outfit_slots`). Used by the "Generate New Outfits" path so a
+    /// re-roll doesn't get blocked by `hasOutfitsForDate` returning the
+    /// previous batch.
+    func deleteOutfits(userId: UUID, date: String) async throws
 }
 
 extension OutfitRepositoryProtocol {
