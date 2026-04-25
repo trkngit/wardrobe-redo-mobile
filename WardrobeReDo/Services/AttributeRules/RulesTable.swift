@@ -216,10 +216,13 @@ enum RulesTable {
              (.shoe, .oxford, _), (.shoe, .derby, _), (.shoe, .loafers, _):
             return [.work, .date, .formal]
 
-        // 103. formal outerwear
-        case (.outerwear, .suitJacket, _), (.outerwear, .trench, _),
-             (.outerwear, .overcoat, _):
-            return [.work, .formal]
+        // 103. formal outerwear — work + formal anchor; trench coats
+        // and overcoats also cross naturally into casual / date so
+        // the corresponding subtabs aren't empty.
+        case (.outerwear, .suitJacket, _):
+            return [.work, .date, .formal]
+        case (.outerwear, .trench, _), (.outerwear, .overcoat, _):
+            return [.casual, .work, .date, .formal]
 
         // 104. formal dresses
         case (.dress, .cocktailDress, _), (.dress, .sheathDress, _):
@@ -235,10 +238,14 @@ enum RulesTable {
         case (.bottom, .joggers, _), (.bottom, .leggings, _):
             return [.casual, .athletic, .lounge]
 
-        // 111. athletic footwear
+        // 111. athletic footwear — sneakers cross casual / athletic /
+        // lounge / date depending on outfit. Rather than narrow them to
+        // [.casual, .athletic] (which makes Date / Lounge subtabs go
+        // empty for sneaker-only wardrobes), we widen the set so the
+        // OccasionContextScorer has signal across all 4 subtabs.
         case (.shoe, .sneakers, _), (.shoe, .sneakerLow, _), (.shoe, .sneakerHigh, _),
              (.shoe, .highTops, _), (.shoe, .runningShoe, _), (.shoe, .designerSneakers, _):
-            return [.casual, .athletic]
+            return [.casual, .athletic, .date, .lounge]
 
         // 112. performance fabric tops
         case (.top, _, .synthetic?), (.top, _, .nylon?):
@@ -250,31 +257,63 @@ enum RulesTable {
         case (.top, .sweatshirt, _), (.top, .hoodie, _):
             return [.casual, .athletic, .lounge]
 
+        // MARK: Smart-casual subcategory rules
+        //
+        // These rules fire AFTER the texture-keyed formal (100, 105) and
+        // athletic (112) blocks, so a synthetic polo still routes to
+        // athletic and a silk button-down still routes to formal — only
+        // textures that haven't been claimed by an earlier rule fall
+        // into these subcategory defaults.
+
+        // 106. polo — smart-casual; works for casual + work day-to-day,
+        // and slides into date/lounge with the right pairing.
+        case (.top, .polo, _):
+            return [.casual, .work, .date, .lounge]
+
+        // 107. button-down / dress shirts — work + casual + date.
+        case (.top, .buttonDown, _), (.top, .dressShirt, _):
+            return [.casual, .work, .date]
+
+        // 108. blazer (categorized as a top in this enum) — work-leaning
+        // but rounds out casual + date too. Suit jackets (.outerwear,
+        // .suitJacket) are covered by rule 103 above.
+        case (.top, .blazer, _):
+            return [.casual, .work, .date, .formal]
+
         // MARK: Casual defaults
 
-        // 130. basic tops → casual
+        // 130. basic short-sleeve tops — casual + lounge anchor; t-shirts
+        // and tanks are also fine for date-night under a layer.
         case (.top, .tshirt, _), (.top, .tankTop, _), (.top, .tank, _),
              (.top, .camisole, _), (.top, .cropTop, _), (.top, .graphicTee, _),
-             (.top, .henley, _), (.top, .polo, _):
-            return [.casual]
+             (.top, .henley, _):
+            return [.casual, .date, .lounge]
 
-        // 131. casual bottoms
-        case (.bottom, .jeans, _), (.bottom, .shorts, _),
-             (.bottom, .cargo, _), (.bottom, .chinos, _):
+        // 131. casual bottoms — chinos cross into work; jeans don't.
+        case (.bottom, .chinos, _):
+            return [.casual, .work, .date]
+
+        case (.bottom, .jeans, _):
+            return [.casual, .date, .lounge]
+
+        case (.bottom, .shorts, _), (.bottom, .cargo, _):
             return [.casual, .date]
 
-        // 132. sandals → casual only
+        // 132. sandals → casual + lounge (summer-only feet still want
+        // a non-empty Lounge match)
         case (.shoe, .sandals, _):
-            return [.casual]
+            return [.casual, .lounge]
 
-        // 133. casual outerwear
+        // 133. casual outerwear — denim/bomber/varsity all read
+        // casual + date.
         case (.outerwear, .denimJacket, _), (.outerwear, .bomber, _),
              (.outerwear, .varsityJacket, _), (.outerwear, .shirtJacket, _):
             return [.casual, .date]
 
-        // 134. casual dresses
+        // 134. casual dresses — sundress, casual-dress slide
+        // casual / date / lounge.
         case (.dress, .sundress, _), (.dress, .casualDress, _):
-            return [.casual, .date]
+            return [.casual, .date, .lounge]
 
         // 135. accessories — don't narrow occasion
         case (.accessory, _, _):
@@ -282,9 +321,11 @@ enum RulesTable {
 
         // MARK: Fallback (matches the non-empty invariant)
 
-        // 199. default → casual
+        // 199. default → casual + lounge so unknown items still appear
+        // in the Lounge subtab (was [.casual] which produced empty
+        // subtabs for everything else).
         default:
-            return [.casual]
+            return [.casual, .lounge]
         }
     }
 }
