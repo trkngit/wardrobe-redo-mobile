@@ -59,7 +59,7 @@ struct AddItemView: View {
                 if viewModel.currentProposal != nil, viewModel.currentStep == .details {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("Skip this item") {
-                            viewModel.onSkipCurrentProposal()
+                            Task { await viewModel.onSkipCurrentProposal() }
                         }
                         .accessibilityHint("Skips this garment without saving and moves to the next detected item.")
                     }
@@ -285,7 +285,7 @@ struct AddItemView: View {
                     get: { viewModel.selectedProposalIDs },
                     set: { viewModel.selectedProposalIDs = $0 }
                 ),
-                onConfirmed: { viewModel.onMultiPickConfirmed() },
+                onConfirmed: { Task { await viewModel.onMultiPickConfirmed() } },
                 onUseFullPhoto: { viewModel.onMultiPickUseFullPhoto() },
                 onCancel: { viewModel.onMultiPickCancelled() }
             )

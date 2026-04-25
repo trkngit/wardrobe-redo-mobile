@@ -132,4 +132,60 @@ import Testing
         let result = MultiGarmentProposalService.collapseShoePairs(shoes)
         #expect(result.count == 3)
     }
+
+    // MARK: - looksLikeShoeRedundancy / wide-shot + close-up collapse
+
+    @Test func closeUpFullyContainedInWideShotCollapsesToOne() {
+        // The model produced both a wide-shot of a shoe at the bottom
+        // of the frame AND a close-up zoom into the laces of the same
+        // shoe. The close-up box (smaller) sits inside the wide-shot
+        // box (larger). `looksLikeShoePair` fails (different sizes,
+        // different Y positions); redundancy collapse must catch it.
+        let wideShot = MultiGarmentProposalService.RawDetection(
+            boundingBox: CGRect(x: 0.30, y: 0.70, width: 0.30, height: 0.25),
+            score: 0.88, rawClass: "shoe", mask: nil
+        )
+        let closeUp = MultiGarmentProposalService.RawDetection(
+            // Sits entirely inside `wideShot` (laces region).
+            boundingBox: CGRect(x: 0.35, y: 0.75, width: 0.10, height: 0.08),
+            score: 0.82, rawClass: "shoe", mask: nil
+        )
+        let result = MultiGarmentProposalService.collapseShoePairs([wideShot, closeUp])
+        #expect(result.count == 1)
+        // Higher-scored copy survives (wide-shot here).
+        #expect(result.first?.score == 0.88)
+    }
+
+    @Test func sameSizeAdjacentBoxesStillCollapseViaPairPath() {
+        // Regression: redundancy pruning must NOT swallow a real
+        // left+right shoe pair. Side-by-side, similar size — the pair
+        // path should still fire and collapse to one.
+        let left = MultiGarmentProposalService.RawDetection(
+            boundingBox: CGRect(x: 0.30, y: 0.85, width: 0.10, height: 0.10),
+            score: 0.91, rawClass: "shoe", mask: nil
+        )
+        let right = MultiGarmentProposalService.RawDetection(
+            boundingBox: CGRect(x: 0.41, y: 0.85, width: 0.10, height: 0.10),
+            score: 0.92, rawClass: "shoe", mask: nil
+        )
+        let result = MultiGarmentProposalService.collapseShoePairs([left, right])
+        #expect(result.count == 1)
+        #expect(result.first?.score == 0.92)
+    }
+
+    @Test func twoDistinctShoesFarApartAreBothKept() {
+        // Real two-pair flat-lay: opposite corners, no overlap, no
+        // pair geometry. Neither the redundancy nor the pair check
+        // should fire — both shoes survive.
+        let one = MultiGarmentProposalService.RawDetection(
+            boundingBox: CGRect(x: 0.05, y: 0.10, width: 0.15, height: 0.15),
+            score: 0.85, rawClass: "shoe", mask: nil
+        )
+        let two = MultiGarmentProposalService.RawDetection(
+            boundingBox: CGRect(x: 0.75, y: 0.80, width: 0.15, height: 0.15),
+            score: 0.87, rawClass: "shoe", mask: nil
+        )
+        let result = MultiGarmentProposalService.collapseShoePairs([one, two])
+        #expect(result.count == 2)
+    }
 }
