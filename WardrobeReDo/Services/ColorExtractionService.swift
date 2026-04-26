@@ -1,5 +1,15 @@
 import CoreImage
+import OSLog
 import UIKit
+
+/// Capture-pipeline telemetry. PR #26's color overhaul will replace
+/// this whole file (LAB clustering + CIEDE2000 merge); this logger is
+/// here so the build-4 → build-5 transitional behavior is observable
+/// in dogfood.
+private let colorExtractionLogger = Logger(
+    subsystem: "com.wardroberedo",
+    category: "ColorExtraction"
+)
 
 struct ExtractedColor: Sendable {
     let hex: String
@@ -90,7 +100,13 @@ final class ColorExtractionService: ColorExtracting, Sendable {
         // remain, the color palette would be empty — surface that as
         // an empty result rather than crash. Callers already handle
         // zero-color results.
-        guard !pixels.isEmpty else { return [] }
+        let alphaRejected = totalPixels - pixels.count
+        guard !pixels.isEmpty else {
+            colorExtractionLogger.notice(
+                "extractColors.empty totalPixels=\(totalPixels, privacy: .public) alphaRejected=\(alphaRejected, privacy: .public)"
+            )
+            return []
+        }
 
         // K-means clustering
         let clusters = kMeans(pixels: pixels, k: maxColors, maxIterations: 20)
@@ -98,6 +114,14 @@ final class ColorExtractionService: ColorExtracting, Sendable {
         // Sort by coverage (largest cluster first)
         let sorted = clusters.sorted { $0.count > $1.count }
         let sampledCount = pixels.count
+
+        // Per-extraction telemetry — surfaces the "5 nearly-identical
+        // shades of blue" pattern from build-4 dogfood. PR #26 will
+        // add cluster-merge counts here once LAB-space clustering and
+        // CIEDE2000 merge land.
+        colorExtractionLogger.info(
+            "extractColors.success totalPixels=\(totalPixels, privacy: .public) sampledPixels=\(sampledCount, privacy: .public) alphaRejected=\(alphaRejected, privacy: .public) clusters=\(sorted.count, privacy: .public) maxColors=\(maxColors, privacy: .public)"
+        )
 
         return sorted.map { cluster in
             let (h, s, l) = rgbToHSL(r: cluster.center.r, g: cluster.center.g, b: cluster.center.b)
