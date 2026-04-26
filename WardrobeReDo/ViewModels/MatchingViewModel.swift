@@ -168,9 +168,15 @@ final class MatchingViewModel {
     // MARK: - Thumbnails
 
     func loadThumbnails(for items: [WardrobeItem]) async {
+        // Prefer the per-item masked cutout (`maskedImagePath`) over the
+        // framed source-photo thumbnail. PR #20 added this fallback to the
+        // wardrobe grid via `ItemCardView.displayPath`; the match tab's
+        // piece selector + outfit-suggestion result cards both feed off
+        // this `thumbnailURLs` cache, so applying the same rule here
+        // fixes the source-photo backdrop on every multi-pick item.
         for item in items where thumbnailURLs[item.id] == nil {
             thumbnailURLs[item.id] = try? await imageService.signedURL(
-                for: item.thumbnailPath
+                for: ItemCardView.displayPath(for: item)
             )
         }
     }
