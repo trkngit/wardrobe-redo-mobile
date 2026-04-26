@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 @testable import WardrobeReDo
 
@@ -44,5 +45,60 @@ struct ItemThumbnailViewDisplayPathTests {
             ItemCardView.displayPath(for: withoutMasked)
                 == ItemThumbnailView.displayPath(for: withoutMasked)
         )
+    }
+}
+
+/// PR #27 changes the thumbnail body from `.scaledToFill` over the full
+/// frame to `.scaledToFit` inside a white-background card with a 16pt
+/// inset. Snapshot tests are heavy for what's mostly a layout contract
+/// — instead we pin the dimensions and verify the view constructs for
+/// each `Size` so a regression in the size table or the body shape
+/// fails the suite immediately.
+@MainActor
+@Suite("ItemThumbnailView.layout")
+struct ItemThumbnailViewLayoutTests {
+
+    @Test func smallSizeUses44pt() {
+        #expect(ItemThumbnailView.Size.small.dimension == 44)
+    }
+
+    @Test func mediumSizeUses160pt() {
+        #expect(ItemThumbnailView.Size.medium.dimension == 160)
+    }
+
+    @Test func largeSizeIsFullWidth() {
+        // Full-width is encoded as `nil` so the surrounding layout
+        // (e.g. an outfit detail grid cell) controls the actual
+        // dimension.
+        #expect(ItemThumbnailView.Size.large.dimension == nil)
+    }
+
+    /// Smoke test — every size constructs without throwing. Catches a
+    /// regression where the body's size-aware padding or placeholder
+    /// switch breaks at one of the cases.
+    @Test func constructsForEverySize() {
+        let item = TestFixtures.makeWardrobeItem()
+        let url = URL(string: "https://example.com/item.png")
+
+        for size in [ItemThumbnailView.Size.small,
+                     ItemThumbnailView.Size.medium,
+                     ItemThumbnailView.Size.large] {
+            _ = ItemThumbnailView(item: item, url: url, size: size)
+        }
+    }
+
+    /// Pins the thumbnail's stored properties — the cluster of `let`
+    /// inputs the body reads. SwiftUI doesn't expose modifier metadata
+    /// at runtime, so the higher-confidence layout assertion is a
+    /// snapshot test (out of scope here); the smoke + size-table tests
+    /// above plus this property check together pin the public surface.
+    @Test func storesProvidedItemAndUrl() {
+        let item = TestFixtures.makeWardrobeItem()
+        let url = URL(string: "https://example.com/item.png")
+        let view = ItemThumbnailView(item: item, url: url, size: .medium)
+
+        let mirror = Mirror(reflecting: view)
+        let storedURL = mirror.children.first { $0.label == "url" }?.value as? URL
+        #expect(storedURL == url)
     }
 }

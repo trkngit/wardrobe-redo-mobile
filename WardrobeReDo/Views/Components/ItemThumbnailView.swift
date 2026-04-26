@@ -54,22 +54,48 @@ struct ItemThumbnailView: View {
     }
 
     var body: some View {
-        KFImage(url)
-            .placeholder { placeholder }
-            .resizable()
-            .scaledToFill()
-            .frame(width: size.dimension, height: size.dimension)
-            .clipped()
+        ZStack {
+            // White background — pure white in light mode and the system
+            // secondary background (≈#1C1C1E) in dark mode. Industry
+            // convention for fashion product cards (Whering, Acloset,
+            // Indyx, SSENSE) and what unifies a wardrobe of cutouts shot
+            // against wildly different sources into one product surface.
+            RoundedRectangle(cornerRadius: Theme.Radius.card)
+                .fill(cardBackground)
+
+            KFImage(url)
+                .placeholder { placeholder }
+                .resizable()
+                // `scaledToFit` (not `.scaledToFill`) is the load-bearing
+                // change in PR #27: the cutout sits centred on the white
+                // card with breathing room rather than getting cropped to
+                // the frame edge. A 16pt inset puts the garment at the
+                // ~70% fill point industry mockups land on.
+                .scaledToFit()
+                .padding(thumbnailPadding)
+        }
+        .aspectRatio(1, contentMode: .fit)
+        .frame(width: size.dimension, height: size.dimension)
+    }
+
+    /// Padding shrinks for the 44pt strip cell so the garment stays
+    /// readable at small sizes — 16pt of inset on a 44pt frame leaves no
+    /// room for the image. Medium and large keep the spec's 16pt.
+    private var thumbnailPadding: CGFloat {
+        switch size {
+        case .small: return 4
+        case .medium, .large: return 16
+        }
+    }
+
+    private var cardBackground: Color {
+        Color(uiColor: .systemBackground)
     }
 
     private var placeholder: some View {
-        Rectangle()
-            .fill(Color(Theme.Colors.muted).opacity(0.3))
-            .overlay {
-                Image(systemName: item.category.iconName)
-                    .font(.system(size: size == .small ? 16 : 24, weight: .light))
-                    .foregroundStyle(Color(Theme.Colors.textSecondary))
-            }
+        Image(systemName: item.category.iconName)
+            .font(.system(size: size == .small ? 16 : 24, weight: .light))
+            .foregroundStyle(Color(Theme.Colors.textSecondary))
     }
 }
 
