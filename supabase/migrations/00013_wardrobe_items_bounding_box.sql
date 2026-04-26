@@ -21,8 +21,11 @@
 -- No index — bounding boxes are read on detail view only, never
 -- queried or sorted on.
 
+-- `IF NOT EXISTS` keeps re-applies on dev boxes / CI from failing once
+-- the column already exists in production. The COMMENT below is
+-- naturally idempotent (overwrites without erroring).
 ALTER TABLE public.wardrobe_items
-ADD COLUMN bounding_box JSONB;
+ADD COLUMN IF NOT EXISTS bounding_box JSONB;
 
 COMMENT ON COLUMN public.wardrobe_items.bounding_box IS
     'Normalized [0,1] bounding box of the detected garment within '

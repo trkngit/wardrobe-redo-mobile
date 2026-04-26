@@ -230,7 +230,13 @@ struct BoundingBoxCodable: Codable, Sendable, Equatable, Hashable {
 
     /// Convenience round-trip from a CGRect produced by the on-device
     /// extraction pipeline. Inputs are expected to already be in
-    /// normalized [0, 1] coordinates — this initializer doesn't clamp.
+    /// normalized [0, 1] coordinates — this initializer doesn't clamp
+    /// the origin or upper bound. It does normalize a flipped rect
+    /// (negative width/height) via `CGRect.minX/minY/width/height`,
+    /// which always return the standardized values (positive size,
+    /// smallest origin). So a flipped input lands here as a positive-
+    /// direction bbox with the visual region preserved, just
+    /// re-anchored to the smaller corner.
     init(_ rect: CGRect) {
         self.x = Double(rect.minX)
         self.y = Double(rect.minY)
