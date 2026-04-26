@@ -62,7 +62,7 @@ struct AddItemViewModelPrefillTests {
         vm.proposals = [proposal]
         vm.selectedProposalIDs = [proposal.id]
 
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
         #expect(vm.category == .outerwear)
         #expect(vm.detectedAttributes["category"] == ClothingCategory.outerwear.rawValue)
@@ -80,7 +80,7 @@ struct AddItemViewModelPrefillTests {
         vm.proposals = [proposal]
         vm.selectedProposalIDs = [proposal.id]
 
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
         #expect(vm.category == .top, "sub-threshold prediction should fall back to the default .top")
         #expect(vm.detectedAttributes["category"] == nil, "snapshot should omit fields that weren't pre-filled")
@@ -98,7 +98,7 @@ struct AddItemViewModelPrefillTests {
         vm.proposals = [proposal]
         vm.selectedProposalIDs = [proposal.id]
 
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
         #expect(vm.category == .top)
         #expect(vm.detectedAttributes["category"] == nil)
@@ -119,7 +119,7 @@ struct AddItemViewModelPrefillTests {
         vm.proposals = [proposal]
         vm.selectedProposalIDs = [proposal.id]
 
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
         #expect(vm.subcategory == .buttonDown)
         #expect(vm.detectedAttributes["subcategory"] == ClothingSubcategory.buttonDown.rawValue)
@@ -142,11 +142,134 @@ struct AddItemViewModelPrefillTests {
         vm.proposals = [proposal]
         vm.selectedProposalIDs = [proposal.id]
 
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
         #expect(vm.category == .top)
         #expect(vm.subcategory == .tshirt, "mismatched subcategory should fall back to category default")
         #expect(vm.detectedAttributes["subcategory"] == nil)
+    }
+
+    // MARK: - Accessory raw-class rescue (A3)
+    //
+    // When a proposal lands as `.accessory` but the standard
+    // `predictedSubcategory` path returns nil, the rescue mapping
+    // (`ClothingSubcategory.accessorySubcategoryFromRawClass`) should
+    // pick the right subcategory from the raw Fashionpedia label
+    // instead of silently defaulting to `.hat`.
+
+    @Test func addItemRescuesAccessorySubcategoryFromRawBelt() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
+
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedCategory: .accessory,
+            predictedCategoryConfidence: 0.95,
+            predictedSubcategory: nil,
+            modelClassRaw: "belt"
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
+
+        await vm.onMultiPickConfirmed()
+
+        #expect(vm.subcategory == .belt,
+               "raw 'belt' must rescue to .belt rather than fall to .hat")
+        #expect(vm.detectedAttributes["subcategory"] == ClothingSubcategory.belt.rawValue)
+    }
+
+    @Test func addItemRescuesAccessorySubcategoryFromRawGlasses() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
+
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedCategory: .accessory,
+            predictedCategoryConfidence: 0.95,
+            predictedSubcategory: nil,
+            modelClassRaw: "glasses"
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
+
+        await vm.onMultiPickConfirmed()
+
+        #expect(vm.subcategory == .sunglasses,
+               "raw 'glasses' must rescue to .sunglasses rather than fall to .hat")
+        #expect(vm.detectedAttributes["subcategory"] == ClothingSubcategory.sunglasses.rawValue)
+    }
+
+    @Test func addItemRescuesAccessorySubcategoryFromRawWatch() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
+
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedCategory: .accessory,
+            predictedCategoryConfidence: 0.95,
+            predictedSubcategory: nil,
+            modelClassRaw: "watch"
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
+
+        await vm.onMultiPickConfirmed()
+
+        #expect(vm.subcategory == .watch,
+               "raw 'watch' must rescue to .watch rather than fall to .hat")
+        #expect(vm.detectedAttributes["subcategory"] == ClothingSubcategory.watch.rawValue)
+    }
+
+    @Test func addItemAccessoryFallsBackToDefaultWhenRawUnknown() async {
+        // Raw class outside the rescue map → fall through to the
+        // category default (.hat for .accessory). The rescue path is
+        // strictly additive — it doesn't change behavior when no
+        // mapping is available.
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
+
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedCategory: .accessory,
+            predictedCategoryConfidence: 0.95,
+            predictedSubcategory: nil,
+            modelClassRaw: "unknownThing"
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
+
+        await vm.onMultiPickConfirmed()
+
+        #expect(vm.subcategory == .hat,
+               "unknown raw classes still fall to the .accessory default — no regression")
+        #expect(vm.detectedAttributes["subcategory"] == nil,
+               "rescue miss must not record a snapshot entry")
+    }
+
+    @Test func addItemPrefillRespectsExistingSubcategoryPath() async {
+        // Regression check: when `predictedSubcategory` IS populated
+        // and matches the category, the standard path wins — the
+        // accessory rescue never runs for non-accessory categories.
+        // Mirrors the typical happy-path flow for .top + shirt_blouse.
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
+
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedCategory: .top,
+            predictedCategoryConfidence: 0.95,
+            predictedSubcategory: .buttonDown,
+            modelClassRaw: "shirt_blouse"
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
+
+        await vm.onMultiPickConfirmed()
+
+        #expect(vm.category == .top)
+        #expect(vm.subcategory == .buttonDown,
+               "existing predictedSubcategory path must continue to win")
+        #expect(vm.detectedAttributes["subcategory"] == ClothingSubcategory.buttonDown.rawValue)
     }
 
     // MARK: - Texture threshold
@@ -163,7 +286,7 @@ struct AddItemViewModelPrefillTests {
         vm.proposals = [proposal]
         vm.selectedProposalIDs = [proposal.id]
 
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
         #expect(vm.texture == .leather)
         #expect(vm.detectedAttributes["texture"] == TextureType.leather.rawValue)
@@ -181,7 +304,7 @@ struct AddItemViewModelPrefillTests {
         vm.proposals = [proposal]
         vm.selectedProposalIDs = [proposal.id]
 
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
         #expect(vm.texture == nil)
         #expect(vm.detectedAttributes["texture"] == nil)
@@ -201,7 +324,7 @@ struct AddItemViewModelPrefillTests {
         vm.proposals = [proposal]
         vm.selectedProposalIDs = [proposal.id]
 
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
         #expect(vm.fitAttribute == .oversized)
         #expect(vm.detectedAttributes["fit"] == FitAttribute.oversized.rawValue)
@@ -220,7 +343,7 @@ struct AddItemViewModelPrefillTests {
         vm.proposals = [proposal]
         vm.selectedProposalIDs = [proposal.id]
 
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
         #expect(vm.selectedSeasons == Set(Season.allCases),
                "empty predictions must fall back to all-seasons, never leave the picker empty")
@@ -238,7 +361,7 @@ struct AddItemViewModelPrefillTests {
         vm.proposals = [proposal]
         vm.selectedProposalIDs = [proposal.id]
 
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
         #expect(vm.selectedSeasons == Set([Season.fall, Season.winter]))
         #expect(vm.detectedAttributes["seasons"] == "fall,winter",
@@ -258,7 +381,7 @@ struct AddItemViewModelPrefillTests {
         vm.proposals = [proposal]
         vm.selectedProposalIDs = [proposal.id]
 
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
         #expect(vm.selectedOccasions == [.casual],
                "empty predictions must fall back to [.casual], never leave the picker empty")
@@ -276,7 +399,7 @@ struct AddItemViewModelPrefillTests {
         vm.proposals = [proposal]
         vm.selectedProposalIDs = [proposal.id]
 
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
         #expect(vm.selectedOccasions == Set([Occasion.work, Occasion.formal]))
         #expect(vm.detectedAttributes["occasions"] == "formal,work",
@@ -304,7 +427,7 @@ struct AddItemViewModelPrefillTests {
         vm.proposals = [proposal]
         vm.selectedProposalIDs = [proposal.id]
 
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
         #expect(vm.detectedAttributes["category"] == "outerwear")
         #expect(vm.detectedAttributes["subcategory"] == "leatherJacket")
@@ -349,7 +472,7 @@ struct AddItemViewModelPrefillTests {
         vm.proposals = [proposal]
         vm.selectedProposalIDs = [proposal.id]
 
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
         #expect(vm.category == .top, "flag off → legacy hard-reset category")
         #expect(vm.subcategory == .tshirt)

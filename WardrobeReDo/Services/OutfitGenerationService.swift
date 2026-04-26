@@ -85,7 +85,19 @@ final class OutfitGenerationService: @unchecked Sendable {
             seed: seed
         )
 
-        var results: [OutfitCandidate] = []
+        // Build two pools in parallel as we iterate archetypes:
+        //   • `filteredResults` — candidates that contain at least one
+        //     occasion-tagged item (the strict pool for the active subtab)
+        //   • `allResults` — every successfully-scored candidate (the
+        //     fallback pool for small wardrobes / sparsely-tagged items)
+        //
+        // Filtering DURING the loop instead of AFTER it is what fixes
+        // the dogfood symptom where a small post-diversification pool
+        // never contained enough occasion-tagged outfits to clear the
+        // strict filter — the loop now keeps walking archetypes until
+        // either pool reaches the `preDedupTarget`.
+        var allResults: [OutfitCandidate] = []
+        var filteredResults: [OutfitCandidate] = []
         var usedFamilies: Set<String> = []
         // Larger early-exit threshold than `dailyOutfitCount` so the
         // dedup pass below has duplicates to discard before falling
@@ -124,12 +136,38 @@ final class OutfitGenerationService: @unchecked Sendable {
             }
 
             if let best = bestCandidate {
-                results.append(best)
+                allResults.append(best)
+                if best.items.contains(where: { $0.occasions.contains(occasion) }) {
+                    filteredResults.append(best)
+                }
                 usedFamilies.insert(archetype.family)
             }
 
-            if results.count >= preDedupTarget { break }
+            // Keep walking archetypes until BOTH the filtered pool has
+            // enough occasion-tagged outfits AND we've collected enough
+            // total fallbacks. Either pool hitting the cap on its own
+            // is fine — the loop ends when both have headroom OR we've
+            // exhausted the archetype list.
+            if filteredResults.count >= preDedupTarget,
+               allResults.count >= preDedupTarget {
+                break
+            }
         }
+
+        // Hard occasion filter — the OccasionContextScorer's 0.10
+        // weight is too small to reorder outfits between subtabs
+        // against ColorHarmony's 0.25, so the same "Nordic Clean"
+        // candidate surfaced on every subtab. Filtering candidates to
+        // those with at least one item explicitly tagged for the
+        // selected occasion guarantees subtabs differ. Small-wardrobe
+        // rescue: fall back to the unfiltered ranking when the strict
+        // filter would drop us below `dailyOutfitCount` so the user
+        // never sees an empty carousel.
+        let pool = selectOccasionPool(
+            filtered: filteredResults,
+            all: allResults,
+            minimum: dailyOutfitCount
+        )
 
         // Dedup by item-set to collapse "Saturday Refined" + "The
         // Capsule" with identical items into a single card, keeping
@@ -137,8 +175,45 @@ final class OutfitGenerationService: @unchecked Sendable {
         // wardrobe is small enough that fewer than `dailyOutfitCount`
         // distinct outfits exist — better to show 1-2 real options
         // than 3 cards where two are duplicates.
-        let sorted = results.sorted { $0.score.totalScore > $1.score.totalScore }
+        let sorted = pool.sorted { $0.score.totalScore > $1.score.totalScore }
         return deduplicateCandidates(sorted, limit: dailyOutfitCount)
+    }
+
+    // MARK: - Occasion Filter
+
+    /// Filter candidates to outfits where at least one item carries the
+    /// selected occasion in its `occasions` array. Falls back to the
+    /// unfiltered list when the strict filter would yield fewer than
+    /// `minimum` candidates — small wardrobes never surface an empty
+    /// carousel even when no item is tagged for the active subtab.
+    ///
+    /// Retained as a public helper for callers that have a flat
+    /// pre-scored pool (e.g. tests, or future hero-piece flows). The
+    /// daily generation path no longer routes through this — it builds
+    /// `filteredResults` and `allResults` directly inside the archetype
+    /// loop so the strict pool can grow past the per-iteration cap.
+    func filteredByOccasion(
+        candidates: [OutfitCandidate],
+        occasion: Occasion,
+        minimum: Int
+    ) -> [OutfitCandidate] {
+        let strictlyFiltered = candidates.filter { candidate in
+            candidate.items.contains { $0.occasions.contains(occasion) }
+        }
+        return strictlyFiltered.count >= minimum ? strictlyFiltered : candidates
+    }
+
+    /// Pool-selection rule used by `generateDailyOutfits`: if the
+    /// occasion-tagged pool has at least `minimum` candidates, prefer
+    /// it; otherwise fall back to the unfiltered pool. Pure function
+    /// over the two pre-built pools so tests can assert the decision
+    /// without driving a full beam search.
+    func selectOccasionPool(
+        filtered: [OutfitCandidate],
+        all: [OutfitCandidate],
+        minimum: Int
+    ) -> [OutfitCandidate] {
+        filtered.count >= minimum ? filtered : all
     }
 
     // MARK: - Hero Piece Matching
@@ -611,10 +686,49 @@ final class OutfitGenerationService: @unchecked Sendable {
 
     // MARK: - Editorial Description
 
-    /// Generate a short editorial description from the outfit's items and score.
+    /// Generate a short editorial description from the outfit's items and
+    /// score. Prepends the highest-scoring scoring dimension's reasoning
+    /// so users see WHY an outfit works (e.g. "Cohesive navy palette
+    /// anchors this look") instead of only WHAT it contains. Falls back
+    /// to the legacy item+color summary when no dimension populated
+    /// reasoning text.
+    ///
+    /// Ties on `value` are broken by `dimension.weight` (descending) so
+    /// the higher-priority dimension's reasoning wins — Color Harmony
+    /// (0.25) beats Texture Mix (0.10) on a tie. Without this, Swift's
+    /// `max(by:)` returns the LAST element matching the max, which means
+    /// the later dimension in `ScoringDimension.allCases` would silently
+    /// win ties and surface the lower-weight reasoning to the user.
     func generateDescription(
         items: [WardrobeItem],
         archetype: StyleArchetype,
+        score: OutfitScore
+    ) -> String {
+        let topReasoning = score.breakdown
+            .filter { !$0.reasoning.trimmingCharacters(in: .whitespaces).isEmpty }
+            .max(by: { lhs, rhs in
+                if lhs.value != rhs.value {
+                    return lhs.value < rhs.value
+                }
+                return lhs.dimension.weight < rhs.dimension.weight
+            })?
+            .reasoning
+            .trimmingCharacters(in: .whitespaces) ?? ""
+
+        let baseCopy = legacyDescription(items: items, score: score)
+
+        if topReasoning.isEmpty {
+            return baseCopy
+        }
+        return "\(topReasoning) — \(baseCopy)"
+    }
+
+    /// Item + color + score-tier summary that previously lived inside
+    /// `generateDescription`. Kept as a private helper so the new
+    /// dimension-reasoning prefix can prepend on top without losing the
+    /// existing copy when reasoning is empty.
+    private func legacyDescription(
+        items: [WardrobeItem],
         score: OutfitScore
     ) -> String {
         let itemNames = items.map { $0.subcategory.displayName.lowercased() }

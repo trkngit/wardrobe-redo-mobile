@@ -1031,7 +1031,7 @@ struct AddItemMultiGarmentTests {
         vm.isShowingCamera = true
         await vm.onCameraPhotoCaptured(makePixelImage())
 
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
         #expect(vm.currentProposal != nil, "first proposal popped into details")
         #expect(vm.pendingProposalQueue.count == 2, "remaining 2 still queued")
@@ -1058,7 +1058,7 @@ struct AddItemMultiGarmentTests {
         )
         vm.isShowingCamera = true
         await vm.onCameraPhotoCaptured(makePixelImage())
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
         let firstProposalId = vm.currentProposal?.id
 
@@ -1107,10 +1107,10 @@ struct AddItemMultiGarmentTests {
         )
         vm.isShowingCamera = true
         await vm.onCameraPhotoCaptured(makePixelImage())
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
         let firstProposalId = vm.currentProposal?.id
 
-        vm.onSkipCurrentProposal()
+        await vm.onSkipCurrentProposal()
 
         #expect(mockRepo.insertItemCallCount == 0, "skip doesn't save")
         #expect(vm.currentProposal != nil, "second proposal should now be current")
@@ -1134,10 +1134,10 @@ struct AddItemMultiGarmentTests {
         )
         vm.isShowingCamera = true
         await vm.onCameraPhotoCaptured(makePixelImage())
-        vm.onMultiPickConfirmed()
+        await vm.onMultiPickConfirmed()
 
-        vm.onSkipCurrentProposal() // skip #1 (queue still has #2)
-        vm.onSkipCurrentProposal() // skip #2 (queue now empty)
+        await vm.onSkipCurrentProposal() // skip #1 (queue still has #2)
+        await vm.onSkipCurrentProposal() // skip #2 (queue now empty)
 
         #expect(vm.currentProposal == nil)
         #expect(vm.savedItemsFromSource == 0)
@@ -1183,6 +1183,136 @@ struct AddItemMultiGarmentTests {
         #expect(vm.pendingProposalQueue.isEmpty)
         #expect(vm.currentProposal == nil)
         #expect(vm.isShowingMultiPick == false)
+    }
+
+    // MARK: - Per-proposal color extraction (A2)
+    //
+    // Each item in a multi-pick batch must surface its OWN palette in
+    // the details form. Pre-fix: every item carried the source-photo
+    // palette via `current.dominantColors`, so items 2..N silently
+    // showed item 1's colors. The fix re-runs `ColorExtractionService`
+    // on each proposal's `maskedImage` inside `startNextProposal`.
+    //
+    // We seed two proposals with distinct, opaque, solid-color cutouts
+    // (one red, one green) and walk the batch. The assertion: after
+    // advancing to proposal 2, `extractedColors` should be non-empty
+    // (proves per-proposal extraction runs) AND its dominant family
+    // should differ from proposal 1's (proves it isn't reusing the
+    // first item's palette).
+    //
+    // 50×50 matches `ColorExtractionService`'s internal downsample so
+    // every fixture pixel survives clustering and the family
+    // classification is stable.
+    private func makeSolidColorImage(_ color: UIColor, size: CGFloat = 50) -> UIImage {
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: size, height: size))
+        return renderer.image { ctx in
+            color.setFill()
+            ctx.fill(CGRect(x: 0, y: 0, width: size, height: size))
+        }
+    }
+
+    @Test func startNextProposalReExtractsColorsPerProposal() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
+        FeatureFlags.resetAll()
+        FeatureFlags.isMultiGarmentEnabled = true
+        defer { FeatureFlags.resetAll() }
+
+        // Two proposals with placeholder cutouts — palette assertions
+        // are now driven by the injected stub, not by the real k-means
+        // run on synthetic colors. The grid sorts by `detectionScore`
+        // descending so the higher score is detailed first.
+        let redProposal = MaskProposalFixture.make(
+            maskedImage: makeSolidColorImage(.red),
+            detectionScore: 0.9
+        )
+        let greenProposal = MaskProposalFixture.make(
+            maskedImage: makeSolidColorImage(.green),
+            detectionScore: 0.8
+        )
+
+        let mockImage = MockImageService()
+        mockImage.processImageResult = ProcessedImage(
+            originalData: Data([0xFF]),
+            thumbnailData: Data([0xFF]),
+            maskedData: Data([0xAB]),
+            extractionConfidence: .high,
+            extractionMethod: .multiGarmentRFDETR,
+            // Source-photo palette is intentionally a sentinel that no
+            // per-proposal extraction would produce (a single neutral
+            // gray) — if the per-item path regresses, the assertions
+            // below would surface this exact color back as item 2's
+            // palette.
+            dominantColors: [
+                ExtractedColor(
+                    hex: "#808080",
+                    hue: 0,
+                    saturation: 0,
+                    lightness: 0.5,
+                    percentage: 100,
+                    colorFamily: "gray",
+                    isNeutral: true
+                )
+            ],
+            proposals: [redProposal, greenProposal]
+        )
+
+        // Deterministic per-proposal palette via injected stub. Decouples
+        // the assertion from the real k-means classifier — the test
+        // proves the VM calls the extractor on each proposal AND uses
+        // the result, regardless of what the live classifier would emit
+        // for solid-color synthetic fixtures.
+        let stubExtractor = StubColorExtractor()
+        stubExtractor.results = [
+            [ExtractedColor(
+                hex: "#FF0000",
+                hue: 0, saturation: 1.0, lightness: 0.5, percentage: 100,
+                colorFamily: "red", isNeutral: false
+            )],
+            [ExtractedColor(
+                hex: "#00FF00",
+                hue: 120, saturation: 1.0, lightness: 0.5, percentage: 100,
+                colorFamily: "green", isNeutral: false
+            )]
+        ]
+
+        let vm = AddItemViewModel(
+            imageService: mockImage,
+            wardrobeRepository: MockWardrobeRepository(),
+            colorExtractor: stubExtractor
+        )
+        vm.isShowingCamera = true
+        await vm.onCameraPhotoCaptured(makePixelImage())
+
+        // First proposal becomes current — capture its palette.
+        await vm.onMultiPickConfirmed()
+        let firstColors = vm.extractedColors
+        #expect(!firstColors.isEmpty,
+               "first proposal must surface its own extracted palette")
+        let firstFamily = firstColors.first?.colorFamily
+        #expect(firstFamily == "red",
+               "first proposal palette must come from the stubbed extractor")
+
+        // Advance to the second proposal via save (mock repo / image
+        // service so the real pipeline doesn't need to be wired).
+        await vm.save(userId: UUID())
+
+        let secondColors = vm.extractedColors
+        #expect(!secondColors.isEmpty,
+               "second proposal must surface its own (non-empty) palette — proves re-extraction ran")
+        let secondFamily = secondColors.first?.colorFamily
+        #expect(secondFamily != firstFamily,
+               "per-proposal palettes must differ — proves item 2 didn't reuse item 1's colors")
+        // Belt-and-suspenders: the source-photo sentinel was gray.
+        // If the regression slipped back in, item 2 would echo it.
+        #expect(secondFamily != "gray",
+               "per-proposal palette must NOT echo the source-photo sentinel")
+        #expect(secondFamily == "green",
+               "second proposal palette must come from the stubbed extractor")
+        // The VM must invoke the extractor once per proposal that has
+        // a CGImage-backed maskedImage.
+        #expect(stubExtractor.callCount == 2,
+               "extractColors must be called exactly once per proposal in the queue")
     }
 
     @Test func stampFreshCaptureClearsProposalStateOnNewPhoto() async {

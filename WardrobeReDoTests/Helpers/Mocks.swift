@@ -268,6 +268,30 @@ final class MockClothingExtractionService: ClothingExtracting, @unchecked Sendab
     }
 }
 
+// MARK: - Stub ColorExtractor
+//
+// Deterministic per-call palette so per-proposal extraction tests don't
+// depend on the real k-means classifier (whose output for synthetic
+// solid-color test images is brittle across colour spaces).
+//
+// `results` is a FIFO queue: each `extractColors` call dequeues the
+// front entry. When the queue is empty the stub returns an empty array
+// — matching the real service's contract for unprocessable inputs.
+
+final class StubColorExtractor: ColorExtracting, @unchecked Sendable {
+    /// Pre-canned palettes returned in order, one per call. Tests seed
+    /// this before driving the VM; assertions read `callCount` and the
+    /// VM's `extractedColors` to verify the per-proposal path.
+    var results: [[ExtractedColor]] = []
+    var callCount = 0
+
+    func extractColors(from image: UIImage, maxColors: Int) async -> [ExtractedColor] {
+        callCount += 1
+        guard !results.isEmpty else { return [] }
+        return results.removeFirst()
+    }
+}
+
 // MARK: - Mock MultiGarmentExtractor
 
 /// Canned-response mock for `MultiGarmentExtracting`. Supply one of:
