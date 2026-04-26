@@ -342,12 +342,16 @@ final class OutfitViewModel {
     // MARK: - Thumbnails
 
     /// Pre-load signed thumbnail URLs for all items across all outfits.
+    /// Uses `ItemCardView.displayPath` so multi-pick items render the
+    /// transparent-bg cutout (`maskedImagePath`) instead of the framed
+    /// source-photo thumbnail. Same rule the wardrobe grid follows
+    /// after PR #20.
     func loadThumbnails() async {
         for outfit in dailyOutfits {
             for item in outfit.items {
                 if thumbnailURLs[item.id] == nil {
                     thumbnailURLs[item.id] = try? await imageService.signedURL(
-                        for: item.thumbnailPath
+                        for: ItemCardView.displayPath(for: item)
                     )
                 }
             }
@@ -356,7 +360,9 @@ final class OutfitViewModel {
 
     func thumbnailURL(for item: WardrobeItem) async -> URL? {
         if let cached = thumbnailURLs[item.id] { return cached }
-        let url = try? await imageService.signedURL(for: item.thumbnailPath)
+        let url = try? await imageService.signedURL(
+            for: ItemCardView.displayPath(for: item)
+        )
         thumbnailURLs[item.id] = url
         return url
     }
