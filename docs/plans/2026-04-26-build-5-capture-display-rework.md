@@ -474,6 +474,101 @@ Each build ships to TestFlight, dogfood iteration, then next.
 
 ---
 
+# Build 6 — Capture Quality v2 (extended from build-5 dogfood)
+
+> Generated 2026-04-27 from build-5 dogfood (10 screenshots — see `.build5-research/screenshots-analysis/build-5-findings.md`).
+
+## Build-5 dogfood deltas
+
+**Confirmed wins**: shoe redundancy (5 items not 6), texture category-default fired (`.denim` for misclassified jeans), telemetry visible in Console.
+
+**Still broken**:
+- Subcategory rescue NOT firing for sunglasses + belt + sneakers — root cause: model emits raw classes (`headband`, `boot`) that hit the rescue's nil paths and fall through to defaults
+- Wardrobe + Match cards still show source-photo backdrops — root cause: `decodeDETROutput:506` hardcodes `mask: nil`, so the `compositeMaskedItem` from PR #23 always hits the rect-crop fallback
+- Color extraction unchanged — expected, PR #26 not yet shipped
+- Outfit duplicates ("Retro Spirit BOHEMIAN" twice) — symptom of upstream subcategory bugs producing duplicate items
+
+## Build 6 PR sequence
+
+### PR #31 — Subcategory smart-defaults v3 (P0, ~150 LOC)
+
+**Branch:** `fix/subcategory-smart-defaults-v3`
+**Severity:** HIGH — fixes the build-5 sunglasses/belt/sneakers regressions
+**Migration:** None
+**Dependencies:** None (independent fix)
+
+**What it does:** Apply bbox-position heuristics + user-favoring defaults so the form's pre-fill is right more often than wrong, even when the model is confused.
+
+**Changes:**
+
+| File | Change |
+|---|---|
+| `WardrobeReDo/ViewModels/AddItemViewModel.swift::applyPrefill` | When `category == .accessory` and `accessorySubcategoryFromRawClass` returns nil, infer subcategory from bbox y-position: y < 0.4 + small height → `.sunglasses`; y in [0.45, 0.65] + thin horizontal → `.belt`; else `.hat`. |
+| `WardrobeReDo/Models/Enums/ClothingSubcategory.swift::shoeSubcategoryFromRawClass` | Change `case "boot": return .boots` → `case "boot": return nil`. Lets `.sneakers` category-default fire for boot raw class. Trade-off: real boots get mistagged as sneakers (user corrects). Matches the user-favoring default precedent set by PR #25's `.bottom → .denim`. |
+| `WardrobeReDoTests/ViewModels/AddItemViewModelAccessoryRescueTests.swift` | Extend with bbox-heuristic cases: `accessoryFallbackInferssunglassesFromFaceBbox`, `accessoryFallbackInfersBeltFromWaistBbox`, `accessoryFallbackInfersHatFromHighBbox`. |
+| `WardrobeReDoTests/Models/Enums/ClothingSubcategoryFashionpediaMappingTests.swift` | Update `shoeSubcategoryRescueMapsBoot` → `shoeSubcategoryRescueDeferToCategoryDefault`. |
+
+**Verification:**
+- Multi-pick a sunglasses + belt + sneaker photo → form pre-fills `.sunglasses`, `.belt`, `.sneakers`.
+
+### PR #32 — Wire RFDETR-Seg mask-decode head (P0, ~300 LOC)
+
+**Branch:** `feat/seg-mask-decode`
+**Severity:** HIGH — biggest visible quality gain
+**Migration:** None
+**Dependencies:** PR #23's infrastructure (already merged)
+
+**What it does:** Decode the segmentation-head tensor (`pred_masks`) from `RFDETRSegFashion`'s output. Pipe each per-instance mask into `RawDetection.mask` so `compositeMaskedItem` produces real transparent-bg cutouts.
+
+**Investigation steps before coding:**
+1. Inspect `RFDETRSegFashion.mlpackage` model description (`mlmodel_inspect.py` or `MLModel.modelDescription`) to enumerate output names + shapes
+2. Identify the `pred_masks` tensor — typically `[1, num_queries, mask_H, mask_W]` for RT-DETR-Seg variants
+3. Per-query: extract mask slice, threshold (>0.5), upsample bilinear to source resolution, wrap in `CVPixelBuffer`
+
+**Changes:**
+
+| File | Change |
+|---|---|
+| `WardrobeReDo/Services/Extraction/MultiGarmentProposalService.swift::decodeDETROutput` | Read `maskTensor` (shape `[1, Q, H, W]`), per-query slice → bilinear upsample → threshold → `CVPixelBuffer`. Set `RawDetection.mask = pixelBuffer`. |
+| New helper `decodeMask(from:queryIndex:)` | Extract + upsample mask. |
+| `WardrobeReDoTests/Services/Extraction/MultiGarmentProposalServiceMaskDecodeTests.swift` (new) | Synthetic mask tensor → assert `decodeMask` returns CVPixelBuffer with correct dimensions + threshold. |
+
+**Verification:**
+- Multi-pick a mirror selfie → wardrobe cards show transparent-bg cutouts (no source-photo backdrop)
+- Match tab + Outfit cards same
+
+**Risk control:** if mask decode has any failure mode (wrong tensor shape, NaN values, etc.), fall through to existing `mask: nil` path. `compositeMaskedItem` already handles nil with rect-crop fallback. No regression possible.
+
+### PR #26 (from build-5 plan) — Color extraction overhaul (P0, ~350 LOC)
+
+Same scope as planned. Confirmed needed by build-5 dogfood (5 nearly-identical shades, skin-tone leak, 0/1/2% clusters slipping through).
+
+### PR #27 (from build-5 plan) — Uniform white-bg item cards (P0, ~150 LOC)
+
+Same scope as planned. Will pair well with PR #32 (real cutouts on white bg = the intended visual).
+
+## Build 6 cadence
+
+**Build 6.0** = PR #31 + PR #32 + PR #26 + PR #27
+
+These four together transform the look + accuracy of the app:
+- Real cutouts everywhere (PR #32)
+- White-bg uniform cards showing them (PR #27)
+- Editorial single-color UI (PR #26)
+- Right pre-fills on accessories + shoes (PR #31)
+
+**Build 6.1** = PR #28 (Review Wall)
+**Build 7** = PR #29 (Worn Outfits)
+
+## Build 6 risk controls
+
+- PR #32 has a robust nil-mask fallback (PR #23 already designed for this) — worst case is no regression vs build 5
+- PR #31 trade-off (real boots mistagged as sneakers): explicitly chosen, matches PR #25's user-favoring pattern
+- PR #26 + #27 can ship without #32 if mask-decode investigation hits a snag
+
+
+---
+
 ## Implementation prompts (drop-in, for use with Agent tool)
 
 If you (Opus 4.7 1M) decide to delegate any PR to a sub-agent, use these self-contained prompts:
