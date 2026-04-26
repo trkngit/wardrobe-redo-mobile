@@ -12,6 +12,13 @@ struct ItemDetailView: View {
     let item: WardrobeItem
 
     @State private var imageURL: URL?
+    /// Intrinsic size of the source photo, captured from
+    /// `KFImage.onSuccess`. Stays nil while the image is loading or if
+    /// the load failed; the bbox overlay is suppressed until it's
+    /// populated so we never render the highlight in the wrong place
+    /// (the `.scaledToFit` letterbox bands shift with the source
+    /// aspect ratio).
+    @State private var loadedImageSize: CGSize?
     @State private var showDeleteConfirm = false
     @State private var showArchiveConfirm = false
     @State private var isArchiving = false
@@ -130,27 +137,47 @@ struct ItemDetailView: View {
         // When `boundingBox` is present we dim everything outside the
         // bbox and outline it; otherwise the photo renders plainly so
         // legacy / single-item rows look unchanged.
-        ZStack {
-            KFImage(imageURL)
-                .placeholder {
-                    Rectangle()
-                        .fill(Color(Theme.Colors.muted).opacity(0.3))
-                        .overlay {
-                            VStack(spacing: Theme.Spacing.sm) {
-                                ProgressView()
-                                    .tint(Color(Theme.Colors.primary))
-                                Text("Loading image...")
-                                    .font(Theme.Fonts.caption)
-                                    .foregroundStyle(Color(Theme.Colors.textSecondary))
+        //
+        // `.scaledToFit()` letterboxes the image inside the 400pt-tall
+        // frame whenever the source-photo aspect ratio differs from the
+        // frame's. Anchoring the overlay to the GeometryReader frame
+        // would land the highlight in the letterbox bands; instead we
+        // capture the loaded image's intrinsic size via
+        // `KFImage.onSuccess` and project the bbox onto the actual
+        // rendered image rect inside the frame.
+        GeometryReader { geo in
+            ZStack {
+                KFImage(imageURL)
+                    .placeholder {
+                        Rectangle()
+                            .fill(Color(Theme.Colors.muted).opacity(0.3))
+                            .overlay {
+                                VStack(spacing: Theme.Spacing.sm) {
+                                    ProgressView()
+                                        .tint(Color(Theme.Colors.primary))
+                                    Text("Loading image...")
+                                        .font(Theme.Fonts.caption)
+                                        .foregroundStyle(Color(Theme.Colors.textSecondary))
+                                }
                             }
-                        }
-                }
-                .resizable()
-                .scaledToFit()
+                    }
+                    .onSuccess { result in
+                        // `result.image.size` already accounts for
+                        // EXIF orientation — Kingfisher applies it
+                        // before handing the UIImage off — so this
+                        // matches how `.scaledToFit()` lays the photo
+                        // out inside the frame.
+                        loadedImageSize = result.image.size
+                    }
+                    .resizable()
+                    .scaledToFit()
 
-            if let bbox = item.boundingBox?.cgRect {
-                GeometryReader { geo in
-                    let pixelRect = bbox.scaled(to: geo.size)
+                if let bbox = item.boundingBox?.cgRect,
+                   let imageSize = loadedImageSize {
+                    let imageRect = aspectFitRect(for: imageSize, in: geo.size)
+                    let pixelRect = bbox
+                        .scaled(to: imageRect.size)
+                        .offsetBy(dx: imageRect.minX, dy: imageRect.minY)
 
                     // Dim the area outside the bbox using an even-odd
                     // fill (outer rect minus inner hole).
@@ -422,5 +449,42 @@ private extension CGRect {
             width: width * size.width,
             height: height * size.height
         )
+    }
+}
+
+/// Computes the rendered rect when an image of `imageSize` is fit
+/// inside `containerSize` with `.scaledToFit()` (letterbox bands either
+/// above/below or left/right). Returns the rect of the actual image
+/// content within the container — origin is the top-left of the
+/// rendered photo, size matches its on-screen pixel dimensions.
+///
+/// `internal` (file-package) so the unit tests can pin its math:
+/// `.scaledToFit()` makes the bbox alignment depend on it, and a
+/// regression here would silently land the overlay in the letterbox
+/// bands again — exactly the bug PR #21 fixes.
+///
+/// Edge cases: returns `.zero` if either dimension is zero or
+/// non-finite (avoids NaN propagation into the overlay rect).
+func aspectFitRect(for imageSize: CGSize, in containerSize: CGSize) -> CGRect {
+    guard imageSize.width > 0, imageSize.height > 0,
+          containerSize.width > 0, containerSize.height > 0,
+          imageSize.width.isFinite, imageSize.height.isFinite,
+          containerSize.width.isFinite, containerSize.height.isFinite else {
+        return .zero
+    }
+
+    let containerAspect = containerSize.width / containerSize.height
+    let imageAspect = imageSize.width / imageSize.height
+
+    if imageAspect > containerAspect {
+        // Image wider than container — bands above and below.
+        let height = containerSize.width / imageAspect
+        let y = (containerSize.height - height) / 2
+        return CGRect(x: 0, y: y, width: containerSize.width, height: height)
+    } else {
+        // Image taller (or equal aspect) — bands left and right.
+        let width = containerSize.height * imageAspect
+        let x = (containerSize.width - width) / 2
+        return CGRect(x: x, y: 0, width: width, height: containerSize.height)
     }
 }
