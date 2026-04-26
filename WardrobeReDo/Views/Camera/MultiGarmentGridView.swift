@@ -47,6 +47,9 @@ struct MultiGarmentGridView: View {
                 Color(Theme.Colors.background).ignoresSafeArea()
 
                 VStack(spacing: 0) {
+                    if shouldShowLayeredLookHint {
+                        layeredLookHint
+                    }
                     grid
                     bottomBar
                 }
@@ -81,6 +84,54 @@ struct MultiGarmentGridView: View {
     var confirmButtonTitle: String {
         let n = selectedIDs.count
         return n == 1 ? "Save 1 item" : "Save \(n) items"
+    }
+
+    /// Heuristic for the layered-look help tip. The model often fuses a
+    /// t-shirt + open overshirt into a single `.top` proposal because the
+    /// pieces visually overlap on the torso. When at least one detected
+    /// `.top` covers more than 30% of the frame we flag it as a likely
+    /// layered look and surface a tip suggesting the user re-shoot each
+    /// piece separately. A solitary, well-cropped t-shirt rarely crosses
+    /// the threshold so the hint stays out of the way for the common
+    /// single-piece case.
+    var shouldShowLayeredLookHint: Bool {
+        proposals.contains { proposal in
+            proposal.predictedCategory == .top
+                && proposal.boundingBox.area > Self.layeredLookAreaThreshold
+        }
+    }
+
+    /// Threshold (normalized image area in [0, 1]) above which a `.top`
+    /// proposal is considered large enough to suggest a layered look.
+    /// Pulled out so the test suite can pin the exact boundary value.
+    static let layeredLookAreaThreshold: CGFloat = 0.30
+
+    // MARK: - Layered-look hint
+
+    /// Inline help tip shown above the grid when the detector likely
+    /// merged a t-shirt + overshirt (or any layered top) into a single
+    /// proposal. We can't fix the segmentation post-hoc, so we nudge the
+    /// user to re-shoot each piece separately for a cleaner result.
+    private var layeredLookHint: some View {
+        HStack(alignment: .top, spacing: Theme.Spacing.sm) {
+            Image(systemName: "info.circle")
+                .foregroundStyle(Color(Theme.Colors.primary))
+            Text("Wearing layers? Take a separate photo of each piece for the cleanest results.")
+                .font(Theme.Fonts.caption)
+                .foregroundStyle(Color(Theme.Colors.textSecondary))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, Theme.Spacing.md)
+        .padding(.vertical, Theme.Spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: Theme.Radius.card)
+                .fill(Color(Theme.Colors.primary).opacity(0.08))
+        )
+        .padding(.horizontal, Theme.Spacing.md)
+        .padding(.top, Theme.Spacing.sm)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("MultiGarmentGrid.LayeredLookHint")
     }
 
     // MARK: - Grid

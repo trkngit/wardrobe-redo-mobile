@@ -149,7 +149,7 @@ struct AddItemViewModelTextureSourceTests {
             vm.proposals = [proposal]
             vm.selectedProposalIDs = [proposal.id]
 
-            vm.onMultiPickConfirmed()
+            await vm.onMultiPickConfirmed()
 
             #expect(vm.texture == .denim)
             #expect(vm.detectedAttributes["texture"] == TextureType.denim.rawValue)
@@ -172,7 +172,7 @@ struct AddItemViewModelTextureSourceTests {
             vm.proposals = [proposal]
             vm.selectedProposalIDs = [proposal.id]
 
-            vm.onMultiPickConfirmed()
+            await vm.onMultiPickConfirmed()
 
             #expect(vm.texture == .denim)
             #expect(vm.detectedAttributes["texture"] == TextureType.denim.rawValue)

@@ -185,6 +185,12 @@ final class AddItemViewModel {
 
     private let imageService: any ImageServiceProtocol
     private let wardrobeRepository: any WardrobeRepositoryProtocol
+    /// Per-proposal palette extractor. Injected via `init` so tests can
+    /// substitute a deterministic stub instead of running the real
+    /// k-means classifier (whose output for synthetic test images is
+    /// brittle across colour spaces). Production default is the shared
+    /// `ColorExtractionService`.
+    private let colorExtractor: any ColorExtracting
     /// Exposed so the Phase 3 TapToSelectView can call back into the
     /// same extractor instance as the rest of the pipeline (no duplicate
     /// model loads, no cold-starts per tap).
@@ -204,11 +210,13 @@ final class AddItemViewModel {
     init(
         imageService: any ImageServiceProtocol = ImageService(),
         wardrobeRepository: any WardrobeRepositoryProtocol = WardrobeRepository(),
+        colorExtractor: any ColorExtracting = ColorExtractionService(),
         clothingExtractor: any ClothingExtracting = ClothingExtractionService(),
         uploadQueue: UploadQueue = UploadQueue.shared
     ) {
         self.imageService = imageService
         self.wardrobeRepository = wardrobeRepository
+        self.colorExtractor = colorExtractor
         self.clothingExtractor = clothingExtractor
         self.uploadQueue = uploadQueue
     }
@@ -809,7 +817,11 @@ final class AddItemViewModel {
     /// the current checkbox selection, orders it score-descending so the
     /// most confident garment is detailed first (matching the display
     /// order), and starts the sequential details loop.
-    func onMultiPickConfirmed() {
+    ///
+    /// Async because `startNextProposal` now awaits per-proposal color
+    /// extraction so each item shows its own palette in the details
+    /// step. SwiftUI buttons wrap the call in `Task { ... }`.
+    func onMultiPickConfirmed() async {
         guard let proposals else { return }
         pendingProposalQueue = proposals
             .filter { selectedProposalIDs.contains($0.id) }
@@ -824,7 +836,7 @@ final class AddItemViewModel {
         // `startNextProposal` calls `persistBatchSnapshot()` itself,
         // so a force-quit between confirm and the first save still
         // preserves the queue. See `BatchPersistenceService`.
-        startNextProposal()
+        await startNextProposal()
     }
 
     /// Escape hatch. User tapped "Use full photo" on the multi-pick
@@ -864,7 +876,11 @@ final class AddItemViewModel {
     /// next proposal without saving the current one; if the queue is
     /// empty this becomes a no-save finish like the user just tapped
     /// Cancel on the last item.
-    func onSkipCurrentProposal() {
+    ///
+    /// Async because `startNextProposal` now awaits per-proposal color
+    /// extraction so the next item's palette is ready by the time the
+    /// user lands on its details form. SwiftUI toolbar wraps in `Task`.
+    func onSkipCurrentProposal() async {
         // Bump the skipped counter so the progress bar advances even
         // for items the user opts out of. (Saved items advance the bar
         // via `savedItemsFromSource` in `save(userId:)`.)
@@ -872,7 +888,7 @@ final class AddItemViewModel {
         logger.info("multiGarment.skip: skipping current proposal, \(self.pendingProposalQueue.count) remaining")
         // `startNextProposal` re-persists or clears the snapshot
         // based on whether the queue still has items.
-        startNextProposal()
+        await startNextProposal()
     }
 
     /// Pop the next proposal off the queue and prepare the details step
@@ -883,7 +899,15 @@ final class AddItemViewModel {
     /// When the queue is empty this routes to one of:
     /// - `didSave = true` if at least one item was saved (batch done)
     /// - `.photo` step if nothing was saved (user skipped all)
-    private func startNextProposal() {
+    ///
+    /// Async because color extraction now runs per-proposal (see
+    /// `extractColors` await below) — earlier the constructor inherited
+    /// the source-photo palette from `current.dominantColors`, which
+    /// meant items 2..N of a multi-pick batch all showed item 1's
+    /// colors. The await is constant-time on small mask cutouts (k-means
+    /// clusters at 50×50) and gates the UI flip into `.details`, which
+    /// already represents tens of milliseconds of processing.
+    private func startNextProposal() async {
         guard !pendingProposalQueue.isEmpty else {
             isShowingMultiPick = false
             isShowingTapToSelect = false
@@ -914,13 +938,29 @@ final class AddItemViewModel {
         // details preview renders the right garment. PNG preserves the
         // transparent background — JPEG would flatten it.
         if let current = processedImage {
+            // Re-extract dominant colors from THIS proposal's cutout
+            // before reconstructing `processedImage`. Without this the
+            // new ProcessedImage inherits `current.dominantColors`
+            // (which were extracted once from the source photo on the
+            // initial `processImage(_:)` call) — every item in a
+            // multi-pick batch then surfaces the same palette. Falls
+            // back to the source-photo palette only when CGImage
+            // conversion fails, since `extractColors` already returns
+            // an empty array on broken inputs.
+            let perProposalColors: [ExtractedColor]
+            if next.maskedImage.cgImage != nil {
+                perProposalColors = await colorExtractor.extractColors(from: next.maskedImage)
+            } else {
+                perProposalColors = current.dominantColors
+            }
+
             processedImage = ProcessedImage(
                 originalData: current.originalData,
                 thumbnailData: current.thumbnailData,
                 maskedData: next.maskedImage.pngData(),
                 extractionConfidence: next.confidence,
                 extractionMethod: .multiGarmentRFDETR,
-                dominantColors: current.dominantColors,
+                dominantColors: perProposalColors,
                 // Clear so the post-save branch doesn't re-route into
                 // multi-pick — this proposal is already being processed.
                 proposals: nil
@@ -985,9 +1025,21 @@ final class AddItemViewModel {
         // prediction mismatch (e.g. predicted blazer→.suitJacket but
         // category fell back to .top) doesn't leave the picker stuck on
         // an invalid option.
+        //
+        // Accessory rescue: when no subcategory clears the standard
+        // path (low-confidence ML, ambiguous Fashionpedia class), fall
+        // back to a raw-class rescue mapping before resorting to the
+        // category default. Without this, a sunglasses or belt
+        // detection silently pre-fills as `.hat` (the .accessory
+        // default), which the user reads as a wrong prediction. See
+        // `ClothingSubcategory.accessorySubcategoryFromRawClass`.
         if let sub = proposal.predictedSubcategory, sub.category == category {
             subcategory = sub
             snapshot["subcategory"] = sub.rawValue
+        } else if category == .accessory,
+                  let rescue = ClothingSubcategory.accessorySubcategoryFromRawClass(proposal.modelClassRaw) {
+            subcategory = rescue
+            snapshot["subcategory"] = rescue.rawValue
         } else {
             subcategory = defaultSubcategory(for: category)
         }
@@ -1285,7 +1337,7 @@ final class AddItemViewModel {
                 // via `didSave = true` when the queue is empty. Takes
                 // priority over the single-item `wantsAnotherGarment`
                 // flag because batch progression is the stronger signal.
-                startNextProposal()
+                await startNextProposal()
             } else if shouldLoopAfter {
                 // "Save & add another garment" path: keep the captured
                 // image + session hot, clear only item-specific metadata,

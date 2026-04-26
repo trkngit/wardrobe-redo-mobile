@@ -675,10 +675,24 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
         return gap < avgWidth
     }
 
+    /// True when one shoe-class detection's bounding box is largely
+    /// contained within another's (i.e., the model produced a wide-shot
+    /// + a close-up of the same shoe). Drops the lower-scored copy.
+    /// Distinct from `looksLikeShoePair` (which catches left+right).
+    static func looksLikeShoeRedundancy(_ a: CGRect, _ b: CGRect) -> Bool {
+        let intersection = a.intersection(b)
+        guard !intersection.isNull, intersection.area > 0 else { return false }
+        let smaller = min(a.area, b.area)
+        // If the intersection covers >70% of the smaller box, it's
+        // contained — a close-up zoom into a wide-shot of the same shoe.
+        return intersection.area / smaller > 0.7
+    }
+
     /// Reduces same-class shoe detections that look like a pair down
-    /// to one box, keeping the higher-scored side. Three+ shoe boxes
-    /// fall through to the natural per-class NMS / cap path so a
-    /// flat-lay of multiple pairs still surfaces each pair.
+    /// to one box, keeping the higher-scored side. For 3+ shoe boxes,
+    /// iteratively prunes contained-redundancies (wide-shot + close-up
+    /// of the same shoe) before the pair check. Genuinely distinct
+    /// shoes survive both passes.
     ///
     /// Treats every shoe-family Fashionpedia label (`shoe`, `boot`,
     /// `sandal`) as the same class for pair purposes — left and right
@@ -695,11 +709,17 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             }
         }
 
+        // Iteratively drop redundant shoe boxes (one mostly contained
+        // within another). Runs before the pair check so a wide-shot +
+        // close-up of the SAME shoe doesn't slip past as a "pair."
+        shoes = pruneShoeRedundancies(shoes)
+
         guard shoes.count == 2 else {
-            // 0, 1, or 3+ shoes — nothing to collapse. The 3+ case
-            // intentionally falls through (could be a flat-lay of
-            // multiple pairs); the per-photo cap will trim from there.
-            return detections
+            // 0, 1, or 3+ shoes after redundancy pruning — nothing
+            // further to collapse. The 3+ case intentionally falls
+            // through (likely a flat-lay of multiple pairs); the
+            // per-photo cap will trim from there.
+            return nonShoes + shoes
         }
 
         if looksLikeShoePair(shoes[0].boundingBox, shoes[1].boundingBox) {
@@ -708,8 +728,43 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             let winner = shoes[0].score >= shoes[1].score ? shoes[0] : shoes[1]
             return nonShoes + [winner]
         } else {
-            return detections
+            return nonShoes + shoes
         }
+    }
+
+    /// Iteratively drops the lower-scored member of any shoe-class
+    /// detection pair where one box is largely contained within the
+    /// other. Stops when no contained-pair remains. Ordering by score
+    /// descending makes the survivor deterministic.
+    private static func pruneShoeRedundancies(_ shoes: [RawDetection]) -> [RawDetection] {
+        guard shoes.count > 1 else { return shoes }
+
+        var remaining = shoes.sorted { $0.score > $1.score }
+        var changed = true
+        while changed {
+            changed = false
+            for i in 0..<remaining.count {
+                var didCollapse = false
+                for j in (i + 1)..<remaining.count {
+                    if looksLikeShoeRedundancy(
+                        remaining[i].boundingBox,
+                        remaining[j].boundingBox
+                    ) {
+                        // `remaining[i]` has the higher score (sorted
+                        // descending) — drop the lower-scored copy.
+                        // The `while changed` re-entry restarts iteration
+                        // from the top with the shrunken array, so we
+                        // only need to break the inner loop here.
+                        remaining.remove(at: j)
+                        changed = true
+                        didCollapse = true
+                        break
+                    }
+                }
+                if didCollapse { break }
+            }
+        }
+        return remaining
     }
 
     // MARK: - Proposal construction

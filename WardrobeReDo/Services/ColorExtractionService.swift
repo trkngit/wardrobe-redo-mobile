@@ -23,7 +23,24 @@ struct ExtractedColor: Sendable {
     }
 }
 
-final class ColorExtractionService: Sendable {
+/// Injection seam for color extraction. Production uses
+/// `ColorExtractionService`; tests inject deterministic stubs so palette
+/// assertions don't depend on the real k-means classifier.
+///
+/// The default value for `maxColors` lives on the protocol so callers can
+/// continue calling `extractColors(from:)` without specifying the second
+/// argument — preserving the existing call-site ergonomics.
+protocol ColorExtracting: Sendable {
+    func extractColors(from image: UIImage, maxColors: Int) async -> [ExtractedColor]
+}
+
+extension ColorExtracting {
+    func extractColors(from image: UIImage) async -> [ExtractedColor] {
+        await extractColors(from: image, maxColors: 5)
+    }
+}
+
+final class ColorExtractionService: ColorExtracting, Sendable {
 
     /// Extract dominant colors from a UIImage using k-means clustering
     /// on downsampled pixels.
