@@ -72,6 +72,7 @@
 		3BCA97B47D1F333CA45419B7 /* MLDiagnosticsTestIsolation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27579C9FB42F8D72B0DFB9FD /* MLDiagnosticsTestIsolation.swift */; };
 		3BD6FFAC9936178F9A3A6CAB /* TabRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C9571A55D9A18682F09E9F /* TabRootView.swift */; };
 		3DEA9E6DFA642833DF3705B1 /* clean_bg_03.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2C9E21DD9F4CB54772F22E4B /* clean_bg_03.jpg */; };
+		41A142C6C4571099ACF570A6 /* WardrobeItemBoundingBoxTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26B808906834870313D770D9 /* WardrobeItemBoundingBoxTests.swift */; };
 		444B35250F76AA848519B307 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = FEB6684B035E4967ED33904E /* manifest.json */; };
 		46042DFD4468C0C80DE77872 /* ColorHexTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45ED34761886B766A155D865 /* ColorHexTests.swift */; };
 		47D1E9588F36D9FBC57A1A36 /* clean_bg_09.png in Resources */ = {isa = PBXBuildFile; fileRef = 7CB08DD0AE92536BC62D9E27 /* clean_bg_09.png */; };
@@ -198,6 +199,7 @@
 		B9B6073F940F28D2DE86D248 /* MultiGarmentGridViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43B4675E0AAC741E567F8765 /* MultiGarmentGridViewTests.swift */; };
 		B9C2D5D223E4D2025DF5934E /* GoldenPathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58A2AA9B73984492E8E5B2AB /* GoldenPathTests.swift */; };
 		BBC20C655A418EC320416035 /* WardrobeRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6227E043096FCC04C8921342 /* WardrobeRepository.swift */; };
+		BDCA26E766243A7934DF85CB /* ItemDetailViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7423FE53B01FD026F811E99 /* ItemDetailViewTests.swift */; };
 		C08A66331DB9FD1EFF3729D9 /* LocalCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 797AEDE9A63C7C91D9D7EFF3 /* LocalCache.swift */; };
 		C53B931792C24B363FAD1E3F /* AuthViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C5ED3AC7EFDFC86DD91D4DF /* AuthViewModelTests.swift */; };
 		C66A438F99021BD4F692C0F9 /* cluttered_05.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 3F0F92C918581515AEAC6C32 /* cluttered_05.jpg */; };
@@ -351,6 +353,7 @@
 		25DC5CD683DD962BA802B6BA /* StyleRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleRule.swift; sourceTree = "<group>"; };
 		25E662C139AA32A35D83AD43 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 		264BBB2F3E55F63315C0E1C1 /* WardrobeReDoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeReDoApp.swift; sourceTree = "<group>"; };
+		26B808906834870313D770D9 /* WardrobeItemBoundingBoxTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeItemBoundingBoxTests.swift; sourceTree = "<group>"; };
 		272C848C6755A13AAAD82B1A /* MultiGarmentProposalService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiGarmentProposalService.swift; sourceTree = "<group>"; };
 		27579C9FB42F8D72B0DFB9FD /* MLDiagnosticsTestIsolation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLDiagnosticsTestIsolation.swift; sourceTree = "<group>"; };
 		2852392E1C43C8F0995299C7 /* BackgroundQualityMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundQualityMonitor.swift; sourceTree = "<group>"; };
@@ -520,6 +523,7 @@
 		C592BAD5B2ABC33292A5FD4C /* WidgetDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataService.swift; sourceTree = "<group>"; };
 		C6B79FE52A37417AB643C883 /* EditItemViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditItemViewModel.swift; sourceTree = "<group>"; };
 		C6E465734D0F4208AE7FBB42 /* StyleEngineService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleEngineService.swift; sourceTree = "<group>"; };
+		C7423FE53B01FD026F811E99 /* ItemDetailViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailViewTests.swift; sourceTree = "<group>"; };
 		C8A29BD830D9D48C451DEFDC /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Secrets.plist; sourceTree = "<group>"; };
 		CA4AF5446D85F237FCB56924 /* ItemStyleTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemStyleTag.swift; sourceTree = "<group>"; };
 		CCC08E26935AFAC7B04EB268 /* MultiGarmentGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiGarmentGridView.swift; sourceTree = "<group>"; };
@@ -672,6 +676,7 @@
 			isa = PBXGroup;
 			children = (
 				6F988B0CEE643888271BC7FC /* ItemCardViewTests.swift */,
+				C7423FE53B01FD026F811E99 /* ItemDetailViewTests.swift */,
 				43B4675E0AAC741E567F8765 /* MultiGarmentGridViewTests.swift */,
 				891D58D48CDC455A34260577 /* WardrobeGridViewCacheTests.swift */,
 			);
@@ -1119,6 +1124,7 @@
 				19D1221EDB96B4AB6CA724D0 /* ScoringDimensionTests.swift */,
 				28FAF5086E748AB81EBAFBFE /* SlotRequirementTests.swift */,
 				F8B53A45BACA6F4F63824A9E /* StyleEnumsTests.swift */,
+				26B808906834870313D770D9 /* WardrobeItemBoundingBoxTests.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1682,6 +1688,7 @@
 				4E1F22CA44189DA7008C7C1C /* FormalityCoherenceScorerTests.swift in Sources */,
 				94B8BB1B211AFF8CE7281645 /* ImageServiceProposalsTests.swift in Sources */,
 				8B5E6398CD320CCFD41A3E38 /* ItemCardViewTests.swift in Sources */,
+				BDCA26E766243A7934DF85CB /* ItemDetailViewTests.swift in Sources */,
 				D29F3426DA8DCA0ED264C1B0 /* ItemFormViewSnapshotTests.swift in Sources */,
 				C7E0289C5DA0A563CA0E2A1B /* LocalCacheTests.swift in Sources */,
 				0B85B891EE71D4031086AC66 /* MLDiagnosticsStoreTests.swift in Sources */,
@@ -1727,6 +1734,7 @@
 				978089A0380FEA20660E07AA /* UploadQueueTests.swift in Sources */,
 				92E61C324B31FE53ADBE6E4E /* VersatilityScorerTests.swift in Sources */,
 				F32198AC55FBF273DE56084E /* WardrobeGridViewCacheTests.swift in Sources */,
+				41A142C6C4571099ACF570A6 /* WardrobeItemBoundingBoxTests.swift in Sources */,
 				6E6D4845CCE627D16F3F579F /* WardrobeReDoTests.swift in Sources */,
 				6146249D4AA5919D624987AC /* WardrobeViewModelSessionsTests.swift in Sources */,
 				0CC78BCE2B52A8E5A47298FD /* WardrobeViewModelTests.swift in Sources */,

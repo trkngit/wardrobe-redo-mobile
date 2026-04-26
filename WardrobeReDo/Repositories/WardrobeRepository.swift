@@ -243,6 +243,11 @@ struct NewWardrobeItem: Codable, Sendable {
     /// is saved next run once the migration lands). Set nil on this
     /// struct to opt-out (e.g. legacy tests that never retry).
     let idempotencyKey: UUID?
+    /// Normalized [0, 1] bounding box of the detected garment within
+    /// `sourcePhotoPath`. Stored in the `bounding_box` JSONB column
+    /// (see migration 00013). Nil for single-item captures where no
+    /// bbox was recorded — matches the shape of legacy rows.
+    let boundingBox: BoundingBoxCodable?
 
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
@@ -259,6 +264,45 @@ struct NewWardrobeItem: Codable, Sendable {
         case seasons, occasions
         case detectedAttributes = "detected_attributes"
         case idempotencyKey = "idempotency_key"
+        case boundingBox = "bounding_box"
+    }
+
+    init(
+        userId: UUID,
+        imagePath: String,
+        thumbnailPath: String,
+        maskedImagePath: String?,
+        extractionConfidence: String?,
+        sourcePhotoId: UUID?,
+        sourcePhotoPath: String?,
+        category: String,
+        subcategory: String,
+        dominantColors: [ColorProfile],
+        texture: String?,
+        fitAttribute: String?,
+        seasons: [String],
+        occasions: [String],
+        detectedAttributes: [String: String]?,
+        idempotencyKey: UUID?,
+        boundingBox: BoundingBoxCodable? = nil
+    ) {
+        self.userId = userId
+        self.imagePath = imagePath
+        self.thumbnailPath = thumbnailPath
+        self.maskedImagePath = maskedImagePath
+        self.extractionConfidence = extractionConfidence
+        self.sourcePhotoId = sourcePhotoId
+        self.sourcePhotoPath = sourcePhotoPath
+        self.category = category
+        self.subcategory = subcategory
+        self.dominantColors = dominantColors
+        self.texture = texture
+        self.fitAttribute = fitAttribute
+        self.seasons = seasons
+        self.occasions = occasions
+        self.detectedAttributes = detectedAttributes
+        self.idempotencyKey = idempotencyKey
+        self.boundingBox = boundingBox
     }
 }
 
