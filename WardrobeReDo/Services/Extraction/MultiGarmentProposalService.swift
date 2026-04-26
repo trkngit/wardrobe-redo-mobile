@@ -675,24 +675,52 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
         return gap < avgWidth
     }
 
-    /// True when one shoe-class detection's bounding box is largely
-    /// contained within another's (i.e., the model produced a wide-shot
-    /// + a close-up of the same shoe). Drops the lower-scored copy.
-    /// Distinct from `looksLikeShoePair` (which catches left+right).
-    static func looksLikeShoeRedundancy(_ a: CGRect, _ b: CGRect) -> Bool {
-        let intersection = a.intersection(b)
-        guard !intersection.isNull, intersection.area > 0 else { return false }
-        let smaller = min(a.area, b.area)
-        // If the intersection covers >70% of the smaller box, it's
-        // contained — a close-up zoom into a wide-shot of the same shoe.
-        return intersection.area / smaller > 0.7
+    /// True when two shoe-class detections look like the same physical
+    /// foot photographed from slightly different angles or zooms — i.e.
+    /// proposal-level redundancy from the model emitting near-duplicate
+    /// queries.
+    ///
+    /// **Why proximity, not IoU containment.** The previous 70%-IoU
+    /// containment heuristic missed real-world cases. Supabase production
+    /// data (build-4 batch) confirmed two shoe detections of the same
+    /// foot at slightly different zooms produced bounding boxes that
+    /// don't actually overlap enough to trip a containment check, but
+    /// whose centroids land within a hand-width of each other. The
+    /// proximity check catches those reliably.
+    ///
+    /// **Tuning.**
+    ///   * dx < 0.18 — same physical foot photographed across the
+    ///     image plane lands within 18% horizontal-image-width tolerance.
+    ///     Two genuinely different feet (left + right) of a wearer
+    ///     typically land 5-15% apart in horizontal centroid.
+    ///   * dy < 0.10 — same foot stays inside a 10%-image-height band.
+    ///     Front-foot vs back-foot in a walking pose can spread further
+    ///     vertically; left + right of a standing pose stay tight.
+    ///
+    /// Returns false for the "left foot vs right foot of the same pair"
+    /// case (often dx ≈ 0.10-0.15 — borderline). That's intentional:
+    /// `collapseShoePairs` runs `looksLikeShoePair` afterward to catch
+    /// the legitimate left+right collapse. The proximity check is
+    /// strictly tighter — only catches near-duplicates.
+    ///
+    /// Both bounding boxes in normalized [0,1] image coordinates.
+    static func looksLikeSameShoeDetection(_ a: CGRect, _ b: CGRect) -> Bool {
+        let centroidA = CGPoint(x: a.midX, y: a.midY)
+        let centroidB = CGPoint(x: b.midX, y: b.midY)
+        let dx = abs(centroidA.x - centroidB.x)
+        let dy = abs(centroidA.y - centroidB.y)
+        // Real-world shoe pair detections: same physical foot photographed
+        // at different angles/zooms produces detections with centroids
+        // close horizontally and vertically (in normalized image coords).
+        return dx < 0.18 && dy < 0.10
     }
 
     /// Reduces same-class shoe detections that look like a pair down
     /// to one box, keeping the higher-scored side. For 3+ shoe boxes,
-    /// iteratively prunes contained-redundancies (wide-shot + close-up
-    /// of the same shoe) before the pair check. Genuinely distinct
-    /// shoes survive both passes.
+    /// iteratively prunes near-duplicate redundancies (same physical
+    /// foot at different angles/zooms) before the pair check, then caps
+    /// the remaining shoes at 2 per photo (left + right of one pair —
+    /// rest are model noise, not legitimate distinct items).
     ///
     /// Treats every shoe-family Fashionpedia label (`shoe`, `boot`,
     /// `sandal`) as the same class for pair purposes — left and right
@@ -709,16 +737,22 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             }
         }
 
-        // Iteratively drop redundant shoe boxes (one mostly contained
-        // within another). Runs before the pair check so a wide-shot +
-        // close-up of the SAME shoe doesn't slip past as a "pair."
+        // Iteratively drop redundant shoe boxes (proximity-based — same
+        // physical foot at different angles). Runs before the pair check
+        // so a near-duplicate pair doesn't slip past as a "pair."
         shoes = pruneShoeRedundancies(shoes)
 
+        // Hard cap at 2 shoe items per source photo (left + right foot).
+        // Real-world wardrobe captures don't legitimately contain 3+
+        // distinct shoes — anything over 2 after redundancy pruning is
+        // model noise. Keep the 2 highest-confidence to preserve the
+        // best detections.
+        if shoes.count > 2 {
+            shoes = Array(shoes.sorted { $0.score > $1.score }.prefix(2))
+        }
+
         guard shoes.count == 2 else {
-            // 0, 1, or 3+ shoes after redundancy pruning — nothing
-            // further to collapse. The 3+ case intentionally falls
-            // through (likely a flat-lay of multiple pairs); the
-            // per-photo cap will trim from there.
+            // 0 or 1 shoe(s) — no pair collapse possible.
             return nonShoes + shoes
         }
 
@@ -733,8 +767,9 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
     }
 
     /// Iteratively drops the lower-scored member of any shoe-class
-    /// detection pair where one box is largely contained within the
-    /// other. Stops when no contained-pair remains. Ordering by score
+    /// detection pair where the two boxes' centroids are close enough
+    /// to be the same physical foot (see `looksLikeSameShoeDetection`).
+    /// Stops when no near-duplicate pair remains. Ordering by score
     /// descending makes the survivor deterministic.
     private static func pruneShoeRedundancies(_ shoes: [RawDetection]) -> [RawDetection] {
         guard shoes.count > 1 else { return shoes }
@@ -746,7 +781,7 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             for i in 0..<remaining.count {
                 var didCollapse = false
                 for j in (i + 1)..<remaining.count {
-                    if looksLikeShoeRedundancy(
+                    if looksLikeSameShoeDetection(
                         remaining[i].boundingBox,
                         remaining[j].boundingBox
                     ) {
@@ -773,7 +808,16 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
         from raw: RawDetection,
         sourceImage: UIImage
     ) -> MaskProposal? {
-        guard let cropped = cropped(sourceImage, to: raw.boundingBox) else { return nil }
+        // Composite the per-instance segmentation mask onto the source
+        // image and crop to the bbox. When the mask isn't available
+        // (model failure / segmentation head not decoded), this falls
+        // back to a plain rect crop — still a usable image, just lacks
+        // the transparent background.
+        guard let cropped = compositeMaskedItem(
+            sourceImage: sourceImage,
+            mask: raw.mask,
+            bbox: raw.boundingBox
+        ) else { return nil }
         let category = ClothingCategory.fromFashionpediaClass(raw.rawClass)
         let subcategory = ClothingSubcategory.fromFashionpediaClass(raw.rawClass)
         let confidence: ExtractionConfidence = {
@@ -930,8 +974,37 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
         }
     }
 
-    private static func cropped(_ image: UIImage, to normalizedBox: CGRect) -> UIImage? {
-        guard let cg = image.cgImage else { return image }
+    /// Composite the per-instance segmentation mask onto the source image
+    /// then crop to the proposal's bounding box, producing a transparent-
+    /// background `UIImage`.
+    ///
+    /// **Why this exists.** The previous `cropped()` took a rectangular
+    /// slice of the source photo. Wardrobe cards rendered those slices
+    /// with the source-photo backdrop visible (the "mirror selfie behind
+    /// the shirt" bug). RFDETR-Seg already produces a per-instance
+    /// segmentation mask — this function uses it to mask out everything
+    /// outside the garment, leaving alpha=0 outside and ~alpha=255 inside.
+    ///
+    /// **Mask handling.**
+    ///   * `mask == nil` → fall back to a plain rectangular bbox crop
+    ///     (back-compat with the legacy `cropped()` behavior). The model
+    ///     can fail to surface a mask (e.g. when the segmentation head
+    ///     isn't decoded yet) and we'd rather show a rect crop than
+    ///     drop the proposal entirely.
+    ///   * `mask != nil` → run `MaskCleaner.clean` to drop the soft
+    ///     fringe, scale to source extent, composite via `CIBlendWithMask`
+    ///     against transparency, then crop to the bbox region.
+    ///
+    /// The masking approach uses `CIBlendWithMask` — same pattern as
+    /// `VisionForegroundExtractor.applyMask` (the single-item flow). See
+    /// `web-research/G-ios-isolation-best-practices.md` § 2.1 for rationale.
+    static func compositeMaskedItem(
+        sourceImage: UIImage,
+        mask: CVPixelBuffer?,
+        bbox normalizedBox: CGRect
+    ) -> UIImage? {
+        guard let cg = sourceImage.cgImage else { return sourceImage }
+
         let w = CGFloat(cg.width)
         let h = CGFloat(cg.height)
         let rect = CGRect(
@@ -940,9 +1013,67 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             width: normalizedBox.width * w,
             height: normalizedBox.height * h
         ).integral
+
+        // No usable mask — preserve the legacy rect-crop behavior so the
+        // proposal still surfaces (better than dropping it entirely).
+        guard let mask else {
+            return rectCropFallback(cg, rect: rect, base: sourceImage)
+        }
+
+        // Composite source over transparent background using the cleaned
+        // mask. CIImage extents put origin at bottom-left while CGImage
+        // pixels are top-left — both extents are full-image so the
+        // bbox-pixel rect we computed above is in the right space for
+        // the final cgImage crop.
+        let sourceCI = CIImage(cgImage: cg)
+        let maskCI = CIImage(cvPixelBuffer: mask)
+
+        // Scale mask to match source extent (RFDETR's mask is at model
+        // resolution, e.g. 320×320; source can be 1280×… after the
+        // working-image downscale).
+        let sx = sourceCI.extent.width / max(maskCI.extent.width, 1)
+        let sy = sourceCI.extent.height / max(maskCI.extent.height, 1)
+        let scaledMask = maskCI.transformed(by: CGAffineTransform(scaleX: sx, y: sy))
+
+        // Drop the soft fringe. If cleaning fails for any reason, fall
+        // back to the un-cleaned scaled mask rather than the rect crop —
+        // a slightly fringy cutout still beats a rect crop visually.
+        let finalMask = MaskCleaner.clean(scaledMask) ?? scaledMask
+
+        guard let blend = CIFilter(name: "CIBlendWithMask") else {
+            return rectCropFallback(cg, rect: rect, base: sourceImage)
+        }
+        blend.setValue(sourceCI, forKey: kCIInputImageKey)
+        blend.setValue(CIImage.empty(), forKey: kCIInputBackgroundImageKey)
+        blend.setValue(finalMask, forKey: kCIInputMaskImageKey)
+
+        guard let composited = blend.outputImage else {
+            return rectCropFallback(cg, rect: rect, base: sourceImage)
+        }
+
+        let context = CIContext(options: nil)
+        guard let fullCG = context.createCGImage(composited, from: sourceCI.extent) else {
+            return rectCropFallback(cg, rect: rect, base: sourceImage)
+        }
+
+        // Crop the composited image to the bbox region. fullCG carries
+        // alpha now, so the crop preserves transparency outside the
+        // garment silhouette.
         guard rect.width > 1, rect.height > 1,
-              let cropped = cg.cropping(to: rect) else { return image }
-        return UIImage(cgImage: cropped, scale: image.scale, orientation: image.imageOrientation)
+              let cropped = fullCG.cropping(to: rect) else {
+            return UIImage(cgImage: fullCG, scale: sourceImage.scale, orientation: sourceImage.imageOrientation)
+        }
+        return UIImage(cgImage: cropped, scale: sourceImage.scale, orientation: sourceImage.imageOrientation)
+    }
+
+    /// Rectangular bbox crop — the legacy behavior preserved as the
+    /// nil-mask fallback so any caller that hits the no-mask path still
+    /// gets a usable image. Kept private since callers should always go
+    /// through `compositeMaskedItem`.
+    private static func rectCropFallback(_ cg: CGImage, rect: CGRect, base: UIImage) -> UIImage? {
+        guard rect.width > 1, rect.height > 1,
+              let cropped = cg.cropping(to: rect) else { return base }
+        return UIImage(cgImage: cropped, scale: base.scale, orientation: base.imageOrientation)
     }
 }
 
