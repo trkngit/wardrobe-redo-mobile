@@ -119,8 +119,10 @@ struct AddItemViewModelAccessoryRescueTests {
     }
 
     /// And when neither rescue nor predictedSubcategory has an opinion,
-    /// the category default (`.hat`) lands on the picker.
-    @Test func accessoryRescueFallsThroughToCategoryDefaultWhenAllElseFails() async {
+    /// the bbox heuristic kicks in (Build 6). Default fixture bbox is
+    /// large (height 0.5), so isThin=false, heuristic falls through
+    /// to `.hat` — same observable result as the legacy default.
+    @Test func accessoryRescueFallsThroughToBboxHeuristicWhenAllElseFails() async {
         let flag = await enableAttributeDetection()
         defer { flag.finalize() }
 
@@ -136,20 +138,131 @@ struct AddItemViewModelAccessoryRescueTests {
 
         await vm.onMultiPickConfirmed()
 
-        #expect(vm.subcategory == .hat, "rescue + predicted both nil → .hat default")
+        #expect(vm.subcategory == .hat, "rescue + predicted both nil + non-thin bbox → .hat default")
         #expect(vm.detectedAttributes["subcategory"] == nil,
-                "category-default landings are not recorded as ML-driven")
+                "heuristic-derived subcategories are not recorded as ML-driven")
+    }
+
+    // MARK: - Bbox heuristic for unmapped accessory classes (Build 6)
+
+    /// Build-5 dogfood: the model emits `headband` for actual
+    /// sunglasses. Both rescue and `predictedSubcategory` punt to nil,
+    /// so the form pre-filled `.hat` (the legacy default). Build 6's
+    /// heuristic uses the bbox position — face-area + thin → infer
+    /// `.sunglasses`.
+    @Test func accessoryBboxHeuristicInfersSunglassesFromFaceBbox() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
+
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedCategory: .accessory,
+            predictedCategoryConfidence: 0.95,
+            predictedSubcategory: nil,
+            // Realistic sunglasses bbox: across the face, thin strip.
+            // y-mid 0.30 < 0.40, height 0.06 < 0.10.
+            boundingBox: CGRect(x: 0.30, y: 0.27, width: 0.40, height: 0.06),
+            modelClassRaw: "headband"  // model misclassification
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
+
+        await vm.onMultiPickConfirmed()
+
+        #expect(vm.subcategory == .sunglasses,
+                "face-area + thin bbox → sunglasses (overrides .hat default)")
+    }
+
+    /// Build-5 dogfood: model emits `headband` (or another unmapped
+    /// accessory class) for an actual belt. Bbox is at the waist with
+    /// a thin horizontal stripe → infer `.belt`.
+    @Test func accessoryBboxHeuristicInfersBeltFromWaistBbox() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
+
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedCategory: .accessory,
+            predictedCategoryConfidence: 0.95,
+            predictedSubcategory: nil,
+            // Realistic belt bbox: across the waistband, thin stripe.
+            // y-mid ≈ 0.53 in [0.42, 0.62], height 0.04 < 0.10.
+            boundingBox: CGRect(x: 0.30, y: 0.51, width: 0.40, height: 0.04),
+            modelClassRaw: "tie"  // model misclassification
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
+
+        await vm.onMultiPickConfirmed()
+
+        #expect(vm.subcategory == .belt,
+                "waist-area + thin bbox → belt (overrides .hat default)")
+    }
+
+    /// Bbox heuristic falls through to `.hat` when neither face nor
+    /// waist criteria match. Covers the original default behavior.
+    @Test func accessoryBboxHeuristicFallsBackToHatForOtherPositions() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
+
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedCategory: .accessory,
+            predictedCategoryConfidence: 0.95,
+            predictedSubcategory: nil,
+            // Bbox spans most of the frame — neither face nor waist
+            // criteria fire (height 0.5 > 0.10 makes isThin false).
+            boundingBox: CGRect(x: 0.1, y: 0.1, width: 0.5, height: 0.5),
+            modelClassRaw: "ring"  // unmapped accessory
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
+
+        await vm.onMultiPickConfirmed()
+
+        #expect(vm.subcategory == .hat, "non-thin bbox → .hat fallback")
+    }
+
+    /// Bbox heuristic also applied when bbox is thin but in the high
+    /// region (above the face) — falls back to `.hat` (covers
+    /// caps/headbands/etc.).
+    @Test func accessoryBboxHeuristicHighThinBboxStillHat() async {
+        let flag = await enableAttributeDetection()
+        defer { flag.finalize() }
+
+        let vm = AddItemViewModel()
+        let proposal = MaskProposalFixture.make(
+            predictedCategory: .accessory,
+            predictedCategoryConfidence: 0.95,
+            predictedSubcategory: nil,
+            // Above eye level (y-mid 0.20). Thin (height 0.06).
+            // y-mid 0.20 < 0.40 ✓ AND isThin ✓ → falls into sunglasses
+            // branch by current spec. This test pins that behavior; if
+            // future tuning carves out a "headwear above eyes" class
+            // (cap/beanie), update this case.
+            boundingBox: CGRect(x: 0.30, y: 0.17, width: 0.40, height: 0.06),
+            modelClassRaw: "headband"
+        )
+        vm.proposals = [proposal]
+        vm.selectedProposalIDs = [proposal.id]
+
+        await vm.onMultiPickConfirmed()
+
+        #expect(vm.subcategory == .sunglasses,
+                "high + thin currently lumps with sunglasses; revisit if dogfood shows hat-confusion")
     }
 
     // MARK: - Shoe rescue contract
 
-    /// Build 4 dogfood failure: a `shoe` detection commonly arrived
-    /// with `predictedSubcategory: .boots` (the model's class-id bias),
-    /// silently mis-prefilling sneakers as boots. After the fix:
-    /// `boot` raw → `.boots` (correct), but a generic `shoe` raw lets
-    /// the `.sneakers` default fire instead of trusting the stale
-    /// prediction.
-    @Test func shoeRescueFiresForBootEvenWhenPredictedSubcategoryDisagrees() async {
+    /// **Build 6 user-favoring default.** Build-5 dogfood confirmed
+    /// the model's `boot` class-id fires for actual sneakers more often
+    /// than for actual boots, so trusting `boot` was net-negative for
+    /// users. PR #31 flips `shoeSubcategoryFromRawClass("boot")` to
+    /// return nil, letting the `.sneakers` default fire instead.
+    /// Real boots get mistagged as sneakers — same trade-off PR #25
+    /// made for texture (`.bottom → .denim`). The user can correct
+    /// the rare boot case manually.
+    @Test func shoeBootRawClassNowDefaultsToSneakersForUserFavoringFix() async {
         let flag = await enableAttributeDetection()
         defer { flag.finalize() }
 
@@ -157,7 +270,7 @@ struct AddItemViewModelAccessoryRescueTests {
         let proposal = MaskProposalFixture.make(
             predictedCategory: .shoe,
             predictedCategoryConfidence: 0.95,
-            predictedSubcategory: .sneakers,  // stale — model said sneakers but raw said boot
+            predictedSubcategory: nil,  // model didn't pin a subcategory
             modelClassRaw: "boot"
         )
         vm.proposals = [proposal]
@@ -165,9 +278,10 @@ struct AddItemViewModelAccessoryRescueTests {
 
         await vm.onMultiPickConfirmed()
 
-        #expect(vm.subcategory == .boots,
-                "raw 'boot' must override stale predictedSubcategory: .sneakers")
-        #expect(vm.detectedAttributes["subcategory"] == ClothingSubcategory.boots.rawValue)
+        #expect(vm.subcategory == .sneakers,
+                "Build 6: raw 'boot' lets .sneakers default fire (user-favoring trade-off)")
+        // Category-default landings are not recorded as ML-driven.
+        #expect(vm.detectedAttributes["subcategory"] == nil)
     }
 
     @Test func shoeRescueFiresForSandalEvenWhenPredictedSubcategoryIsBoots() async {

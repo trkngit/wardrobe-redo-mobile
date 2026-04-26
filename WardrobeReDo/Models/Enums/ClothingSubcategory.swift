@@ -342,12 +342,59 @@ enum ClothingSubcategory: String, Codable, CaseIterable, Sendable {
     /// rescue-first ordering so that the model's default
     /// `predictedSubcategory` (often `.boots` due to a class-id bias)
     /// never overrides a more specific raw-class signal.
+    ///
+    /// **Build 6 user-favoring default.** Both `boot` and `shoe` raw
+    /// classes return nil so the caller falls through to the
+    /// `.sneakers` default. The model's `boot` head fires on real
+    /// sneakers more often than not (build-5 dogfood: every captured
+    /// sneaker pre-filled as `.boots`) — the user-visible cost of
+    /// that mistake (manual correction every time) is higher than the
+    /// rarer cost of mistagging a real boot as a sneaker. Mirrors the
+    /// pattern PR #25 set for texture (`.bottom → .denim` default).
+    /// `sandal` keeps an explicit map because the model's sandal head
+    /// is empirically reliable; sneakers are the failure mode.
     static func shoeSubcategoryFromRawClass(_ raw: String) -> ClothingSubcategory? {
         switch raw.lowercased() {
-        case "boot": return .boots
+        // Build 6: `.boot` no longer trusted for boots — let the
+        // .sneakers default fire. See doc-comment above.
+        case "boot": return nil
         case "sandal": return .sandals
         case "shoe": return nil  // let `.sneakers` default fire
         default: return nil
         }
+    }
+
+    // MARK: - Build 6 — Bbox-position heuristic for unmapped accessory classes
+
+    /// Infer an accessory subcategory from the bbox y-position when
+    /// the rescue mapping returns nil AND the model's
+    /// `predictedSubcategory` doesn't pin one. Build-5 dogfood
+    /// confirmed the model emits `headband` / `tie` / `glove` (valid
+    /// Fashionpedia accessory classes that don't map to our enum) for
+    /// items that are visually sunglasses / belts — falling through
+    /// to the `.hat` category default surfaces "Hat" on the form
+    /// regardless of what the user is actually photographing.
+    ///
+    /// Position model (normalized [0, 1] coords, origin top-left):
+    /// - **y < 0.40 + bbox-height < 0.10** → face area, thin strip →
+    ///   probably sunglasses (frames span the eyes horizontally)
+    /// - **y in [0.42, 0.62] + bbox-height < 0.10** → waist, thin
+    ///   strip → probably belt (typically a horizontal stripe at the
+    ///   waistband)
+    /// - everything else → fall back to `.hat` (the historic default
+    ///   for accessories — covers head accessories, jewelry, etc.)
+    ///
+    /// This helper is intentionally a pure function so tests can
+    /// exercise the bbox math without running the full ML pipeline.
+    static func accessorySubcategoryFromBboxHeuristic(_ bbox: CGRect) -> ClothingSubcategory {
+        let yMid = bbox.midY
+        let isThin = bbox.height < 0.10
+        if yMid < 0.40 && isThin {
+            return .sunglasses
+        }
+        if yMid >= 0.42 && yMid <= 0.62 && isThin {
+            return .belt
+        }
+        return .hat
     }
 }
