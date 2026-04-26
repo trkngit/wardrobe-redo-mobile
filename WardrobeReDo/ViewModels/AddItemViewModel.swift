@@ -998,6 +998,12 @@ final class AddItemViewModel {
         guard FeatureFlags.isAttributeDetectionEnabled else {
             // Legacy behaviour: reset every picker to its hard-coded
             // default. Matches the pre-Phase-0 `startNextProposal` logic.
+            //
+            // Build-5 dogfood (PR #25) added this log so a remotely
+            // disabled flag is visible in the device log — without it
+            // a "texture / subcategory / seasons not pre-filled" report
+            // is indistinguishable from a rules-engine failure.
+            logger.notice("applyPrefill.skipped: FeatureFlags.isAttributeDetectionEnabled=false — falling back to legacy hard-reset")
             category = .top
             subcategory = .tshirt
             texture = nil

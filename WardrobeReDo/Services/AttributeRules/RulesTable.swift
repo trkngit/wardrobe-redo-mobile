@@ -72,6 +72,46 @@ enum RulesTable {
         }
     }
 
+    // MARK: - Category-default texture
+    //
+    // Build 5 fallback (PR #25) — when the subcategory rule above
+    // returns nil (either because the subcategory has no committed
+    // fabric like `.tshirt`, or because the upstream classifier
+    // misclassified the garment so the subcategory is wrong — the
+    // build-4 dogfood case where full-length jeans were tagged
+    // `.shorts`), look up a category-level default.
+    //
+    // The defaults are deliberately conservative: only categories where
+    // the dominant fabric is overwhelmingly one type get a default.
+    // Bottoms in modern wardrobes are >70% denim or denim-adjacent in
+    // dogfood data — defaulting to `.denim` is the right "best guess"
+    // when the subcategory rule didn't fire. Tops, shoes, accessories
+    // span too many fabrics for a category default to be useful, so
+    // they return nil and the picker stays empty.
+    //
+    // Used by `AttributeRulesEngine.deriveTexture` AFTER the
+    // subcategory-keyed lookup misses. Order matters: subcategory rules
+    // win when they fire (jeans → denim still routes through the
+    // subcategory path above), so this is purely additive — it never
+    // overrides a subcategory match.
+    static func categoryDefaultTexture(for category: ClothingCategory) -> TextureType? {
+        switch category {
+        case .bottom:
+            // Jeans dominate the bottoms category for our user base; the
+            // model frequently misclassifies long jeans as `.shorts`,
+            // and `.shorts` has no subcategory rule (correctly — shorts
+            // can be cotton, linen, denim, …). Routing the
+            // category-default to `.denim` rescues the jeans case
+            // without forcing the user to manually pick fabric on every
+            // multi-pick item.
+            return .denim
+        case .top, .shoe, .dress, .outerwear, .accessory:
+            // These categories span too many fabrics to default
+            // meaningfully — keep the picker empty so the user picks.
+            return nil
+        }
+    }
+
     // MARK: - Seasons
 
     static func seasons(
