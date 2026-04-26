@@ -88,6 +88,7 @@
 		4F2C9B67C331599177762C77 /* GenerationFailure.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B499969896AA1013101C1F7 /* GenerationFailure.swift */; };
 		53D2EF89867CAD37C59A3A77 /* UploadQueueTestIsolation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA70C9920FDBA0E83F03097A /* UploadQueueTestIsolation.swift */; };
 		541A46F796DE0232F708459F /* MaskCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 800B1D00034A9B508B53F3D0 /* MaskCleaner.swift */; };
+		563B2988554BEF3B6B0D4C68 /* AddItemViewModelAccessoryRescueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDC87B5702530E2AAD344A42 /* AddItemViewModelAccessoryRescueTests.swift */; };
 		57CC995BFD00440FD1CA0924 /* OutfitDeduplicationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA53B80137AF29DCEE27CD69 /* OutfitDeduplicationTests.swift */; };
 		582AABE87441DF63D710753C /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 918DC82615BA389443CFF61E /* SwiftUI.framework */; };
 		59241DDEB1035B200FB34C58 /* ImageCacheService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51971C0F2B9570B3CE177E48 /* ImageCacheService.swift */; };
@@ -142,6 +143,7 @@
 		7FF6EDD480ACBB768C0600F1 /* SlotRequirementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28FAF5086E748AB81EBAFBFE /* SlotRequirementTests.swift */; };
 		80B3E51782E1270031F0FC30 /* ShimmerPlaceholders.swift in Sources */ = {isa = PBXBuildFile; fileRef = FADBC6710093A4394EA43447 /* ShimmerPlaceholders.swift */; };
 		824ABB7D88A3A6ACDEE05AEC /* MultiGarmentTextureRulesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8768CBE4BDF16CF8DF19F29 /* MultiGarmentTextureRulesTests.swift */; };
+		82713BBB5A2D588793534923 /* ClothingSubcategoryFashionpediaMappingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAB8DD2EBB551C6CFE966FD8 /* ClothingSubcategoryFashionpediaMappingTests.swift */; };
 		827D93FA5B6BC5ECBFE43636 /* Sentry in Frameworks */ = {isa = PBXBuildFile; productRef = BCFD6F3B934E9ED2E443CA5F /* Sentry */; };
 		82B139FEDA1B0C6D0B72518A /* HapticManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90334A1885AC99F617DF15A3 /* HapticManager.swift */; };
 		838D1708A8B4F155B9114A67 /* capture-brief.md in Resources */ = {isa = PBXBuildFile; fileRef = 15B1D86258537D306181311C /* capture-brief.md */; };
@@ -544,6 +546,7 @@
 		D85862D9F6082BC406086E6E /* cluttered_06.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = cluttered_06.png; sourceTree = "<group>"; };
 		D8CCAC15AB0F6C9437C0DE51 /* clean_bg_10.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = clean_bg_10.jpg; sourceTree = "<group>"; };
 		D95CBA1D9AD2AB55CEBEE6B3 /* MaskTouchupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskTouchupView.swift; sourceTree = "<group>"; };
+		DAB8DD2EBB551C6CFE966FD8 /* ClothingSubcategoryFashionpediaMappingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingSubcategoryFashionpediaMappingTests.swift; sourceTree = "<group>"; };
 		DB979D72C8E717BB5F9F8228 /* StyleEnums.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleEnums.swift; sourceTree = "<group>"; };
 		DD2E419D226826217136FE80 /* OutfitScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitScorer.swift; sourceTree = "<group>"; };
 		DD6CE261DC869A46FCDE381C /* on_person_04.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = on_person_04.png; sourceTree = "<group>"; };
@@ -559,6 +562,7 @@
 		E8F492572689E88F3EA544E6 /* CormorantGaramond-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "CormorantGaramond-Medium.ttf"; sourceTree = "<group>"; };
 		EBEE5B471E124115C3045A0F /* cluttered_01.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = cluttered_01.jpg; sourceTree = "<group>"; };
 		ECBD887704FA72D6BD5952B4 /* AttributeDetectionFlagDefaultTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributeDetectionFlagDefaultTests.swift; sourceTree = "<group>"; };
+		EDC87B5702530E2AAD344A42 /* AddItemViewModelAccessoryRescueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddItemViewModelAccessoryRescueTests.swift; sourceTree = "<group>"; };
 		EF82CDF068E318725A1D2C02 /* ItemCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemCardView.swift; sourceTree = "<group>"; };
 		F08E100E4D24438011D36A4D /* AnimationModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationModifiers.swift; sourceTree = "<group>"; };
 		F17ECBF77827412B73E10EB1 /* ProportionBalanceScorerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProportionBalanceScorerTests.swift; sourceTree = "<group>"; };
@@ -620,6 +624,7 @@
 		006A85D06A573F2AF6D6CF90 /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
+				EDC87B5702530E2AAD344A42 /* AddItemViewModelAccessoryRescueTests.swift */,
 				9A6BFD43D0F9135B6147AF9C /* AddItemViewModelBatchProgressTests.swift */,
 				2E4B956CBED2F0053BFDF0A0 /* AddItemViewModelBatchRestoreTests.swift */,
 				718D58D4DFF04750F552D8ED /* AddItemViewModelPrefillTests.swift */,
@@ -904,6 +909,14 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		310C48AC16A7F37AEE8C8AF9 /* Enums */ = {
+			isa = PBXGroup;
+			children = (
+				DAB8DD2EBB551C6CFE966FD8 /* ClothingSubcategoryFashionpediaMappingTests.swift */,
+			);
+			path = Enums;
+			sourceTree = "<group>";
+		};
 		398457868FC3700B55F0A584 /* Repositories */ = {
 			isa = PBXGroup;
 			children = (
@@ -1135,6 +1148,7 @@
 				28FAF5086E748AB81EBAFBFE /* SlotRequirementTests.swift */,
 				F8B53A45BACA6F4F63824A9E /* StyleEnumsTests.swift */,
 				26B808906834870313D770D9 /* WardrobeItemBoundingBoxTests.swift */,
+				310C48AC16A7F37AEE8C8AF9 /* Enums */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -1667,6 +1681,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				563B2988554BEF3B6B0D4C68 /* AddItemViewModelAccessoryRescueTests.swift in Sources */,
 				CE296BE2B558752BA32CEFFC /* AddItemViewModelBatchProgressTests.swift in Sources */,
 				64BACB97E976923A7BB9C57F /* AddItemViewModelBatchRestoreTests.swift in Sources */,
 				AF26ED6257F8DC545C884CC3 /* AddItemViewModelPrefillTests.swift in Sources */,
@@ -1688,6 +1703,7 @@
 				185E00FB228C8A38AFFCF726 /* ClothingCategoryFashionpediaTests.swift in Sources */,
 				2BBC8B9F54B7084C73205141 /* ClothingCategoryTests.swift in Sources */,
 				92CF957050AF45F7156A45B4 /* ClothingExtractionChainingTests.swift in Sources */,
+				82713BBB5A2D588793534923 /* ClothingSubcategoryFashionpediaMappingTests.swift in Sources */,
 				3A5FA2C1187002FE1A8877AE /* ClothingSubcategoryTests.swift in Sources */,
 				1434A570FF8BE87D7BFB0949 /* ColorExtractionServiceTests.swift in Sources */,
 				59AA9B48B300159453543498 /* ColorHarmonyScorerTests.swift in Sources */,
