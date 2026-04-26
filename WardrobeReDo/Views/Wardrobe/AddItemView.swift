@@ -443,7 +443,7 @@ struct AddItemView: View {
                     Text("Extracted Colors")
                         .font(Theme.Fonts.h3)
                         .foregroundStyle(Color(Theme.Colors.textPrimary))
-                    ColorSwatchView(colors: viewModel.extractedColors, size: 28, showPercentage: true)
+                    EditorialColorView(colors: viewModel.extractedColors)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }

@@ -212,7 +212,7 @@ struct ItemDetailView: View {
             if !item.dominantColors.isEmpty {
                 VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
                     sectionHeader("Colors")
-                    ColorSwatchDetailView(colors: item.dominantColors)
+                    EditorialColorView(colors: item.dominantColors)
                 }
                 .detailCard()
             }
