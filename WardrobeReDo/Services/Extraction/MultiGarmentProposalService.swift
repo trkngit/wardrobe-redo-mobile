@@ -743,7 +743,8 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
         var changed = true
         while changed {
             changed = false
-            outer: for i in 0..<remaining.count {
+            for i in 0..<remaining.count {
+                var didCollapse = false
                 for j in (i + 1)..<remaining.count {
                     if looksLikeShoeRedundancy(
                         remaining[i].boundingBox,
@@ -751,11 +752,16 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
                     ) {
                         // `remaining[i]` has the higher score (sorted
                         // descending) — drop the lower-scored copy.
+                        // The `while changed` re-entry restarts iteration
+                        // from the top with the shrunken array, so we
+                        // only need to break the inner loop here.
                         remaining.remove(at: j)
                         changed = true
-                        break outer
+                        didCollapse = true
+                        break
                     }
                 }
+                if didCollapse { break }
             }
         }
         return remaining

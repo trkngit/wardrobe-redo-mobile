@@ -185,6 +185,12 @@ final class AddItemViewModel {
 
     private let imageService: any ImageServiceProtocol
     private let wardrobeRepository: any WardrobeRepositoryProtocol
+    /// Per-proposal palette extractor. Injected via `init` so tests can
+    /// substitute a deterministic stub instead of running the real
+    /// k-means classifier (whose output for synthetic test images is
+    /// brittle across colour spaces). Production default is the shared
+    /// `ColorExtractionService`.
+    private let colorExtractor: any ColorExtracting
     /// Exposed so the Phase 3 TapToSelectView can call back into the
     /// same extractor instance as the rest of the pipeline (no duplicate
     /// model loads, no cold-starts per tap).
@@ -204,11 +210,13 @@ final class AddItemViewModel {
     init(
         imageService: any ImageServiceProtocol = ImageService(),
         wardrobeRepository: any WardrobeRepositoryProtocol = WardrobeRepository(),
+        colorExtractor: any ColorExtracting = ColorExtractionService(),
         clothingExtractor: any ClothingExtracting = ClothingExtractionService(),
         uploadQueue: UploadQueue = UploadQueue.shared
     ) {
         self.imageService = imageService
         self.wardrobeRepository = wardrobeRepository
+        self.colorExtractor = colorExtractor
         self.clothingExtractor = clothingExtractor
         self.uploadQueue = uploadQueue
     }
@@ -941,7 +949,7 @@ final class AddItemViewModel {
             // an empty array on broken inputs.
             let perProposalColors: [ExtractedColor]
             if next.maskedImage.cgImage != nil {
-                perProposalColors = await ColorExtractionService().extractColors(from: next.maskedImage)
+                perProposalColors = await colorExtractor.extractColors(from: next.maskedImage)
             } else {
                 perProposalColors = current.dominantColors
             }
