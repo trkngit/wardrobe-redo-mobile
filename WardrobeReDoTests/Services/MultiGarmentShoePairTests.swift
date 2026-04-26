@@ -120,20 +120,86 @@ import Testing
         #expect(result.contains { $0.rawClass == "shoe" })
     }
 
-    @Test func threePlusShoesFallThrough() {
-        // Flat-lay of 3 shoes — we don't try to pair-match heuristically
-        // beyond two; let the per-photo cap trim from there.
-        let shoes = (0..<3).map { i in
-            MultiGarmentProposalService.RawDetection(
-                boundingBox: CGRect(x: 0.10 + Double(i) * 0.20, y: 0.85, width: 0.10, height: 0.10),
-                score: 0.85 + Float(i) * 0.02, rawClass: "shoe", mask: nil
-            )
-        }
-        let result = MultiGarmentProposalService.collapseShoePairs(shoes)
-        #expect(result.count == 3)
+    // MARK: - Proximity-based redundancy + 2-shoe cap
+
+    @Test func proximityBasedMergeCollapsesNearbyShoes() {
+        // Two shoe detections of the same physical foot at slightly
+        // different angles/zooms. Centroids land within (0.18, 0.10)
+        // of each other → proximity check fires, drops the lower-scored
+        // copy. Mirrors the build-4 production data shape (Supabase
+        // confirmed two shoe items at non-overlapping bboxes).
+        //
+        // a: bbox(x=0.25, y=0.75, w=0.10, h=0.10) → centroid (0.30, 0.80)
+        // b: bbox(x=0.35, y=0.80, w=0.10, h=0.10) → centroid (0.40, 0.85)
+        // dx = 0.10 (< 0.18), dy = 0.05 (< 0.10) → collapse.
+        let a = MultiGarmentProposalService.RawDetection(
+            boundingBox: CGRect(x: 0.25, y: 0.75, width: 0.10, height: 0.10),
+            score: 0.88, rawClass: "shoe", mask: nil
+        )
+        let b = MultiGarmentProposalService.RawDetection(
+            boundingBox: CGRect(x: 0.35, y: 0.80, width: 0.10, height: 0.10),
+            score: 0.91, rawClass: "shoe", mask: nil
+        )
+        let result = MultiGarmentProposalService.collapseShoePairs([a, b])
+        #expect(result.count == 1)
+        // Higher-scored detection survives.
+        #expect(result.first?.score == 0.91)
     }
 
-    // MARK: - looksLikeShoeRedundancy / wide-shot + close-up collapse
+    @Test func proximityBasedMergeKeepsDistantShoes() {
+        // Two shoes with centroids far enough apart that neither the
+        // proximity check (dx < 0.18 AND dy < 0.10) nor the pair check
+        // fires. Both kept.
+        //
+        // a: bbox(x=0.15, y=0.45, w=0.10, h=0.10) → centroid (0.20, 0.50)
+        // b: bbox(x=0.65, y=0.45, w=0.10, h=0.10) → centroid (0.70, 0.50)
+        // dx = 0.50 (NOT < 0.18) → keep both.
+        let a = MultiGarmentProposalService.RawDetection(
+            boundingBox: CGRect(x: 0.15, y: 0.45, width: 0.10, height: 0.10),
+            score: 0.85, rawClass: "shoe", mask: nil
+        )
+        let b = MultiGarmentProposalService.RawDetection(
+            boundingBox: CGRect(x: 0.65, y: 0.45, width: 0.10, height: 0.10),
+            score: 0.87, rawClass: "shoe", mask: nil
+        )
+        let result = MultiGarmentProposalService.collapseShoePairs([a, b])
+        #expect(result.count == 2)
+    }
+
+    @Test func threeShoesCappedToTwoHighestConfidence() {
+        // Three shoe detections with centroids spaced beyond proximity
+        // tolerance (no proximity collapse). Wardrobe captures don't
+        // legitimately have 3+ distinct shoes — cap to 2 highest-confidence.
+        //
+        // Scores: 0.85, 0.87, 0.89. Top 2 = 0.87, 0.89; lowest = 0.85.
+        let lowScore: Float = 0.85
+        let midScore: Float = 0.87
+        let highScore: Float = 0.89
+        let shoes: [MultiGarmentProposalService.RawDetection] = [
+            // Centroids spaced 0.25 apart horizontally → outside the
+            // 0.18 proximity tolerance → no proximity collapse.
+            MultiGarmentProposalService.RawDetection(
+                boundingBox: CGRect(x: 0.10, y: 0.85, width: 0.10, height: 0.10),
+                score: lowScore, rawClass: "shoe", mask: nil
+            ),
+            MultiGarmentProposalService.RawDetection(
+                boundingBox: CGRect(x: 0.35, y: 0.85, width: 0.10, height: 0.10),
+                score: midScore, rawClass: "shoe", mask: nil
+            ),
+            MultiGarmentProposalService.RawDetection(
+                boundingBox: CGRect(x: 0.60, y: 0.85, width: 0.10, height: 0.10),
+                score: highScore, rawClass: "shoe", mask: nil
+            ),
+        ]
+        let result = MultiGarmentProposalService.collapseShoePairs(shoes)
+        #expect(result.count == 2)
+        let scores = result.map { $0.score }
+        #expect(scores.contains(highScore))
+        #expect(scores.contains(midScore))
+        #expect(!scores.contains(lowScore))
+    }
+
+    // MARK: - Wide-shot + close-up collapse (now via proximity)
 
     @Test func closeUpFullyContainedInWideShotCollapsesToOne() {
         // The model produced both a wide-shot of a shoe at the bottom
@@ -156,10 +222,12 @@ import Testing
         #expect(result.first?.score == 0.88)
     }
 
-    @Test func sameSizeAdjacentBoxesStillCollapseViaPairPath() {
-        // Regression: redundancy pruning must NOT swallow a real
-        // left+right shoe pair. Side-by-side, similar size — the pair
-        // path should still fire and collapse to one.
+    @Test func sameSizeAdjacentBoxesStillCollapseToOne() {
+        // Side-by-side, similar size — the proximity check now catches
+        // tight left+right pairs (dx ~0.11 < 0.18) before the pair-check
+        // path runs. Either way collapses to one — the wardrobe UX shows
+        // a single shoe item and the user can re-take if they want both
+        // feet split out.
         let left = MultiGarmentProposalService.RawDetection(
             boundingBox: CGRect(x: 0.30, y: 0.85, width: 0.10, height: 0.10),
             score: 0.91, rawClass: "shoe", mask: nil
