@@ -1218,9 +1218,10 @@ struct AddItemMultiGarmentTests {
         FeatureFlags.isMultiGarmentEnabled = true
         defer { FeatureFlags.resetAll() }
 
-        // Two proposals with distinct solid-color cutouts. The grid
-        // sorts by `detectionScore` descending, so the higher score
-        // is detailed first.
+        // Two proposals with placeholder cutouts — palette assertions
+        // are now driven by the injected stub, not by the real k-means
+        // run on synthetic colors. The grid sorts by `detectionScore`
+        // descending so the higher score is detailed first.
         let redProposal = MaskProposalFixture.make(
             maskedImage: makeSolidColorImage(.red),
             detectionScore: 0.9
@@ -1255,19 +1256,42 @@ struct AddItemMultiGarmentTests {
             ],
             proposals: [redProposal, greenProposal]
         )
+
+        // Deterministic per-proposal palette via injected stub. Decouples
+        // the assertion from the real k-means classifier — the test
+        // proves the VM calls the extractor on each proposal AND uses
+        // the result, regardless of what the live classifier would emit
+        // for solid-color synthetic fixtures.
+        let stubExtractor = StubColorExtractor()
+        stubExtractor.results = [
+            [ExtractedColor(
+                hex: "#FF0000",
+                hue: 0, saturation: 1.0, lightness: 0.5, percentage: 100,
+                colorFamily: "red", isNeutral: false
+            )],
+            [ExtractedColor(
+                hex: "#00FF00",
+                hue: 120, saturation: 1.0, lightness: 0.5, percentage: 100,
+                colorFamily: "green", isNeutral: false
+            )]
+        ]
+
         let vm = AddItemViewModel(
             imageService: mockImage,
-            wardrobeRepository: MockWardrobeRepository()
+            wardrobeRepository: MockWardrobeRepository(),
+            colorExtractor: stubExtractor
         )
         vm.isShowingCamera = true
         await vm.onCameraPhotoCaptured(makePixelImage())
 
-        // First proposal (red) becomes current — capture its palette.
+        // First proposal becomes current — capture its palette.
         await vm.onMultiPickConfirmed()
         let firstColors = vm.extractedColors
         #expect(!firstColors.isEmpty,
                "first proposal must surface its own extracted palette")
         let firstFamily = firstColors.first?.colorFamily
+        #expect(firstFamily == "red",
+               "first proposal palette must come from the stubbed extractor")
 
         // Advance to the second proposal via save (mock repo / image
         // service so the real pipeline doesn't need to be wired).
@@ -1283,6 +1307,12 @@ struct AddItemMultiGarmentTests {
         // If the regression slipped back in, item 2 would echo it.
         #expect(secondFamily != "gray",
                "per-proposal palette must NOT echo the source-photo sentinel")
+        #expect(secondFamily == "green",
+               "second proposal palette must come from the stubbed extractor")
+        // The VM must invoke the extractor once per proposal that has
+        // a CGImage-backed maskedImage.
+        #expect(stubExtractor.callCount == 2,
+               "extractColors must be called exactly once per proposal in the queue")
     }
 
     @Test func stampFreshCaptureClearsProposalStateOnNewPhoto() async {
