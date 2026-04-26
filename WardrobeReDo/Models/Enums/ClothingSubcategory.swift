@@ -213,49 +213,57 @@ enum ClothingSubcategory: String, Codable, CaseIterable, Sendable {
     /// unambiguous. `MaskProposal.predictedSubcategory` consumers should
     /// fall back to the category's default subcategory when this returns
     /// nil.
+    ///
+    /// **Build 5 correctness pass.** The cases below are constrained to the
+    /// 33-class label vocabulary the bundled `RFDETRSegFashion.mlmodelc`
+    /// actually emits (see `MultiGarmentProposalService.fashionpediaLabels`
+    /// and `.build5-research/web-research/J-rfdetr-fashionpedia-classes.md`).
+    /// Anything outside that vocabulary used to be dead code — e.g. the
+    /// model never emits `"sunglasses"`, `"t-shirt"`, `"sweatshirt"`,
+    /// `"top"`, `"bag"`, `"wallet"`, `"purse"`, `"trousers"`, `"gown"`,
+    /// `"sneaker"`, `"loafer"` — Fashionpedia uses combo classes
+    /// (`shirt_blouse`, `top_t-shirt_sweatshirt`, `bag_wallet`) and the
+    /// finer distinctions (sneaker/loafer/heel) live in the attribute
+    /// head, not the segmentation classifier.
     static func fromFashionpediaClass(_ raw: String) -> ClothingSubcategory? {
         let normalized = raw.lowercased()
         switch normalized {
-        // Tops
-        case "shirt":
+        // Tops — combo classes from Fashionpedia (model ids 0, 1)
+        case "shirt_blouse":
+            // Combo class covers both shirts and blouses; pick the
+            // historically-common case (`.buttonDown`) so the picker
+            // lands on a sensible default. Users override on the rare
+            // blouse case.
             return .buttonDown
-        case "blouse":
-            return .blouse
-        case "t-shirt":
+        case "top_t-shirt_sweatshirt":
             return .tshirt
-        case "sweatshirt":
-            return .sweatshirt
         case "sweater":
             return .sweater
         case "cardigan":
             return .cardigan
 
-        // Bottoms
+        // Bottoms (model ids 9, 10)
         case "shorts":
             return .shorts
         case "skirt":
             return .skirt
 
-        // Outerwear
-        case "blazer":
-            return .suitJacket
-
-        // Footwear
+        // Footwear (model ids 15, 16) — `shoe` (id 14) intentionally
+        // returns nil; let `shoeSubcategoryFromRawClass` rescue + the
+        // `.sneakers` default fire for that.
         case "boot":
             return .boots
-        case "sandal", "sandals":
+        case "sandal":
             return .sandals
 
-        // Accessories
-        case "glasses", "sunglasses":
+        // Accessories (model ids 19, 20, 22, 24, 25, 27, 29, 30, 31)
+        case "glasses":
             return .sunglasses
         case "hat":
             return .hat
-        case "cap":
-            return .baseballCap
         case "scarf":
             return .scarf
-        case "bag", "purse", "bag_wallet":
+        case "bag_wallet":
             return .bag
         case "belt":
             return .belt
@@ -263,20 +271,29 @@ enum ClothingSubcategory: String, Codable, CaseIterable, Sendable {
             return .watch
         case "bracelet":
             return .bracelet
-        case "earring", "earrings":
+        case "earring":
             return .earrings
         case "necklace":
             return .necklace
 
-        // Ambiguous or unsupported (explicit nil for documentation):
-        // `pants` / `trousers` — jeans vs chinos vs dress pants
-        // `top` / `shirt_blouse` / `top_t-shirt_sweatshirt` — combined classes
-        // `dress` / `gown` — maxi vs mini vs cocktail, etc.
-        // `jumpsuit` / `romper` / `cape` / `vest` — no direct subcategory case
-        // `coat` / `jacket` — too many specific variants
-        // `shoe` — too generic (sneakers vs loafers vs heels vs …)
-        // `tights` / `stockings` — closest match `.leggings` is a different garment
-        // `tie` / `bow_tie` / `glove` / `ring` / `headband` / `wallet` — no subcategory case
+        // Explicitly nil for documentation. These ARE classes the model
+        // emits but the mapping is ambiguous or no enum case exists:
+        //   `jacket` (id 4)            — bomber/leather/puffer/...
+        //   `vest` (id 5)              — no `.vest` enum case
+        //   `coat` (id 6)              — trench/parka/winter/...
+        //   `cape` (id 7)              — no `.cape` enum case
+        //   `pants` (id 8)             — jeans/chinos/dress
+        //   `tights_stockings` (id 11) — closest is `.leggings`, drift
+        //   `dress` (id 12)            — maxi/mini/cocktail/...
+        //   `jumpsuit` (id 13)         — no `.jumpsuit` enum case
+        //   `shoe` (id 14)             — sneaker/loafer/heel/... (rescue)
+        //   `sock` (id 17)             — excluded
+        //   `leg_warmer` (id 18)       — excluded
+        //   `headband` (id 21)         — no good enum match
+        //   `tie` (id 23)              — no `.tie` enum case
+        //   `glove` (id 26)            — no `.gloves` enum case
+        //   `ring` (id 28)             — no `.ring` enum case
+        //   `umbrella` (id 32)         — excluded
         default:
             return nil
         }
@@ -292,18 +309,44 @@ enum ClothingSubcategory: String, Codable, CaseIterable, Sendable {
     /// `fromFashionpediaClass` mapping is bypassed (low confidence,
     /// missing prediction, etc.). Returning nil signals "no rescue
     /// available — fall through to the category default."
+    ///
+    /// **Build 5 vocabulary pass.** Cases pruned to only the accessory
+    /// labels the trained model actually emits — `glasses`, `belt`,
+    /// `watch`, `scarf`, `necklace`, `bracelet`, `earring`, `bag_wallet`,
+    /// `hat`. Aliases like `"sunglasses"` and `"baseballcap"` were dead
+    /// code that never fired (the model doesn't emit those tokens).
     static func accessorySubcategoryFromRawClass(_ raw: String) -> ClothingSubcategory? {
         switch raw.lowercased() {
-        case "glasses", "sunglasses": return .sunglasses
+        case "glasses": return .sunglasses
         case "belt": return .belt
         case "watch": return .watch
         case "scarf": return .scarf
         case "necklace": return .necklace
         case "bracelet": return .bracelet
-        case "earring", "earrings": return .earrings
-        case "bag", "purse", "bag_wallet": return .bag
-        case "hat", "headband": return .hat
-        case "baseballcap", "cap": return .baseballCap
+        case "earring": return .earrings
+        case "bag_wallet": return .bag
+        case "hat": return .hat
+        default: return nil
+        }
+    }
+
+    /// Rescue mapping for shoe-class detections. The model emits only
+    /// `shoe`, `boot`, `sandal` (no sneaker/loafer/oxford classes — those
+    /// are Fashionpedia *attributes*, not categories). Returning nil for
+    /// `shoe` lets the caller fall through to the category default
+    /// (`.sneakers`), which is the right product behavior — most shoes are
+    /// sneakers and the user can correct on the rare wrong cases.
+    ///
+    /// Used by `AddItemViewModel.applyPrefill` exclusively for the
+    /// `.shoe` category. Mirrors `accessorySubcategoryFromRawClass`'s
+    /// rescue-first ordering so that the model's default
+    /// `predictedSubcategory` (often `.boots` due to a class-id bias)
+    /// never overrides a more specific raw-class signal.
+    static func shoeSubcategoryFromRawClass(_ raw: String) -> ClothingSubcategory? {
+        switch raw.lowercased() {
+        case "boot": return .boots
+        case "sandal": return .sandals
+        case "shoe": return nil  // let `.sneakers` default fire
         default: return nil
         }
     }

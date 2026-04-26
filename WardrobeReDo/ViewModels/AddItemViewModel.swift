@@ -1026,22 +1026,49 @@ final class AddItemViewModel {
         // category fell back to .top) doesn't leave the picker stuck on
         // an invalid option.
         //
-        // Accessory rescue: when no subcategory clears the standard
-        // path (low-confidence ML, ambiguous Fashionpedia class), fall
-        // back to a raw-class rescue mapping before resorting to the
-        // category default. Without this, a sunglasses or belt
-        // detection silently pre-fills as `.hat` (the .accessory
-        // default), which the user reads as a wrong prediction. See
-        // `ClothingSubcategory.accessorySubcategoryFromRawClass`.
-        if let sub = proposal.predictedSubcategory, sub.category == category {
-            subcategory = sub
-            snapshot["subcategory"] = sub.rawValue
-        } else if category == .accessory,
-                  let rescue = ClothingSubcategory.accessorySubcategoryFromRawClass(proposal.modelClassRaw) {
-            subcategory = rescue
-            snapshot["subcategory"] = rescue.rawValue
+        // Build 5 inversion: for `.accessory` and `.shoe` specifically,
+        // the raw-class rescue runs FIRST. The previous ordering let a
+        // generic `predictedSubcategory` (e.g. `.hat` from
+        // `fromFashionpediaClass("glasses")` returning `.sunglasses` but
+        // a downstream prediction landing on `.hat`, or the model's
+        // default `.boots` for any shoe) override the rescue and silently
+        // mis-prefill multi-pick items. The rescue mapping is the
+        // authoritative bridge between the trained vocabulary and our
+        // enum, so it should win whenever it has an opinion. Other
+        // categories keep the original ordering — their predicted
+        // subcategories already line up with our enum without rescue.
+        // See `ClothingSubcategory.accessorySubcategoryFromRawClass` and
+        // `ClothingSubcategory.shoeSubcategoryFromRawClass`.
+        if category == .accessory {
+            if let rescue = ClothingSubcategory.accessorySubcategoryFromRawClass(proposal.modelClassRaw) {
+                subcategory = rescue
+                snapshot["subcategory"] = rescue.rawValue
+            } else if let sub = proposal.predictedSubcategory, sub.category == category {
+                subcategory = sub
+                snapshot["subcategory"] = sub.rawValue
+            } else {
+                subcategory = defaultSubcategory(for: category)
+            }
+        } else if category == .shoe {
+            if let rescue = ClothingSubcategory.shoeSubcategoryFromRawClass(proposal.modelClassRaw) {
+                subcategory = rescue
+                snapshot["subcategory"] = rescue.rawValue
+            } else if let sub = proposal.predictedSubcategory, sub.category == category {
+                subcategory = sub
+                snapshot["subcategory"] = sub.rawValue
+            } else {
+                subcategory = defaultSubcategory(for: category)
+            }
         } else {
-            subcategory = defaultSubcategory(for: category)
+            // Tops, bottoms, dresses, outerwear: trust the predicted
+            // subcategory when it lines up with the category, else fall
+            // back to the category default.
+            if let sub = proposal.predictedSubcategory, sub.category == category {
+                subcategory = sub
+                snapshot["subcategory"] = sub.rawValue
+            } else {
+                subcategory = defaultSubcategory(for: category)
+            }
         }
 
         if let tex = proposal.predictedTexture,
