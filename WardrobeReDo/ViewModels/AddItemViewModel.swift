@@ -1062,8 +1062,19 @@ final class AddItemViewModel {
                 snapshot["subcategory"] = sub.rawValue
                 subcategoryBranch = "accessoryPredicted"
             } else {
-                subcategory = defaultSubcategory(for: category)
-                subcategoryBranch = "accessoryDefault"
+                // Build 6: rescue + predictedSubcategory both punted —
+                // model is emitting an unmapped accessory class
+                // (`headband`, `tie`, `glove`, etc., per build-5 dogfood).
+                // Use bbox y-position to infer sunglasses (face area)
+                // vs belt (waist) vs default `.hat`. Pure function on
+                // CGRect so the heuristic is easy to test + tune.
+                //
+                // Heuristic-derived subcategories are intentionally NOT
+                // recorded in `snapshot` — they're not ML-driven, just
+                // geometric defaults. Matches the categoryDefault path
+                // for telemetry purposes.
+                subcategory = ClothingSubcategory.accessorySubcategoryFromBboxHeuristic(proposal.boundingBox)
+                subcategoryBranch = "accessoryBboxHeuristic"
             }
         } else if category == .shoe {
             if let rescue = ClothingSubcategory.shoeSubcategoryFromRawClass(proposal.modelClassRaw) {

@@ -1,3 +1,4 @@
+import CoreGraphics
 import Testing
 @testable import WardrobeReDo
 
@@ -122,13 +123,20 @@ struct ClothingSubcategoryFashionpediaMappingTests {
         #expect(ClothingSubcategory.accessorySubcategoryFromRawClass(raw) == nil)
     }
 
-    // MARK: - Shoe rescue contract (new in Build 5)
+    // MARK: - Shoe rescue contract (Build 6 user-favoring update)
 
-    @Test func shoeSubcategoryRescueMapsBoot() {
-        #expect(ClothingSubcategory.shoeSubcategoryFromRawClass("boot") == .boots)
+    /// Build-5 mapped `boot` → `.boots` to honor the model's class. But
+    /// dogfood revealed the `boot` head fires on actual sneakers more
+    /// often than actual boots, so trusting it was net-negative for
+    /// users. Build 6 returns nil so the `.sneakers` default fires.
+    /// Same trade-off as PR #25's `.bottom → .denim` — defaulting to
+    /// the most common case beats trusting an unreliable signal.
+    @Test func shoeSubcategoryRescueLetsBootDefaultToSneakers() {
+        #expect(ClothingSubcategory.shoeSubcategoryFromRawClass("boot") == nil)
     }
 
     @Test func shoeSubcategoryRescueMapsSandal() {
+        // Sandal head is empirically reliable, unlike boot.
         #expect(ClothingSubcategory.shoeSubcategoryFromRawClass("sandal") == .sandals)
     }
 
@@ -141,8 +149,9 @@ struct ClothingSubcategoryFashionpediaMappingTests {
     }
 
     @Test func shoeSubcategoryRescueIsCaseInsensitive() {
-        #expect(ClothingSubcategory.shoeSubcategoryFromRawClass("BOOT") == .boots)
         #expect(ClothingSubcategory.shoeSubcategoryFromRawClass("Sandal") == .sandals)
+        // BOOT now also returns nil under Build 6.
+        #expect(ClothingSubcategory.shoeSubcategoryFromRawClass("BOOT") == nil)
     }
 
     @Test(arguments: [
@@ -150,8 +159,57 @@ struct ClothingSubcategoryFashionpediaMappingTests {
         "shirt_blouse", "glasses", "belt", "hat",
         // Dead pre-Build-5 aliases that never came from the model
         "sneaker", "sneakers", "loafer", "oxford", "heel",
+        // Build 6: `boot` now returns nil too (user-favoring)
+        "boot",
     ])
     func shoeSubcategoryRescueReturnsNilOutsideVocabulary(raw: String) {
         #expect(ClothingSubcategory.shoeSubcategoryFromRawClass(raw) == nil)
+    }
+
+    // MARK: - Bbox heuristic for unmapped accessory classes (Build 6)
+
+    /// Build-5 dogfood found the model emits unmapped accessory classes
+    /// (`headband`, `tie`, `glove`, `ring`) for items that are visually
+    /// sunglasses or belts. The bbox-position heuristic infers the
+    /// likely subcategory from where the item lives in the frame.
+    ///
+    /// Pure-function tests here pin the geometric contract; integration
+    /// tests in `AddItemViewModelAccessoryRescueTests` exercise the
+    /// heuristic's wiring inside `applyPrefill`.
+
+    @Test func bboxHeuristicSunglassesFromFaceArea() {
+        // y-mid 0.30 < 0.40, height 0.06 < 0.10 → face-area thin strip
+        let bbox = CGRect(x: 0.30, y: 0.27, width: 0.40, height: 0.06)
+        #expect(ClothingSubcategory.accessorySubcategoryFromBboxHeuristic(bbox) == .sunglasses)
+    }
+
+    @Test func bboxHeuristicBeltFromWaistArea() {
+        // y-mid 0.53 ∈ [0.42, 0.62], height 0.04 < 0.10 → waist thin strip
+        let bbox = CGRect(x: 0.30, y: 0.51, width: 0.40, height: 0.04)
+        #expect(ClothingSubcategory.accessorySubcategoryFromBboxHeuristic(bbox) == .belt)
+    }
+
+    @Test func bboxHeuristicHatForLargeBboxes() {
+        // height 0.5 >= 0.10 → not thin → falls back to .hat
+        let bbox = CGRect(x: 0.1, y: 0.1, width: 0.5, height: 0.5)
+        #expect(ClothingSubcategory.accessorySubcategoryFromBboxHeuristic(bbox) == .hat)
+    }
+
+    @Test func bboxHeuristicHatForLowAreaThinBbox() {
+        // y-mid 0.85 outside both face (<0.40) and waist ([0.42, 0.62])
+        // ranges, even with thin height. Falls back to .hat — not
+        // ideal for a sock-or-something accessory at the foot, but the
+        // heuristic intentionally only carves out the high-confidence
+        // sunglasses/belt cases.
+        let bbox = CGRect(x: 0.30, y: 0.83, width: 0.40, height: 0.04)
+        #expect(ClothingSubcategory.accessorySubcategoryFromBboxHeuristic(bbox) == .hat)
+    }
+
+    @Test func bboxHeuristicHatForMidAreaTallBbox() {
+        // y-mid 0.50 ∈ [0.42, 0.62] but height 0.30 NOT thin.
+        // Mid-frame tall bbox is more likely a top/jacket misclassified
+        // as accessory than a belt — fall back to .hat.
+        let bbox = CGRect(x: 0.20, y: 0.35, width: 0.60, height: 0.30)
+        #expect(ClothingSubcategory.accessorySubcategoryFromBboxHeuristic(bbox) == .hat)
     }
 }
