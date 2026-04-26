@@ -45,7 +45,10 @@ enum TestFixtures {
         wearCount: Int = 0,
         isArchived: Bool = false,
         maskedImagePath: String? = nil,
-        extractionConfidence: ExtractionConfidence? = nil
+        extractionConfidence: ExtractionConfidence? = nil,
+        sourcePhotoId: UUID? = nil,
+        sourcePhotoPath: String? = nil,
+        createdAt: Date = Date()
     ) -> WardrobeItem {
         WardrobeItem(
             id: id,
@@ -54,6 +57,8 @@ enum TestFixtures {
             thumbnailPath: "thumbnails/\(id).jpg",
             maskedImagePath: maskedImagePath,
             extractionConfidence: extractionConfidence,
+            sourcePhotoId: sourcePhotoId,
+            sourcePhotoPath: sourcePhotoPath,
             category: category,
             subcategory: subcategory,
             dominantColors: dominantColors ?? [makeColorProfile()],
@@ -67,8 +72,8 @@ enum TestFixtures {
             wearCount: wearCount,
             lastWornAt: nil,
             isArchived: isArchived,
-            createdAt: Date(),
-            updatedAt: Date()
+            createdAt: createdAt,
+            updatedAt: createdAt
         )
     }
 
