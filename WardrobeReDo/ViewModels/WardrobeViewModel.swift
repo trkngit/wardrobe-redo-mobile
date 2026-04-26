@@ -26,16 +26,60 @@ struct WardrobeSession: Identifiable, Sendable {
     let createdAt: Date
 }
 
+/// One renderable block in the wardrobe grid. Consecutive single-item
+/// sessions fuse into a `.singles` block so they pack into the 2-column
+/// grid together; multi-item sessions get their own `.session` block with
+/// a header. `staggerStart` is the cumulative item index across the whole
+/// list, so `staggeredFadeIn` animation timing stays consistent regardless
+/// of how the runs split.
+enum SessionGroup: Identifiable, Sendable {
+    case singles(items: [WardrobeItem], staggerStart: Int)
+    case session(WardrobeSession, staggerStart: Int)
+
+    /// Stable id for SwiftUI `ForEach`. For `.singles`, the first item's
+    /// id is enough — a run never overlaps with another run, and the
+    /// first item's id changes only when the group's contents change.
+    /// For `.session`, the session's own id (sourcePhotoId or lone item id).
+    var id: UUID {
+        switch self {
+        case .singles(let items, _):
+            return items.first?.id ?? UUID()
+        case .session(let session, _):
+            return session.id
+        }
+    }
+}
+
 @MainActor
 @Observable
 final class WardrobeViewModel {
     // MARK: - State
 
-    var items: [WardrobeItem] = []
-    var selectedCategory: ClothingCategory?
+    var items: [WardrobeItem] = [] {
+        didSet { recomputeSessions() }
+    }
+    var selectedCategory: ClothingCategory? {
+        didSet { recomputeSessions() }
+    }
     var isLoading = false
     var errorMessage: String?
     var showAddItem = false
+
+    /// Filtered items grouped by `sourcePhotoId` into capture sessions.
+    /// Legacy items with `sourcePhotoId == nil` each become a 1-item
+    /// session keyed on the item's own id (so a wardrobe full of legacy
+    /// rows doesn't render as one giant fake "session"). Sessions are
+    /// sorted newest-first; items inside a session are sorted oldest-first
+    /// to preserve the order the user saved them during the multi-garment
+    /// loop. A category filter that drops every item in a session also
+    /// drops the session itself.
+    ///
+    /// Cached as a stored property and recomputed only when `items` or
+    /// `selectedCategory` change — the previous computed-property
+    /// implementation re-ran `Dictionary(grouping:) + sort` on every
+    /// SwiftUI body evaluation, which got expensive once a wardrobe had
+    /// dozens of sessions.
+    private(set) var sessions: [WardrobeSession] = []
 
     // MARK: - Dependencies
 
@@ -57,20 +101,12 @@ final class WardrobeViewModel {
         return items.filter { $0.category == category }
     }
 
-    /// Filtered items grouped by `sourcePhotoId` into capture sessions.
-    /// Legacy items with `sourcePhotoId == nil` each become a 1-item
-    /// session keyed on the item's own id (so a wardrobe full of legacy
-    /// rows doesn't render as one giant fake "session"). Sessions are
-    /// sorted newest-first; items inside a session are sorted oldest-first
-    /// to preserve the order the user saved them during the multi-garment
-    /// loop. A category filter that drops every item in a session also
-    /// drops the session itself.
-    var sessions: [WardrobeSession] {
+    private func recomputeSessions() {
         let grouped = Dictionary(grouping: filteredItems) { item in
             item.sourcePhotoId ?? item.id
         }
 
-        return grouped.map { (key, groupItems) in
+        sessions = grouped.map { (key, groupItems) in
             let sortedItems = groupItems.sorted { $0.createdAt < $1.createdAt }
             let first = sortedItems.first
             return WardrobeSession(
@@ -82,6 +118,39 @@ final class WardrobeViewModel {
             )
         }
         .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    /// `sessions` collapsed into renderable groups. Consecutive single-item
+    /// sessions fuse into one `.singles` block so the wardrobe grid keeps its
+    /// 2-column packing — without this, two singles in a row each rendered as
+    /// a half-width card with empty space on the right. Multi-item sessions
+    /// interrupt the run with their own `.session` block. The
+    /// `staggerStart` carried on each group preserves the original cumulative
+    /// item index so `staggeredFadeIn` animations stay in lockstep with the
+    /// visual order.
+    var groupedSessions: [SessionGroup] {
+        var result: [SessionGroup] = []
+        var pendingSingles: [WardrobeItem] = []
+        var pendingStart = 0
+        var stagger = 0
+        for session in sessions {
+            if session.items.count == 1 {
+                if pendingSingles.isEmpty { pendingStart = stagger }
+                pendingSingles.append(session.items[0])
+                stagger += 1
+            } else {
+                if !pendingSingles.isEmpty {
+                    result.append(.singles(items: pendingSingles, staggerStart: pendingStart))
+                    pendingSingles = []
+                }
+                result.append(.session(session, staggerStart: stagger))
+                stagger += session.items.count
+            }
+        }
+        if !pendingSingles.isEmpty {
+            result.append(.singles(items: pendingSingles, staggerStart: pendingStart))
+        }
+        return result
     }
 
     var itemCountText: String {
