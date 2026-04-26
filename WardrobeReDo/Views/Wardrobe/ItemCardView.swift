@@ -17,22 +17,14 @@ struct ItemCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Thumbnail
+            // Thumbnail — delegated to `ItemThumbnailView` so every
+            // surface (wardrobe grid / match strip / outfit card / item
+            // detail) shares the same white-bg + scaledToFit + 16pt
+            // padding contract. PR #27's user-visible win comes from
+            // putting cutouts on a uniform background; routing through
+            // `ItemThumbnailView` is what keeps that consistent.
             ZStack(alignment: .topTrailing) {
-                KFImage(thumbnailURL)
-                    .placeholder {
-                        Rectangle()
-                            .fill(Color(Theme.Colors.muted).opacity(0.3))
-                            .overlay {
-                                Image(systemName: item.category.iconName)
-                                    .font(.system(size: 24, weight: .light))
-                                    .foregroundStyle(Color(Theme.Colors.textSecondary))
-                            }
-                    }
-                    .resizable()
-                    .scaledToFill()
-                    .frame(minHeight: 160)
-                    .clipped()
+                ItemThumbnailView(item: item, url: thumbnailURL, size: .medium)
 
                 // Category badge
                 Text(item.subcategory.displayName)
