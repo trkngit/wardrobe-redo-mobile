@@ -1045,25 +1045,38 @@ final class AddItemViewModel {
         // subcategories already line up with our enum without rescue.
         // See `ClothingSubcategory.accessorySubcategoryFromRawClass` and
         // `ClothingSubcategory.shoeSubcategoryFromRawClass`.
+        //
+        // Subcategory branch telemetry (`subcategoryBranch`) tags which
+        // path resolved the subcategory so dogfood can separate "model
+        // got it right" from "rescue fired" from "category default"
+        // from "user fixed it later". PII-safe: raw class + category
+        // enum only.
+        let subcategoryBranch: String
         if category == .accessory {
             if let rescue = ClothingSubcategory.accessorySubcategoryFromRawClass(proposal.modelClassRaw) {
                 subcategory = rescue
                 snapshot["subcategory"] = rescue.rawValue
+                subcategoryBranch = "accessoryRescue"
             } else if let sub = proposal.predictedSubcategory, sub.category == category {
                 subcategory = sub
                 snapshot["subcategory"] = sub.rawValue
+                subcategoryBranch = "accessoryPredicted"
             } else {
                 subcategory = defaultSubcategory(for: category)
+                subcategoryBranch = "accessoryDefault"
             }
         } else if category == .shoe {
             if let rescue = ClothingSubcategory.shoeSubcategoryFromRawClass(proposal.modelClassRaw) {
                 subcategory = rescue
                 snapshot["subcategory"] = rescue.rawValue
+                subcategoryBranch = "shoeRescue"
             } else if let sub = proposal.predictedSubcategory, sub.category == category {
                 subcategory = sub
                 snapshot["subcategory"] = sub.rawValue
+                subcategoryBranch = "shoePredicted"
             } else {
                 subcategory = defaultSubcategory(for: category)
+                subcategoryBranch = "shoeDefault"
             }
         } else {
             // Tops, bottoms, dresses, outerwear: trust the predicted
@@ -1072,10 +1085,15 @@ final class AddItemViewModel {
             if let sub = proposal.predictedSubcategory, sub.category == category {
                 subcategory = sub
                 snapshot["subcategory"] = sub.rawValue
+                subcategoryBranch = "predicted"
             } else {
                 subcategory = defaultSubcategory(for: category)
+                subcategoryBranch = "categoryDefault"
             }
         }
+        logger.info(
+            "applyPrefill.subcategory branch=\(subcategoryBranch, privacy: .public) rawClass=\(proposal.modelClassRaw, privacy: .public) category=\(self.category.rawValue, privacy: .public) subcategory=\(self.subcategory.rawValue, privacy: .public)"
+        )
 
         if let tex = proposal.predictedTexture,
            AttributePrefill.shouldPrefill(proposal.predictedTextureConfidence) {
