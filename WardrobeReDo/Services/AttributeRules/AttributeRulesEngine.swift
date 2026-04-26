@@ -66,21 +66,31 @@ enum AttributeRulesEngine {
     /// Stop-gap texture inference until the v1.1 attribute classifier
     /// ships a real texture head. Returns a `TextureType` only when the
     /// subcategory commits unambiguously to a fabric (jeans → denim,
-    /// sweater → knit, hoodie → fleece, …). Returns `nil` for generic
-    /// subcategories so the picker stays empty rather than show a
-    /// low-confidence guess.
+    /// sweater → knit, hoodie → fleece, …) OR when the category has a
+    /// safe default (bottom → denim — see `RulesTable.categoryDefaultTexture`).
+    /// Returns `nil` only when neither rule fires.
+    ///
+    /// **Lookup order (added in PR #25, build 5):**
+    /// 1. Subcategory-keyed rule (`RulesTable.texture(for: subcategory)`).
+    ///    Wins when the subcategory commits to a fabric (e.g. `.jeans → .denim`).
+    /// 2. Category-default rule (`RulesTable.categoryDefaultTexture(for: category)`).
+    ///    Catches the build-4 dogfood case where the upstream classifier
+    ///    misclassified jeans as `.shorts` — the subcategory rule misses
+    ///    (`.shorts` has no fabric default, correctly), but the category
+    ///    rule rescues `.bottom → .denim`.
     ///
     /// - Parameters:
-    ///   - category: included for symmetry with `derive(...)` but not
-    ///     used by the current rule set — every rule keys on
-    ///     subcategory alone. Kept in the signature so callers don't
-    ///     have to refactor when category-conditional rules ship.
-    ///   - subcategory: the only field the rules consult today.
+    ///   - category: the final `ClothingCategory` for the proposal.
+    ///     Used as the second-tier fallback when the subcategory rule
+    ///     returns nil.
+    ///   - subcategory: the final `ClothingSubcategory`. Tried first.
     static func deriveTexture(
         category: ClothingCategory,
         subcategory: ClothingSubcategory
     ) -> TextureType? {
-        _ = category   // reserved for future category-conditional rules
-        return RulesTable.texture(for: subcategory)
+        if let subcategoryTexture = RulesTable.texture(for: subcategory) {
+            return subcategoryTexture
+        }
+        return RulesTable.categoryDefaultTexture(for: category)
     }
 }

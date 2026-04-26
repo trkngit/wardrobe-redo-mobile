@@ -371,7 +371,7 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             // from the detection head. Texture is left nil, which the
             // rules engine tolerates (subcategory-level rules still
             // narrow the season / occasion sets).
-            proposals = baseProposals.map { Self.enrichedWithRulesOnly($0) }
+            proposals = baseProposals.map { Self.enrichedWithRulesOnly($0, logger: logger) }
         }
 
         logger.info("detectProposals.success count=\(proposals.count, privacy: .public) topScore=\(proposals.first?.detectionScore ?? 0, privacy: .public)")
@@ -859,24 +859,49 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             prediction = try await classifier.predict(crop: proposal.maskedImage)
         } catch {
             logger.notice("attribute.predict.failed \(error.localizedDescription, privacy: .public)")
-            return enrichedWithRulesOnly(proposal)
+            return enrichedWithRulesOnly(proposal, logger: logger)
         }
-        return applyAttributesAndRules(to: proposal, prediction: prediction)
+        return applyAttributesAndRules(
+            to: proposal,
+            prediction: prediction,
+            pathTaken: "ml-classifier",
+            logger: logger
+        )
     }
 
     /// Fallback enrichment when no classifier is available. Still
     /// populates seasons + occasions from the rules engine using
     /// whatever category + subcategory the detection head produced.
-    static func enrichedWithRulesOnly(_ proposal: MaskProposal) -> MaskProposal {
-        applyAttributesAndRules(to: proposal, prediction: .empty)
+    static func enrichedWithRulesOnly(
+        _ proposal: MaskProposal,
+        logger: Logger? = nil
+    ) -> MaskProposal {
+        applyAttributesAndRules(
+            to: proposal,
+            prediction: .empty,
+            pathTaken: "rules-only",
+            logger: logger
+        )
     }
 
     /// Shared enrichment logic: given a base proposal and an (optional)
     /// attribute prediction, return a proposal with seasons + occasions
     /// filled in from `AttributeRulesEngine`.
+    ///
+    /// The `pathTaken` parameter exists purely for diagnostics — it
+    /// distinguishes the `ml-classifier` (attribute model returned a
+    /// prediction), `rules-only` (no classifier or classifier errored),
+    /// and `direct` (callers like tests bypass the higher-level
+    /// orchestration) paths in the structured log line emitted at the
+    /// end of this method. Build-5 dogfood (PR #25) added the log so
+    /// future "texture not pre-filled" failures can be diagnosed by
+    /// grep'ing the device log for `multiGarment.enrichment` rather
+    /// than re-instrumenting the codebase.
     static func applyAttributesAndRules(
         to proposal: MaskProposal,
-        prediction: AttributePrediction
+        prediction: AttributePrediction,
+        pathTaken: String = "direct",
+        logger: Logger? = nil
     ) -> MaskProposal {
         // Rules engine needs a concrete ClothingCategory +
         // ClothingSubcategory. Fall back to sensible defaults when the
@@ -901,17 +926,21 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
         // `detected_attributes` JSONB telemetry.
         let resolvedTexture: TextureType?
         let resolvedTextureConfidence: Float
+        let textureSource: String
         if let mlTexture = prediction.texture {
             resolvedTexture = mlTexture
             resolvedTextureConfidence = prediction.textureConfidence
+            textureSource = "prediction"
         } else if let rulesTexture = AttributeRulesEngine.deriveTexture(
             category: category, subcategory: subcategory
         ) {
             resolvedTexture = rulesTexture
             resolvedTextureConfidence = AttributeRulesEngine.rulesTextureConfidence
+            textureSource = "rules-table"
         } else {
             resolvedTexture = nil
             resolvedTextureConfidence = 0.0
+            textureSource = "none"
         }
 
         let rules = AttributeRulesEngine.derive(
@@ -919,6 +948,21 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             subcategory: subcategory,
             texture: resolvedTexture
         )
+
+        // Build-5 dogfood (PR #25): structured log so future "texture
+        // not pre-filled" failures can be diagnosed by tailing the
+        // device log for `multiGarment.enrichment`. Captures the path
+        // taken (ml-classifier / rules-only / direct), the resolved
+        // category + subcategory the rules engine used, the resolved
+        // texture, and which lookup tier produced it (prediction /
+        // rules-table / none). The log is gated on a Logger being
+        // injected so tests calling this static directly don't spam.
+        if let logger {
+            let categoryRaw = category.rawValue
+            let subcategoryRaw = subcategory.rawValue
+            let textureRaw = resolvedTexture?.rawValue ?? "nil"
+            logger.info("multiGarment.enrichment: path=\(pathTaken, privacy: .public) category=\(categoryRaw, privacy: .public) subcategory=\(subcategoryRaw, privacy: .public) texture=\(textureRaw, privacy: .public) source=\(textureSource, privacy: .public)")
+        }
 
         return MaskProposal(
             id: proposal.id,
