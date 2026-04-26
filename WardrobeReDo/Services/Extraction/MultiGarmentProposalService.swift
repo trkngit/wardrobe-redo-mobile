@@ -188,6 +188,13 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
     private let attributeClassifier: AttributeClassifying?
     private let logger = Logger(subsystem: "com.wardroberedo", category: "MultiGarment")
 
+    /// Static logger for capture-pipeline telemetry emitted from the
+    /// static helpers (`makeProposal`, NMS, dedup). Same subsystem as the
+    /// instance logger so dogfood log captures show the full pipeline
+    /// timeline under one filter. See `MultiGarmentSmokeTest` for the
+    /// existing precedent of a static logger on a service type.
+    fileprivate static let staticLogger = Logger(subsystem: "com.wardroberedo", category: "MultiGarment")
+
     /// One-shot model load. `NSLock`-gated lazy just like SAM2Extractor.
     private let modelLock = NSLock()
     private var loadedModel: MLModel?
@@ -817,7 +824,10 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             sourceImage: sourceImage,
             mask: raw.mask,
             bbox: raw.boundingBox
-        ) else { return nil }
+        ) else {
+            staticLogger.notice("makeProposal.dropped reason=cropFailed rawClass=\(raw.rawClass, privacy: .public)")
+            return nil
+        }
         let category = ClothingCategory.fromFashionpediaClass(raw.rawClass)
         let subcategory = ClothingSubcategory.fromFashionpediaClass(raw.rawClass)
         let confidence: ExtractionConfidence = {
@@ -825,6 +835,21 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             if raw.score >= 0.6 { return .medium }
             return .low
         }()
+        // Per-proposal telemetry — dogfood failures (sneakers→Boots,
+        // sunglasses→Hat, etc.) need the raw model class string + the
+        // resolved category/subcategory side-by-side to triage. PII-
+        // safe: bbox geometry only, no image bytes or user identifiers.
+        staticLogger.info(
+            """
+            makeProposal: \
+            rawClass=\(raw.rawClass, privacy: .public) \
+            score=\(raw.score, privacy: .public) \
+            bbox=(\(raw.boundingBox.minX, privacy: .public),\(raw.boundingBox.minY, privacy: .public),\(raw.boundingBox.width, privacy: .public),\(raw.boundingBox.height, privacy: .public)) \
+            category=\(category?.rawValue ?? "nil", privacy: .public) \
+            subcategory=\(subcategory?.rawValue ?? "nil", privacy: .public) \
+            hasMask=\(raw.mask != nil, privacy: .public)
+            """
+        )
         return MaskProposal(
             id: UUID(),
             maskedImage: cropped,
