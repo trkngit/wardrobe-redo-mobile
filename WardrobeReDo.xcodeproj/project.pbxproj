@@ -86,6 +86,7 @@
 		4DAB88B82A0C075337918B5D /* OutfitScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2E419D226826217136FE80 /* OutfitScorer.swift */; };
 		4E1F22CA44189DA7008C7C1C /* FormalityCoherenceScorerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC6055EA11189510E148635B /* FormalityCoherenceScorerTests.swift */; };
 		4F2C9B67C331599177762C77 /* GenerationFailure.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B499969896AA1013101C1F7 /* GenerationFailure.swift */; };
+		4F972741200CFBBB2605F905 /* MultiGarmentTextureRulesIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BED49021A4D71E6E26BFC3D /* MultiGarmentTextureRulesIntegrationTests.swift */; };
 		53D2EF89867CAD37C59A3A77 /* UploadQueueTestIsolation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA70C9920FDBA0E83F03097A /* UploadQueueTestIsolation.swift */; };
 		57CC995BFD00440FD1CA0924 /* OutfitDeduplicationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA53B80137AF29DCEE27CD69 /* OutfitDeduplicationTests.swift */; };
 		582AABE87441DF63D710753C /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 918DC82615BA389443CFF61E /* SwiftUI.framework */; };
@@ -459,6 +460,7 @@
 		8AC5CFD39AE9C2A5288561F0 /* cluttered_04.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = cluttered_04.jpg; sourceTree = "<group>"; };
 		8ACBEE9703BBFB285A46C45B /* ConcurrencyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConcurrencyTests.swift; sourceTree = "<group>"; };
 		8B7697276A5A5A2DD394CE46 /* TextureMixScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextureMixScorer.swift; sourceTree = "<group>"; };
+		8BED49021A4D71E6E26BFC3D /* MultiGarmentTextureRulesIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiGarmentTextureRulesIntegrationTests.swift; sourceTree = "<group>"; };
 		8C06151844400E18F6A7CB33 /* ATTRIBUTIONS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ATTRIBUTIONS.md; sourceTree = "<group>"; };
 		8D8A7C6AB9FD9CE98C1D829F /* AttributeRulesEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttributeRulesEngineTests.swift; sourceTree = "<group>"; };
 		8DF3B0AF85BC98DC8DA7A52A /* archetypes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = archetypes.json; sourceTree = "<group>"; };
@@ -724,6 +726,7 @@
 				7772CCF760B8ED4B42B822FC /* MultiGarmentDownscaleTests.swift */,
 				08D8AA8F7813D0A2E3EAD400 /* MultiGarmentShoePairTests.swift */,
 				0835F2304A69C3DD167609EF /* MultiGarmentSmokeTestTests.swift */,
+				8BED49021A4D71E6E26BFC3D /* MultiGarmentTextureRulesIntegrationTests.swift */,
 				F8768CBE4BDF16CF8DF19F29 /* MultiGarmentTextureRulesTests.swift */,
 				AA53B80137AF29DCEE27CD69 /* OutfitDeduplicationTests.swift */,
 				F385FCB8D1419E716DE8E394 /* OutfitGenerationServiceTests.swift */,
@@ -1706,6 +1709,7 @@
 				68FB0EFF557C5039BE89B908 /* MultiGarmentProposalServiceTests.swift in Sources */,
 				E5E967CC41DBC57EAE493247 /* MultiGarmentShoePairTests.swift in Sources */,
 				CF783DBD59E6885D705E375F /* MultiGarmentSmokeTestTests.swift in Sources */,
+				4F972741200CFBBB2605F905 /* MultiGarmentTextureRulesIntegrationTests.swift in Sources */,
 				824ABB7D88A3A6ACDEE05AEC /* MultiGarmentTextureRulesTests.swift in Sources */,
 				2F6F8B327F1BDB8289458931 /* NetworkResilienceTests.swift in Sources */,
 				D597C68645ADD88B464BFD69 /* OccasionContextScorerTests.swift in Sources */,
