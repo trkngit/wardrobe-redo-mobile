@@ -50,58 +50,74 @@ enum ClothingCategory: String, Codable, CaseIterable, Sendable {
         let normalized = raw.lowercased()
         switch normalized {
         // Tops / shirts / knits
-        case "shirt", "blouse", "shirt_blouse",
-             "top", "t-shirt", "sweatshirt", "top_t-shirt_sweatshirt",
+        // Combo classes `shirt_blouse` and `top_t-shirt_sweatshirt` are
+        // what RFDETRSegFashion actually emits — Fashionpedia merges
+        // shirts/blouses into one trained class and tops/t-shirts/
+        // sweatshirts into another. The singular aliases the previous
+        // version handled (`shirt`, `blouse`, `top`, `t-shirt`,
+        // `sweatshirt`) are dead code because the model never produces
+        // them.
+        case "shirt_blouse",
+             "top_t-shirt_sweatshirt",
              "sweater",
              "vest",
              "cardigan":
             return .top
 
-        // Bottoms
-        case "pants", "trousers",
+        // Bottoms — `tights_stockings` is the model's combo class; the
+        // singular `tights` / `stockings` aliases never fire. `pants`
+        // is the canonical Fashionpedia label (NOT `trousers`).
+        case "pants",
              "shorts",
-             "tights", "stockings", "tights_stockings",
+             "tights_stockings",
              "skirt":
             return .bottom
 
-        // Full-length garments
-        case "dress", "gown",
-             "jumpsuit", "romper":
+        // Full-length garments — `dress` and `jumpsuit` are the only
+        // canonical labels; `gown` and `romper` are dead aliases.
+        case "dress",
+             "jumpsuit":
             return .dress
 
-        // Outerwear
+        // Outerwear — `jacket` covers blazer/bomber/leather/etc. as a
+        // single Fashionpedia class. `blazer` alias is dead code.
         case "coat",
-             "jacket", "blazer",
+             "jacket",
              "cape":
             return .outerwear
 
-        // Footwear
+        // Footwear — model emits `shoe`, `boot`, `sandal` (singular)
+        // only; subcategory rescue distinguishes them downstream.
         case "shoe",
              "boot",
-             "sandal", "sandals":
+             "sandal":
             return .shoe
 
-        // Accessories (intentionally folded; v1.1 splits these out)
-        case "glasses", "sunglasses",
-             "hat", "cap",
-             "headband", "head_covering",
+        // Accessories (intentionally folded; v1.1 splits these out).
+        // Combo class `bag_wallet` is what the model emits — singular
+        // `bag` / `wallet` / `purse` are dead aliases. `glasses` is
+        // canonical (NOT `sunglasses`); `hat` covers caps/fedoras/
+        // beanies as one class. `earring` is singular per Fashionpedia.
+        case "glasses",
+             "hat",
+             "headband",
              "scarf",
-             "tie", "bow_tie",
-             "bag", "wallet", "bag_wallet", "purse",
+             "tie",
+             "bag_wallet",
              "belt",
              "glove",
              "watch",
              "ring",
              "bracelet",
-             "earring", "earrings",
+             "earring",
              "necklace":
             return .accessory
 
-        // Explicit exclusions (not surfaced in v1)
+        // Explicit exclusions (not surfaced in v1) — must stay in sync
+        // with `MultiGarmentProposalService.fashionpediaExcludedLabels`.
         case "sock",
              "leg_warmer",
-             "umbrella",
-             "hood", "hood_head_covering":
+             "umbrella":
             return nil
 
         default:
