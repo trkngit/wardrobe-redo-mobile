@@ -210,7 +210,11 @@ final class ClothingExtractionService: ClothingExtracting, @unchecked Sendable {
     }
 
     func extract(_ image: UIImage, tapPoints: [SAM2TapPoint]) async -> ExtractionResult {
-        let normalized = OrientationUtil.normalized(image)
+        // Match the auto-extract path's memory cap — SAM2 internally
+        // operates at ≤ 1024 px so 2048 here keeps mask quality
+        // identical while preventing a 31.6 MB bitmap from being held
+        // for the duration of the manual touch-up flow.
+        let normalized = OrientationUtil.normalizedAndCapped(image, maxDimension: 2048)
         guard !tapPoints.isEmpty,
               let sam2 = await sam2Extractor.segment(image: normalized, points: tapPoints)
         else {
@@ -241,8 +245,16 @@ final class ClothingExtractionService: ClothingExtracting, @unchecked Sendable {
     /// up-front so the session operates in the same coordinate space as
     /// `extract(_:)` / `extract(_:tapPoints:)`. Returns nil when SAM2 is
     /// unavailable — callers gate their multi-item UI on this.
+    ///
+    /// **B4 hardening:** uses `normalizedAndCapped` (matching `extract(_:)`)
+    /// so the session-load path and the processing path share the same
+    /// 2048 px working bitmap. Pre-build-7 the session held a separate
+    /// 31.6 MB bitmap on a 3840×2160 source — combined with the parallel
+    /// processing task's 31.6 MB this could spike peak in-flight memory
+    /// past 60 MB and trigger jetsam on 4 GB devices. SAM2 internally
+    /// resamples to ≤ 1024 px, so the cap is mask-quality-neutral.
     func makeSession(for image: UIImage) async -> SAM2Session? {
-        let normalized = OrientationUtil.normalized(image)
+        let normalized = OrientationUtil.normalizedAndCapped(image, maxDimension: 2048)
         return await sam2Extractor.makeSession(for: normalized)
     }
 
