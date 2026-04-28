@@ -42,6 +42,16 @@ enum FixtureLoader {
         return UIImage(contentsOfFile: url.path)
     }
 
+    /// Load a large-image stress fixture (e.g.
+    /// `iphone15plus_3840x2160_exif8.jpg`) from
+    /// `WardrobeReDoTests/Fixtures/Large/`. Same return contract as
+    /// `loadImage(named:)` — falls back to a flat-bundle lookup so
+    /// xcodegen folder-reference quirks don't break callers.
+    static func loadLargeImage(named name: String) -> UIImage? {
+        guard let url = largeImageURL(forFilename: name) else { return nil }
+        return UIImage(contentsOfFile: url.path)
+    }
+
     /// Load a ground-truth alpha mask PNG. Returns the mask as a monochrome
     /// `CVPixelBuffer` (same format `VisionForegroundExtractor` emits) so IoU
     /// math can compare like-for-like. Pixels with alpha > 127 in the source
@@ -72,6 +82,17 @@ enum FixtureLoader {
             withExtension: ext,
             subdirectory: "Fixtures/Extraction"
         ) ?? testBundle.url(forResource: url, withExtension: ext)
+    }
+
+    private static func largeImageURL(forFilename name: String) -> URL? {
+        let stem = (name as NSString).deletingPathExtension
+        let ext = (name as NSString).pathExtension
+        let extensionOrNil: String? = ext.isEmpty ? nil : ext
+        return testBundle.url(
+            forResource: stem,
+            withExtension: extensionOrNil,
+            subdirectory: "Fixtures/Large"
+        ) ?? testBundle.url(forResource: stem, withExtension: extensionOrNil)
     }
 
     private static func alphaMaskPixelBuffer(from cgImage: CGImage) -> CVPixelBuffer? {
