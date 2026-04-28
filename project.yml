@@ -119,13 +119,55 @@ targets:
     sources:
       - path: WardrobeReDoIntegrationTests
       # Integration tests re-use the same fixtures, mocks, and isolation
-      # helpers as the unit target. Duplicating them would drift; including
-      # the helper directory gives the target access to TestFixtures +
-      # MockWardrobeRepository + friends without a separate copy.
+      # helpers as the unit target. Duplicating them would drift;
+      # including the helper directory gives the target access to
+      # TestFixtures + MockWardrobeRepository + friends without a
+      # separate copy. The explicit `group` keeps the file references
+      # in a single virtual group rather than being claimed by both
+      # WardrobeReDoTests and the implicit empty group at project
+      # root — clearing the "malformed project" warning xcodegen
+      # emitted on every regeneration prior to build 7.
       - path: WardrobeReDoTests/Helpers
+        group: WardrobeReDoTests
     dependencies:
       - target: WardrobeReDo
     settings:
       base:
         SWIFT_VERSION: "6.0"
         GENERATE_INFOPLIST_FILE: YES
+
+# Test plans (D2 of build-7 hardening). Three-plan split:
+#   * `All`         — full suite, runs everything (matches pre-build-7
+#                     behaviour). `defaultPlan: true` so plain
+#                     `xcodebuild test` keeps working without -testPlan.
+#   * `Fast`        — unit + service tests, skips three slow suites:
+#                     RFDETR real-model inference (~26 s), large-image
+#                     stress (~24 s), EXIF orientation invariance
+#                     (~29 s). Runs in ~46 s. The dev inner loop —
+#                     `xcodebuild test -testPlan Fast`.
+#   * `Integration` — the slow suites + `WardrobeReDoIntegrationTests`
+#                     target. Runs in ~110 s. CI gate —
+#                     `xcodebuild test -testPlan Integration`.
+schemes:
+  WardrobeReDo:
+    build:
+      targets:
+        WardrobeReDo: all
+        WardrobeReDoWidget: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      testPlans:
+        - path: Tests/Plans/All.xctestplan
+          defaultPlan: true
+        - path: Tests/Plans/Fast.xctestplan
+        - path: Tests/Plans/Integration.xctestplan
+      gatherCoverageData: false
+      parallelizeBuild: true
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
