@@ -121,14 +121,35 @@ final class ColorExtractionService: ColorExtracting, Sendable {
 
             // Un-premultiply so clustering operates on the actual
             // clothing colors, not alpha-scaled versions.
+            //
+            // **Build-7 hardening:** clamp explicitly to [0, 1] AFTER
+            // un-premultiply. Pre-build-7 a degenerate bitmap (all
+            // pixels α=0 with non-zero RGB, or premultiplied with a
+            // bogus alpha that makes the un-premultiplied channel
+            // exceed 1.0) let `r/g/b` escape [0, 1] and the
+            // `pow(c, 2.4)` inside `srgbToLab` then produced Inf/NaN
+            // that propagated through k-means → empty palette OR a
+            // crash on `Color(hex:)` formatting. The α >= 200 gate
+            // (alphaThreshold) should already have rejected most of
+            // these, but a defensive clamp here costs nothing and
+            // prevents the entire downstream pipeline from observing
+            // non-finite values.
             let alpha = Double(alphaByte) / 255.0
             let rp = Double(buffer[offset]) / 255.0
             let gp = Double(buffer[offset + 1]) / 255.0
             let bp = Double(buffer[offset + 2]) / 255.0
-            let r = alpha > 0 ? min(rp / alpha, 1.0) : rp
-            let g = alpha > 0 ? min(gp / alpha, 1.0) : gp
-            let b = alpha > 0 ? min(bp / alpha, 1.0) : bp
-            labPixels.append(srgbToLab(r: r, g: g, b: b))
+            let rRaw = alpha > 0 ? min(rp / alpha, 1.0) : rp
+            let gRaw = alpha > 0 ? min(gp / alpha, 1.0) : gp
+            let bRaw = alpha > 0 ? min(bp / alpha, 1.0) : bp
+            let r = max(0.0, min(1.0, rRaw))
+            let g = max(0.0, min(1.0, gRaw))
+            let b = max(0.0, min(1.0, bRaw))
+            let lab = srgbToLab(r: r, g: g, b: b)
+            // Reject any sample that landed non-finite despite the
+            // upstream clamp — corrupted bitmap, pathological gamma,
+            // etc. Treat as if it were alpha-rejected.
+            guard lab.L.isFinite, lab.a.isFinite, lab.b.isFinite else { continue }
+            labPixels.append(lab)
         }
 
         // If the mask was so aggressive that no foreground pixels
@@ -374,7 +395,18 @@ final class ColorExtractionService: ColorExtracting, Sendable {
     ) -> [LabCluster] {
         var merged = clusters
         var changed = true
-        while changed {
+        // Build-7 hardening: bound the merge loop. Each successful
+        // merge strictly reduces `merged.count`, so the natural
+        // upper bound is `clusters.count` iterations. Cap at a
+        // generous 50 anyway — covers any pathological case where a
+        // merge produces a centroid that still passes the threshold
+        // against another cluster (e.g. all clusters within ε of
+        // each other after weighted averaging). Logs if we hit the
+        // ceiling so dogfood can flag the pathological input.
+        let maxIterations = 50
+        var iterations = 0
+        while changed && iterations < maxIterations {
+            iterations += 1
             changed = false
             outer: for i in 0..<merged.count {
                 for j in (i + 1)..<merged.count {
@@ -394,6 +426,11 @@ final class ColorExtractionService: ColorExtracting, Sendable {
                     }
                 }
             }
+        }
+        if iterations >= maxIterations {
+            colorExtractionLogger.warning(
+                "mergeSimilarClusters.iterationCap clusters=\(merged.count, privacy: .public) cap=\(maxIterations, privacy: .public)"
+            )
         }
         return merged
     }

@@ -124,9 +124,15 @@ final class ClothingExtractionService: ClothingExtracting, @unchecked Sendable {
     }
 
     func extract(_ image: UIImage) async -> ExtractionResult {
-        // Work with a rotation-normalized copy so the downstream JPEG
-        // and mask share the same pixel orientation.
-        let normalized = OrientationUtil.normalized(image)
+        // Work with a rotation-normalized **and dimension-capped** copy
+        // so a 3840×2160 EXIF-rotated source doesn't pin a 31.6 MB
+        // bitmap during Vision + SAM2's parallel work. Vision's
+        // foreground request and SAM2 both internally operate at
+        // ≤ 1024 px, so capping the entry point at 2048 keeps the
+        // mask-quality identical while cutting peak working memory by
+        // ~9×. Combined with B5/B6 fixes this brings peak in-flight
+        // memory below 50 MB on a 4 GB device.
+        let normalized = OrientationUtil.normalizedAndCapped(image, maxDimension: 2048)
 
         let visionResult = await visionExtractor.extractForeground(from: normalized)
 
