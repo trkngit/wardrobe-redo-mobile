@@ -1,0 +1,31 @@
+{
+  "configurations" : [
+    {
+      "id" : "4DAAA6AF-864A-41AD-AC95-2F8F4D2ABF35",
+      "name" : "All",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:WardrobeReDo.xcodeproj",
+        "identifier" : "WardrobeReDoTests",
+        "name" : "WardrobeReDoTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:WardrobeReDo.xcodeproj",
+        "identifier" : "WardrobeReDoIntegrationTests",
+        "name" : "WardrobeReDoIntegrationTests"
+      }
+    }
+  ],
+  "version" : 1
+}

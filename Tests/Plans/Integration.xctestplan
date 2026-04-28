@@ -1,0 +1,36 @@
+{
+  "configurations" : [
+    {
+      "id" : "9355D277-8B78-459D-A720-3226BC5C9906",
+      "name" : "Integration",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "selectedTests" : [
+        "EXIFOrientationInvarianceTests",
+        "LargeImageProcessingTests",
+        "MultiGarmentProposalServiceRealModelTests"
+      ],
+      "target" : {
+        "containerPath" : "container:WardrobeReDo.xcodeproj",
+        "identifier" : "WardrobeReDoTests",
+        "name" : "WardrobeReDoTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:WardrobeReDo.xcodeproj",
+        "identifier" : "WardrobeReDoIntegrationTests",
+        "name" : "WardrobeReDoIntegrationTests"
+      }
+    }
+  ],
+  "version" : 1
+}
