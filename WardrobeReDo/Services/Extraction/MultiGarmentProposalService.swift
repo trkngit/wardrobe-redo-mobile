@@ -716,6 +716,9 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
         height: Int
     ) -> CVPixelBuffer? {
         guard width > 0, height > 0, values.count == width * height else {
+            staticLogger.warning(
+                "makeBinaryMaskBuffer.invalidShape width=\(width, privacy: .public) height=\(height, privacy: .public) valuesCount=\(values.count, privacy: .public)"
+            )
             return nil
         }
         var output: CVPixelBuffer?
@@ -727,12 +730,28 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             nil,
             &output
         )
-        guard status == kCVReturnSuccess, let pb = output else { return nil }
+        guard status == kCVReturnSuccess, let pb = output else {
+            // Build-7 hardening: surface allocation failures from the
+            // field. `CVPixelBufferCreate` can return
+            // `kCVReturnAllocationFailed` (-6660) on memory-constrained
+            // devices; without this log the silent-nil return looks
+            // identical to a malformed-input rejection upstream, masking
+            // a real OOM signal.
+            staticLogger.warning(
+                "makeBinaryMaskBuffer.cvCreateFailed status=\(status, privacy: .public) width=\(width, privacy: .public) height=\(height, privacy: .public)"
+            )
+            return nil
+        }
 
         CVPixelBufferLockBaseAddress(pb, [])
         defer { CVPixelBufferUnlockBaseAddress(pb, []) }
         let bytesPerRow = CVPixelBufferGetBytesPerRow(pb)
-        guard let baseAddr = CVPixelBufferGetBaseAddress(pb) else { return nil }
+        guard let baseAddr = CVPixelBufferGetBaseAddress(pb) else {
+            staticLogger.warning(
+                "makeBinaryMaskBuffer.lockFailed width=\(width, privacy: .public) height=\(height, privacy: .public)"
+            )
+            return nil
+        }
         let dst = baseAddr.assumingMemoryBound(to: UInt8.self)
         // Honour bytesPerRow — it may include row padding so a flat
         // memcpy of `width * height` bytes would scribble over padding
