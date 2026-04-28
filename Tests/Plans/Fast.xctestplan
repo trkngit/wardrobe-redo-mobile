@@ -1,0 +1,30 @@
+{
+  "configurations" : [
+    {
+      "id" : "93845031-ED98-4A91-BC23-BF1CF75D6DE0",
+      "name" : "Fast",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testExecutionOrdering" : "random",
+    "testTimeoutsEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "skippedTests" : [
+        "EXIFOrientationInvarianceTests",
+        "LargeImageProcessingTests",
+        "MultiGarmentProposalServiceRealModelTests"
+      ],
+      "target" : {
+        "containerPath" : "container:WardrobeReDo.xcodeproj",
+        "identifier" : "WardrobeReDoTests",
+        "name" : "WardrobeReDoTests"
+      }
+    }
+  ],
+  "version" : 1
+}
