@@ -199,6 +199,7 @@
 		AF26ED6257F8DC545C884CC3 /* AddItemViewModelPrefillTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 718D58D4DFF04750F552D8ED /* AddItemViewModelPrefillTests.swift */; };
 		B0F03F24327C53D2B7CCABC7 /* TextureMixScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B7697276A5A5A2DD394CE46 /* TextureMixScorer.swift */; };
 		B1E5D6FBE23AF63AFD1A9831 /* clean_bg_07.png in Resources */ = {isa = PBXBuildFile; fileRef = A0081F6CA15F242DF0714713 /* clean_bg_07.png */; };
+		B20E3F3BBD2968B85D355968 /* MultiGarmentProposalServiceRealModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 086E4A24DE526DACE93D5456 /* MultiGarmentProposalServiceRealModelTests.swift */; };
 		B23B2F660B761E7F05BFE1F0 /* RepositoryProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 061E3E45DE6468A83E4AA6AC /* RepositoryProtocols.swift */; };
 		B312C6A8432B84DDB60F86E6 /* StyleEnumsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B53A45BACA6F4F63824A9E /* StyleEnumsTests.swift */; };
 		B3C3B601ADC13C8FE7BA391E /* MLTelemetryServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D847AE4E7FD3651DC2D3B08 /* MLTelemetryServiceTests.swift */; };
@@ -332,6 +333,7 @@
 		063B6D8EB12F97EC8FB4C8E3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		0688E82B35A527869065DFD9 /* OutfitGenerationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitGenerationService.swift; sourceTree = "<group>"; };
 		0835F2304A69C3DD167609EF /* MultiGarmentSmokeTestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiGarmentSmokeTestTests.swift; sourceTree = "<group>"; };
+		086E4A24DE526DACE93D5456 /* MultiGarmentProposalServiceRealModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiGarmentProposalServiceRealModelTests.swift; sourceTree = "<group>"; };
 		08D8AA8F7813D0A2E3EAD400 /* MultiGarmentShoePairTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiGarmentShoePairTests.swift; sourceTree = "<group>"; };
 		09B6177F055B8350472C2188 /* MLTelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLTelemetryService.swift; sourceTree = "<group>"; };
 		0A225554031C33A50FF9FBB5 /* clean_bg_10.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = clean_bg_10.png; sourceTree = "<group>"; };
@@ -1330,6 +1332,7 @@
 				6486F50F482461932C86CED4 /* MultiGarmentProposalServiceFashionpediaLabelsTests.swift */,
 				DF86CF7589BF035C98D4F2CC /* MultiGarmentProposalServiceMaskDecodeTests.swift */,
 				202B3280D48DF6136205F70E /* MultiGarmentProposalServiceMaskingTests.swift */,
+				086E4A24DE526DACE93D5456 /* MultiGarmentProposalServiceRealModelTests.swift */,
 				E3D36414C7C1815048C85CF8 /* MultiGarmentProposalServiceTests.swift */,
 			);
 			path = Extraction;
@@ -1766,6 +1769,7 @@
 				5A98297BB133B0D6EC8DC54C /* MultiGarmentProposalServiceFashionpediaLabelsTests.swift in Sources */,
 				2C5595B158FF2DE775A27B13 /* MultiGarmentProposalServiceMaskDecodeTests.swift in Sources */,
 				F67048A922627D4CCA07331A /* MultiGarmentProposalServiceMaskingTests.swift in Sources */,
+				B20E3F3BBD2968B85D355968 /* MultiGarmentProposalServiceRealModelTests.swift in Sources */,
 				68FB0EFF557C5039BE89B908 /* MultiGarmentProposalServiceTests.swift in Sources */,
 				E5E967CC41DBC57EAE493247 /* MultiGarmentShoePairTests.swift in Sources */,
 				CF783DBD59E6885D705E375F /* MultiGarmentSmokeTestTests.swift in Sources */,
