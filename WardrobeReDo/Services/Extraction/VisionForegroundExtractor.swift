@@ -56,12 +56,29 @@ final class VisionForegroundExtractor: VisionForegroundExtracting, @unchecked Se
         // simulator. Let the request itself surface the platform error
         // so callers can fall through to the unmasked path.
         return await withCheckedContinuation { continuation in
+            // Build-7 hardening: single-resume guard. The Vision request
+            // has TWO paths that can resume the continuation — the
+            // completion handler (lines below) and the `catch` of
+            // `handler.perform`. On unsupported platforms (simulator
+            // without Neural Engine, iOS 16 fallback) both paths can
+            // fire for the same call, double-resuming the continuation
+            // and triggering `EXC_BREAKPOINT` (a checked-continuation
+            // contract violation). Wrap the resume call in a one-shot
+            // gate so whichever path fires first wins.
+            //
+            // Reproducible on a 3840×2160 EXIF-rotated source on
+            // iPhone 17 Pro simulator (build 6 + earlier) — see
+            // `LargeImageProcessingTests`.
+            let resumer = SingleResumer { result in
+                continuation.resume(returning: result)
+            }
+
             let request = VNGenerateForegroundInstanceMaskRequest { request, error in
                 guard error == nil,
                       let observation = request.results?.first as? VNInstanceMaskObservation,
                       !observation.allInstances.isEmpty
                 else {
-                    continuation.resume(returning: nil)
+                    resumer.fire(nil)
                     return
                 }
 
@@ -88,24 +105,24 @@ final class VisionForegroundExtractor: VisionForegroundExtracting, @unchecked Se
                     // background image that the color extractor can sample.
                     guard let maskedImage = self.applyMask(floatMask, to: cgImage, orientation: orientation)
                     else {
-                        continuation.resume(returning: nil)
+                        resumer.fire(nil)
                         return
                     }
 
                     guard let uint8Mask = Self.convertFloat32ToUInt8(floatMask) else {
-                        continuation.resume(returning: nil)
+                        resumer.fire(nil)
                         return
                     }
                     let coverage = self.coverageRatio(of: uint8Mask)
 
-                    continuation.resume(returning: ForegroundMaskResult(
+                    resumer.fire(ForegroundMaskResult(
                         mask: uint8Mask,
                         maskedImage: UIImage(cgImage: maskedImage),
                         instanceCount: observation.allInstances.count,
                         coverageRatio: coverage
                     ))
                 } catch {
-                    continuation.resume(returning: nil)
+                    resumer.fire(nil)
                 }
             }
 
@@ -117,8 +134,41 @@ final class VisionForegroundExtractor: VisionForegroundExtracting, @unchecked Se
 
             do {
                 try handler.perform([request])
+                // If perform returned cleanly without the completion
+                // handler firing (rare — Vision contract is that the
+                // handler runs synchronously inside perform), close
+                // the continuation here. The single-resume gate makes
+                // this a no-op when the handler did fire.
+                resumer.fire(nil)
             } catch {
-                continuation.resume(returning: nil)
+                resumer.fire(nil)
+            }
+        }
+    }
+
+    /// One-shot resumer for a `CheckedContinuation`. Vision's request
+    /// completion handler + the `handler.perform` `try/catch` block
+    /// each represent a potential resume site; only the first one to
+    /// fire is allowed to invoke the underlying continuation. Without
+    /// this guard, an unsupported-platform code path can resume twice
+    /// and trip `EXC_BREAKPOINT` from `CheckedContinuation`'s
+    /// double-resume precondition.
+    private final class SingleResumer: @unchecked Sendable {
+        private let lock = NSLock()
+        private var fired = false
+        private let action: (ForegroundMaskResult?) -> Void
+
+        init(_ action: @escaping (ForegroundMaskResult?) -> Void) {
+            self.action = action
+        }
+
+        func fire(_ result: ForegroundMaskResult?) {
+            lock.lock()
+            let shouldFire = !fired
+            fired = true
+            lock.unlock()
+            if shouldFire {
+                action(result)
             }
         }
     }
