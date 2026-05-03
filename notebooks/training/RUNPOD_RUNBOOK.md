@@ -29,7 +29,7 @@ Tiny + classifier path from plan Section 2).
 ## Phase 0 — Local probe (free, on your Mac)
 
 ```bash
-cd "/Users/tarkansurav/Projects/Coding/Wardrobe Re-Do"
+cd "~/Projects/Coding/Wardrobe Re-Do"
 
 # One-time env setup
 python3.11 -m venv .venv-train
@@ -165,7 +165,7 @@ tar czf RFDETRSegFashion_smoketest.tar.gz RFDETRSegFashion.mlpackage
 ```bash
 # On your Mac
 scp runpod:/workspace/wardrobe-redo-mobile/checkpoints/coreml/RFDETRSegFashion_smoketest.tar.gz ~/Downloads/
-cd "/Users/tarkansurav/Projects/Coding/Wardrobe Re-Do"
+cd "~/Projects/Coding/Wardrobe Re-Do"
 tar xzf ~/Downloads/RFDETRSegFashion_smoketest.tar.gz \
     -C WardrobeReDo/Models/CoreML/
 
@@ -279,7 +279,7 @@ tar czf RFDETRSegFashion.tar.gz RFDETRSegFashion.mlpackage
 ```bash
 # On Mac
 scp runpod:/workspace/wardrobe-redo-mobile/checkpoints/coreml/RFDETRSegFashion.tar.gz ~/Downloads/
-cd "/Users/tarkansurav/Projects/Coding/Wardrobe Re-Do"
+cd "~/Projects/Coding/Wardrobe Re-Do"
 rm -rf WardrobeReDo/Models/CoreML/RFDETRSegFashion.mlpackage
 tar xzf ~/Downloads/RFDETRSegFashion.tar.gz -C WardrobeReDo/Models/CoreML/
 

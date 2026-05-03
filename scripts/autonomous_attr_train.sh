@@ -6,7 +6,7 @@
 
 set -uo pipefail
 
-PROJECT_ROOT="/Users/tarkansurav/Projects/Coding/Wardrobe Re-Do"
+PROJECT_ROOT="~/Projects/Coding/Wardrobe Re-Do"
 cd "$PROJECT_ROOT"
 
 TS=$(date +%s)
@@ -210,7 +210,6 @@ Enable Apple Silicon training by selecting MPS when CUDA is unavailable.
 AMP stays CUDA-only because MPS AMP is still immature in torch 2.5.1 and
 the fp32 overhead is acceptable for the 20-epoch run.
 
-Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 MSG
   )" || log "[warn] commit-1-failed"
 fi
@@ -235,7 +234,6 @@ after dogfood).
 
 Gate check: $GATE_RESULT
 
-Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 MSG
   )" || log "[warn] commit-2-failed"
 fi
@@ -259,7 +257,6 @@ if ! git diff --cached --quiet; then
   git commit -m "$(cat <<'MSG'
 docs(attr): log autonomous run summary
 
-Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 MSG
   )" || log "[warn] commit-3-failed"
 fi

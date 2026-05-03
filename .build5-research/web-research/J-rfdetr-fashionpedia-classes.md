@@ -376,8 +376,8 @@ Suggested values based on the model's actual behaviour:
 
 ### Project files referenced
 
-- `/Users/tarkansurav/Projects/Coding/Wardrobe Re-Do/WardrobeReDo/Models/Enums/ClothingSubcategory.swift`
-- `/Users/tarkansurav/Projects/Coding/Wardrobe Re-Do/WardrobeReDo/Models/Enums/ClothingCategory.swift`
-- `/Users/tarkansurav/Projects/Coding/Wardrobe Re-Do/WardrobeReDo/Services/Extraction/MultiGarmentProposalService.swift` (bundled label list, lines 148-158)
-- `/Users/tarkansurav/Projects/Coding/Wardrobe Re-Do/WardrobeReDo/ViewModels/AddItemViewModel.swift` (`applyPrefill`, lines 997-1096; `defaultSubcategory`, line 1103)
-- `/Users/tarkansurav/Projects/Coding/Wardrobe Re-Do/notebooks/training/2026-04-multi-garment.ipynb` (training notebook, source of the 33-class subset)
+- `~/Projects/Coding/Wardrobe Re-Do/WardrobeReDo/Models/Enums/ClothingSubcategory.swift`
+- `~/Projects/Coding/Wardrobe Re-Do/WardrobeReDo/Models/Enums/ClothingCategory.swift`
+- `~/Projects/Coding/Wardrobe Re-Do/WardrobeReDo/Services/Extraction/MultiGarmentProposalService.swift` (bundled label list, lines 148-158)
+- `~/Projects/Coding/Wardrobe Re-Do/WardrobeReDo/ViewModels/AddItemViewModel.swift` (`applyPrefill`, lines 997-1096; `defaultSubcategory`, line 1103)
+- `~/Projects/Coding/Wardrobe Re-Do/notebooks/training/2026-04-multi-garment.ipynb` (training notebook, source of the 33-class subset)

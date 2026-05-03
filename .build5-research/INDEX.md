@@ -4,9 +4,9 @@
 
 ## Quick links
 
-- **Final canonical plan:** `/Users/tarkansurav/Projects/Coding/Wardrobe Re-Do/docs/plans/build-5-capture-display-rework.md`
-- **Source screenshots:** `/Users/tarkansurav/Downloads/After build 4/IMG_2512..2521.PNG`
-- **Original plan file (handoff):** `/Users/tarkansurav/.claude/plans/read-docs-session-handoff-brief-md-for-t-velvet-flamingo.md`
+- **Final canonical plan:** `~/Projects/Coding/Wardrobe Re-Do/docs/plans/build-5-capture-display-rework.md`
+- **Source screenshots:** `~/Downloads/After build 4/IMG_2512..2521.PNG`
+- **Original plan file (handoff):** `~/.claude/plans/read-docs-session-handoff-brief-md-for-t-velvet-flamingo.md`
 
 ## File map
 

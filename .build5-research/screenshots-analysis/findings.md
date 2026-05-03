@@ -1,6 +1,6 @@
 # Build 4 Dogfood Screenshot Catalog
 
-Source: `/Users/tarkansurav/Downloads/After build 4/` — 10 PNGs, 17:34-17:36 timestamps.
+Source: `~/Downloads/After build 4/` — 10 PNGs, 17:34-17:36 timestamps.
 
 | Image | Subject | Findings |
 |---|---|---|
