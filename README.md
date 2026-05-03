@@ -10,6 +10,20 @@ iOS-native wardrobe decision engine — generates daily styled outfit suggestion
 
 ---
 
+## Why I built this
+
+Existing wardrobe apps stop at digital-closet bookkeeping — they show you what you own, then leave the styling decisions to you. The interesting problem is the other direction: given the clothes I already own, what's a *good* outfit for today?
+
+That problem sits at the intersection of three things I wanted to learn end-to-end:
+
+- **Fashion theory as a domain model.** Professional stylists rely on real heuristics (color harmony rules, the "third-piece" rule, formality coherence, occasion matching). Encoding those into a scoring system surfaced design questions a typical CRUD app never raises — how do you weight conflicting rules, how do you make the engine explain itself, when do you trust personal preference over the rule.
+- **On-device ML where privacy is the product.** Clothing photos are intimate data. Sending them to a server for inference is a non-starter — so the entire visual pipeline (multi-garment detection, attribute classification, color extraction) had to run on the iPhone's Neural Engine. That constraint forced real engineering: model selection (RF-DETR-Seg fine-tuned on Fashionpedia), palettization, Core ML export, on-device benchmarking, fallback paths when the model is uncertain.
+- **iOS as a shipping target, not a sandbox.** SwiftUI + `@Observable` + SwiftData are still moving targets in iOS 17/18; getting a real app through TestFlight (590+ tests, structured logging, telemetry opt-in, crash reporting, idempotent uploads) was a forcing function for production discipline.
+
+The repo is the audit trail of that learning — every PR has a focused scope, every architectural choice has a write-up under [`docs/`](docs/), and every research dead-end is documented under [`.build5-research/`](.build5-research/) instead of being deleted.
+
+---
+
 ## What it does
 
 Two user-facing flows on top of a beam-search outfit generator:
