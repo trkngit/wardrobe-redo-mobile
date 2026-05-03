@@ -6,7 +6,7 @@ iOS-native wardrobe decision engine — generates daily styled outfit suggestion
 
 [![Platform](https://img.shields.io/badge/platform-iOS%2017%2B-blue)](https://developer.apple.com/ios/) [![Swift](https://img.shields.io/badge/Swift-5.9-orange)](https://swift.org) [![Tests](https://img.shields.io/badge/tests-598%2F598%20green-brightgreen)](#tests) [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
-> **Status:** Solo project, 90+ commits, TestFlight Build 8 shipped. 598/598 tests green (595 unit + 3 integration).
+> **Status:** Solo project, TestFlight Build 8 shipped. 598/598 tests green (595 unit + 3 integration).
 
 ---
 
