@@ -1,0 +1,145 @@
+# Wardrobe Re-Do
+
+iOS-native wardrobe decision engine — generates daily styled outfit suggestions from photos of your own clothing using a 7-dimension style engine grounded in professional fashion theory.
+
+> **Status:** Solo project, 90+ commits, TestFlight Build 8 shipped. 598/598 tests green (595 unit + 3 integration).
+
+---
+
+## What it does
+
+Two user-facing flows on top of a beam-search outfit generator:
+
+1. **Outfits — "Today's Outfits"**. One tap generates three styled outfits given a chosen occasion (casual / work / date / formal / athletic / lounge). Results stable across launches (stored per day).
+2. **Match — "What goes with this?"**. Pick a hero item from the wardrobe; the engine returns the five best outfits built around it.
+
+Photos in → structured style metadata out (color, texture, fit, formality, sub-category) → scored across 7 independent style dimensions → outfits.
+
+## Architecture
+
+```
+View (SwiftUI) → ViewModel (@Observable) → Service → Repository → Supabase / SwiftData
+```
+
+- **MVVM + Repository + Service.** ViewModels own UI state; Services encapsulate domain logic (style engine, image processing); Repositories handle data access.
+- **On-device ML for privacy.** No clothing images leave the device for inference — multi-garment detection (RF-DETR-Seg fine-tuned on Fashionpedia) and the attribute classifier both run via Core ML on-device.
+- **Tier-A resilience.** Retry, local cache, upload queue, idempotency keys — the app stays useful when the network doesn't.
+
+See [`docs/ENGINE.md`](docs/ENGINE.md) for the full engine reference and [`docs/diagrams/`](docs/diagrams/) for architecture diagrams.
+
+## Stack
+
+| Layer | Technology |
+|-------|-----------|
+| UI | SwiftUI (iOS 17+, `@Observable`) |
+| State | `@Observable` ViewModels, SwiftData local cache |
+| Backend | Supabase — PostgreSQL, Auth, Storage, Edge Functions |
+| On-device ML | Core ML + Vision (RF-DETR-Seg multi-garment, attribute classifier) |
+| Image loading | Kingfisher |
+| Crash reporting | Sentry (opt-in) |
+| Telemetry | Supabase `ml_inference_telemetry` (opt-in) |
+| Tests | XCTest — 595 unit + 3 integration |
+
+Dependencies via Swift Package Manager only. No CocoaPods, no Carthage.
+
+## Style engine — 7 scoring dimensions
+
+Each candidate outfit is scored independently across:
+
+1. **Proportion balance** (0.15) — silhouette pairing
+2. **Color harmony** (0.25) — 3-color max, 60-30-10 rule, value contrast
+3. **Texture mix** (0.10) — 2-3 textures, visual weight balance
+4. **Formality coherence** (0.15) — multi-dimensional formality
+5. **Outfit formula** (0.15) — hero piece, 2-of-3 matching, third-piece rule
+6. **Seasonal/occasion fit** (0.10) — temperature, dress code
+7. **Personal preference signal** (0.10) — learned from user feedback
+
+Weights are not magic numbers — see [`docs/ENGINE.md`](docs/ENGINE.md) §3 for the rationale and tuning history.
+
+## Engineering highlights
+
+- **Beam-search outfit generator** over a library of 50 style archetypes and 200 combination rules. See [`docs/diagrams/06-beam-search.png`](docs/diagrams/06-beam-search.png).
+- **Multi-garment detection on-device.** RF-DETR-Seg-Small fine-tuned on Fashionpedia, palettized to ~50 MB, exported to Core ML. Runs on Apple Neural Engine.
+- **K-means color extraction** with a perceptually weighted hue wheel. See [`docs/diagrams/03-kmeans.png`](docs/diagrams/03-kmeans.png) and [`docs/diagrams/04-hue-wheel.png`](docs/diagrams/04-hue-wheel.png).
+- **Auto-attribute pre-fill** with a confidence floor (0.80) — predictions below threshold show no guess rather than a wrong one. See [`WardrobeReDo/Config/AttributePrefill.swift`](WardrobeReDo/Config/AttributePrefill.swift).
+- **Feature flags + Developer menu** for staged rollout of detection/classifier and telemetry opt-in.
+- **Self-hosted CI** on macOS/ARM64 — full test suite + build artifacts on every PR.
+
+## Engineering patterns documented in this repo
+
+- [`docs/patterns/gpu-budget-math.md`](docs/patterns/gpu-budget-math.md) — three-way credit split (smoke + production + buffer) for fixed-budget GPU training runs.
+- [`docs/patterns/probe-env-before-gpu-spend.md`](docs/patterns/probe-env-before-gpu-spend.md) — write a CPU-only local probe that validates every assumption the training script makes before touching a paid GPU.
+- [`docs/patterns/rfdetr-1.4-api-surface.md`](docs/patterns/rfdetr-1.4-api-surface.md) — copy-paste reference for fine-tuning + Core ML export with rfdetr 1.4.
+- [`docs/patterns/gpu-workflow-tool-split.md`](docs/patterns/gpu-workflow-tool-split.md) — map each surface in a remote GPU workflow (web UI, SSH, training, monitoring, scp) to the tool tier that's fastest and most reliable for it.
+
+## Project structure
+
+```
+WardrobeReDo/
+├── App/             # Entry point, AppState, ContentView
+├── Config/          # Theme tokens, feature flags, Supabase manager
+├── Models/          # Codable structs, enums, Core ML wrappers
+├── Services/        # Style engine (7 scorers + OutfitGenerator), image processing
+├── Repositories/    # Supabase data access (PostgREST, Storage, local cache)
+└── Views/           # SwiftUI views grouped by feature domain
+
+supabase/
+├── migrations/      # Database schema migrations (timestamp-prefixed)
+└── config.toml      # Local Supabase config
+
+docs/
+├── ENGINE.md        # Full engine reference (this is the one to read)
+├── diagrams/        # Architecture + algorithm diagrams (PNG + Mermaid)
+├── audits/          # Per-build walkthrough audits
+├── patterns/        # Engineering patterns extracted from this work
+└── EXTRACTION_BENCHMARK.md  # Color extraction benchmark methodology + results
+```
+
+## Build & run
+
+Requires: macOS, Xcode 16.2+, iOS 17+ simulator or device, a Supabase project.
+
+```bash
+# 1. Create Secrets.plist in the WardrobeReDo target with:
+#    SUPABASE_URL    : https://<your-project>.supabase.co
+#    SUPABASE_ANON_KEY : <your-anon-key>
+#    (Secrets.plist is git-ignored.)
+
+# 2. Apply Supabase migrations
+cd supabase
+supabase link --project-ref <your-project-ref>
+supabase db push
+
+# 3. Build & run
+open WardrobeReDo.xcodeproj
+# Cmd+R in Xcode
+```
+
+Run tests:
+
+```bash
+xcodebuild test \
+  -scheme WardrobeReDo \
+  -sdk iphonesimulator \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+```
+
+## Status
+
+| Phase | Status |
+|-------|--------|
+| v1 — multi-garment detection + attribute classifier + Tier-A resilience | ✅ Shipped (PR #1, 90 commits / 245 files / ~41.8k insertions) |
+| v1.1 — post-ship hardening, telemetry, dogfood plumbing | ✅ Shipped |
+| v1.2 — capture/display rework (Build 5–8) | ✅ Shipped (TestFlight Build 8) |
+| v2 — outfit feedback loop + style preference learning | 🔜 Planned |
+
+## Author
+
+**Tarkan Surav** — solo design, implementation, ML training, deployment.
+
+---
+
+## License
+
+Code: see [LICENSE](LICENSE) (if present in repo).
+The fashion-theory rules and style archetype library are derived from public professional fashion sources, with attribution in [`docs/ENGINE.md`](docs/ENGINE.md).
