@@ -91,12 +91,57 @@ struct DimensionScore: Codable, Sendable {
 
 // MARK: - Scoring Context
 
+/// Per-request inputs threaded through every scorer. Build 6 added
+/// `recentOutfitItemPairs` to power `VersatilityScorer`'s novelty
+/// bonus — the field that the docstring promised since the engine
+/// shipped but the code never implemented. The set is empty for
+/// fresh users (no saved outfits yet) and the scorer treats that
+/// as "no novelty signal" → `coverage = 0` on the sub-component.
 struct ScoringContext: Sendable {
     let season: Season
     let occasion: Occasion
     let dayOfWeek: String // "monday", "tuesday", etc.
     let wardrobeItemCount: Int
     let recentOutfitItemIds: Set<UUID> // items used in last 7 days
+    let recentOutfitItemPairs: Set<UnorderedItemPair> // pairs seen in last 30 outfits
+
+    init(
+        season: Season,
+        occasion: Occasion,
+        dayOfWeek: String,
+        wardrobeItemCount: Int,
+        recentOutfitItemIds: Set<UUID>,
+        recentOutfitItemPairs: Set<UnorderedItemPair> = []
+    ) {
+        self.season = season
+        self.occasion = occasion
+        self.dayOfWeek = dayOfWeek
+        self.wardrobeItemCount = wardrobeItemCount
+        self.recentOutfitItemIds = recentOutfitItemIds
+        self.recentOutfitItemPairs = recentOutfitItemPairs
+    }
+}
+
+/// Unordered pair of wardrobe item IDs. Used by
+/// `VersatilityScorer` to detect novel combinations: an outfit
+/// whose item-pair set contains pairs the user hasn't worn
+/// together recently scores higher than one that just reshuffles
+/// the same handful of pairings.
+struct UnorderedItemPair: Hashable, Sendable {
+    let lhs: UUID
+    let rhs: UUID
+
+    init(_ a: UUID, _ b: UUID) {
+        // Canonical ordering: lhs always lexicographically ≤ rhs so
+        // `{A,B}` and `{B,A}` hash identically.
+        if a.uuidString <= b.uuidString {
+            self.lhs = a
+            self.rhs = b
+        } else {
+            self.lhs = b
+            self.rhs = a
+        }
+    }
 }
 
 // MARK: - Aggregate Score

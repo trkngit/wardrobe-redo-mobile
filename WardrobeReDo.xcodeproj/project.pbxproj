@@ -180,6 +180,7 @@
 		982099EAFB06E31DD9C80D7F /* AppStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD5ED7D35C75B13509510AB5 /* AppStateTests.swift */; };
 		988650A573FFAD6DBCA15DBF /* LargeImageProcessingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A79693E9033EE711D113E1B6 /* LargeImageProcessingTests.swift */; };
 		990E6E6606ECE862F7803C8F /* ClothingCategory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30CEFA6A7B5A6DA1D58FA150 /* ClothingCategory.swift */; };
+		9A2A4A4D2CC112046C8F23D7 /* VersatilityNoveltyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 026A04AF2E342BF909E1B5AC /* VersatilityNoveltyTests.swift */; };
 		9A60749377A0C694694184FD /* cluttered_10.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 41961630CE78CE15FCB71DDF /* cluttered_10.jpg */; };
 		9A6559BAC55291A82A3A6AF9 /* AddItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2869F1610C0A845EE9693D4B /* AddItemView.swift */; };
 		9BBDABE548490B11A1DAF9BC /* on_person_08.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F798A065F76E9F7634F316B8 /* on_person_08.jpg */; };
@@ -333,6 +334,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		026A04AF2E342BF909E1B5AC /* VersatilityNoveltyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersatilityNoveltyTests.swift; sourceTree = "<group>"; };
 		03480C1256AC46E910409170 /* clean_bg_08.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = clean_bg_08.png; sourceTree = "<group>"; };
 		0462CAEDBFC70A40F03F85A0 /* OutfitScoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitScoreTests.swift; sourceTree = "<group>"; };
 		061E3E45DE6468A83E4AA6AC /* RepositoryProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryProtocols.swift; sourceTree = "<group>"; };
@@ -1207,6 +1209,7 @@
 				F17ECBF77827412B73E10EB1 /* ProportionBalanceScorerTests.swift */,
 				C50A94F47C6C6A438C8EBAF9 /* StyleEngineServiceTests.swift */,
 				91A2CE1D441E6A257019DDE2 /* TextureMixScorerTests.swift */,
+				026A04AF2E342BF909E1B5AC /* VersatilityNoveltyTests.swift */,
 				5E3BD1135B9CEF8267E743F6 /* VersatilityScorerTests.swift */,
 			);
 			path = StyleEngine;
@@ -1823,6 +1826,7 @@
 				E5F060EDB892718557713CF8 /* TextureMixScorerTests.swift in Sources */,
 				1FB54076CD58EBD99449A77C /* UploadQueueTestIsolation.swift in Sources */,
 				978089A0380FEA20660E07AA /* UploadQueueTests.swift in Sources */,
+				9A2A4A4D2CC112046C8F23D7 /* VersatilityNoveltyTests.swift in Sources */,
 				92E61C324B31FE53ADBE6E4E /* VersatilityScorerTests.swift in Sources */,
 				F32198AC55FBF273DE56084E /* WardrobeGridViewCacheTests.swift in Sources */,
 				41A142C6C4571099ACF570A6 /* WardrobeItemBoundingBoxTests.swift in Sources */,
