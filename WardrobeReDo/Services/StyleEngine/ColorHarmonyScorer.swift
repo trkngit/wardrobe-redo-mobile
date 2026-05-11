@@ -47,20 +47,48 @@ struct ColorHarmonyScorer: OutfitScorer {
             reasons.append("Too many colors compete for attention (\(familyCount) > \(maxFamilies))")
         }
 
-        // 2. 60-30-10 allocation check
-        let colorsByFamily = Dictionary(grouping: allColors, by: \.colorFamily)
-        let percentages = colorsByFamily.mapValues { colors in
-            colors.reduce(0.0) { $0 + $1.percentage } / Double(items.count)
+        // 2. 60-30-10 allocation check — Phase 8A area-weighted.
+        //
+        // Pre-build-6-phase-8 the divisor was `Double(items.count)`,
+        // which treated every item as equal-weight. A black t-shirt
+        // + white pants scored 50/50 even though it visually reads
+        // ~47/53 (top occupies less silhouette than bottom).
+        //
+        // Phase 8A weights each item's per-family contribution by
+        // `ClothingCategory.defaultSilhouetteFraction`, then
+        // normalizes to a per-family fraction in [0, 1]. Phase 8B
+        // layers per-item `silhouetteArea` on top via
+        // `itemSilhouetteWeight(_:)`.
+        //
+        // We normalize each item's per-color shares to sum to 1.0
+        // before multiplying by silhouette weight — this is
+        // robust to the two scales `ColorProfile.percentage` is
+        // observed in (production fills [0, 100] from k-means
+        // clusters; test fixtures sometimes pass [0, 1] shares).
+        let totalWeight = items.reduce(0.0) { $0 + itemSilhouetteWeight($1) }
+        let weightedFamily: [String: Double] = items.reduce(into: [:]) { acc, item in
+            let weight = itemSilhouetteWeight(item)
+            let itemTotal = item.dominantColors.reduce(0.0) { $0 + $1.percentage }
+            guard itemTotal > 0 else { return }
+            for color in item.dominantColors {
+                // Share-within-item normalizes whatever scale the
+                // percentages came in on to a [0, 1] domain.
+                let shareWithinItem = color.percentage / itemTotal
+                acc[color.colorFamily, default: 0] += weight * shareWithinItem
+            }
         }
-        .values
-        .sorted(by: >)
+        // Per-family share of the outfit's visible color area in
+        // [0, 1]. Sum across families = 1.0 (modulo rounding).
+        let percentages = weightedFamily.values
+            .map { totalWeight > 0 ? $0 / totalWeight : 0 }
+            .sorted(by: >)
 
         if percentages.count >= 2 {
             let dominant = percentages[0]
-            if dominant >= 45 && dominant <= 75 {
+            if dominant >= 0.45 && dominant <= 0.75 {
                 totalScore += 0.2
-                reasons.append("Good dominant color proportion (\(Int(dominant))%)")
-            } else if dominant >= 35 {
+                reasons.append("Good dominant color proportion (\(Int(dominant * 100))%)")
+            } else if dominant >= 0.35 {
                 totalScore += 0.1
                 reasons.append("Acceptable color distribution")
             } else {
@@ -136,6 +164,16 @@ struct ColorHarmonyScorer: OutfitScorer {
             value: min(1.0, max(0.0, totalScore)),
             reasoning: reasons.joined(separator: ". ")
         )
+    }
+
+    // MARK: - Silhouette weight (build 6 Phase 8)
+
+    /// Returns the silhouette weight to use for `item` in the
+    /// area-weighted 60-30-10 aggregation. Phase 8A returns the
+    /// category default; Phase 8B will modulate by the persisted
+    /// `silhouetteArea` when present.
+    private func itemSilhouetteWeight(_ item: WardrobeItem) -> Double {
+        item.category.defaultSilhouetteFraction
     }
 
     // MARK: - Harmony Classification

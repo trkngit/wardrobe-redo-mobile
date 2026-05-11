@@ -30,6 +30,30 @@ enum ClothingCategory: String, Codable, CaseIterable, Sendable {
         }
     }
 
+    /// Build 6 Phase 8 — typical fraction of a head-to-toe outfit
+    /// silhouette this category occupies. Used by
+    /// `ColorHarmonyScorer` to weight per-item color percentages
+    /// by visual area rather than item count. A black top + white
+    /// pants read closer to 47/53 (or 60/40 against a dress)
+    /// instead of the item-count-driven 50/50.
+    ///
+    /// Defaults are intentionally hand-picked sensible starting
+    /// points — they roughly match how much of a typical
+    /// head-to-toe outfit silhouette each category occupies, not
+    /// research-backed values. Future builds can fit them from
+    /// engagement data or modulate via the persisted
+    /// `WardrobeItem.silhouetteArea` (Phase 8B).
+    var defaultSilhouetteFraction: Double {
+        switch self {
+        case .top:       0.28
+        case .bottom:    0.32
+        case .outerwear: 0.20  // layered over tops; partial overlap
+        case .dress:     0.55  // covers top + bottom buckets in one piece
+        case .shoe:      0.06
+        case .accessory: 0.04
+        }
+    }
+
     // MARK: - Fashionpedia mapping
 
     /// Map a Fashionpedia main-class string (as emitted by the
