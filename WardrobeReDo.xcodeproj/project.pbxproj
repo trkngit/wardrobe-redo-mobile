@@ -141,6 +141,7 @@
 		7A5F2BBBAF173AB7C5A78B79 /* MLDiagnosticsTestIsolation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 217C56DC5EACCC97DEC80884 /* MLDiagnosticsTestIsolation.swift */; };
 		7B294A5A92517CEAD9312EC3 /* iphone15plus_3840x2160_exif8.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 74FF22770DF12414A68735DD /* iphone15plus_3840x2160_exif8.jpg */; };
 		7BC741E5DBD89CA5F752C28A /* SAM2SessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82EAF3FD590C492A92FF7394 /* SAM2SessionTests.swift */; };
+		7C30BB295A4C13126912ECF2 /* AddItemViewModelLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB75BEE9C6996C2F7024D713 /* AddItemViewModelLifecycleTests.swift */; };
 		7CA451AF7EAAEF3200C7A780 /* AttributePrefill.swift in Sources */ = {isa = PBXBuildFile; fileRef = 170B69912B0F360ACB49624C /* AttributePrefill.swift */; };
 		7CA48C2BB6591A47130F10B2 /* AnimationModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F08E100E4D24438011D36A4D /* AnimationModifiers.swift */; };
 		7D77520EE8F296141536D818 /* MultiGarmentProposalService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 272C848C6755A13AAAD82B1A /* MultiGarmentProposalService.swift */; };
@@ -558,6 +559,7 @@
 		C7423FE53B01FD026F811E99 /* ItemDetailViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemDetailViewTests.swift; sourceTree = "<group>"; };
 		C8A29BD830D9D48C451DEFDC /* Secrets.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Secrets.plist; sourceTree = "<group>"; };
 		CA4AF5446D85F237FCB56924 /* ItemStyleTag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemStyleTag.swift; sourceTree = "<group>"; };
+		CB75BEE9C6996C2F7024D713 /* AddItemViewModelLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddItemViewModelLifecycleTests.swift; sourceTree = "<group>"; };
 		CCC08E26935AFAC7B04EB268 /* MultiGarmentGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiGarmentGridView.swift; sourceTree = "<group>"; };
 		CD577940605802E18A788E1C /* ItemThumbnailViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ItemThumbnailViewTests.swift; sourceTree = "<group>"; };
 		CF53994B4FD8C70C8B64D1B8 /* AddItemViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddItemViewModel.swift; sourceTree = "<group>"; };
@@ -651,6 +653,7 @@
 				EDC87B5702530E2AAD344A42 /* AddItemViewModelAccessoryRescueTests.swift */,
 				9A6BFD43D0F9135B6147AF9C /* AddItemViewModelBatchProgressTests.swift */,
 				2E4B956CBED2F0053BFDF0A0 /* AddItemViewModelBatchRestoreTests.swift */,
+				CB75BEE9C6996C2F7024D713 /* AddItemViewModelLifecycleTests.swift */,
 				718D58D4DFF04750F552D8ED /* AddItemViewModelPrefillTests.swift */,
 				9E0E26C68C61DBB2C1E5ACDE /* AddItemViewModelProcessingTimeoutTests.swift */,
 				345BEA8DEA0CF880A3C85772 /* AddItemViewModelProvenanceTests.swift */,
@@ -1730,6 +1733,7 @@
 				563B2988554BEF3B6B0D4C68 /* AddItemViewModelAccessoryRescueTests.swift in Sources */,
 				CE296BE2B558752BA32CEFFC /* AddItemViewModelBatchProgressTests.swift in Sources */,
 				64BACB97E976923A7BB9C57F /* AddItemViewModelBatchRestoreTests.swift in Sources */,
+				7C30BB295A4C13126912ECF2 /* AddItemViewModelLifecycleTests.swift in Sources */,
 				AF26ED6257F8DC545C884CC3 /* AddItemViewModelPrefillTests.swift in Sources */,
 				627D836324659BBF9155D4FB /* AddItemViewModelProcessingTimeoutTests.swift in Sources */,
 				8D86A615FBE314DADD01BFBC /* AddItemViewModelProvenanceTests.swift in Sources */,

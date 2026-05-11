@@ -257,6 +257,7 @@ struct AddItemView: View {
         }
         .onDisappear {
             monitor.cancel()
+            viewModel.onCameraCoverDismissed()
         }
     }
 

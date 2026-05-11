@@ -674,6 +674,25 @@ final class AddItemViewModel {
     func onCameraCancelled() {
         isShowingCamera = false
         captureMethod = .library
+        // Build 6: clear a stale capture error so a transient camera-
+        // init failure doesn't survive into the next open. Without
+        // this, dismissing then reopening the camera leaves the
+        // "Couldn't capture: …" banner sitting on the photo step.
+        errorMessage = nil
+    }
+
+    /// Hook fired by `AddItemView`'s camera-cover `.onDisappear` so
+    /// the VM has a single, testable seam for "user navigated away
+    /// from the camera." Build 6 doesn't keep state inside the VM
+    /// for the camera flow — that lives in `AddItemView.@State` —
+    /// so this is intentionally a logging-only no-op today.
+    ///
+    /// Kept as a real entry point because:
+    ///   1. Tests can spy on it without poking at view internals.
+    ///   2. Future builds that move sharpness/coverage observers
+    ///      back into the VM have an obvious owner for teardown.
+    func onCameraCoverDismissed() {
+        logger.info("camera.coverDismissed")
     }
 
     /// User tapped Cancel on the analyzing-popup overlay while
@@ -1464,6 +1483,32 @@ final class AddItemViewModel {
         isProcessing = false
         isShowingTouchup = false
         currentStep = .details
+    }
+
+    /// Build 6 — releases heavy state held by the VM when iOS
+    /// deallocates the sheet. SwiftUI tears down `@State`
+    /// view models on the main actor, so `MainActor.assumeIsolated`
+    /// is safe in practice; Swift 6's checker can't statically prove
+    /// it, hence the dynamic assumption.
+    ///
+    /// We stick to direct property writes — no method calls, no
+    /// `await`s, no Task spawns. The `reset()` flow handles the
+    /// "user starts a new add" case; this handles the "AddItemView
+    /// is torn down while still holding a big UIImage" case, which
+    /// previously left those images sitting in memory until iOS
+    /// reclaimed them under pressure.
+    deinit {
+        MainActor.assumeIsolated {
+            sessionLoadTask?.cancel()
+            processingTask?.cancel()
+            cancellationDismissTask?.cancel()
+            selectedImage = nil
+            processedImage = nil
+            sam2Session = nil
+            proposals = nil
+            pendingProposalQueue.removeAll()
+            currentProposal = nil
+        }
     }
 
     func reset() {
