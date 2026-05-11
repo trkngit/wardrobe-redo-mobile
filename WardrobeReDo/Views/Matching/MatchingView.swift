@@ -344,6 +344,17 @@ struct MatchingView: View {
             }
             .padding(.horizontal, Theme.Spacing.md)
 
+            // Build 10 — bulk-save affordance. Shown only when at
+            // least one result is still unsaved (and at least 2
+            // total — for a single match the per-card Save button
+            // is plenty). Count in the label is honest about what
+            // tapping it does — "Save all (3)" is clearer than a
+            // bare "Save all" when some are already in.
+            if viewModel.matchResults.count > 1, viewModel.unsavedResultCount > 0 {
+                saveAllButton
+                    .padding(.horizontal, Theme.Spacing.md)
+            }
+
             ForEach(Array(viewModel.matchResults.enumerated()), id: \.offset) { index, candidate in
                 MatchResultCard(
                     candidate: candidate,
@@ -363,6 +374,29 @@ struct MatchingView: View {
         // animation key; whenever the array contents shift,
         // SwiftUI re-applies the transition above on each card.
         .animation(Theme.Animation.standard, value: viewModel.matchResults.count)
+    }
+
+    // MARK: - Save-all (build 10)
+
+    /// Build 10 — secondary CTA below the result-count header that
+    /// persists every unsaved candidate in one round-trip. Uses
+    /// `GhostButton` (outlined, not filled) so it doesn't compete
+    /// visually with each card's own primary Save button — this is
+    /// a "shortcut to the same five taps" affordance, not a new
+    /// destination. Success haptic on completion since the result
+    /// is a state shift you'd otherwise infer from the cards
+    /// quietly all marking themselves Saved.
+    private var saveAllButton: some View {
+        GhostButton("Save all (\(viewModel.unsavedResultCount))") {
+            guard let userId = appState.currentUser?.id else { return }
+            HapticManager.medium()
+            Task {
+                await viewModel.saveAllResults(userId: userId)
+                HapticManager.success()
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityHint("Saves every match result not already saved")
     }
 
     // MARK: - States

@@ -25,7 +25,24 @@ struct OutfitCardView: View {
         .background(Color(Theme.Colors.surface))
         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
         .cardShadow()
+        // Build 10 — visually dim a skipped outfit so the carousel
+        // reflects the user's "not today" signal. Previously the
+        // skip reaction only set a forward-arrow icon in the
+        // footer — easy to miss. Halving the opacity + a tiny
+        // desaturation effect makes the card recede without
+        // removing it, so the user can change their mind by
+        // re-reacting. Animates with the existing reaction-update
+        // path on the VM (no new animation key needed).
+        .opacity(isSkipped ? 0.45 : 1.0)
+        .saturation(isSkipped ? 0.4 : 1.0)
+        .animation(Theme.Animation.standard, value: isSkipped)
     }
+
+    /// True when the user explicitly skipped this outfit. The
+    /// reaction column is a free-form string for forward
+    /// compatibility, but `"skip"` is the value the React menu
+    /// writes today.
+    private var isSkipped: Bool { outfit.reaction == "skip" }
 
     // MARK: - Header
 

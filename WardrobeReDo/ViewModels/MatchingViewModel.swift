@@ -213,6 +213,50 @@ final class MatchingViewModel {
         }
     }
 
+    /// Build 10 — bulk-save every unsaved match result in one
+    /// round-trip. The user gets back five suggestions; needing to
+    /// tap "save" five times to keep all of them was friction we
+    /// could remove with a single button. Persists each unsaved
+    /// candidate via the same `saveDailyOutfits` path used by the
+    /// single-save flow, then marks the indices saved in one batch
+    /// so the buttons' "Saved" state updates with the result list
+    /// in one animation tick.
+    ///
+    /// No-op when there are no unsaved results — the view hides
+    /// the button in that case, but the guard makes the method
+    /// safe to call from anywhere (telemetry, future UI tests).
+    func saveAllResults(userId: UUID) async {
+        let unsavedCandidates: [(Int, OutfitCandidate)] = matchResults.enumerated()
+            .compactMap { (index, candidate) in
+                savedResultIndices.contains(index) ? nil : (index, candidate)
+            }
+        guard !unsavedCandidates.isEmpty else { return }
+
+        do {
+            _ = try await generationService.saveDailyOutfits(
+                candidates: unsavedCandidates.map(\.1),
+                userId: userId
+            )
+            for (index, _) in unsavedCandidates {
+                savedResultIndices.insert(index)
+            }
+            // Same cache-invalidation rationale as the single
+            // save: the just-persisted candidates now live in the
+            // recent-pair history window the novelty scorer reads.
+            cachedRecentIds = nil
+            cachedRecentPairs = nil
+        } catch {
+            errorMessage = "Couldn't save outfits."
+        }
+    }
+
+    /// Build 10 — count of result rows that haven't been saved
+    /// yet. The view binds the bulk button's title (e.g.
+    /// "Save all (3)") and its visibility to this value.
+    var unsavedResultCount: Int {
+        matchResults.indices.filter { !savedResultIndices.contains($0) }.count
+    }
+
     // MARK: - Build 7 — regeneration funnel
 
     /// Single entry point for occasion / vibe / re-roll requests.

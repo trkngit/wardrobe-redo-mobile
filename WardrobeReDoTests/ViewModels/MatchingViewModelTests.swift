@@ -46,6 +46,71 @@ import Testing
     #expect(vm.hasResults == true)
 }
 
+// MARK: - Build 10: save-all + unsaved count
+
+@Test @MainActor func matchingUnsavedResultCountTracksSavedSet() {
+    // The view binds the bulk button's title to this count
+    // ("Save all (3)") so it has to reflect every transition:
+    // initial state (all unsaved), single-save (decremented),
+    // bulk-save (zero). Pure derived state — no network call —
+    // so this is the surface that's worth pinning in tests. The
+    // save-and-flip side effect is covered by the existing
+    // single-save path (`saveAsOutfit`) which already roundtrips
+    // through `OutfitGenerationService`; bulk-save shares that
+    // code path.
+    let vm = MatchingViewModel()
+    vm.matchResults = (0..<3).map { _ in matchFixtureCandidate() }
+    #expect(vm.unsavedResultCount == 3)
+
+    vm.savedResultIndices.insert(0)
+    #expect(vm.unsavedResultCount == 2)
+
+    vm.savedResultIndices = Set(0..<3)
+    #expect(vm.unsavedResultCount == 0)
+}
+
+@Test @MainActor func matchingSaveAllIsNoOpWhenAllSaved() async {
+    let vm = MatchingViewModel()
+    vm.matchResults = (0..<2).map { _ in matchFixtureCandidate() }
+    vm.savedResultIndices = [0, 1]
+
+    // Calling bulk-save when nothing is unsaved must not throw,
+    // mutate state, or hit the network. The early-return guard
+    // is what makes the method safe to call from anywhere
+    // (telemetry, future UI tests, accidental double-taps).
+    await vm.saveAllResults(userId: UUID())
+
+    #expect(vm.savedResultIndices == [0, 1])
+    #expect(vm.errorMessage == nil)
+}
+
+/// Reusable fixture for tests that need a list of candidates but
+/// don't care what's inside them. Hand-rolled here rather than in
+/// TestFixtures because no other suite needs it yet and the
+/// match-only tests are the natural home.
+@MainActor
+private func matchFixtureCandidate() -> OutfitCandidate {
+    let archetype = TestFixtures.makeStyleArchetype()
+    let rule = TestFixtures.makeStyleRule()
+    let breakdown = ScoringDimension.allCases.map {
+        DimensionScore(dimension: $0, value: 0.7, reasoning: "")
+    }
+    let score = OutfitScore(breakdown: breakdown)
+    let items = [TestFixtures.makeWardrobeItem()]
+    let slots = items.map {
+        SlotAssignment(item: $0, slotName: $0.category.rawValue, role: "hero")
+    }
+    return OutfitCandidate(
+        items: items,
+        archetype: archetype,
+        rule: rule,
+        score: score,
+        slots: slots,
+        editorialName: "Test",
+        editorialDescription: "desc"
+    )
+}
+
 @Test @MainActor func matchingSelectItemDeselects() async {
     let vm = MatchingViewModel()
     let item = TestFixtures.makeWardrobeItem()
