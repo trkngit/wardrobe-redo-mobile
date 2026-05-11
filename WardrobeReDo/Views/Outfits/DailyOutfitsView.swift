@@ -65,12 +65,29 @@ struct DailyOutfitsView: View {
             // Occasion selector
             occasionPicker
 
+            // Build 6 — vibe selector. Slots between the occasion
+            // picker and the regenerate button so the user can tune
+            // "what kind of outfit" (occasion) AND "how adventurous"
+            // (vibe) before hitting Generate.
+            vibePickerRow
+
             // Regenerate button — re-rolls today's outfits with a fresh
             // seed so the user gets a different combination on demand.
             // Lives below the picker so it's adjacent to the occasion
             // they may have just changed.
             regenerateButton
         }
+    }
+
+    // MARK: - Vibe selector (build 6)
+
+    private var vibePickerRow: some View {
+        VibeSelector(vibe: Binding(
+            get: { viewModel.selectedVibe },
+            set: { viewModel.selectedVibe = $0 }
+        ))
+        .padding(.horizontal, Theme.Spacing.lg)
+        .padding(.bottom, Theme.Spacing.sm)
     }
 
     // MARK: - Regenerate Button

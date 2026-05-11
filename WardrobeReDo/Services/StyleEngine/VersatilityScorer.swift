@@ -99,9 +99,14 @@ struct VersatilityScorer: OutfitScorer {
         // when we have no historical pairs to compare against —
         // the OutfitScore aggregator handles that by excluding the
         // dimension from the weighted average.
+        //
+        // Vibe modulation: `.bold` outfits get a 1.5× novelty
+        // multiplier (rewarding unusual pairings); `.safe`
+        // outfits get 0.5× (de-emphasizing novelty in favour of
+        // familiarity). See `VibePreset.noveltyRewardMultiplier`.
         let novelty = noveltyScore(items: items, recent: context.recentOutfitItemPairs)
         if let bonus = novelty.bonus {
-            totalScore += bonus
+            totalScore += bonus * context.vibePreset.noveltyRewardMultiplier
             reasons.append(novelty.reason)
         }
 

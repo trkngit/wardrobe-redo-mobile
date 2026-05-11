@@ -19,26 +19,32 @@ struct ColorHarmonyScorer: OutfitScorer {
         var totalScore = 0.0
         var reasons: [String] = []
 
-        // 1. Color count (3-color max principle)
+        // 1. Color count. Build 6 reads `vibePreset.colorMaxFamilies`
+        // so a `.bold` outfit can pass at 4-5 families while a
+        // `.safe` outfit is held to ≤2. The score is full credit
+        // when the count is ≤ the cap and drops off above it.
         let uniqueFamilies = Set(allColors.map(\.colorFamily))
         let familyCount = uniqueFamilies.count
+        let maxFamilies = context.vibePreset.colorMaxFamilies
 
-        switch familyCount {
-        case 1:
+        if familyCount <= maxFamilies {
             totalScore += 0.25
-            reasons.append("Monochromatic palette")
-        case 2:
-            totalScore += 0.25
-            reasons.append("Clean two-color palette")
-        case 3:
-            totalScore += 0.25
-            reasons.append("Ideal three-color palette")
-        case 4:
+            switch familyCount {
+            case 0, 1:
+                reasons.append("Monochromatic palette")
+            case 2:
+                reasons.append("Clean two-color palette")
+            case 3:
+                reasons.append("Three-color palette")
+            default:
+                reasons.append("\(familyCount)-color palette within your vibe's range")
+            }
+        } else if familyCount == maxFamilies + 1 {
             totalScore += 0.15
-            reasons.append("Four colors — slightly busy")
-        default:
+            reasons.append("\(familyCount) colors — slightly above your vibe's cap of \(maxFamilies)")
+        } else {
             totalScore += 0.05
-            reasons.append("Too many colors compete for attention")
+            reasons.append("Too many colors compete for attention (\(familyCount) > \(maxFamilies))")
         }
 
         // 2. 60-30-10 allocation check

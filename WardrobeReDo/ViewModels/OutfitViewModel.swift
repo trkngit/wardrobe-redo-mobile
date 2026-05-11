@@ -35,6 +35,13 @@ final class OutfitViewModel {
     /// outfits" vs "network timeout".
     var lastFailure: GenerationFailure?
     var selectedOccasion: Occasion = .casual
+    /// Build 6 — vibe preset selector. Defaults to `.balanced`; the
+    /// view layer can flip this before tapping "Generate New
+    /// Outfits" to ask for a more or less adventurous re-roll. We
+    /// don't persist this on the VM (it's ephemeral per generation);
+    /// the user's saved default lives on `UserProfile.defaultVibe`
+    /// once that field ships.
+    var selectedVibe: VibeStop = .balanced
 
     // MARK: - Thumbnail Cache
 
@@ -215,7 +222,7 @@ final class OutfitViewModel {
             // Race generation against a 60-second timeout. The outcome
             // enum lets us distinguish empty results from real timeouts.
             let outcome: GenerationOutcome = await withTaskGroup(of: GenerationOutcome.self) {
-                [outfitRepository, generationService, selectedOccasion, wardrobeItems, seed] group in
+                [outfitRepository, generationService, selectedOccasion, selectedVibe, wardrobeItems, seed] group in
                 group.addTask {
                     do {
                         let recentIds = try await outfitRepository.fetchRecentItemIds(userId: userId)
@@ -224,7 +231,8 @@ final class OutfitViewModel {
                             items: wardrobeItems,
                             occasion: selectedOccasion,
                             recentItemIds: recentIds,
-                            seed: seed
+                            seed: seed,
+                            vibe: selectedVibe
                         )
 
                         if candidates.isEmpty { return .empty }

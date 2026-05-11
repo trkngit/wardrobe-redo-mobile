@@ -104,6 +104,14 @@ struct ScoringContext: Sendable {
     let wardrobeItemCount: Int
     let recentOutfitItemIds: Set<UUID> // items used in last 7 days
     let recentOutfitItemPairs: Set<UnorderedItemPair> // pairs seen in last 30 outfits
+    /// Per-generation vibe preset (build 6). Each scorer that's
+    /// vibe-aware reads from this — color harmony reads
+    /// `colorMaxFamilies`, formula reads `formulaStrictness`,
+    /// versatility reads `noveltyRewardMultiplier`. The
+    /// `OutfitScore` aggregator reads `weightDeltas` to renormalize
+    /// the overall weight vector. Defaults to `.balanced` so legacy
+    /// call sites compile unchanged and behave like build-5.
+    let vibePreset: VibePreset
 
     init(
         season: Season,
@@ -111,7 +119,8 @@ struct ScoringContext: Sendable {
         dayOfWeek: String,
         wardrobeItemCount: Int,
         recentOutfitItemIds: Set<UUID>,
-        recentOutfitItemPairs: Set<UnorderedItemPair> = []
+        recentOutfitItemPairs: Set<UnorderedItemPair> = [],
+        vibePreset: VibePreset = .balanced
     ) {
         self.season = season
         self.occasion = occasion
@@ -119,6 +128,7 @@ struct ScoringContext: Sendable {
         self.wardrobeItemCount = wardrobeItemCount
         self.recentOutfitItemIds = recentOutfitItemIds
         self.recentOutfitItemPairs = recentOutfitItemPairs
+        self.vibePreset = vibePreset
     }
 }
 
@@ -167,14 +177,35 @@ struct OutfitScore: Codable, Sendable {
 
     var isLowCoverage: Bool { coveredDimensionCount < Self.minCoveredDimensions }
 
-    init(breakdown: [DimensionScore]) {
+    init(breakdown: [DimensionScore], vibePreset: VibePreset = .balanced) {
         self.breakdown = breakdown
+
+        // Build 6 composes two renormalizations:
+        //   1. Vibe preset adjusts each dimension's base weight via
+        //      `VibePreset.renormalizedWeights`. A `.bold` outfit
+        //      gives Versatility more weight; `.safe` gives Color
+        //      more.
+        //   2. Coverage strips zero-coverage dimensions from the
+        //      weighted average and renormalizes again. An outfit
+        //      with no texture data doesn't pay the texture penalty.
+        //
+        // The composition order matters: vibe runs first because
+        // it expresses user intent (which dimensions matter today);
+        // coverage runs second because it filters by data
+        // availability (which dimensions we can actually evaluate).
+        let baseWeights = Dictionary(
+            uniqueKeysWithValues: ScoringDimension.allCases.map { ($0, $0.weight) }
+        )
+        let vibeWeights = VibePreset.renormalizedWeights(base: baseWeights, preset: vibePreset)
+
         let covered = breakdown.filter { $0.coverage > 0 }
         let weightedSum = covered.reduce(0.0) { acc, dim in
-            acc + dim.value * dim.dimension.weight * dim.coverage
+            let w = vibeWeights[dim.dimension] ?? dim.dimension.weight
+            return acc + dim.value * w * dim.coverage
         }
         let weightDenom = covered.reduce(0.0) { acc, dim in
-            acc + dim.dimension.weight * dim.coverage
+            let w = vibeWeights[dim.dimension] ?? dim.dimension.weight
+            return acc + w * dim.coverage
         }
         self.totalScore = weightDenom > 0 ? weightedSum / weightDenom : 0.5
         self.coveredDimensionCount = covered.count
