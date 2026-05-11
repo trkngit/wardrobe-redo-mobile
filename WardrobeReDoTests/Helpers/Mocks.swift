@@ -87,6 +87,12 @@ final class MockOutfitRepository: OutfitRepositoryProtocol {
     var markAsWornCallCount = 0
     var hasOutfitsForDateCallCount = 0
     var deleteOutfitsCallCount = 0
+    /// Build 7 — call counters for the recent-item history fetches so
+    /// tests can verify the in-VM cache populates once and re-uses on
+    /// subsequent regens. The funnel re-fetches only when the VM
+    /// invalidates (after `toggleWorn` or `saveAsOutfit`).
+    var fetchRecentItemIdsCallCount = 0
+    var fetchRecentItemPairsCallCount = 0
     var lastReaction: String??
     var lastIsWorn: Bool?
     var lastOutfitId: UUID?
@@ -106,10 +112,12 @@ final class MockOutfitRepository: OutfitRepositoryProtocol {
     }
 
     func fetchRecentItemIds(userId: UUID, days: Int) async throws -> Set<UUID> {
+        fetchRecentItemIdsCallCount += 1
         return try fetchRecentItemIdsResult.get()
     }
 
     func fetchRecentItemPairs(userId: UUID, limit: Int) async throws -> Set<UnorderedItemPair> {
+        fetchRecentItemPairsCallCount += 1
         return try fetchRecentItemPairsResult.get()
     }
 

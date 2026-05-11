@@ -27,10 +27,12 @@
 		1017A796AB915D49DFE1DDDD /* OutfitDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 165E8F07B133D103EA536F99 /* OutfitDetailView.swift */; };
 		1061A903ACCC1C8A22C4EF87 /* on_person_10.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 3F9E8333628582CCD4150CE0 /* on_person_10.jpg */; };
 		110339A6DB625B3B6EA0C23D /* on_person_09.png in Resources */ = {isa = PBXBuildFile; fileRef = 2D6AA0405DB08BCE966458D6 /* on_person_09.png */; };
+		12DDB4BF81407977513964EF /* OccasionTelemetry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0424D290B99F7CFC3A5377 /* OccasionTelemetry.swift */; };
 		1434A570FF8BE87D7BFB0949 /* ColorExtractionServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A61409AC1E4D748E2F35EDB3 /* ColorExtractionServiceTests.swift */; };
 		14FC5E3E883885716AFFA303 /* OutfitViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B41E402ED7710F0F5E2305EB /* OutfitViewModel.swift */; };
 		1522BD55FAAF7CA93A50FAE6 /* clean_bg_01.png in Resources */ = {isa = PBXBuildFile; fileRef = 80909317D66DEA4839194AA3 /* clean_bg_01.png */; };
 		1637C48F07073D0F96F118BD /* on_person_04.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 4B772A781F9D653AFE5C3FAC /* on_person_04.jpg */; };
+		17770BA340E5A0074087A7CA /* StatusToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5917A7B7186447F2748147DF /* StatusToast.swift */; };
 		185E00FB228C8A38AFFCF726 /* ClothingCategoryFashionpediaTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A095EFFD28AEF955F65BEA0 /* ClothingCategoryFashionpediaTests.swift */; };
 		18FFBAD210CE6D86F0F09E89 /* cluttered_05.png in Resources */ = {isa = PBXBuildFile; fileRef = 802A26CD763C3CB321D0EB22 /* cluttered_05.png */; };
 		1B15D910E477B5332B48F83A /* FeatureFlagsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B8C7135A349A124D0CB468F /* FeatureFlagsTests.swift */; };
@@ -41,6 +43,7 @@
 		20264BDCD62E9AB2573BF2CE /* cluttered_07.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 87A9B2D34B481A593B4CC412 /* cluttered_07.jpg */; };
 		21568009CA5EF7B39A602944 /* TapToSelectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 774D7B1E402D46AAE82F76C5 /* TapToSelectView.swift */; };
 		23B23FAFE440E9BD8E732F9F /* ModelCodingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C365457507CDA72533F93B0 /* ModelCodingTests.swift */; };
+		2665F4D4DE285328691967EC /* OutfitViewModelGenerationFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64A0DAD581DB914331243E41 /* OutfitViewModelGenerationFlowTests.swift */; };
 		2770E30DA4A3E6A974CEC055 /* clean_bg_09.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B88CDC0EF9733D28465D4BDA /* clean_bg_09.jpg */; };
 		288231C3D7D96D85EDD7C6C1 /* cluttered_02.png in Resources */ = {isa = PBXBuildFile; fileRef = 2D5D5CADC675CA24A2DA36C1 /* cluttered_02.png */; };
 		2AB7D34B20FEB8071F10D924 /* cluttered_09.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 12888FA557435D6369BFA515 /* cluttered_09.jpg */; };
@@ -94,6 +97,7 @@
 		524DD4ABB0B07C241AADAD4E /* Mocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79B23EA65E265746ECEA5520 /* Mocks.swift */; };
 		541A46F796DE0232F708459F /* MaskCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 800B1D00034A9B508B53F3D0 /* MaskCleaner.swift */; };
 		563B2988554BEF3B6B0D4C68 /* AddItemViewModelAccessoryRescueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDC87B5702530E2AAD344A42 /* AddItemViewModelAccessoryRescueTests.swift */; };
+		574D2CF90AD4D6D65FBF4573 /* MatchingViewModelGenerationFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D9621C95705469A1ADD8228 /* MatchingViewModelGenerationFlowTests.swift */; };
 		579003E9C0320DE039647FFC /* UploadQueueTestIsolation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ABFAD415749D4A96C958D19 /* UploadQueueTestIsolation.swift */; };
 		57CC995BFD00440FD1CA0924 /* OutfitDeduplicationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA53B80137AF29DCEE27CD69 /* OutfitDeduplicationTests.swift */; };
 		582AABE87441DF63D710753C /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 918DC82615BA389443CFF61E /* SwiftUI.framework */; };
@@ -421,6 +425,7 @@
 		3A99C02E5CAF71235061614E /* rules.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = rules.json; sourceTree = "<group>"; };
 		3D69A87DEE93491C4C1C0DD0 /* VibePresetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VibePresetTests.swift; sourceTree = "<group>"; };
 		3D847AE4E7FD3651DC2D3B08 /* MLTelemetryServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLTelemetryServiceTests.swift; sourceTree = "<group>"; };
+		3D9621C95705469A1ADD8228 /* MatchingViewModelGenerationFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingViewModelGenerationFlowTests.swift; sourceTree = "<group>"; };
 		3F0F92C918581515AEAC6C32 /* cluttered_05.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = cluttered_05.jpg; sourceTree = "<group>"; };
 		3F9E8333628582CCD4150CE0 /* on_person_10.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = on_person_10.jpg; sourceTree = "<group>"; };
 		408DF6F4637E0C85BF985D68 /* CameraOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraOverlay.swift; sourceTree = "<group>"; };
@@ -443,6 +448,7 @@
 		5715EAA4F9B796E29711D971 /* SegmentationIoUTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SegmentationIoUTests.swift; sourceTree = "<group>"; };
 		57E477D0C7D4CDAE664051D3 /* OccasionContextScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OccasionContextScorer.swift; sourceTree = "<group>"; };
 		58A2AA9B73984492E8E5B2AB /* GoldenPathTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoldenPathTests.swift; sourceTree = "<group>"; };
+		5917A7B7186447F2748147DF /* StatusToast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusToast.swift; sourceTree = "<group>"; };
 		5ABD1F70203F642DD851CA53 /* ColorHarmonyScorerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorHarmonyScorerTests.swift; sourceTree = "<group>"; };
 		5B362849ACB15A1FB7426DAC /* SubcategoryAliases.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubcategoryAliases.swift; sourceTree = "<group>"; };
 		5D07FF6B66631CD212F73EFF /* WardrobeReDoWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WardrobeReDoWidget.entitlements; sourceTree = "<group>"; };
@@ -457,6 +463,7 @@
 		62DEF1EBDB68C17C9E6ED4BB /* EditItemViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditItemViewModelTests.swift; sourceTree = "<group>"; };
 		630CAC50468CCAE89A269AF1 /* cluttered_03.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = cluttered_03.png; sourceTree = "<group>"; };
 		6486F50F482461932C86CED4 /* MultiGarmentProposalServiceFashionpediaLabelsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiGarmentProposalServiceFashionpediaLabelsTests.swift; sourceTree = "<group>"; };
+		64A0DAD581DB914331243E41 /* OutfitViewModelGenerationFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitViewModelGenerationFlowTests.swift; sourceTree = "<group>"; };
 		6516D881877F3E114CD98C0D /* BackgroundQualityClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundQualityClassifierTests.swift; sourceTree = "<group>"; };
 		654C4AE47DC4F5D6968755CA /* clean_bg_02.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = clean_bg_02.png; sourceTree = "<group>"; };
 		65716EA0D84BB999106AE018 /* DeveloperMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeveloperMenuView.swift; sourceTree = "<group>"; };
@@ -545,6 +552,7 @@
 		A843300BF6B185DAEFCDC024 /* OutfitFormulaScorerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitFormulaScorerTests.swift; sourceTree = "<group>"; };
 		A8BE0ED2702B3BB640612301 /* VibeSelectorSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VibeSelectorSnapshotTests.swift; sourceTree = "<group>"; };
 		A917E05A57655B6F4A453F19 /* testItemFormView_defaultState.1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testItemFormView_defaultState.1.png; sourceTree = "<group>"; };
+		AA0424D290B99F7CFC3A5377 /* OccasionTelemetry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OccasionTelemetry.swift; sourceTree = "<group>"; };
 		AA53B80137AF29DCEE27CD69 /* OutfitDeduplicationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitDeduplicationTests.swift; sourceTree = "<group>"; };
 		AB9128E432CF0044E15761A5 /* cluttered_06.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = cluttered_06.jpg; sourceTree = "<group>"; };
 		AC6055EA11189510E148635B /* FormalityCoherenceScorerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormalityCoherenceScorerTests.swift; sourceTree = "<group>"; };
@@ -683,8 +691,10 @@
 				FD5ED7D35C75B13509510AB5 /* AppStateTests.swift */,
 				4C5ED3AC7EFDFC86DD91D4DF /* AuthViewModelTests.swift */,
 				62DEF1EBDB68C17C9E6ED4BB /* EditItemViewModelTests.swift */,
+				3D9621C95705469A1ADD8228 /* MatchingViewModelGenerationFlowTests.swift */,
 				981E83DE652A3B46BBC9D8B5 /* MatchingViewModelTests.swift */,
 				34139F42F966A86466BBA0C6 /* OutfitViewModelEmptyWardrobeTests.swift */,
+				64A0DAD581DB914331243E41 /* OutfitViewModelGenerationFlowTests.swift */,
 				67EB615A4916E722BF973F75 /* OutfitViewModelTests.swift */,
 				918C221BAA1AF5B96C73B14E /* OutfitViewModelWearCountTests.swift */,
 				A068245655FACB9B07793700 /* WardrobeViewModelSessionsTests.swift */,
@@ -1180,6 +1190,7 @@
 			isa = PBXGroup;
 			children = (
 				09B6177F055B8350472C2188 /* MLTelemetryService.swift */,
+				AA0424D290B99F7CFC3A5377 /* OccasionTelemetry.swift */,
 				44D3E39B8E56769EE8DC1A3F /* SentryService.swift */,
 				30B2B2AD3635F9A237F60D64 /* VibeTelemetry.swift */,
 			);
@@ -1370,6 +1381,7 @@
 				A1BBE9F2C0E97A7C98F08604 /* GoldButton.swift */,
 				41881B918C595CB04460D76A /* ItemThumbnailView.swift */,
 				FADBC6710093A4394EA43447 /* ShimmerPlaceholders.swift */,
+				5917A7B7186447F2748147DF /* StatusToast.swift */,
 				330E5FD9F8488464914C3C6F /* VibeSelector.swift */,
 			);
 			path = Components;
@@ -1715,6 +1727,7 @@
 				8F4CF9D6DD09F8A9AE9BB47C /* MultiGarmentSmokeTest.swift in Sources */,
 				E8272EB15A599D6B65F01F98 /* NotificationService.swift in Sources */,
 				5F635A5141566AB41B119F4A /* OccasionContextScorer.swift in Sources */,
+				12DDB4BF81407977513964EF /* OccasionTelemetry.swift in Sources */,
 				96963FF55F2E00EBD9FCAE2E /* OnboardingView.swift in Sources */,
 				2E863C20D792A5D09BDF0B64 /* OrientationUtil.swift in Sources */,
 				5DF6700A54CB012EBECEB48B /* Outfit.swift in Sources */,
@@ -1736,6 +1749,7 @@
 				96103D210BDC51D8B876E1CF /* SentryService.swift in Sources */,
 				9621D2F316D60B671A0406A5 /* SharpnessMetric.swift in Sources */,
 				80B3E51782E1270031F0FC30 /* ShimmerPlaceholders.swift in Sources */,
+				17770BA340E5A0074087A7CA /* StatusToast.swift in Sources */,
 				6A8D1D1930FBA7A07CF0F44E /* StyleArchetype.swift in Sources */,
 				D2378DFC394CF515AD188E5C /* StyleDataRepository.swift in Sources */,
 				FBA86764A0F1CF832762779F /* StyleEngineService.swift in Sources */,
@@ -1827,6 +1841,7 @@
 				B3C3B601ADC13C8FE7BA391E /* MLTelemetryServiceTests.swift in Sources */,
 				373FD1AB852AE4024B9B7389 /* MaskDebug.swift in Sources */,
 				A71BCB5D4E4B74D637829E12 /* MaskIoU.swift in Sources */,
+				574D2CF90AD4D6D65FBF4573 /* MatchingViewModelGenerationFlowTests.swift in Sources */,
 				7E0EC91832C7D631E0781D01 /* MatchingViewModelTests.swift in Sources */,
 				524DD4ABB0B07C241AADAD4E /* Mocks.swift in Sources */,
 				23B23FAFE440E9BD8E732F9F /* ModelCodingTests.swift in Sources */,
@@ -1850,6 +1865,7 @@
 				A9C5635D38A6B8C6AC638174 /* OutfitRepositoryDateTests.swift in Sources */,
 				DBF471D0A1E5C7EA51B3B1F5 /* OutfitScoreTests.swift in Sources */,
 				03999C90575A5AB7DA25109C /* OutfitViewModelEmptyWardrobeTests.swift in Sources */,
+				2665F4D4DE285328691967EC /* OutfitViewModelGenerationFlowTests.swift in Sources */,
 				C6D23E8DF6B9942CF5E34FA0 /* OutfitViewModelTests.swift in Sources */,
 				D155CA24DB5D7DAA2B533FCC /* OutfitViewModelWearCountTests.swift in Sources */,
 				BDBA5BA78537D1D6D2CE8B48 /* ProfileDefaultVibeTests.swift in Sources */,

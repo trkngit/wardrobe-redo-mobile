@@ -85,7 +85,7 @@ import Testing
         wardrobeRepository: mockWardrobe
     )
 
-    await vm.regenerateDailyOutfits(userId: userId)
+    await vm.regenerateDailyOutfits(userId: userId, seed: nil)
 
     #expect(mockRepo.deleteOutfitsCallCount == 1)
     #expect(mockRepo.lastDeleteOutfitsUserId == userId)
@@ -102,7 +102,7 @@ import Testing
     mockRepo.deleteOutfitsError = MockError.simulated
     let vm = OutfitViewModel(outfitRepository: mockRepo)
 
-    await vm.regenerateDailyOutfits(userId: userId)
+    await vm.regenerateDailyOutfits(userId: userId, seed: nil)
 
     #expect(mockRepo.deleteOutfitsCallCount == 1)
     #expect(vm.lastFailure != nil)

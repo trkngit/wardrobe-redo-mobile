@@ -43,6 +43,14 @@ struct DailyOutfitsView: View {
         .navigationDestination(for: UUID.self) { outfitId in
             OutfitDetailView(outfitId: outfitId, viewModel: viewModel)
         }
+        // Build 7 — brief "Updated for [occasion] · [vibe]" toast
+        // when a picker change triggers a debounced regeneration.
+        // The modifier auto-clears the message after 1.5 s; the
+        // VM sets it inside `requestRegeneration(reason: .pickerChange)`.
+        .statusToast(message: Binding(
+            get: { viewModel.statusToastMessage },
+            set: { viewModel.statusToastMessage = $0 }
+        ))
     }
 
     // MARK: - Outfit Content
@@ -68,6 +76,21 @@ struct DailyOutfitsView: View {
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
+            // Build 7 — crossfade between outfit sets on regen.
+            // The `id:` on the keypath makes SwiftUI replace the
+            // TabView's identity when the daily-outfit list shifts,
+            // which triggers the transition. Without this the cards
+            // change in place with no motion cue and the "idle"
+            // feeling persists.
+            .animation(Theme.Animation.standard, value: viewModel.dailyOutfits.map(\.id))
+            .onChange(of: viewModel.dailyOutfits.count) { _, newCount in
+                // Preserve the user's carousel position when it's
+                // still in bounds — avoid jarring jumps to page 0
+                // when results re-rank.
+                if selectedPage >= newCount {
+                    selectedPage = max(0, newCount - 1)
+                }
+            }
 
             // Occasion selector
             occasionPicker
@@ -86,7 +109,7 @@ struct DailyOutfitsView: View {
         }
     }
 
-    // MARK: - Vibe selector (build 6)
+    // MARK: - Vibe selector (build 6 + 7)
 
     private var vibePickerRow: some View {
         VibeSelector(vibe: Binding(
@@ -101,22 +124,33 @@ struct DailyOutfitsView: View {
                 if let defaultVibe = appState.currentUser?.defaultVibe {
                     VibeTelemetry.logOverride(default: defaultVibe, selected: newValue, source: "outfits")
                 }
+                // Build 7 — live regeneration. The VM debounces
+                // 250 ms and cancels older tasks so rapid drags
+                // collapse into a single beam search.
+                if let userId = appState.currentUser?.id {
+                    viewModel.requestRegeneration(userId: userId, reason: .pickerChange)
+                }
             }
         ))
         .padding(.horizontal, Theme.Spacing.lg)
         .padding(.bottom, Theme.Spacing.sm)
     }
 
-    // MARK: - Regenerate Button
+    // MARK: - "Surprise me" re-roll button (build 7)
 
+    /// Build 7 — renamed from "Generate New Outfits". Build 6 made
+    /// this the only path to regeneration; build 7 makes picker
+    /// changes auto-regenerate, leaving this button as the
+    /// explicit "give me variety" affordance — runs the engine
+    /// with the same occasion + vibe but a fresh random seed.
     private var regenerateButton: some View {
         GoldButton(
-            viewModel.isRegenerating ? "Generating…" : "Generate New Outfits",
+            viewModel.isRegenerating ? "Rolling…" : "🎲 Surprise me",
             isLoading: viewModel.isRegenerating
         ) {
             guard !viewModel.isRegenerating else { return }
             guard let userId = appState.currentUser?.id else { return }
-            Task { await viewModel.regenerateDailyOutfits(userId: userId) }
+            viewModel.requestRegeneration(userId: userId, reason: .surpriseMe)
         }
         .disabled(viewModel.isRegenerating)
         .padding(.horizontal, Theme.Spacing.lg)
@@ -252,7 +286,15 @@ struct DailyOutfitsView: View {
             HStack(spacing: Theme.Spacing.sm) {
                 ForEach(Occasion.allCases, id: \.self) { occasion in
                     Button {
+                        // Build 7 — tapping an occasion now both
+                        // updates state AND triggers a debounced
+                        // regeneration. The VM cancels in-flight
+                        // tasks so rapid tapping collapses cleanly
+                        // into a single run.
                         viewModel.selectedOccasion = occasion
+                        if let userId = appState.currentUser?.id {
+                            viewModel.requestRegeneration(userId: userId, reason: .pickerChange)
+                        }
                     } label: {
                         Text(occasion.displayName)
                             .font(Theme.Fonts.bodySmall)

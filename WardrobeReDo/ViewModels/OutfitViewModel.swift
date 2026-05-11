@@ -43,10 +43,58 @@ final class OutfitViewModel {
     /// once that field ships.
     var selectedVibe: VibeStop = .balanced
 
+    /// Build 7 — transient post-regen confirmation. Set by
+    /// `requestRegeneration(reason: .pickerChange)` after a
+    /// successful debounced regen, so the view can mount a brief
+    /// "Updated for [occasion] · [vibe]" `StatusToast`. Nil
+    /// otherwise.
+    var statusToastMessage: String?
+
     // MARK: - Thumbnail Cache
 
     /// Maps wardrobe item ID → signed thumbnail URL.
     var thumbnailURLs: [UUID: URL] = [:]
+
+    // MARK: - Build 7 — regeneration plumbing
+
+    /// Active regeneration task, if any. Held so a rapid picker
+    /// change can cancel the in-flight run before starting a new
+    /// one — prevents overlapping generations writing stale
+    /// results after the user has moved on.
+    ///
+    /// `internal` visibility (not `private`) so tests can await
+    /// `currentRegenerationTask?.value` and assert end-state
+    /// deterministically instead of racing a `Task.sleep`. The
+    /// view never reads this — it observes `isRegenerating`
+    /// and the data fields the task mutates.
+    var generationTask: Task<Void, Never>?
+
+    /// Recent-item history cache. Avoids re-fetching from Supabase
+    /// on every regeneration during a tight sequence of picker
+    /// changes — saves ~200-300 ms of round trips per tap.
+    /// Invalidated by `toggleWorn` and `saveOutfit` paths so the
+    /// novelty scorer sees fresh history after the user takes a
+    /// real action.
+    private var cachedRecentIds: Set<UUID>?
+    private var cachedRecentPairs: Set<UnorderedItemPair>?
+
+    /// Why the regeneration fired — drives seed selection and
+    /// whether a status toast appears on completion.
+    enum RegenerationReason: Sendable {
+        /// User changed occasion or vibe. Passes `seed = nil`
+        /// (deterministic for the new parameters) and surfaces
+        /// a brief "Updated for [occasion] · [vibe]" toast.
+        case pickerChange
+        /// User tapped "🎲 Surprise me". Passes a fresh random
+        /// `UInt64` seed for genuine variety; no toast — the
+        /// visible card swap IS the feedback.
+        case surpriseMe
+    }
+
+    /// Debounce window between picker change and regeneration.
+    /// Matches `BackgroundQualityMonitor.debounceInterval` —
+    /// codebase precedent for "wait for the user to settle".
+    private let regenerationDebounce: Duration = .milliseconds(250)
 
     // MARK: - Dependencies
 
@@ -159,16 +207,60 @@ final class OutfitViewModel {
         await runGeneration(userId: userId, seed: nil)
     }
 
-    /// "Generate New Outfits" — explicitly delete today's cached batch
-    /// and regenerate against a fresh `seed`. Distinct from
-    /// `generateDailyOutfits(userId:)` because it bypasses the
-    /// `hasOutfitsForDate` guard (which would otherwise short-circuit
-    /// to the cached results) AND drives a different archetype ordering
-    /// via the seeded RNG in `OutfitGenerationService`.
+    /// Build 7 — single funnel for both picker-change auto-regens
+    /// and explicit "Surprise me" re-rolls.
+    ///
+    /// Cancels any in-flight generation, then waits a 250 ms
+    /// debounce window (so a flurry of picker taps collapses into
+    /// a single regen). After the wait, kicks the same shared
+    /// `regenerateDailyOutfits` pipeline that was previously
+    /// driven only from the bottom button.
+    ///
+    /// On `.pickerChange` success, a `statusToastMessage` is set
+    /// so the view mounts a brief confirmation toast. On
+    /// `.surpriseMe` the toast stays nil — the visible card swap
+    /// is the feedback.
+    func requestRegeneration(userId: UUID, reason: RegenerationReason) {
+        generationTask?.cancel()
+        generationTask = Task { [weak self] in
+            guard let self else { return }
+            // Debounce window. If a newer request arrives the
+            // sleep throws `CancellationError`, we honour it and
+            // bail without calling regenerate.
+            do {
+                try await Task.sleep(for: self.regenerationDebounce)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
+
+            let seed: UInt64? = switch reason {
+            case .pickerChange: nil
+            case .surpriseMe:   UInt64.random(in: .min ... .max)
+            }
+            await self.regenerateDailyOutfits(userId: userId, seed: seed)
+
+            // Only the picker-change path surfaces a toast — the
+            // re-roll path's feedback is the visible card swap.
+            if reason == .pickerChange, self.lastFailure == nil {
+                self.statusToastMessage = "Updated for \(self.selectedOccasion.displayName) · \(self.selectedVibe.displayName)"
+            }
+        }
+    }
+
+    /// Internal regeneration entry point. Pass `seed: nil` for a
+    /// deterministic regen with the current picker state; pass a
+    /// random `UInt64` for a "Surprise me" re-roll.
     ///
     /// Sets `isRegenerating` (button-local spinner) instead of
     /// `isGenerating` (whole-screen "Curating…" state).
-    func regenerateDailyOutfits(userId: UUID) async {
+    ///
+    /// Visibility: `internal` (default) so tests can drive the
+    /// underlying flow directly, bypassing the debounce + Task
+    /// wrapper in `requestRegeneration`. Production view code
+    /// should always go through `requestRegeneration` so picker
+    /// taps stay debounced.
+    func regenerateDailyOutfits(userId: UUID, seed: UInt64?) async {
         isRegenerating = true
         defer { isRegenerating = false }
 
@@ -184,7 +276,7 @@ final class OutfitViewModel {
         // briefly show stale results between delete and reload.
         dailyOutfits = []
 
-        await runGeneration(userId: userId, seed: UInt64.random(in: .min ... .max))
+        await runGeneration(userId: userId, seed: seed)
     }
 
     /// Shared generation path for both the first-time and regenerate
@@ -219,26 +311,29 @@ final class OutfitViewModel {
                 return
             }
 
+            // Build 7 — recent-item history cache. Avoids hammering
+            // Supabase on every picker tap during a tight regen
+            // sequence (typical: user drags vibe slider through 5
+            // stops in 2 s). Cache invalidates on toggleWorn /
+            // saveOutfit success so the novelty scorer sees fresh
+            // history after the user takes a real action.
+            if cachedRecentIds == nil {
+                async let idsTask = outfitRepository.fetchRecentItemIds(userId: userId)
+                async let pairsTask = outfitRepository.fetchRecentItemPairs(userId: userId)
+                cachedRecentIds = (try? await idsTask) ?? []
+                cachedRecentPairs = (try? await pairsTask) ?? []
+            }
+            let recentIds = cachedRecentIds ?? []
+            let recentPairs = cachedRecentPairs ?? []
+
             // Race generation against a 60-second timeout. The outcome
             // enum lets us distinguish empty results from real timeouts.
             VibeTelemetry.logGenerationVibe(selectedVibe, source: "outfits")
+            OccasionTelemetry.logGenerationOccasion(selectedOccasion, source: "outfits")
             let outcome: GenerationOutcome = await withTaskGroup(of: GenerationOutcome.self) {
-                [outfitRepository, generationService, selectedOccasion, selectedVibe, wardrobeItems, seed] group in
+                [generationService, selectedOccasion, selectedVibe, wardrobeItems, seed, recentIds, recentPairs] group in
                 group.addTask {
                     do {
-                        // Race the two history fetches — they're
-                        // independent (different tables, different
-                        // limit windows) and the engine consumes both.
-                        async let recentIdsTask = outfitRepository.fetchRecentItemIds(userId: userId)
-                        async let recentPairsTask = outfitRepository.fetchRecentItemPairs(userId: userId)
-                        let recentIds = try await recentIdsTask
-                        // Pairs are best-effort: if the query fails
-                        // (RLS hiccup, network blip) we fall back to
-                        // an empty set so the novelty scorer reports
-                        // coverage = 0 rather than aborting the entire
-                        // generation.
-                        let recentPairs = (try? await recentPairsTask) ?? []
-
                         let candidates = await generationService.generateDailyOutfits(
                             items: wardrobeItems,
                             occasion: selectedOccasion,
@@ -354,6 +449,11 @@ final class OutfitViewModel {
                     // Log + swallow — see comment above.
                     print("[OutfitViewModel] wear-count increment failed: \(error)")
                 }
+                // Build 7 — the recent-item caches are stale now
+                // (this outfit's pair just hit the 30-outfit history
+                // window). Drop them; the next regen will refetch.
+                cachedRecentIds = nil
+                cachedRecentPairs = nil
             }
 
             let updatedOutfit = Outfit(

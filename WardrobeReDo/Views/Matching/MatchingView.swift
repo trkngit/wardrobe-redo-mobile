@@ -29,6 +29,12 @@ struct MatchingView: View {
             viewModel.selectedVibe = user.defaultVibe
             await viewModel.loadWardrobe(userId: user.id)
         }
+        // Build 7 — "Updated for [occasion] · [vibe]" toast,
+        // identical pattern to the Outfits tab.
+        .statusToast(message: Binding(
+            get: { viewModel.statusToastMessage },
+            set: { viewModel.statusToastMessage = $0 }
+        ))
     }
 
     // MARK: - Main Content
@@ -172,7 +178,7 @@ struct MatchingView: View {
         .animation(Theme.Animation.standard, value: isSelected)
     }
 
-    // MARK: - Vibe Picker (build 6)
+    // MARK: - Vibe Picker (build 6 + 7)
 
     private var vibePickerRow: some View {
         VibeSelector(
@@ -183,8 +189,12 @@ struct MatchingView: View {
                     if let defaultVibe = appState.currentUser?.defaultVibe {
                         VibeTelemetry.logOverride(default: defaultVibe, selected: newVibe, source: "match")
                     }
-                    guard let userId = appState.currentUser?.id else { return }
-                    Task { await viewModel.regenerateMatches(userId: userId) }
+                    // Build 7 — same funnel as Outfits tab. The VM
+                    // debounces + cancels in-flight tasks so a
+                    // dragged slider doesn't queue 5 matches.
+                    if let userId = appState.currentUser?.id {
+                        viewModel.requestRegeneration(userId: userId, reason: .pickerChange)
+                    }
                 }
             )
         )
@@ -198,8 +208,18 @@ struct MatchingView: View {
             HStack(spacing: Theme.Spacing.sm) {
                 ForEach(Occasion.allCases, id: \.self) { occasion in
                     Button {
-                        guard let userId = appState.currentUser?.id else { return }
-                        Task { await viewModel.changeOccasion(occasion, userId: userId) }
+                        // Build 7 — symmetric with the vibe slider:
+                        // an occasion tap mutates state and routes
+                        // through the same `requestRegeneration`
+                        // funnel. Pre-build-7 this called
+                        // `changeOccasion` which only re-ran the
+                        // matcher if a hero was already selected;
+                        // the new path inherits that no-op guard
+                        // inside the VM.
+                        viewModel.selectedOccasion = occasion
+                        if let userId = appState.currentUser?.id {
+                            viewModel.requestRegeneration(userId: userId, reason: .pickerChange)
+                        }
                     } label: {
                         Text(occasion.displayName)
                             .font(Theme.Fonts.bodySmall)
@@ -252,8 +272,14 @@ struct MatchingView: View {
                     }
                 )
                 .padding(.horizontal, Theme.Spacing.md)
+                .transition(.opacity)
             }
         }
+        // Build 7 — crossfade the result list when the ranking
+        // shifts under a debounced regen. `matchResults` is the
+        // animation key; whenever the array contents shift,
+        // SwiftUI re-applies the transition above on each card.
+        .animation(Theme.Animation.standard, value: viewModel.matchResults.count)
     }
 
     // MARK: - States
