@@ -308,7 +308,8 @@ struct AddItemView: View {
                     maskedImage: maskedImage,
                     mask: nil,
                     confidence: processed.extractionConfidence ?? .low,
-                    method: processed.extractionMethod ?? .none
+                    method: processed.extractionMethod ?? .none,
+                    silhouetteArea: processed.silhouetteArea
                 )
             }
             TapToSelectView(

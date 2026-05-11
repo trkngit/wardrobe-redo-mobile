@@ -315,7 +315,12 @@ struct TapToSelectView: View {
             maskedImage: preview ?? sourceImage,
             mask: nil,
             confidence: .low,
-            method: .sam2Manual
+            method: .sam2Manual,
+            // No mask available here (the auto-segment in
+            // TapToSelectView's confirm-without-tap path).
+            // Persisting nil lets `ColorHarmonyScorer` fall back
+            // to the category-default silhouette weight alone.
+            silhouetteArea: nil
         ))
     }
 
@@ -349,7 +354,8 @@ struct TapToSelectView: View {
                 maskedImage: placeholder,
                 mask: nil,
                 confidence: .high,
-                method: .sam2Auto
+                method: .sam2Auto,
+                silhouetteArea: nil
             ),
             extractor: ClothingExtractionService(),
             onDone: { _ in },

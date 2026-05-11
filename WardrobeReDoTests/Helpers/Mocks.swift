@@ -277,7 +277,8 @@ final class MockClothingExtractionService: ClothingExtracting, @unchecked Sendab
             maskedImage: image,
             mask: nil,
             confidence: confidence,
-            method: method
+            method: method,
+            silhouetteArea: nil
         )
     }
 }

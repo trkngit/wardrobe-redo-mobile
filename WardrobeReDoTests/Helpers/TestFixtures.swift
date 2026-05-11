@@ -49,6 +49,7 @@ enum TestFixtures {
         sourcePhotoId: UUID? = nil,
         sourcePhotoPath: String? = nil,
         boundingBox: BoundingBoxCodable? = nil,
+        silhouetteArea: Double? = nil,
         createdAt: Date = Date()
     ) -> WardrobeItem {
         WardrobeItem(
@@ -74,6 +75,7 @@ enum TestFixtures {
             lastWornAt: nil,
             isArchived: isArchived,
             boundingBox: boundingBox,
+            silhouetteArea: silhouetteArea,
             createdAt: createdAt,
             updatedAt: createdAt
         )

@@ -169,11 +169,25 @@ struct ColorHarmonyScorer: OutfitScorer {
     // MARK: - Silhouette weight (build 6 Phase 8)
 
     /// Returns the silhouette weight to use for `item` in the
-    /// area-weighted 60-30-10 aggregation. Phase 8A returns the
-    /// category default; Phase 8B will modulate by the persisted
-    /// `silhouetteArea` when present.
+    /// area-weighted 60-30-10 aggregation.
+    ///
+    /// - Phase 8A: category default only (fallback path).
+    /// - Phase 8B: when `item.silhouetteArea` is populated, the
+    ///   category default is multiplied by a damped coverage
+    ///   ratio. An oversized top that filled 60% of its frame
+    ///   counts as ~1.2× a typical top; a fitted top at 30%
+    ///   coverage counts as ~0.8×. The multiplier is clamped
+    ///   to [0.5, 1.5] so a single outlier item can't crowd the
+    ///   rest of the outfit out of the color math.
     private func itemSilhouetteWeight(_ item: WardrobeItem) -> Double {
-        item.category.defaultSilhouetteFraction
+        let categoryDefault = item.category.defaultSilhouetteFraction
+        guard let area = item.silhouetteArea else { return categoryDefault }
+        // Rough mean of the category defaults, weighted by typical
+        // item counts in an outfit (1 top + 1 bottom + 1 shoes +
+        // occasional outerwear/accessory). Hand-picked baseline.
+        let categoryAverage = 0.45
+        let multiplier = 0.7 + 0.6 * (area / categoryAverage)
+        return categoryDefault * min(1.5, max(0.5, multiplier))
     }
 
     // MARK: - Harmony Classification

@@ -26,6 +26,11 @@ struct ProcessedImage: Sendable {
     /// single-item `TapToSelectView`. `count >= 2` → present the
     /// `MultiGarmentGridView` and queue per-item details.
     let proposals: [MaskProposal]?
+    /// Build 6 Phase 8B — fraction of the source frame the
+    /// extracted mask covers, in [0, 1]. Sourced from
+    /// `ExtractionResult.silhouetteArea`. Nil when extraction was
+    /// skipped or failed outright.
+    let silhouetteArea: Double?
 
     init(
         originalData: Data,
@@ -34,7 +39,8 @@ struct ProcessedImage: Sendable {
         extractionConfidence: ExtractionConfidence?,
         extractionMethod: ExtractionMethod?,
         dominantColors: [ExtractedColor],
-        proposals: [MaskProposal]? = nil
+        proposals: [MaskProposal]? = nil,
+        silhouetteArea: Double? = nil
     ) {
         self.originalData = originalData
         self.thumbnailData = thumbnailData
@@ -43,6 +49,7 @@ struct ProcessedImage: Sendable {
         self.extractionMethod = extractionMethod
         self.dominantColors = dominantColors
         self.proposals = proposals
+        self.silhouetteArea = silhouetteArea
     }
 }
 
@@ -113,7 +120,8 @@ final class ImageService: ImageServiceProtocol {
             extractionConfidence: extraction.confidence,
             extractionMethod: extraction.method,
             dominantColors: colors,
-            proposals: proposals
+            proposals: proposals,
+            silhouetteArea: extraction.silhouetteArea
         )
     }
 
@@ -251,7 +259,13 @@ final class ImageService: ImageServiceProtocol {
             extractionConfidence: processed.extractionConfidence,
             extractionMethod: processed.extractionMethod,
             dominantColors: colors,
-            proposals: processed.proposals
+            proposals: processed.proposals,
+            // Build 6 Phase 8B — touchup edits typically refine mask
+            // edges, not silhouette mass. Carrying the previously
+            // computed value is "good enough" for v1; a future build
+            // can re-count alpha pixels on `editedMask` if engagement
+            // data shows touchup users substantially redrawing.
+            silhouetteArea: processed.silhouetteArea
         )
     }
 

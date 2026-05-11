@@ -1349,7 +1349,14 @@ final class AddItemViewModel {
                         // thing outside this garment's rect when
                         // rendering the source photo. Nil for single-
                         // item captures (no proposal was ever computed).
-                        boundingBox: capturedBoundingBox
+                        boundingBox: capturedBoundingBox,
+                        // Build 6 Phase 8B — persist mask coverage so
+                        // `ColorHarmonyScorer` can modulate the
+                        // category-default silhouette weight by
+                        // actual visual mass. Nil on extraction
+                        // failure; the scorer falls back to the
+                        // category default alone.
+                        silhouetteArea: processed.silhouetteArea
                     )
 
                     // Primary path: hit the repo synchronously so the UX
