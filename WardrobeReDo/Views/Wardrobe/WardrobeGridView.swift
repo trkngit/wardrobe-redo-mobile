@@ -77,6 +77,17 @@ struct WardrobeGridView: View {
             await viewModel.loadItems(userId: userId)
             await loadThumbnails()
         }
+        // Build 8 — honor cross-tab deep-link from the Outfits /
+        // Match failure CTAs. Clear the flag immediately so a
+        // later tab switch doesn't re-present the sheet
+        // unexpectedly. Runs in `onAppear` (vs `task`) because
+        // tab switches don't recreate the view's task.
+        .onAppear {
+            if appState.pendingAddItem {
+                appState.pendingAddItem = false
+                viewModel.showAddItem = true
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .wardrobeDidChange)) { _ in
             guard let userId = appState.currentUser?.id else { return }
             Task {

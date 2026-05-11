@@ -34,6 +34,13 @@ struct DailyOutfitsView: View {
             // Supabase unless the user explicitly taps "Make this my
             // default" in Settings.
             viewModel.selectedVibe = user.defaultVibe
+            // Build 8: seed the occasion picker from on-device
+            // memory. Decision was to keep occasion session-local
+            // (not on `profiles`), but "session-local" felt wrong
+            // when it reset to `.casual` every cold start. UserDefaults
+            // splits the difference — feels like memory without
+            // putting hourly-changing state in Postgres.
+            viewModel.selectedOccasion = OccasionMemory.outfitsLastOccasion()
             await viewModel.loadOutfits(userId: user.id)
         }
         .refreshable {
@@ -115,6 +122,14 @@ struct DailyOutfitsView: View {
         VibeSelector(vibe: Binding(
             get: { viewModel.selectedVibe },
             set: { newValue in
+                // Build 8 — selection tick on every vibe stop.
+                // Light, tactile feedback that confirms the tap
+                // landed even before the regen completes. Skip
+                // when the value didn't actually change so a
+                // SwiftUI re-render doesn't double-buzz.
+                if newValue != viewModel.selectedVibe {
+                    HapticManager.selection()
+                }
                 viewModel.selectedVibe = newValue
                 // Build 6 — log overrides so we can see how often
                 // users pick something other than their saved
@@ -150,11 +165,23 @@ struct DailyOutfitsView: View {
         ) {
             guard !viewModel.isRegenerating else { return }
             guard let userId = appState.currentUser?.id else { return }
+            // Build 8 — medium impact for a "deliberate action"
+            // button (vs the selection tick on picker chips).
+            // Communicates "something substantive just started"
+            // without using `.success` which we reserve for the
+            // post-completion confirmation in the toast.
+            HapticManager.medium()
             viewModel.requestRegeneration(userId: userId, reason: .surpriseMe)
         }
         .disabled(viewModel.isRegenerating)
         .padding(.horizontal, Theme.Spacing.lg)
         .padding(.bottom, Theme.Spacing.md)
+        // Build 8 — VoiceOver: the emoji-prefixed visible title
+        // reads literally as "die emoji surprise me", which is
+        // confusing. Override with a clean label and a hint
+        // explaining what it actually does.
+        .accessibilityLabel(viewModel.isRegenerating ? "Rolling" : "Surprise me")
+        .accessibilityHint("Generates a different set of outfits with the same occasion and vibe")
     }
 
     // MARK: - Date Header
@@ -213,9 +240,19 @@ struct DailyOutfitsView: View {
             // Hide the Generate / Try-Again CTA when the failure
             // explicitly suggests adding items first — tapping it
             // would just re-hit the same wardrobe-too-small failure.
-            // The failureBanner copy already nudges toward the
-            // Wardrobe tab, which is the action that helps.
-            if viewModel.lastFailure?.suggestsAddingItems != true {
+            // Build 8 swaps in a direct "Add an Item" CTA that
+            // deep-links to the Wardrobe tab's Add sheet so the
+            // user doesn't have to manually switch tabs and find
+            // the + button.
+            if viewModel.lastFailure?.suggestsAddingItems == true {
+                GoldButton("Add an Item") {
+                    HapticManager.medium()
+                    appState.pendingAddItem = true
+                    appState.selectedTab = 0
+                }
+                .padding(.horizontal, Theme.Spacing.xxl)
+                .accessibilityHint("Opens the Wardrobe tab and presents the Add Item sheet")
+            } else {
                 GoldButton(
                     viewModel.lastFailure == nil ? "Generate Today's Outfits" : "Try Again",
                     isLoading: viewModel.isGenerating
@@ -291,7 +328,16 @@ struct DailyOutfitsView: View {
                         // regeneration. The VM cancels in-flight
                         // tasks so rapid tapping collapses cleanly
                         // into a single run.
+                        // Build 8 — selection tick on a real
+                        // state change (skip on re-tap-same).
+                        if occasion != viewModel.selectedOccasion {
+                            HapticManager.selection()
+                        }
                         viewModel.selectedOccasion = occasion
+                        // Build 8 — remember for the next launch.
+                        // Cheap synchronous UserDefaults write;
+                        // OK to do on the main thread.
+                        OccasionMemory.setOutfitsLastOccasion(occasion)
                         if let userId = appState.currentUser?.id {
                             viewModel.requestRegeneration(userId: userId, reason: .pickerChange)
                         }
@@ -312,11 +358,23 @@ struct DailyOutfitsView: View {
                             )
                             .clipShape(Capsule())
                     }
+                    // Build 8 — VoiceOver: announce the chip as a
+                    // single button per row instead of "Casual,
+                    // button" with no context. The `.isSelected`
+                    // trait tells VoiceOver to read "selected"
+                    // when it's the active occasion, which is the
+                    // visual signal a sighted user gets from the
+                    // gold capsule background.
+                    .accessibilityLabel("\(occasion.displayName) occasion")
+                    .accessibilityHint("Generates outfits for \(occasion.displayName.lowercased()) settings")
+                    .accessibilityAddTraits(viewModel.selectedOccasion == occasion ? [.isSelected, .isButton] : .isButton)
                 }
             }
             .padding(.horizontal, Theme.Spacing.lg)
             .padding(.vertical, Theme.Spacing.sm)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Occasion picker")
     }
 
     // MARK: - Date Formatting

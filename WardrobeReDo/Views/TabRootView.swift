@@ -1,10 +1,13 @@
 import SwiftUI
 
 struct TabRootView: View {
-    @State private var selectedTab = 0
+    // Build 8 — selection lifted to AppState so failure CTAs in
+    // other tabs can deep-link by setting `appState.selectedTab`.
+    @Environment(AppState.self) private var appState
 
     var body: some View {
-        TabView(selection: $selectedTab) {
+        @Bindable var appState = appState
+        TabView(selection: $appState.selectedTab) {
             NavigationStack {
                 WardrobeGridView()
             }

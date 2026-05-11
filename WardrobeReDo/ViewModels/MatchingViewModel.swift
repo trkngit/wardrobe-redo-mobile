@@ -259,10 +259,34 @@ final class MatchingViewModel {
         // piece selector + outfit-suggestion result cards both feed off
         // this `thumbnailURLs` cache, so applying the same rule here
         // fixes the source-photo backdrop on every multi-pick item.
-        for item in items where thumbnailURLs[item.id] == nil {
-            thumbnailURLs[item.id] = try? await imageService.signedURL(
-                for: ItemCardView.displayPath(for: item)
-            )
+        //
+        // Build 8 — parallelize via TaskGroup. The match flow's
+        // first load resolves the entire hero picker AND each
+        // result card; that's 15-40 thumbnails on a typical
+        // wardrobe and was sequential, ~1-2 s wall clock for
+        // the initial wardrobe paint.
+        // Pre-compute path on the @MainActor side before fanning
+        // out. Same pattern as `OutfitViewModel.loadThumbnails` —
+        // `displayPath` reads from the item on the main actor, the
+        // network call is the only thing parallelized.
+        let pending: [(UUID, String)] = items
+            .filter { thumbnailURLs[$0.id] == nil }
+            .map { ($0.id, ItemCardView.displayPath(for: $0)) }
+
+        let resolved: [(UUID, URL?)] = await withTaskGroup(of: (UUID, URL?).self) { group in
+            for (id, path) in pending {
+                group.addTask { [imageService] in
+                    let url = try? await imageService.signedURL(for: path)
+                    return (id, url)
+                }
+            }
+            var out: [(UUID, URL?)] = []
+            for await pair in group { out.append(pair) }
+            return out
+        }
+
+        for (id, url) in resolved {
+            thumbnailURLs[id] = url
         }
     }
 }

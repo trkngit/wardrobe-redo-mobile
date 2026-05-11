@@ -484,15 +484,39 @@ final class OutfitViewModel {
     /// transparent-bg cutout (`maskedImagePath`) instead of the framed
     /// source-photo thumbnail. Same rule the wardrobe grid follows
     /// after PR #20.
+    ///
+    /// Build 8 — fans the per-item `signedURL` lookups out across a
+    /// `TaskGroup` so a 3-outfit × 5-item set resolves in one
+    /// round-trip-batch instead of 15 sequential ones. Previously
+    /// felt like the carousel "popped in" cards as each fetch
+    /// completed; the parallel pattern lets them all light up
+    /// together, which is much less janky during a Surprise me
+    /// re-roll. Skips items already cached so subsequent calls
+    /// only fan out the new items.
     func loadThumbnails() async {
-        for outfit in dailyOutfits {
-            for item in outfit.items {
-                if thumbnailURLs[item.id] == nil {
-                    thumbnailURLs[item.id] = try? await imageService.signedURL(
-                        for: ItemCardView.displayPath(for: item)
-                    )
+        // Pre-compute path on @MainActor (where `displayPath` and
+        // the item live) before fanning out — avoids needing the
+        // TaskGroup body to hop back to main just to read the
+        // storage path. Pairs `(id, path)` are Sendable.
+        let pending: [(UUID, String)] = dailyOutfits
+            .flatMap(\.items)
+            .filter { thumbnailURLs[$0.id] == nil }
+            .map { ($0.id, ItemCardView.displayPath(for: $0)) }
+
+        let resolved: [(UUID, URL?)] = await withTaskGroup(of: (UUID, URL?).self) { group in
+            for (id, path) in pending {
+                group.addTask { [imageService] in
+                    let url = try? await imageService.signedURL(for: path)
+                    return (id, url)
                 }
             }
+            var out: [(UUID, URL?)] = []
+            for await pair in group { out.append(pair) }
+            return out
+        }
+
+        for (id, url) in resolved {
+            thumbnailURLs[id] = url
         }
     }
 

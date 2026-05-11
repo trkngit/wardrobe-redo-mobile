@@ -11,6 +11,23 @@ final class AppState {
     var currentUser: Profile?
     var profileLoadFailed = false
 
+    // MARK: - Build 8 — cross-tab navigation
+
+    /// Index of the currently visible tab. Lifted out of
+    /// `TabRootView` so deep-link CTAs (e.g. "Add an Item"
+    /// in the Outfits failure banner) can switch tabs without
+    /// passing bindings through every intermediate view.
+    ///
+    /// Ordering matches `TabRootView`: 0=Wardrobe, 1=Outfits,
+    /// 2=Match, 3=Profile.
+    var selectedTab: Int = 0
+
+    /// Pulse this from a deep-link CTA to ask the Wardrobe tab
+    /// to open the Add Item sheet on its next appearance. The
+    /// grid view consumes + clears this in `onAppear` so
+    /// repeated tab switches don't keep re-presenting it.
+    var pendingAddItem: Bool = false
+
     private let supabase = SupabaseManager.shared.client
     private let userRepository = UserRepository()
     private let logger = Logger(subsystem: "com.wardroberedo", category: "AppState")

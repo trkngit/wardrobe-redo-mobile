@@ -27,6 +27,10 @@ struct MatchingView: View {
             // stored default vibe so the Match flow starts at the
             // same intensity as the Outfits flow does.
             viewModel.selectedVibe = user.defaultVibe
+            // Build 8: seed occasion from on-device memory.
+            // Per-surface so a user matching a blazer at "work"
+            // doesn't get blown away by their Outfits-tab "date" pick.
+            viewModel.selectedOccasion = OccasionMemory.matchLastOccasion()
             await viewModel.loadWardrobe(userId: user.id)
         }
         // Build 7 — "Updated for [occasion] · [vibe]" toast,
@@ -53,6 +57,18 @@ struct MatchingView: View {
                 // generation through `onChange` so the user sees
                 // the new ranking immediately.
                 vibePickerRow
+
+                // Build 8 — parity with the Outfits tab. The
+                // match engine doesn't take a seed, but re-running
+                // with the same hero/occasion/vibe still shuffles
+                // results via the cached recent-pair signal — so
+                // "Surprise me" gives the user a fresh ranking
+                // without forcing them to change their picks.
+                // Gated to "hero selected" because matching is
+                // hero-anchored (the VM no-ops otherwise).
+                if viewModel.selectedItem != nil {
+                    surpriseMeButton
+                }
 
                 // Results
                 if viewModel.isMatching {
@@ -137,6 +153,16 @@ struct MatchingView: View {
             }
         }
         .buttonStyle(.plain)
+        // Build 8 — VoiceOver: the visible cell is a tiny thumbnail
+        // + one-word subcategory. Without these, VoiceOver reads
+        // "T-Shirt, button" with no indication it's a wardrobe item
+        // or that it's the selected hero. The label here adds
+        // category context; the hint explains the tap action.
+        .accessibilityLabel("\(item.subcategory.displayName) \(item.category.displayName.lowercased())")
+        .accessibilityHint(isSelected
+            ? "Selected as the piece to match. Tap to deselect."
+            : "Tap to find outfits built around this piece.")
+        .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
     }
 
     // MARK: - Category Filter
@@ -185,6 +211,10 @@ struct MatchingView: View {
             vibe: Binding(
                 get: { viewModel.selectedVibe },
                 set: { newVibe in
+                    // Build 8 — selection tick on real change only.
+                    if newVibe != viewModel.selectedVibe {
+                        HapticManager.selection()
+                    }
                     viewModel.selectedVibe = newVibe
                     if let defaultVibe = appState.currentUser?.defaultVibe {
                         VibeTelemetry.logOverride(default: defaultVibe, selected: newVibe, source: "match")
@@ -199,6 +229,33 @@ struct MatchingView: View {
             )
         )
         .padding(.horizontal, Theme.Spacing.md)
+    }
+
+    // MARK: - "Surprise me" re-roll (build 8)
+
+    /// Build 8 — parity with `DailyOutfitsView.regenerateButton`.
+    /// Re-runs the matcher with the same hero + occasion + vibe;
+    /// the recent-pair history changes the ranking naturally
+    /// between runs even though the match engine doesn't accept
+    /// an explicit seed. Loading title mirrors the Outfits tab
+    /// ("Rolling…") for cross-surface consistency.
+    private var surpriseMeButton: some View {
+        GoldButton(
+            viewModel.isMatching ? "Rolling…" : "🎲 Surprise me",
+            isLoading: viewModel.isMatching
+        ) {
+            guard !viewModel.isMatching else { return }
+            guard let userId = appState.currentUser?.id else { return }
+            // Build 8 — deliberate-action haptic. See the matching
+            // call in `DailyOutfitsView.regenerateButton`.
+            HapticManager.medium()
+            viewModel.requestRegeneration(userId: userId, reason: .surpriseMe)
+        }
+        .disabled(viewModel.isMatching)
+        .padding(.horizontal, Theme.Spacing.md)
+        // Build 8 — accessibility parity with Outfits tab.
+        .accessibilityLabel(viewModel.isMatching ? "Rolling" : "Surprise me")
+        .accessibilityHint("Re-ranks the match results with the same hero piece, occasion, and vibe")
     }
 
     // MARK: - Occasion Picker
@@ -216,7 +273,14 @@ struct MatchingView: View {
                         // matcher if a hero was already selected;
                         // the new path inherits that no-op guard
                         // inside the VM.
+                        // Build 8 — selection tick on real change only.
+                        if occasion != viewModel.selectedOccasion {
+                            HapticManager.selection()
+                        }
                         viewModel.selectedOccasion = occasion
+                        // Build 8 — per-tab on-device memory of
+                        // the user's last pick. See OccasionMemory.
+                        OccasionMemory.setMatchLastOccasion(occasion)
                         if let userId = appState.currentUser?.id {
                             viewModel.requestRegeneration(userId: userId, reason: .pickerChange)
                         }
@@ -238,10 +302,16 @@ struct MatchingView: View {
                             .clipShape(Capsule())
                     }
                     .animation(Theme.Animation.standard, value: viewModel.selectedOccasion == occasion)
+                    // Build 8 — VoiceOver parity with Outfits tab.
+                    .accessibilityLabel("\(occasion.displayName) occasion")
+                    .accessibilityHint("Re-ranks matches for \(occasion.displayName.lowercased()) settings")
+                    .accessibilityAddTraits(viewModel.selectedOccasion == occasion ? [.isSelected, .isButton] : .isButton)
                 }
             }
             .padding(.horizontal, Theme.Spacing.md)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Occasion picker")
     }
 
     // MARK: - Results Section
@@ -380,6 +450,19 @@ struct MatchingView: View {
                 .font(Theme.Fonts.body)
                 .foregroundStyle(Color(Theme.Colors.textSecondary))
                 .multilineTextAlignment(.center)
+
+            // Build 8 — direct deep-link to the Wardrobe Add sheet.
+            // Saves the user from hunting for the + button in the
+            // wardrobe toolbar after switching tabs.
+            GoldButton("Add an Item") {
+                HapticManager.medium()
+                appState.pendingAddItem = true
+                appState.selectedTab = 0
+            }
+            .frame(maxWidth: 240)
+            .padding(.horizontal, Theme.Spacing.lg)
+            .padding(.top, Theme.Spacing.sm)
+            .accessibilityHint("Opens the Wardrobe tab and presents the Add Item sheet")
         }
         .padding(Theme.Spacing.xl)
     }
