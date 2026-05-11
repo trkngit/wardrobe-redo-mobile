@@ -1,15 +1,19 @@
 import SwiftUI
 
-/// 4-step onboarding: Welcome → Style Preferences → First Upload → Preview.
-/// Completes by marking onboarding_completed in the user's profile.
+/// 5-step onboarding: Welcome → Style Preferences → Vibe →
+/// First Upload → Preview. Completes by marking
+/// `onboarding_completed` in the user's profile and persisting
+/// `default_vibe` if the user picked one different from the
+/// `.balanced` default.
 struct OnboardingView: View {
     @Environment(AppState.self) private var appState
     @State private var currentStep = 0
     @State private var selectedFamilies: Set<String> = []
     @State private var selectedOccasions: Set<Occasion> = [.casual]
+    @State private var selectedVibe: VibeStop = .balanced
     @State private var isSaving = false
 
-    private let totalSteps = 4
+    private let totalSteps = 5
     private let userRepository = UserRepository()
 
     var body: some View {
@@ -27,8 +31,9 @@ struct OnboardingView: View {
                 TabView(selection: $currentStep) {
                     welcomeStep.tag(0)
                     preferencesStep.tag(1)
-                    uploadStep.tag(2)
-                    previewStep.tag(3)
+                    vibeStep.tag(2)
+                    uploadStep.tag(3)
+                    previewStep.tag(4)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
                 .animation(Theme.Animation.standard, value: currentStep)
@@ -286,6 +291,50 @@ struct OnboardingView: View {
         }
     }
 
+    // MARK: - Step 3: Vibe (build 6)
+
+    private var vibeStep: some View {
+        VStack(spacing: Theme.Spacing.xl) {
+            VStack(spacing: Theme.Spacing.md) {
+                Image(systemName: "slider.horizontal.below.square.and.square.filled")
+                    .font(.system(size: 44, weight: .light))
+                    .foregroundStyle(Color(Theme.Colors.primary))
+
+                Text("Pick your default vibe")
+                    .font(Theme.Fonts.h2)
+                    .foregroundStyle(Color(Theme.Colors.textPrimary))
+                    .multilineTextAlignment(.center)
+
+                Text("Where should the engine start when you tap Generate? You can always slide between Safe and Bold on the Outfits screen.")
+                    .font(Theme.Fonts.body)
+                    .foregroundStyle(Color(Theme.Colors.textSecondary))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, Theme.Spacing.lg)
+                    .lineSpacing(3)
+            }
+            .padding(.top, Theme.Spacing.lg)
+
+            VibeSelector(vibe: $selectedVibe)
+                .padding(.horizontal, Theme.Spacing.lg)
+
+            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                Text(selectedVibe.description)
+                    .font(Theme.Fonts.bodySmall)
+                    .foregroundStyle(Color(Theme.Colors.textSecondary))
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(Theme.Spacing.md)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color(Theme.Colors.surface))
+                    )
+            }
+            .padding(.horizontal, Theme.Spacing.lg)
+
+            Spacer()
+        }
+    }
+
     // MARK: - Navigation Buttons
 
     private var navigationButtons: some View {
@@ -323,6 +372,12 @@ struct OnboardingView: View {
                 avoidColors: nil
             )
             try await userRepository.updateStylePreferences(userId: userId, preferences: preferences)
+
+            // Build 6: persist the picked default vibe. We always
+            // write this so the user's onboarding choice survives
+            // even when they picked `.balanced` explicitly (their
+            // intent — not a "user didn't pick" default).
+            try await userRepository.updateDefaultVibe(userId: userId, vibe: selectedVibe)
 
             // Mark onboarding completed
             try await userRepository.completeOnboarding(userId: userId)
