@@ -6,6 +6,16 @@ struct AddItemView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = AddItemViewModel()
 
+    // Camera-cover state. Held at the view level (not inside the
+    // `@ViewBuilder` body) so the monitor and controller survive
+    // SwiftUI re-renders — before build 6 these were re-created on
+    // every render, which broke the live `BackgroundQualityMonitor`
+    // bindings and contributed to the "shutter doesn't work" report.
+    @State private var cameraMonitor: BackgroundQualityMonitor?
+    @State private var cameraController: CameraController?
+    @State private var cameraAuthorization: CameraAuthorizationState = .notDetermined
+    @State private var cameraSessionState: CameraSessionState = .configuring
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -85,6 +95,25 @@ struct AddItemView: View {
             }
             .fullScreenCover(isPresented: $viewModel.isShowingCamera) {
                 cameraCover
+            }
+            .onChange(of: viewModel.isShowingCamera) { _, newValue in
+                if newValue {
+                    // Raise: lazily create the monitor + controller and
+                    // reset the state machine so a re-open starts clean.
+                    if cameraMonitor == nil { cameraMonitor = BackgroundQualityMonitor() }
+                    if cameraController == nil { cameraController = CameraController() }
+                    cameraAuthorization = .notDetermined
+                    cameraSessionState = .configuring
+                } else {
+                    // Fall: cancel any in-flight work and drop the
+                    // strong references so iOS can release AVFoundation
+                    // backing state. The `.onDisappear` on the cover
+                    // body usually fires first, but pin the cleanup
+                    // here too for safety against re-entry.
+                    cameraMonitor?.cancel()
+                    cameraMonitor = nil
+                    cameraController = nil
+                }
             }
             .fullScreenCover(isPresented: $viewModel.isShowingTouchup) {
                 touchupCover
@@ -182,8 +211,12 @@ struct AddItemView: View {
 
     @ViewBuilder
     private var cameraCover: some View {
-        let monitor = BackgroundQualityMonitor()
-        let controller = CameraController()
+        // Pull the lazy-initialized state objects. If the cover is
+        // presented before the raise-edge effect runs (rare timing
+        // edge), fall back to a fresh instance so the body still
+        // compiles — this branch is unreachable in normal flow.
+        let monitor = cameraMonitor ?? BackgroundQualityMonitor()
+        let controller = cameraController ?? CameraController()
         ZStack {
             Color.black.ignoresSafeArea()
             CameraCaptureView(
@@ -192,15 +225,38 @@ struct AddItemView: View {
                 onPhotoCaptured: { image in
                     Task { await viewModel.onCameraPhotoCaptured(image) }
                 },
-                onAuthorizationChanged: { _ in }
+                onAuthorizationChanged: { newState in
+                    cameraAuthorization = newState
+                },
+                onSessionStateChanged: { newState in
+                    cameraSessionState = newState
+                },
+                onCaptureFailed: { message in
+                    viewModel.errorMessage = "Couldn't capture: \(message)"
+                }
             )
             .ignoresSafeArea()
             CameraOverlay(
                 quality: monitor.quality,
-                authorization: .authorized,
+                sharpness: monitor.sharpness,
+                coverage: monitor.coverage,
+                authorization: cameraAuthorization,
+                sessionState: cameraSessionState,
                 onShutter: controller.capture,
                 onCancel: viewModel.onCameraCancelled
             )
+        }
+        .onChange(of: monitor.quality) { _, newValue in
+            // First non-`.unknown` frame is the signal that the
+            // session is genuinely live. Flip the SwiftUI session-
+            // state out of `.configuring` so the overlay phase
+            // settles into `.live` and the shutter ring un-dims.
+            if newValue != .unknown, cameraSessionState == .configuring {
+                cameraSessionState = .running
+            }
+        }
+        .onDisappear {
+            monitor.cancel()
         }
     }
 

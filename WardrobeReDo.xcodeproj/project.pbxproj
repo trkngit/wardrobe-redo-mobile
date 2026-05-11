@@ -172,6 +172,7 @@
 		94B8BB1B211AFF8CE7281645 /* ImageServiceProposalsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B910E028A2261041E6CF9716 /* ImageServiceProposalsTests.swift */; };
 		956E35D1D1CD7EFD2A717460 /* cluttered_07.png in Resources */ = {isa = PBXBuildFile; fileRef = B2003A930CC3D5DD30F917EF /* cluttered_07.png */; };
 		96103D210BDC51D8B876E1CF /* SentryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44D3E39B8E56769EE8DC1A3F /* SentryService.swift */; };
+		9621D2F316D60B671A0406A5 /* SharpnessMetric.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA55FBDF7E52F2F26303F71B /* SharpnessMetric.swift */; };
 		96963FF55F2E00EBD9FCAE2E /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDEC6953279FE5130C2A8F4E /* OnboardingView.swift */; };
 		978089A0380FEA20660E07AA /* UploadQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70544EB6B38493F9191E98C4 /* UploadQueueTests.swift */; };
 		97F0472C14662492908C85C0 /* AddItemViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A5E56B68B900A52328E110C /* AddItemViewModelTests.swift */; };
@@ -284,6 +285,7 @@
 		F590265490EED777D6B21FC3 /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B41193683C38AC2B597BAFB3 /* LoginView.swift */; };
 		F67048A922627D4CCA07331A /* MultiGarmentProposalServiceMaskingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 202B3280D48DF6136205F70E /* MultiGarmentProposalServiceMaskingTests.swift */; };
 		F99E71C87F1ACF917ABB1EA2 /* clean_bg_08.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 9FA6CF94AA4B0A79425BEFD0 /* clean_bg_08.jpg */; };
+		FBA353B22E919A381AA4A3CB /* SharpnessMetricTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A7C7175C21026CD225827FB /* SharpnessMetricTests.swift */; };
 		FBA86764A0F1CF832762779F /* StyleEngineService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6E465734D0F4208AE7FBB42 /* StyleEngineService.swift */; };
 		FDA9D0A4BE02801C98E8CE73 /* on_person_05.jpg in Resources */ = {isa = PBXBuildFile; fileRef = A6960F83174F2F13B838C90C /* on_person_05.jpg */; };
 		FDD9ED140A3AC2577BD560B9 /* OutfitCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B7BF5813E651F8CDB8CD164 /* OutfitCardView.swift */; };
@@ -339,6 +341,7 @@
 		08D8AA8F7813D0A2E3EAD400 /* MultiGarmentShoePairTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiGarmentShoePairTests.swift; sourceTree = "<group>"; };
 		09B6177F055B8350472C2188 /* MLTelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLTelemetryService.swift; sourceTree = "<group>"; };
 		0A225554031C33A50FF9FBB5 /* clean_bg_10.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = clean_bg_10.png; sourceTree = "<group>"; };
+		0A7C7175C21026CD225827FB /* SharpnessMetricTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharpnessMetricTests.swift; sourceTree = "<group>"; };
 		0B7BF5813E651F8CDB8CD164 /* OutfitCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitCardView.swift; sourceTree = "<group>"; };
 		0C109E48C41D3C63673FD22B /* EditItemView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditItemView.swift; sourceTree = "<group>"; };
 		0DA1F91DF276CB576DB93CE9 /* BatchPersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchPersistenceService.swift; sourceTree = "<group>"; };
@@ -537,6 +540,7 @@
 		B910E028A2261041E6CF9716 /* ImageServiceProposalsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageServiceProposalsTests.swift; sourceTree = "<group>"; };
 		B99F96027E9C62E61C3A9B8A /* WardrobeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeViewModel.swift; sourceTree = "<group>"; };
 		B9E8C0B962536160970249A7 /* ExtractionPerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtractionPerformanceTests.swift; sourceTree = "<group>"; };
+		BA55FBDF7E52F2F26303F71B /* SharpnessMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharpnessMetric.swift; sourceTree = "<group>"; };
 		BAF67A72DC02CE07EBE8C763 /* cluttered_03.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = cluttered_03.jpg; sourceTree = "<group>"; };
 		BB19069D775C6300C4C750C6 /* cluttered_02.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = cluttered_02.jpg; sourceTree = "<group>"; };
 		BB2E9896CA35BCF68F2B14C9 /* MaskProposal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaskProposal.swift; sourceTree = "<group>"; };
@@ -771,6 +775,7 @@
 				82EAF3FD590C492A92FF7394 /* SAM2SessionTests.swift */,
 				95DF3B7D639F11D133739124 /* SeededRNGTests.swift */,
 				5715EAA4F9B796E29711D971 /* SegmentationIoUTests.swift */,
+				0A7C7175C21026CD225827FB /* SharpnessMetricTests.swift */,
 				70544EB6B38493F9191E98C4 /* UploadQueueTests.swift */,
 				EF0C0B8A03DD044C9CEA811C /* Extraction */,
 			);
@@ -1044,6 +1049,7 @@
 				1187ED645956910F8C96393A /* ImageService.swift */,
 				D123122D77B0FC8202D1335F /* NotificationService.swift */,
 				0688E82B35A527869065DFD9 /* OutfitGenerationService.swift */,
+				BA55FBDF7E52F2F26303F71B /* SharpnessMetric.swift */,
 				C592BAD5B2ABC33292A5FD4C /* WidgetDataService.swift */,
 				11E55475317E16F608E5CC45 /* AttributeRules */,
 				1E631278AB1483FB2BC54860 /* Extraction */,
@@ -1680,6 +1686,7 @@
 				76CC6254C75EC242453FB5DF /* RulesTable.swift in Sources */,
 				01CF2C73F57350D1C1EF11F5 /* SAM2Extractor.swift in Sources */,
 				96103D210BDC51D8B876E1CF /* SentryService.swift in Sources */,
+				9621D2F316D60B671A0406A5 /* SharpnessMetric.swift in Sources */,
 				80B3E51782E1270031F0FC30 /* ShimmerPlaceholders.swift in Sources */,
 				6A8D1D1930FBA7A07CF0F44E /* StyleArchetype.swift in Sources */,
 				D2378DFC394CF515AD188E5C /* StyleDataRepository.swift in Sources */,
@@ -1800,6 +1807,7 @@
 				4C233AC6E5C658C94213AD8C /* SecurityValidationTests.swift in Sources */,
 				03D825718981139132B9659D /* SeededRNGTests.swift in Sources */,
 				E7B23DEF6AA816B0C1A28053 /* SegmentationIoUTests.swift in Sources */,
+				FBA353B22E919A381AA4A3CB /* SharpnessMetricTests.swift in Sources */,
 				7FF6EDD480ACBB768C0600F1 /* SlotRequirementTests.swift in Sources */,
 				94B76C9A42CFFD5055D1CA57 /* StyleEngineServiceTests.swift in Sources */,
 				B312C6A8432B84DDB60F86E6 /* StyleEnumsTests.swift in Sources */,
