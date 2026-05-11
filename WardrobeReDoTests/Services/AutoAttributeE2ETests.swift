@@ -38,7 +38,7 @@ struct AutoAttributeE2ETests {
 
     // MARK: - Happy path
 
-    @Test func enrichedPopulatesTextureFitAndRulesFromClassifier() async {
+    @Test func enrichedPopulatesFitAndRulesFromClassifier() async {
         let base = MaskProposalFixture.make(
             predictedCategory: .outerwear,
             predictedCategoryConfidence: 0.92,
@@ -47,7 +47,6 @@ struct AutoAttributeE2ETests {
         )
         let classifier = MockAttributeClassifier(
             prediction: AttributePrediction(
-                texture: .wool, textureConfidence: 0.88,
                 fit: .oversized, fitConfidence: 0.83
             )
         )
@@ -56,9 +55,11 @@ struct AutoAttributeE2ETests {
             base, with: classifier, logger: Self.logger
         )
 
-        // Classifier output flows into the proposal.
-        #expect(enriched.predictedTexture == .wool)
-        #expect(abs(enriched.predictedTextureConfidence - 0.88) < 0.001)
+        // Build 6: texture is rules-derived, not from the
+        // classifier. Puffer has no `RulesTable` entry but the
+        // bottom-category default doesn't fire for outerwear, so
+        // texture stays nil. The fit head — which IS still wired —
+        // flows through verbatim.
         #expect(enriched.predictedFit == .oversized)
         #expect(abs(enriched.predictedFitConfidence - 0.83) < 0.001)
 

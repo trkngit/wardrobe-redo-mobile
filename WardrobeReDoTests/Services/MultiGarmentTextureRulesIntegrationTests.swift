@@ -159,32 +159,9 @@ import Testing
         }
     }
 
-    // MARK: - ML prediction still wins over rules
-
-    @Test func mlPredictionStillWinsOverCategoryDefault() {
-        // Confidence check: a real ML texture prediction must override
-        // any rules-derived value, including the new category default.
-        // Same contract as the original `mlPredictionTakesPrecedenceOverRules`
-        // in `MultiGarmentTextureRulesTests`, but specifically against
-        // a category-default-eligible subcategory (.shorts) so we
-        // confirm the ordering didn't slip.
-        let proposal = MaskProposalFixture.make(
-            predictedCategory: .bottom,
-            predictedSubcategory: .shorts
-        )
-        let mlPrediction = AttributePrediction(
-            texture: .linen,
-            textureConfidence: 0.91,
-            fit: nil,
-            fitConfidence: 0.0
-        )
-
-        let enriched = MultiGarmentProposalService.applyAttributesAndRules(
-            to: proposal,
-            prediction: mlPrediction
-        )
-
-        #expect(enriched.predictedTexture == .linen)
-        #expect(enriched.predictedTextureConfidence == 0.91)
-    }
+    // Build 6 removed `mlPredictionStillWinsOverCategoryDefault` —
+    // ML inference for texture was retired, so the precedence
+    // ordering it pinned (ML > rules) is no longer reachable. The
+    // remaining tests above continue to verify the rules path
+    // including the new category-default fallback.
 }

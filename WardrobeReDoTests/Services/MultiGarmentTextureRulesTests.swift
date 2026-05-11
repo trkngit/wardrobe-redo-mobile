@@ -3,46 +3,17 @@ import Testing
 @testable import WardrobeReDo
 
 /// Integration tests for the rules-derived texture path inside
-/// `MultiGarmentProposalService.applyAttributesAndRules`. Three
-/// invariants:
+/// `MultiGarmentProposalService.applyAttributesAndRules`. Two invariants
+/// remain after build 6 (ML texture inference was retired — see
+/// `AttributeClassifierService` docstring):
 ///
-///   1. **ML wins when present.** A non-nil `prediction.texture` should
-///      pass through verbatim, even when a rules-derived texture exists.
-///   2. **Rules fill the gap.** When ML returns no texture, the rules
-///      table populates the proposal with the deterministic mapping
-///      (jeans → denim, sweater → knit, …) and stamps the 0.85
-///      confidence sentinel.
-///   3. **Rules respect ambiguity.** Generic subcategories with no
+///   1. **Rules fill the gap.** The deterministic subcategory→texture
+///      mapping (jeans → denim, sweater → knit, …) populates the
+///      proposal and stamps the 0.85 confidence sentinel.
+///   2. **Rules respect ambiguity.** Generic subcategories with no
 ///      rule (t-shirt, chinos, …) keep the proposal's texture nil —
 ///      the picker stays empty rather than show a low-confidence guess.
 @Suite("MultiGarmentProposalService.textureRules") struct MultiGarmentTextureRulesTests {
-
-    // MARK: - ML-wins path
-
-    @Test func mlPredictionTakesPrecedenceOverRules() {
-        // Jeans subcategory would route to .denim via rules, but the
-        // ML pipeline confidently said .leather (e.g. raw-leather skinny
-        // jeans). The ML answer must win — rules are a fallback, not a
-        // gate.
-        let base = MaskProposalFixture.make(
-            predictedCategory: .bottom,
-            predictedSubcategory: .jeans
-        )
-        let mlPrediction = AttributePrediction(
-            texture: .leather,
-            textureConfidence: 0.92,
-            fit: nil,
-            fitConfidence: 0.0
-        )
-
-        let enriched = MultiGarmentProposalService.applyAttributesAndRules(
-            to: base,
-            prediction: mlPrediction
-        )
-
-        #expect(enriched.predictedTexture == .leather)
-        #expect(enriched.predictedTextureConfidence == 0.92)
-    }
 
     // MARK: - Rules fill the gap
 
@@ -157,9 +128,13 @@ struct AddItemViewModelTextureSourceTests {
         }
     }
 
-    @Test func recordsMLSourceWhenConfidenceDiffersFromSentinel() async {
-        // 0.93 is well above the prefill gate but doesn't equal the
-        // rules sentinel — recorded as "ml".
+    @Test func textureSourceAlwaysRulesAfterBuild6() async {
+        // Build 6 retired the ML texture path. Every prefilled
+        // texture is now rules-derived — even when the proposal's
+        // textureConfidence doesn't match the sentinel exactly (e.g.
+        // a historical row from a previous build that stamped a real
+        // softmax score). The snapshot tag must always read "rules"
+        // so downstream telemetry stops branching on the source.
         await withAttributeDetectionEnabled {
             let vm = AddItemViewModel()
             let proposal = MaskProposalFixture.make(
@@ -176,7 +151,7 @@ struct AddItemViewModelTextureSourceTests {
 
             #expect(vm.texture == .denim)
             #expect(vm.detectedAttributes["texture"] == TextureType.denim.rawValue)
-            #expect(vm.detectedAttributes["texture_source"] == "ml")
+            #expect(vm.detectedAttributes["texture_source"] == "rules")
         }
     }
 }
