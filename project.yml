@@ -66,7 +66,7 @@ targets:
         CFBundleName: Wardrobe
         CFBundleDisplayName: Wardrobe
         CFBundleShortVersionString: "1.0.0"
-        CFBundleVersion: "13"
+        CFBundleVersion: "14"
         UILaunchScreen:
           UIColorName: ""
         UIAppFonts:
@@ -86,7 +86,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.digitalatelier.wardroberedo.widget
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "13"
+        CURRENT_PROJECT_VERSION: "14"
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1"
         INFOPLIST_FILE: WardrobeReDoWidget/Info.plist
