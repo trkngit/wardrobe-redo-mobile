@@ -139,6 +139,7 @@
 		76CC6254C75EC242453FB5DF /* RulesTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = F391F9890D89BF7AD8A02FB9 /* RulesTable.swift */; };
 		77AF609FCC53690C862879AC /* ProportionBalanceScorerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17ECBF77827412B73E10EB1 /* ProportionBalanceScorerTests.swift */; };
 		7925FF9A350815597D7D5086 /* on_person_03.png in Resources */ = {isa = PBXBuildFile; fileRef = 7234CA19A890F0A6651DFF67 /* on_person_03.png */; };
+		79569074E80EBA252E8A7970 /* VibeSelectorSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8BE0ED2702B3BB640612301 /* VibeSelectorSnapshotTests.swift */; };
 		7A5F2BBBAF173AB7C5A78B79 /* MLDiagnosticsTestIsolation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 217C56DC5EACCC97DEC80884 /* MLDiagnosticsTestIsolation.swift */; };
 		7B294A5A92517CEAD9312EC3 /* iphone15plus_3840x2160_exif8.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 74FF22770DF12414A68735DD /* iphone15plus_3840x2160_exif8.jpg */; };
 		7BC741E5DBD89CA5F752C28A /* SAM2SessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82EAF3FD590C492A92FF7394 /* SAM2SessionTests.swift */; };
@@ -540,6 +541,7 @@
 		A77AC489FED071A22EFD1085 /* ColorExtractionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorExtractionService.swift; sourceTree = "<group>"; };
 		A79693E9033EE711D113E1B6 /* LargeImageProcessingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LargeImageProcessingTests.swift; sourceTree = "<group>"; };
 		A843300BF6B185DAEFCDC024 /* OutfitFormulaScorerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitFormulaScorerTests.swift; sourceTree = "<group>"; };
+		A8BE0ED2702B3BB640612301 /* VibeSelectorSnapshotTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VibeSelectorSnapshotTests.swift; sourceTree = "<group>"; };
 		A917E05A57655B6F4A453F19 /* testItemFormView_defaultState.1.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testItemFormView_defaultState.1.png; sourceTree = "<group>"; };
 		AA53B80137AF29DCEE27CD69 /* OutfitDeduplicationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitDeduplicationTests.swift; sourceTree = "<group>"; };
 		AB9128E432CF0044E15761A5 /* cluttered_06.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = cluttered_06.jpg; sourceTree = "<group>"; };
@@ -693,6 +695,7 @@
 			isa = PBXGroup;
 			children = (
 				BF7FDEDFCF42DDE54D305E72 /* ItemFormViewSnapshotTests.swift */,
+				A8BE0ED2702B3BB640612301 /* VibeSelectorSnapshotTests.swift */,
 				2DD6A3C288C5E6668BF6B5B2 /* __Snapshots__ */,
 			);
 			path = Snapshot;
@@ -1860,6 +1863,7 @@
 				B1FF3FB8F1B4B5AB73559F78 /* VibeEndToEndTests.swift in Sources */,
 				958573DA5D0C92DBE41F3828 /* VibeIntegrationTests.swift in Sources */,
 				6937423795FF63A0D27C9D4B /* VibePresetTests.swift in Sources */,
+				79569074E80EBA252E8A7970 /* VibeSelectorSnapshotTests.swift in Sources */,
 				F32198AC55FBF273DE56084E /* WardrobeGridViewCacheTests.swift in Sources */,
 				41A142C6C4571099ACF570A6 /* WardrobeItemBoundingBoxTests.swift in Sources */,
 				6E6D4845CCE627D16F3F579F /* WardrobeReDoTests.swift in Sources */,
