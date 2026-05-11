@@ -26,6 +26,35 @@ struct WardrobeSession: Identifiable, Sendable {
     let createdAt: Date
 }
 
+/// Build 11 — wardrobe sort options. `.newest` preserves the
+/// capture-session grouping (default). Wear-count sorts flatten
+/// the grid into a 2-column singles run because "most worn"
+/// cuts across sessions and the session header would be
+/// meaningless. Display copy is the visible label in the SwiftUI
+/// `Menu`.
+enum SortOrder: String, CaseIterable, Sendable {
+    case newest
+    case mostWorn
+    case leastWorn
+
+    var displayName: String {
+        switch self {
+        case .newest:    return "Newest"
+        case .mostWorn:  return "Most worn"
+        case .leastWorn: return "Least worn"
+        }
+    }
+
+    /// SF Symbol that matches the visual semantic of each option.
+    var iconName: String {
+        switch self {
+        case .newest:    return "clock"
+        case .mostWorn:  return "flame"
+        case .leastWorn: return "sparkles"
+        }
+    }
+}
+
 /// One renderable block in the wardrobe grid. Consecutive single-item
 /// sessions fuse into a `.singles` block so they pack into the 2-column
 /// grid together; multi-item sessions get their own `.session` block with
@@ -70,6 +99,16 @@ final class WardrobeViewModel {
     /// "no query"), so clearing the field via the trailing X
     /// returns to the category-only view without a reload.
     var searchQuery: String = "" {
+        didSet { recomputeSessions() }
+    }
+    /// Build 11 — sort order across the wardrobe grid. `.newest`
+    /// keeps the capture-session grouping (a multi-garment selfie
+    /// stays bundled). Wear-count sorts flatten sessions into a
+    /// single grid because "most worn" cuts across captures and
+    /// the session header would be meaningless for it. Default
+    /// is `.newest` so the wardrobe behavior pre-Build 11 is
+    /// preserved for everyone who never opens the sort menu.
+    var sortOrder: SortOrder = .newest {
         didSet { recomputeSessions() }
     }
     var isLoading = false
@@ -133,6 +172,18 @@ final class WardrobeViewModel {
     }
 
     private func recomputeSessions() {
+        switch sortOrder {
+        case .newest:
+            recomputeSessionsBySession()
+        case .mostWorn, .leastWorn:
+            recomputeSessionsFlat()
+        }
+    }
+
+    /// Default behavior: items grouped into capture sessions,
+    /// sessions sorted newest-first. Preserves the visual story
+    /// of "this selfie produced 3 garments".
+    private func recomputeSessionsBySession() {
         let grouped = Dictionary(grouping: filteredItems) { item in
             item.sourcePhotoId ?? item.id
         }
@@ -149,6 +200,46 @@ final class WardrobeViewModel {
             )
         }
         .sorted { $0.createdAt > $1.createdAt }
+    }
+
+    /// Build 11 — flat 2-column layout for wear-count sorts. The
+    /// session metadata is irrelevant when ordering across
+    /// captures by wear count, so every item becomes a one-item
+    /// "session" and `groupedSessions` fuses them into a single
+    /// `.singles` run. Tie-break on `createdAt` desc so two items
+    /// with the same wear count display newest-first within that
+    /// tier — gives a stable, predictable order.
+    private func recomputeSessionsFlat() {
+        let sortedItems: [WardrobeItem] = {
+            switch sortOrder {
+            case .mostWorn:
+                return filteredItems.sorted { lhs, rhs in
+                    if lhs.wearCount != rhs.wearCount {
+                        return lhs.wearCount > rhs.wearCount
+                    }
+                    return lhs.createdAt > rhs.createdAt
+                }
+            case .leastWorn:
+                return filteredItems.sorted { lhs, rhs in
+                    if lhs.wearCount != rhs.wearCount {
+                        return lhs.wearCount < rhs.wearCount
+                    }
+                    return lhs.createdAt > rhs.createdAt
+                }
+            case .newest:
+                return filteredItems  // unreachable, handled in the dispatch
+            }
+        }()
+
+        sessions = sortedItems.map { item in
+            WardrobeSession(
+                id: item.id,
+                sourcePhotoId: nil,
+                sourcePhotoPath: nil,
+                items: [item],
+                createdAt: item.createdAt
+            )
+        }
     }
 
     /// `sessions` collapsed into renderable groups. Consecutive single-item

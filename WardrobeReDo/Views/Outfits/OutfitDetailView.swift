@@ -37,6 +37,48 @@ struct OutfitDetailView: View {
         .background(Color(Theme.Colors.background))
         .navigationTitle(outfit.editorialName)
         .navigationBarTitleDisplayMode(.inline)
+        // Build 11 — share affordance in the nav bar. Uses
+        // SwiftUI's `ShareLink` so we get the standard iOS share
+        // sheet (Messages / Mail / AirDrop / WhatsApp / Notes /
+        // ...) for free instead of hand-rolling
+        // UIActivityViewController. Shares the editorial copy +
+        // a per-item breakdown — text-only on purpose, since the
+        // visual is hard to reproduce reliably without screenshot
+        // capture. A future iteration can attach a rendered card.
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                ShareLink(item: shareText) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Color(Theme.Colors.primary))
+                }
+                .accessibilityLabel("Share outfit")
+            }
+        }
+    }
+
+    /// Build 11 — text representation of the outfit for the
+    /// share sheet. Keeps it short enough to fit in a single
+    /// iMessage bubble while still naming every piece. Score is
+    /// rounded to a percentage because no recipient outside the
+    /// app reads raw 0.0–1.0 floats. Includes a soft brand
+    /// signature so the receiver can find the app if they care.
+    private var shareText: String {
+        var lines: [String] = []
+        lines.append(outfit.editorialName)
+        if let description = outfit.editorialDescription, !description.isEmpty {
+            lines.append(description)
+        }
+        if !items.isEmpty {
+            lines.append("")
+            for item in items {
+                lines.append("• \(item.subcategory.displayName)")
+            }
+        }
+        lines.append("")
+        lines.append("Score: \(Int(outfit.score * 100))%")
+        lines.append("— Curated with Wardrobe")
+        return lines.joined(separator: "\n")
     }
 
     // MARK: - Editorial Header

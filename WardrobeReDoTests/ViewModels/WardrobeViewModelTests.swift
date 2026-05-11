@@ -140,6 +140,73 @@ import Testing
     #expect(vm.filteredItems.first?.subcategory == .sneakers)
 }
 
+// MARK: - Build 11: sort order
+
+@Test @MainActor func wardrobeSortMostWornOrdersByWearCountDescending() {
+    // Highest wear-count first. Captures the "what am I wearing
+    // too much?" question — the user looks at the top of the list
+    // and the worn-favorites surface.
+    let vm = WardrobeViewModel()
+    vm.items = [
+        TestFixtures.makeWardrobeItem(category: .top, wearCount: 2),
+        TestFixtures.makeWardrobeItem(category: .bottom, wearCount: 7),
+        TestFixtures.makeWardrobeItem(category: .shoe, wearCount: 0),
+    ]
+    vm.sortOrder = .mostWorn
+    let order = vm.sessions.flatMap(\.items).map(\.wearCount)
+    #expect(order == [7, 2, 0])
+}
+
+@Test @MainActor func wardrobeSortLeastWornOrdersByWearCountAscending() {
+    // Lowest wear-count first. Captures the "what am I forgetting?"
+    // question — unworn pieces surface at the top so the user can
+    // intentionally re-include them.
+    let vm = WardrobeViewModel()
+    vm.items = [
+        TestFixtures.makeWardrobeItem(category: .top, wearCount: 5),
+        TestFixtures.makeWardrobeItem(category: .bottom, wearCount: 0),
+        TestFixtures.makeWardrobeItem(category: .shoe, wearCount: 3),
+    ]
+    vm.sortOrder = .leastWorn
+    let order = vm.sessions.flatMap(\.items).map(\.wearCount)
+    #expect(order == [0, 3, 5])
+}
+
+@Test @MainActor func wardrobeSortFlattensSessionGrouping() {
+    // Wear-count sorts must flatten every session into singles so
+    // the order isn't bounded inside a capture. Three items from
+    // one capture session shouldn't stay glued together when the
+    // user asks "most worn across my wardrobe".
+    let vm = WardrobeViewModel()
+    let sharedPhotoId = UUID()
+    vm.items = [
+        TestFixtures.makeWardrobeItem(category: .top, wearCount: 1, sourcePhotoId: sharedPhotoId),
+        TestFixtures.makeWardrobeItem(category: .bottom, wearCount: 5, sourcePhotoId: sharedPhotoId),
+    ]
+    vm.sortOrder = .mostWorn
+    // Every session should be a 1-item session.
+    for session in vm.sessions {
+        #expect(session.items.count == 1)
+    }
+}
+
+@Test @MainActor func wardrobeSortNewestKeepsSessionGrouping() {
+    // The default sort preserves session grouping so a multi-
+    // garment selfie stays bundled. Regression guard for the
+    // grid-feature: items from the same capture should NOT spread
+    // out at .newest.
+    let vm = WardrobeViewModel()
+    let sharedPhotoId = UUID()
+    vm.items = [
+        TestFixtures.makeWardrobeItem(category: .top, sourcePhotoId: sharedPhotoId),
+        TestFixtures.makeWardrobeItem(category: .bottom, sourcePhotoId: sharedPhotoId),
+    ]
+    vm.sortOrder = .newest
+    // The two items belong to one session.
+    #expect(vm.sessions.count == 1)
+    #expect(vm.sessions.first?.items.count == 2)
+}
+
 @Test @MainActor func wardrobeIsEmptyWhenEmptyAndNotLoading() {
     let vm = WardrobeViewModel()
     vm.items = []

@@ -235,13 +235,68 @@ struct WardrobeGridView: View {
         .animation(Theme.Animation.spring, value: isSelected)
     }
 
-    // MARK: - Item Count
+    // MARK: - Item Count + sort menu (build 11)
 
+    /// Row showing the filtered item count on the left and a sort
+    /// menu on the right. Pre-Build-11 this was just text; the
+    /// menu lives here because it lines up visually with the count
+    /// the user is staring at — "X items, sorted by Y" reads as one
+    /// thought.
     private var itemCount: some View {
-        Text(viewModel.itemCountText)
-            .font(Theme.Fonts.bodySmall)
-            .foregroundStyle(Color(Theme.Colors.textSecondary))
-            .frame(maxWidth: .infinity, alignment: .leading)
+        HStack {
+            Text(viewModel.itemCountText)
+                .font(Theme.Fonts.bodySmall)
+                .foregroundStyle(Color(Theme.Colors.textSecondary))
+
+            Spacer()
+
+            sortMenu
+        }
+    }
+
+    /// Build 11 — SwiftUI `Menu` picker for sort order. Uses the
+    /// system menu look (button + caret) and the enum's icon names
+    /// so each option carries a glyph that hints at the semantic
+    /// (clock = newest, flame = most worn, sparkles = least worn).
+    /// Selection mutates the VM and the `didSet` recomputes the
+    /// session list, which the grid re-renders.
+    private var sortMenu: some View {
+        Menu {
+            ForEach(SortOrder.allCases, id: \.self) { order in
+                Button {
+                    HapticManager.selection()
+                    viewModel.sortOrder = order
+                } label: {
+                    Label(order.displayName, systemImage: order.iconName)
+                    if viewModel.sortOrder == order {
+                        // SwiftUI menu items render a trailing
+                        // checkmark when the body contains both
+                        // a Label and a system-style indicator
+                        // implicit on iOS — keeping this Image
+                        // explicit makes the selection state
+                        // unmissable on older OS versions too.
+                        Image(systemName: "checkmark")
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: viewModel.sortOrder.iconName)
+                    .font(.system(size: 11, weight: .semibold))
+                Text(viewModel.sortOrder.displayName)
+                    .font(Theme.Fonts.caption)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 9, weight: .semibold))
+            }
+            .foregroundStyle(Color(Theme.Colors.primary))
+            .padding(.horizontal, Theme.Spacing.sm)
+            .padding(.vertical, 4)
+            .background(Color(Theme.Colors.primaryMuted).opacity(0.6))
+            .clipShape(Capsule())
+        }
+        .accessibilityLabel("Sort by")
+        .accessibilityValue(viewModel.sortOrder.displayName)
+        .accessibilityHint("Change how wardrobe items are ordered")
     }
 
     // MARK: - Session List
