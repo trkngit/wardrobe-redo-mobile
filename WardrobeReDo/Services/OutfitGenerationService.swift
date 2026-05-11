@@ -231,7 +231,9 @@ final class OutfitGenerationService: @unchecked Sendable {
         heroItem: WardrobeItem,
         allItems: [WardrobeItem],
         occasion: Occasion = .casual,
-        recentItemIds: Set<UUID> = []
+        recentItemIds: Set<UUID> = [],
+        recentItemPairs: Set<UnorderedItemPair> = [],
+        vibe: VibeStop = .balanced
     ) async -> [OutfitCandidate] {
         let activeItems = allItems.filter { !$0.isArchived && $0.id != heroItem.id }
         guard !activeItems.isEmpty else { return [] }
@@ -242,7 +244,9 @@ final class OutfitGenerationService: @unchecked Sendable {
         let context = StyleEngineService.buildContext(
             occasion: occasion,
             wardrobeSize: allItems.count,
-            recentItemIds: recentItemIds
+            recentItemIds: recentItemIds,
+            recentItemPairs: recentItemPairs,
+            vibe: vibe
         )
 
         var results: [OutfitCandidate] = []

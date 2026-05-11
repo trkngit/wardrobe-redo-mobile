@@ -110,6 +110,12 @@ struct VibePreset: Sendable, Equatable, Codable {
 
     static func preset(for stop: VibeStop) -> VibePreset {
         switch stop {
+        // Strictness + novelty multipliers are intentionally
+        // conservative (~13% spread on formula, ~3× spread on
+        // novelty). Larger swings flipped the ranking on edge-case
+        // outfits that should still respect the user's other axes
+        // (color, proportion). Tune via telemetry once we have
+        // engagement data.
         case .safe:
             return VibePreset(
                 stop: .safe,
@@ -121,7 +127,7 @@ struct VibePreset: Sendable, Equatable, Codable {
                     .textureMix: -0.03,
                 ],
                 colorMaxFamilies: 2,
-                formulaStrictness: 1.1,
+                formulaStrictness: 1.05,
                 noveltyRewardMultiplier: 0.5
             )
         case .polished:
@@ -133,7 +139,7 @@ struct VibePreset: Sendable, Equatable, Codable {
                     .versatility: -0.02,
                 ],
                 colorMaxFamilies: 3,
-                formulaStrictness: 1.05,
+                formulaStrictness: 1.02,
                 noveltyRewardMultiplier: 0.8
             )
         case .balanced:
@@ -154,7 +160,7 @@ struct VibePreset: Sendable, Equatable, Codable {
                     .outfitFormula: -0.03,
                 ],
                 colorMaxFamilies: 4,
-                formulaStrictness: 0.9,
+                formulaStrictness: 0.97,
                 noveltyRewardMultiplier: 1.2
             )
         case .bold:
@@ -168,7 +174,7 @@ struct VibePreset: Sendable, Equatable, Codable {
                     .proportionBalance: -0.03,
                 ],
                 colorMaxFamilies: 5,
-                formulaStrictness: 0.75,
+                formulaStrictness: 0.92,
                 noveltyRewardMultiplier: 1.5
             )
         }

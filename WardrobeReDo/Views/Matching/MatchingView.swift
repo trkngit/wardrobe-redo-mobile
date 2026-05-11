@@ -22,8 +22,12 @@ struct MatchingView: View {
         }
         .navigationTitle("Match")
         .task {
-            guard let userId = appState.currentUser?.id else { return }
-            await viewModel.loadWardrobe(userId: userId)
+            guard let user = appState.currentUser else { return }
+            // Build 6: seed the matching slider from the user's
+            // stored default vibe so the Match flow starts at the
+            // same intensity as the Outfits flow does.
+            viewModel.selectedVibe = user.defaultVibe
+            await viewModel.loadWardrobe(userId: user.id)
         }
     }
 
@@ -37,6 +41,12 @@ struct MatchingView: View {
 
                 // Occasion picker
                 occasionPicker
+
+                // Build 6 — vibe slider between occasion and
+                // results. Adjusting the slider re-runs match
+                // generation through `onChange` so the user sees
+                // the new ranking immediately.
+                vibePickerRow
 
                 // Results
                 if viewModel.isMatching {
@@ -160,6 +170,22 @@ struct MatchingView: View {
                 )
         }
         .animation(Theme.Animation.standard, value: isSelected)
+    }
+
+    // MARK: - Vibe Picker (build 6)
+
+    private var vibePickerRow: some View {
+        VibeSelector(
+            vibe: Binding(
+                get: { viewModel.selectedVibe },
+                set: { newVibe in
+                    viewModel.selectedVibe = newVibe
+                    guard let userId = appState.currentUser?.id else { return }
+                    Task { await viewModel.regenerateMatches(userId: userId) }
+                }
+            )
+        )
+        .padding(.horizontal, Theme.Spacing.md)
     }
 
     // MARK: - Occasion Picker

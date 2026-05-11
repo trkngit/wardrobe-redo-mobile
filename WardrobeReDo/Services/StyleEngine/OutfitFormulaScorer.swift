@@ -62,9 +62,19 @@ struct OutfitFormulaScorer: OutfitScorer {
         totalScore += thirdPieceScore.value
         reasons.append(thirdPieceScore.reason)
 
+        // Build 6 — apply the vibe preset's `formulaStrictness`
+        // multiplier. Safe / Polished read >1.0 (we want strict
+        // adherence to the four formula components); Adventurous /
+        // Bold read <1.0 (formulas are guidelines, not gates). The
+        // multiplier scales the dimension's raw value before
+        // clamping; the per-dimension weight is still adjusted
+        // separately by `VibePreset.weightDeltas` in
+        // `OutfitScore.init`.
+        let strictness = context.vibePreset.formulaStrictness
+        let scaled = totalScore * strictness
         return DimensionScore(
             dimension: dimension,
-            value: min(1.0, max(0.0, totalScore)),
+            value: min(1.0, max(0.0, scaled)),
             reasoning: reasons.joined(separator: ". ")
         )
     }

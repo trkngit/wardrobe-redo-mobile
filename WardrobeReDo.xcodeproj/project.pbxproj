@@ -209,6 +209,7 @@
 		AF26ED6257F8DC545C884CC3 /* AddItemViewModelPrefillTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 718D58D4DFF04750F552D8ED /* AddItemViewModelPrefillTests.swift */; };
 		B0F03F24327C53D2B7CCABC7 /* TextureMixScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B7697276A5A5A2DD394CE46 /* TextureMixScorer.swift */; };
 		B1E5D6FBE23AF63AFD1A9831 /* clean_bg_07.png in Resources */ = {isa = PBXBuildFile; fileRef = A0081F6CA15F242DF0714713 /* clean_bg_07.png */; };
+		B1FF3FB8F1B4B5AB73559F78 /* VibeEndToEndTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31EA96C3FBBEB65A987231AF /* VibeEndToEndTests.swift */; };
 		B20E3F3BBD2968B85D355968 /* MultiGarmentProposalServiceRealModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 086E4A24DE526DACE93D5456 /* MultiGarmentProposalServiceRealModelTests.swift */; };
 		B23B2F660B761E7F05BFE1F0 /* RepositoryProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 061E3E45DE6468A83E4AA6AC /* RepositoryProtocols.swift */; };
 		B312C6A8432B84DDB60F86E6 /* StyleEnumsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B53A45BACA6F4F63824A9E /* StyleEnumsTests.swift */; };
@@ -403,6 +404,7 @@
 		2FB218A3E5982759A27575EF /* FormalityCoherenceScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormalityCoherenceScorer.swift; sourceTree = "<group>"; };
 		307933CEB602AED8C7ACD99B /* AttributeClassifier.mlpackage */ = {isa = PBXFileReference; path = AttributeClassifier.mlpackage; sourceTree = "<group>"; };
 		30CEFA6A7B5A6DA1D58FA150 /* ClothingCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingCategory.swift; sourceTree = "<group>"; };
+		31EA96C3FBBEB65A987231AF /* VibeEndToEndTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VibeEndToEndTests.swift; sourceTree = "<group>"; };
 		330E5FD9F8488464914C3C6F /* VibeSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VibeSelector.swift; sourceTree = "<group>"; };
 		33D72296A4156B1F4C63E506 /* WardrobeReDoIntegrationTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = WardrobeReDoIntegrationTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		34139F42F966A86466BBA0C6 /* OutfitViewModelEmptyWardrobeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitViewModelEmptyWardrobeTests.swift; sourceTree = "<group>"; };
@@ -1226,6 +1228,7 @@
 				91A2CE1D441E6A257019DDE2 /* TextureMixScorerTests.swift */,
 				026A04AF2E342BF909E1B5AC /* VersatilityNoveltyTests.swift */,
 				5E3BD1135B9CEF8267E743F6 /* VersatilityScorerTests.swift */,
+				31EA96C3FBBEB65A987231AF /* VibeEndToEndTests.swift */,
 				83DCDE7A00CA93056888BB86 /* VibeIntegrationTests.swift */,
 			);
 			path = StyleEngine;
@@ -1850,6 +1853,7 @@
 				978089A0380FEA20660E07AA /* UploadQueueTests.swift in Sources */,
 				9A2A4A4D2CC112046C8F23D7 /* VersatilityNoveltyTests.swift in Sources */,
 				92E61C324B31FE53ADBE6E4E /* VersatilityScorerTests.swift in Sources */,
+				B1FF3FB8F1B4B5AB73559F78 /* VibeEndToEndTests.swift in Sources */,
 				958573DA5D0C92DBE41F3828 /* VibeIntegrationTests.swift in Sources */,
 				6937423795FF63A0D27C9D4B /* VibePresetTests.swift in Sources */,
 				F32198AC55FBF273DE56084E /* WardrobeGridViewCacheTests.swift in Sources */,

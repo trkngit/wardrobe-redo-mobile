@@ -13,6 +13,12 @@ final class MatchingViewModel {
     var selectedItem: WardrobeItem?
     var matchResults: [OutfitCandidate] = []
     var selectedOccasion: Occasion = .casual
+    /// Build 6 — vibe preset for the match flow. Mirrors
+    /// `OutfitViewModel.selectedVibe`: ephemeral per-generation,
+    /// seeded from `profile.defaultVibe` by the view. The slider
+    /// re-ranks the five returned matches without changing which
+    /// archetype the engine picks.
+    var selectedVibe: VibeStop = .balanced
     var selectedCategory: ClothingCategory?
     var isLoading = false
     var isMatching = false
@@ -108,13 +114,24 @@ final class MatchingViewModel {
         }
 
         do {
-            let recentIds = try await outfitRepository.fetchRecentItemIds(userId: userId)
+            // Race the two history fetches the engine consumes:
+            // 7-day recency for the frequency penalty and the
+            // 30-outfit pair history for the novelty bonus. The
+            // pair query is best-effort — if it errors we fall
+            // back to an empty set so the scorer reports
+            // coverage = 0 rather than aborting the match.
+            async let recentIdsTask = outfitRepository.fetchRecentItemIds(userId: userId)
+            async let recentPairsTask = outfitRepository.fetchRecentItemPairs(userId: userId)
+            let recentIds = try await recentIdsTask
+            let recentPairs = (try? await recentPairsTask) ?? []
 
             let results = await generationService.matchOutfits(
                 heroItem: hero,
                 allItems: wardrobeItems,
                 occasion: selectedOccasion,
-                recentItemIds: recentIds
+                recentItemIds: recentIds,
+                recentItemPairs: recentPairs,
+                vibe: selectedVibe
             )
 
             matchResults = results
@@ -163,6 +180,15 @@ final class MatchingViewModel {
         if selectedItem != nil {
             await findMatches(userId: userId)
         }
+    }
+
+    /// Build 6 — re-run the match generation when the user
+    /// changes the vibe slider mid-flow. Caller is responsible for
+    /// mutating `selectedVibe` before calling. No-op when the user
+    /// hasn't picked a hero item yet (nothing to re-rank).
+    func regenerateMatches(userId: UUID) async {
+        guard selectedItem != nil else { return }
+        await findMatches(userId: userId)
     }
 
     // MARK: - Thumbnails
