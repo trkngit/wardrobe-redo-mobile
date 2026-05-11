@@ -7,7 +7,12 @@ struct OutfitFormulaScorer: OutfitScorer {
 
     func score(items: [WardrobeItem], archetype: StyleArchetype, rule: StyleRule, context: ScoringContext) -> DimensionScore {
         guard !items.isEmpty else {
-            return DimensionScore(dimension: dimension, value: 0.0, reasoning: "No items")
+            return DimensionScore(
+                dimension: dimension,
+                value: 0.0,
+                coverage: 0.0,
+                reasoning: "No items"
+            )
         }
 
         var totalScore = 0.0

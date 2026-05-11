@@ -271,6 +271,7 @@
 		EAAD3E4944421FFCC887C6D9 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EDFD4B09F5FAFC39A70E7F8 /* Theme.swift */; };
 		EBC058597C494B8FFCAAB11F /* MaskTouchupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D95CBA1D9AD2AB55CEBEE6B3 /* MaskTouchupView.swift */; };
 		EDA22F8CC1D939FD69746D2E /* FixtureLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF4A58AD4775178B0273BF31 /* FixtureLoader.swift */; };
+		EE55C4F5C39C94F02F48EB55 /* CoverageAggregationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 065388197BDDD4C54CBB72C6 /* CoverageAggregationTests.swift */; };
 		EE5B3895B45BAA3FE0554151 /* cluttered_02.jpg in Resources */ = {isa = PBXBuildFile; fileRef = BB19069D775C6300C4C750C6 /* cluttered_02.jpg */; };
 		F011F99766019E7B7897A5F4 /* BoostPenaltyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80F983AECD87A97D0BB4C2AC /* BoostPenaltyTests.swift */; };
 		F08D32389A0DF42FA59453AF /* WardrobeWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8B93ACED5FE7CC1E74AA56 /* WardrobeWidget.swift */; };
@@ -335,6 +336,7 @@
 		0462CAEDBFC70A40F03F85A0 /* OutfitScoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitScoreTests.swift; sourceTree = "<group>"; };
 		061E3E45DE6468A83E4AA6AC /* RepositoryProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepositoryProtocols.swift; sourceTree = "<group>"; };
 		063B6D8EB12F97EC8FB4C8E3 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		065388197BDDD4C54CBB72C6 /* CoverageAggregationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoverageAggregationTests.swift; sourceTree = "<group>"; };
 		0688E82B35A527869065DFD9 /* OutfitGenerationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitGenerationService.swift; sourceTree = "<group>"; };
 		0835F2304A69C3DD167609EF /* MultiGarmentSmokeTestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiGarmentSmokeTestTests.swift; sourceTree = "<group>"; };
 		086E4A24DE526DACE93D5456 /* MultiGarmentProposalServiceRealModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiGarmentProposalServiceRealModelTests.swift; sourceTree = "<group>"; };
@@ -1195,6 +1197,7 @@
 			isa = PBXGroup;
 			children = (
 				5ABD1F70203F642DD851CA53 /* ColorHarmonyScorerTests.swift */,
+				065388197BDDD4C54CBB72C6 /* CoverageAggregationTests.swift */,
 				AC6055EA11189510E148635B /* FormalityCoherenceScorerTests.swift */,
 				0FB2F4476861FE12ADE6A9D0 /* OccasionContextScorerTests.swift */,
 				A843300BF6B185DAEFCDC024 /* OutfitFormulaScorerTests.swift */,
@@ -1753,6 +1756,7 @@
 				59AA9B48B300159453543498 /* ColorHarmonyScorerTests.swift in Sources */,
 				46042DFD4468C0C80DE77872 /* ColorHexTests.swift in Sources */,
 				00484E6C7ACE0EA75F24D4E9 /* ConcurrencyTests.swift in Sources */,
+				EE55C4F5C39C94F02F48EB55 /* CoverageAggregationTests.swift in Sources */,
 				A425CFA4450F8EDB2C4A1C5F /* DataIntegrityTests.swift in Sources */,
 				4AB9077366EE8B7E045F4DEE /* EXIFOrientationInvarianceTests.swift in Sources */,
 				D7A5F04044C83C1762249D84 /* EditItemViewModelTests.swift in Sources */,

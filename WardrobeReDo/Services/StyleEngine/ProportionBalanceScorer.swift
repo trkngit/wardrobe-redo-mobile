@@ -16,7 +16,12 @@ struct ProportionBalanceScorer: OutfitScorer {
 
         guard let topFit = tops.compactMap(\.fitAttribute).first,
               let bottomFit = bottoms.compactMap(\.fitAttribute).first else {
-            return DimensionScore(dimension: dimension, value: 0.5, reasoning: "Missing fit data for proportion scoring")
+            return DimensionScore(
+                dimension: dimension,
+                value: 0.5,
+                coverage: 0.0,
+                reasoning: "Missing fit data for proportion scoring"
+            )
         }
 
         var score = 0.0

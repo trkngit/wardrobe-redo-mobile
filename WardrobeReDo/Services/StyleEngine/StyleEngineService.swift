@@ -71,6 +71,7 @@ final class StyleEngineService {
                     DimensionScore(
                         dimension: dim.dimension,
                         value: dim.value,
+                        coverage: dim.coverage,
                         reasoning: dim.reasoning
                     )
                 })

@@ -8,7 +8,12 @@ struct ColorHarmonyScorer: OutfitScorer {
     func score(items: [WardrobeItem], archetype: StyleArchetype, rule: StyleRule, context: ScoringContext) -> DimensionScore {
         let allColors = items.flatMap(\.dominantColors)
         guard !allColors.isEmpty else {
-            return DimensionScore(dimension: dimension, value: 0.5, reasoning: "No color data available")
+            return DimensionScore(
+                dimension: dimension,
+                value: 0.5,
+                coverage: 0.0,
+                reasoning: "No color data available"
+            )
         }
 
         var totalScore = 0.0

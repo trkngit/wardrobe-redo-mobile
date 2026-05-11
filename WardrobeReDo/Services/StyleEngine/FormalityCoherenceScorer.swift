@@ -8,7 +8,12 @@ struct FormalityCoherenceScorer: OutfitScorer {
 
     func score(items: [WardrobeItem], archetype: StyleArchetype, rule: StyleRule, context: ScoringContext) -> DimensionScore {
         guard !items.isEmpty else {
-            return DimensionScore(dimension: dimension, value: 0.5, reasoning: "No items to evaluate")
+            return DimensionScore(
+                dimension: dimension,
+                value: 0.5,
+                coverage: 0.0,
+                reasoning: "No items to evaluate"
+            )
         }
 
         var totalScore = 0.0
