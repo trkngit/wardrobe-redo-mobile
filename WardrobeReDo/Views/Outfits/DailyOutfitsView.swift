@@ -26,8 +26,15 @@ struct DailyOutfitsView: View {
         .navigationTitle("Today's Outfits")
         .navigationBarTitleDisplayMode(.large)
         .task {
-            guard let userId = appState.currentUser?.id else { return }
-            await viewModel.loadOutfits(userId: userId)
+            guard let user = appState.currentUser else { return }
+            // Build 6: seed the slider from the user's stored
+            // default vibe so future generations start where they
+            // asked. The per-generation chip override stays local
+            // to the VM — flipping it here won't persist back to
+            // Supabase unless the user explicitly taps "Make this my
+            // default" in Settings.
+            viewModel.selectedVibe = user.defaultVibe
+            await viewModel.loadOutfits(userId: user.id)
         }
         .refreshable {
             guard let userId = appState.currentUser?.id else { return }

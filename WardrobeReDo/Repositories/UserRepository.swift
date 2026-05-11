@@ -56,4 +56,16 @@ final class UserRepository {
             .eq("id", value: userId)
             .execute()
     }
+
+    /// Build 6 — persist the user's preferred default vibe. The
+    /// per-generation slider override stays ephemeral on
+    /// `OutfitViewModel.selectedVibe`; this updates only the
+    /// stored "where do future generations start" value.
+    func updateDefaultVibe(userId: UUID, vibe: VibeStop) async throws {
+        try await supabase
+            .from("profiles")
+            .update(["default_vibe": vibe.rawValue])
+            .eq("id", value: userId)
+            .execute()
+    }
 }

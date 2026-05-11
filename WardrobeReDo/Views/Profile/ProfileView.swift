@@ -18,6 +18,7 @@ struct ProfileView: View {
         List {
             userInfoSection
             statsSection
+            defaultVibeSection
             preferencesSection
             notificationsSection
             cacheSection
@@ -104,6 +105,47 @@ struct ProfileView: View {
             Text(value)
                 .font(.system(size: 15, weight: .medium, design: .rounded))
                 .foregroundStyle(Color(Theme.Colors.textSecondary))
+        }
+    }
+
+    // MARK: - Default Vibe (build 6)
+
+    private var defaultVibeSection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                Text("Default vibe")
+                    .font(Theme.Fonts.body)
+                Text("Where every outfit-generation session starts. You can still slide between Safe and Bold on the Outfits screen.")
+                    .font(Theme.Fonts.caption)
+                    .foregroundStyle(Color(Theme.Colors.textSecondary))
+                VibeSelector(vibe: Binding(
+                    get: { appState.currentUser?.defaultVibe ?? .balanced },
+                    set: { newValue in
+                        Task { await saveDefaultVibe(newValue) }
+                    }
+                ))
+            }
+            .padding(.vertical, Theme.Spacing.xs)
+        }
+    }
+
+    private func saveDefaultVibe(_ vibe: VibeStop) async {
+        guard let userId = appState.currentUser?.id else { return }
+        // Optimistic UI: write through to the in-memory profile so
+        // the slider doesn't snap back while the network call is
+        // in flight. Roll back if the persistence fails.
+        let previous = appState.currentUser?.defaultVibe ?? .balanced
+        if var profile = appState.currentUser {
+            profile.defaultVibe = vibe
+            appState.currentUser = profile
+        }
+        do {
+            try await UserRepository().updateDefaultVibe(userId: userId, vibe: vibe)
+        } catch {
+            if var profile = appState.currentUser {
+                profile.defaultVibe = previous
+                appState.currentUser = profile
+            }
         }
     }
 
