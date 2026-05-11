@@ -261,6 +261,37 @@ final class OutfitRepository: OutfitRepositoryProtocol {
         await cache.invalidateOutfits(userId: userId, date: date)
     }
 
+    // MARK: - Wear count (build 6)
+
+    /// Increment `wear_count` + refresh `last_worn_at = now()` for
+    /// every item in the supplied list. Idempotent at the SQL level
+    /// in the sense that each invocation bumps the count by exactly
+    /// one — the iOS client only fires this when an outfit
+    /// transitions to `isWorn = true` (not on the reverse toggle),
+    /// so the count is monotonic and reflects observed wears.
+    ///
+    /// See `supabase/migrations/00014_wardrobe_items_wear_count_rpc.sql`
+    /// for the security model.
+    func incrementWearCounts(itemIds: [UUID]) async throws {
+        guard !itemIds.isEmpty else { return }
+        try await withRetry(.interactive) {
+            try await self.supabase
+                .rpc(
+                    "wardrobe_items_increment_wear_count",
+                    params: WearCountParams(itemIds: itemIds)
+                )
+                .execute()
+        }
+    }
+
+    private struct WearCountParams: Encodable, Sendable {
+        let itemIds: [UUID]
+
+        enum CodingKeys: String, CodingKey {
+            case itemIds = "item_ids"
+        }
+    }
+
     // MARK: - Recent Item Tracking
 
     /// Fetch wardrobe item IDs worn in the last N days.
@@ -284,6 +315,43 @@ final class OutfitRepository: OutfitRepositoryProtocol {
 
         let slotsByOutfit = try await fetchSlotsForOutfits(outfitIds: recentOutfits.map(\.id))
         return Set(slotsByOutfit.values.flatMap { $0 }.map(\.wardrobeItemId))
+    }
+
+    /// Fetch every unordered item-pair that the user has worn together
+    /// across their most-recent `limit` outfits. Powers
+    /// `VersatilityScorer`'s novel-combination bonus (Phase 5.1) —
+    /// the scorer subtracts the candidate's overlap with this set
+    /// to reward unfamiliar pairings.
+    ///
+    /// `limit = 30` mirrors the plan's threshold ("last 30 saved
+    /// outfits"). The two queries are sequential rather than
+    /// `async let`-raced because the slot fetch depends on the
+    /// outfit IDs from the first query.
+    func fetchRecentItemPairs(userId: UUID, limit: Int = 30) async throws -> Set<UnorderedItemPair> {
+        let recentOutfits: [Outfit] = try await supabase
+            .from("outfits")
+            .select()
+            .eq("user_id", value: userId)
+            .order("date", ascending: false)
+            .limit(limit)
+            .execute()
+            .value
+
+        guard !recentOutfits.isEmpty else { return [] }
+
+        let slotsByOutfit = try await fetchSlotsForOutfits(outfitIds: recentOutfits.map(\.id))
+
+        var pairs: Set<UnorderedItemPair> = []
+        for slots in slotsByOutfit.values {
+            let itemIDs = slots.map(\.wardrobeItemId)
+            guard itemIDs.count >= 2 else { continue }
+            for i in 0 ..< itemIDs.count {
+                for j in (i + 1) ..< itemIDs.count {
+                    pairs.insert(UnorderedItemPair(itemIDs[i], itemIDs[j]))
+                }
+            }
+        }
+        return pairs
     }
 
     // MARK: - Existence Check

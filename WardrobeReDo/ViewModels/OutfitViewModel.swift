@@ -225,12 +225,24 @@ final class OutfitViewModel {
                 [outfitRepository, generationService, selectedOccasion, selectedVibe, wardrobeItems, seed] group in
                 group.addTask {
                     do {
-                        let recentIds = try await outfitRepository.fetchRecentItemIds(userId: userId)
+                        // Race the two history fetches — they're
+                        // independent (different tables, different
+                        // limit windows) and the engine consumes both.
+                        async let recentIdsTask = outfitRepository.fetchRecentItemIds(userId: userId)
+                        async let recentPairsTask = outfitRepository.fetchRecentItemPairs(userId: userId)
+                        let recentIds = try await recentIdsTask
+                        // Pairs are best-effort: if the query fails
+                        // (RLS hiccup, network blip) we fall back to
+                        // an empty set so the novelty scorer reports
+                        // coverage = 0 rather than aborting the entire
+                        // generation.
+                        let recentPairs = (try? await recentPairsTask) ?? []
 
                         let candidates = await generationService.generateDailyOutfits(
                             items: wardrobeItems,
                             occasion: selectedOccasion,
                             recentItemIds: recentIds,
+                            recentItemPairs: recentPairs,
                             seed: seed,
                             vibe: selectedVibe
                         )
@@ -325,6 +337,23 @@ final class OutfitViewModel {
             let newWorn = !old.outfit.isWorn
 
             try await outfitRepository.markAsWorn(outfitId: outfitId, isWorn: newWorn)
+
+            // Build 6: bump per-item `wear_count` only on the
+            // un-worn → worn transition so the count is monotonic
+            // and matches observed wears. Failure here is logged
+            // but doesn't roll back the `markAsWorn` write — the
+            // worn flag is the user-visible source of truth; the
+            // count is a derived signal the engine consumes
+            // best-effort.
+            if newWorn {
+                let itemIds = old.slots.map(\.wardrobeItemId)
+                do {
+                    try await outfitRepository.incrementWearCounts(itemIds: itemIds)
+                } catch {
+                    // Log + swallow — see comment above.
+                    print("[OutfitViewModel] wear-count increment failed: \(error)")
+                }
+            }
 
             let updatedOutfit = Outfit(
                 id: old.outfit.id,

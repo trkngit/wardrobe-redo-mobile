@@ -73,8 +73,12 @@ final class MockOutfitRepository: OutfitRepositoryProtocol {
     var fetchOutfitsByDateResult: Result<[Outfit], Error> = .success([])
     var fetchSlotsResult: Result<[UUID: [OutfitSlot]], Error> = .success([:])
     var fetchRecentItemIdsResult: Result<Set<UUID>, Error> = .success([])
+    var fetchRecentItemPairsResult: Result<Set<UnorderedItemPair>, Error> = .success([])
     var updateReactionError: Error?
     var markAsWornError: Error?
+    var incrementWearCountsError: Error?
+    var incrementWearCountsCallCount = 0
+    var lastIncrementWearCountIds: [UUID] = []
 
     var hasOutfitsForDateResult: Bool = false
     var deleteOutfitsError: Error?
@@ -103,6 +107,16 @@ final class MockOutfitRepository: OutfitRepositoryProtocol {
 
     func fetchRecentItemIds(userId: UUID, days: Int) async throws -> Set<UUID> {
         return try fetchRecentItemIdsResult.get()
+    }
+
+    func fetchRecentItemPairs(userId: UUID, limit: Int) async throws -> Set<UnorderedItemPair> {
+        return try fetchRecentItemPairsResult.get()
+    }
+
+    func incrementWearCounts(itemIds: [UUID]) async throws {
+        incrementWearCountsCallCount += 1
+        lastIncrementWearCountIds = itemIds
+        if let error = incrementWearCountsError { throw error }
     }
 
     func updateReaction(outfitId: UUID, reaction: String?) async throws {

@@ -59,6 +59,7 @@ final class OutfitGenerationService: @unchecked Sendable {
         items: [WardrobeItem],
         occasion: Occasion = .casual,
         recentItemIds: Set<UUID> = [],
+        recentItemPairs: Set<UnorderedItemPair> = [],
         seed: UInt64? = nil,
         vibe: VibeStop = .balanced
     ) async -> [OutfitCandidate] {
@@ -72,6 +73,7 @@ final class OutfitGenerationService: @unchecked Sendable {
             occasion: occasion,
             wardrobeSize: activeItems.count,
             recentItemIds: recentItemIds,
+            recentItemPairs: recentItemPairs,
             vibe: vibe
         )
 
