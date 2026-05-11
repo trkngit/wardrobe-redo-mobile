@@ -80,6 +80,17 @@ struct DailyOutfitsView: View {
                     }
                     .buttonStyle(.plain)
                     .tag(index)
+                    // Build 12 — long-press menu on the card.
+                    // Quick path to react / mark worn without
+                    // having to navigate into the detail view
+                    // and back. Sets the same VM methods the
+                    // detail view's reaction bar calls; the
+                    // carousel re-renders the footer icon + the
+                    // build-10 dim treatment for skip in the
+                    // next animation tick.
+                    .contextMenu {
+                        outfitContextMenu(for: dailyOutfit)
+                    }
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
@@ -113,6 +124,53 @@ struct DailyOutfitsView: View {
             // Lives below the picker so it's adjacent to the occasion
             // they may have just changed.
             regenerateButton
+        }
+    }
+
+    // MARK: - Build 12 — context menu
+
+    /// Long-press menu on a card. Currently surfaces: love, like,
+    /// skip, mark worn / un-worn. Each action mirrors the
+    /// corresponding reaction-bar / wear-toggle on `OutfitDetailView`
+    /// so behavior stays consistent — only the navigation cost
+    /// changes. Toggling the same reaction clears it (matches the
+    /// in-detail toggle semantic).
+    @ViewBuilder
+    private func outfitContextMenu(for dailyOutfit: DailyOutfit) -> some View {
+        let outfitId = dailyOutfit.outfit.id
+        let reaction = dailyOutfit.outfit.reaction
+
+        Button {
+            HapticManager.light()
+            Task { await viewModel.react(outfitId: outfitId, reaction: "love") }
+        } label: {
+            Label(reaction == "love" ? "Unlove" : "Love", systemImage: "heart")
+        }
+
+        Button {
+            HapticManager.light()
+            Task { await viewModel.react(outfitId: outfitId, reaction: "like") }
+        } label: {
+            Label(reaction == "like" ? "Unlike" : "Like", systemImage: "hand.thumbsup")
+        }
+
+        Button {
+            HapticManager.light()
+            Task { await viewModel.react(outfitId: outfitId, reaction: "skip") }
+        } label: {
+            Label(reaction == "skip" ? "Un-skip" : "Skip", systemImage: "forward")
+        }
+
+        Divider()
+
+        Button {
+            HapticManager.medium()
+            Task { await viewModel.toggleWorn(outfitId: outfitId) }
+        } label: {
+            Label(
+                dailyOutfit.outfit.isWorn ? "Mark unworn" : "Mark worn",
+                systemImage: dailyOutfit.outfit.isWorn ? "arrow.uturn.backward" : "checkmark.circle"
+            )
         }
     }
 
