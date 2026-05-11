@@ -84,20 +84,37 @@ struct OutfitCardView: View {
 
     private func itemThumbnail(for item: WardrobeItem) -> some View {
         VStack(spacing: Theme.Spacing.xs) {
-            KFImage(thumbnailURLs[item.id])
-                .placeholder {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(Theme.Colors.muted).opacity(0.3))
-                        .overlay {
-                            Image(systemName: item.category.iconName)
-                                .font(.system(size: 18, weight: .light))
-                                .foregroundStyle(Color(Theme.Colors.textSecondary))
-                        }
+            ZStack(alignment: .topTrailing) {
+                KFImage(thumbnailURLs[item.id])
+                    .placeholder {
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color(Theme.Colors.muted).opacity(0.3))
+                            .overlay {
+                                Image(systemName: item.category.iconName)
+                                    .font(.system(size: 18, weight: .light))
+                                    .foregroundStyle(Color(Theme.Colors.textSecondary))
+                            }
+                    }
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 80, height: 100)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                // Build 9 — wear-count badge in the top-right corner.
+                // Helps the user spot wardrobe-rotation imbalance:
+                // "this top is in every other outfit" pops visually.
+                // Hidden at zero wears (fresh item) so unworn pieces
+                // look clean; appears as a small numbered chip once
+                // wear count climbs. The pill background uses the
+                // primary tint at low opacity so it reads as
+                // informative metadata, not an alert.
+                if item.wearCount > 0 {
+                    wearCountBadge(count: item.wearCount)
+                        .padding(.top, 4)
+                        .padding(.trailing, 4)
+                        .accessibilityLabel("Worn \(item.wearCount) \(item.wearCount == 1 ? "time" : "times")")
                 }
-                .resizable()
-                .scaledToFill()
-                .frame(width: 80, height: 100)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
 
             // Slot role indicator
             if let slot = dailyOutfit.slots.first(where: { $0.wardrobeItemId == item.id }) {
@@ -110,6 +127,26 @@ struct OutfitCardView: View {
                     )
             }
         }
+    }
+
+    /// Build 9 — tiny wear-count chip. Scales the visual weight
+    /// with the count: 1-2 reads subtle, 5+ reads "rotation-heavy".
+    /// Numbers above 9 collapse to "9+" so the pill stays
+    /// fixed-width and the thumbnail strip doesn't reflow.
+    private func wearCountBadge(count: Int) -> some View {
+        Text(count > 9 ? "9+" : "\(count)")
+            .font(.system(size: 10, weight: .semibold, design: .rounded))
+            .foregroundStyle(.white)
+            .frame(minWidth: 18, minHeight: 18)
+            .padding(.horizontal, 4)
+            .background(
+                Capsule()
+                    .fill(Color(Theme.Colors.primary).opacity(0.92))
+            )
+            .overlay(
+                Capsule()
+                    .stroke(.white, lineWidth: 1)
+            )
     }
 
     // MARK: - Footer

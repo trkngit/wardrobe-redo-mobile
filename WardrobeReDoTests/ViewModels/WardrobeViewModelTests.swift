@@ -67,6 +67,79 @@ import Testing
     #expect(vm.selectedCategory == .bottom)
 }
 
+// MARK: - Build 9: search filter
+
+@Test @MainActor func wardrobeSearchMatchesSubcategoryName() {
+    // The most natural search target — the user types "Sneakers"
+    // because that's what the card says.
+    let vm = WardrobeViewModel()
+    vm.items = [
+        TestFixtures.makeWardrobeItem(category: .top, subcategory: .tshirt),
+        TestFixtures.makeWardrobeItem(category: .bottom, subcategory: .jeans),
+        TestFixtures.makeWardrobeItem(category: .shoe, subcategory: .sneakers),
+    ]
+    vm.searchQuery = "sneakers"
+    #expect(vm.filteredItems.count == 1)
+    #expect(vm.filteredItems.first?.subcategory == .sneakers)
+}
+
+@Test @MainActor func wardrobeSearchIsCaseInsensitive() {
+    // Mobile keyboards autocapitalize-the-first-letter aggressively,
+    // so "Tshirt" with leading caps must match the lowercased
+    // canonical name. Texture / category branches share the same
+    // path so verifying once is enough.
+    let vm = WardrobeViewModel()
+    vm.items = [
+        TestFixtures.makeWardrobeItem(category: .top, subcategory: .tshirt),
+    ]
+    vm.searchQuery = "T-shirt"
+    #expect(vm.filteredItems.count == 1)
+}
+
+@Test @MainActor func wardrobeSearchMatchesTexture() {
+    // Texture isn't displayed on the card but IS in the user's
+    // mental model ("my denim jacket"). Matching it gives the
+    // search bar more reach than just the visible name strings.
+    let vm = WardrobeViewModel()
+    vm.items = [
+        TestFixtures.makeWardrobeItem(category: .top, subcategory: .tshirt, texture: .cotton),
+        TestFixtures.makeWardrobeItem(category: .bottom, subcategory: .jeans, texture: .denim),
+    ]
+    vm.searchQuery = "denim"
+    #expect(vm.filteredItems.count == 1)
+    #expect(vm.filteredItems.first?.texture == .denim)
+}
+
+@Test @MainActor func wardrobeSearchEmptyQueryIsNoOp() {
+    // Whitespace and empty strings must return the full list —
+    // the field can sit above the chips without changing default
+    // behavior, and clearing the query restores the chip-only view.
+    let vm = WardrobeViewModel()
+    vm.items = (0..<3).map { _ in TestFixtures.makeWardrobeItem() }
+
+    vm.searchQuery = ""
+    #expect(vm.filteredItems.count == 3)
+
+    vm.searchQuery = "   "
+    #expect(vm.filteredItems.count == 3)
+}
+
+@Test @MainActor func wardrobeSearchCombinesWithCategoryChip() {
+    // The two filters AND together: category narrows first, then
+    // the query narrows what's left. A user picking "Shoe" then
+    // typing "sneakers" sees only shoes that match "sneakers".
+    let vm = WardrobeViewModel()
+    vm.items = [
+        TestFixtures.makeWardrobeItem(category: .top, subcategory: .tshirt),
+        TestFixtures.makeWardrobeItem(category: .shoe, subcategory: .sneakers),
+        TestFixtures.makeWardrobeItem(category: .shoe, subcategory: .boots),
+    ]
+    vm.selectedCategory = .shoe
+    vm.searchQuery = "sneakers"
+    #expect(vm.filteredItems.count == 1)
+    #expect(vm.filteredItems.first?.subcategory == .sneakers)
+}
+
 @Test @MainActor func wardrobeIsEmptyWhenEmptyAndNotLoading() {
     let vm = WardrobeViewModel()
     vm.items = []

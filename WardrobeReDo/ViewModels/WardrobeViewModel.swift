@@ -61,6 +61,17 @@ final class WardrobeViewModel {
     var selectedCategory: ClothingCategory? {
         didSet { recomputeSessions() }
     }
+    /// Build 9 — free-text wardrobe search. Filters by substring
+    /// across the item's category + subcategory display names and
+    /// the texture name. Combined with `selectedCategory`: chip
+    /// narrows by category, query narrows further by name.
+    ///
+    /// Empty / whitespace strings disable the filter (same as
+    /// "no query"), so clearing the field via the trailing X
+    /// returns to the category-only view without a reload.
+    var searchQuery: String = "" {
+        didSet { recomputeSessions() }
+    }
     var isLoading = false
     var errorMessage: String?
     var showAddItem = false
@@ -97,8 +108,28 @@ final class WardrobeViewModel {
     // MARK: - Computed
 
     var filteredItems: [WardrobeItem] {
-        guard let category = selectedCategory else { return items }
-        return items.filter { $0.category == category }
+        let categoryFiltered: [WardrobeItem] = {
+            guard let category = selectedCategory else { return items }
+            return items.filter { $0.category == category }
+        }()
+
+        // Build 9 — substring match across the strings the user
+        // sees on the card: subcategory ("Sneakers"), category
+        // ("Shoe"), and texture ("Denim"). Case-insensitive. An
+        // empty / whitespace query is a no-op so the field can
+        // safely sit above the chip row without changing default
+        // behavior.
+        let trimmed = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return categoryFiltered }
+        let needle = trimmed.lowercased()
+        return categoryFiltered.filter { item in
+            let haystack = [
+                item.subcategory.displayName.lowercased(),
+                item.category.displayName.lowercased(),
+                item.texture?.displayName.lowercased() ?? ""
+            ].joined(separator: " ")
+            return haystack.contains(needle)
+        }
     }
 
     private func recomputeSessions() {

@@ -33,6 +33,19 @@ struct MatchingView: View {
             viewModel.selectedOccasion = OccasionMemory.matchLastOccasion()
             await viewModel.loadWardrobe(userId: user.id)
         }
+        // Build 9 — pull-to-refresh parity with the Outfits tab.
+        // Refreshes the wardrobe items underneath the picker so a
+        // user who just added a piece in another tab can pull-down
+        // and see it without backing out of Match. If a hero is
+        // already selected, the match results re-rank on the new
+        // wardrobe snapshot.
+        .refreshable {
+            guard let userId = appState.currentUser?.id else { return }
+            await viewModel.loadWardrobe(userId: userId)
+            if viewModel.selectedItem != nil {
+                await viewModel.findMatches(userId: userId)
+            }
+        }
         // Build 7 — "Updated for [occasion] · [vibe]" toast,
         // identical pattern to the Outfits tab.
         .statusToast(message: Binding(

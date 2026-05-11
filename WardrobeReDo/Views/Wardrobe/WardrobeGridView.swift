@@ -32,9 +32,19 @@ struct WardrobeGridView: View {
             } else {
                 ScrollView {
                     VStack(spacing: Theme.Spacing.md) {
+                        // Build 9 — search bar above the category
+                        // chips. Substring match across the visible
+                        // strings on each card. Sits above the chips
+                        // so the user can think "filter by category
+                        // OR type a name" — both narrow the same list.
+                        searchBar
                         categoryFilters
                         itemCount
-                        sessionList
+                        if viewModel.filteredItems.isEmpty {
+                            searchEmptyState
+                        } else {
+                            sessionList
+                        }
                     }
                     .padding(.horizontal, Theme.Spacing.md)
                     .padding(.top, Theme.Spacing.sm)
@@ -100,6 +110,78 @@ struct WardrobeGridView: View {
                 ItemDetailView(item: item)
             }
         }
+    }
+
+    // MARK: - Search Bar (build 9)
+
+    /// Build 9 — free-text wardrobe filter. Matches on subcategory
+    /// name ("Sneakers"), category name ("Shoe"), and texture
+    /// ("Denim"). Uses a `@Bindable` shortcut on the VM so the
+    /// TextField writes directly to `searchQuery`, which already
+    /// triggers `recomputeSessions()` via its `didSet`.
+    private var searchBar: some View {
+        @Bindable var vm = viewModel
+        return HStack(spacing: Theme.Spacing.sm) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Color(Theme.Colors.textSecondary))
+
+            TextField("Search wardrobe", text: $vm.searchQuery)
+                .font(Theme.Fonts.body)
+                .foregroundStyle(Color(Theme.Colors.textPrimary))
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+
+            if !viewModel.searchQuery.isEmpty {
+                Button {
+                    HapticManager.light()
+                    viewModel.searchQuery = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Color(Theme.Colors.textSecondary))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.horizontal, Theme.Spacing.md)
+        .padding(.vertical, Theme.Spacing.sm)
+        .background(Color(Theme.Colors.surface))
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.chip))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.chip)
+                .stroke(Color(Theme.Colors.border), lineWidth: 1)
+        )
+    }
+
+    /// Empty state shown when a search / category combination
+    /// returns zero items. Stays in-flow with the search bar
+    /// above so the user can keep typing or clear the query
+    /// without losing context.
+    private var searchEmptyState: some View {
+        VStack(spacing: Theme.Spacing.sm) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 32, weight: .ultraLight))
+                .foregroundStyle(Color(Theme.Colors.muted))
+                .padding(.top, Theme.Spacing.xl)
+
+            Text("No items match your search")
+                .font(Theme.Fonts.bodySmall)
+                .foregroundStyle(Color(Theme.Colors.textSecondary))
+
+            if !viewModel.searchQuery.isEmpty {
+                Button("Clear search") {
+                    HapticManager.light()
+                    viewModel.searchQuery = ""
+                }
+                .font(Theme.Fonts.caption)
+                .foregroundStyle(Color(Theme.Colors.primary))
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Theme.Spacing.lg)
     }
 
     // MARK: - Category Filters
