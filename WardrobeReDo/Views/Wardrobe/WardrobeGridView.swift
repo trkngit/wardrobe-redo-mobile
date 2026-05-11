@@ -339,6 +339,11 @@ struct WardrobeGridView: View {
                     .staggeredFadeIn(index: staggerStart + offset)
                 }
                 .buttonStyle(.plain)
+                // Build 13 — long-press for quick actions on a card
+                // without navigating into the detail view. Today
+                // that's just Archive; future iterations can add
+                // Edit / Share without re-plumbing.
+                .contextMenu { itemContextMenu(for: item) }
             }
         }
     }
@@ -407,7 +412,29 @@ struct WardrobeGridView: View {
                     .staggeredFadeIn(index: staggerIndex + itemIndex)
                 }
                 .buttonStyle(.plain)
+                // Build 13 — same context menu as the singles
+                // grid. Multi-garment session cards deserve the
+                // same shortcut.
+                .contextMenu { itemContextMenu(for: item) }
             }
+        }
+    }
+
+    // MARK: - Build 13 — item context menu
+
+    /// Long-press menu on a wardrobe card. Archive is the one
+    /// destructive action we surface from here — delete stays
+    /// gated behind the detail view's full confirmation flow.
+    /// The item.archive path on the VM removes the row from
+    /// `items` optimistically, so the card disappears as soon
+    /// as the user confirms the menu choice.
+    @ViewBuilder
+    private func itemContextMenu(for item: WardrobeItem) -> some View {
+        Button(role: .destructive) {
+            HapticManager.warning()
+            Task { await viewModel.archiveItem(item) }
+        } label: {
+            Label("Archive", systemImage: "archivebox")
         }
     }
 

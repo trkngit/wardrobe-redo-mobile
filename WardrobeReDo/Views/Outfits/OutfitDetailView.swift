@@ -33,6 +33,18 @@ struct OutfitDetailView: View {
             }
             .padding(.horizontal, Theme.Spacing.md)
             .padding(.bottom, Theme.Spacing.xxl)
+            // Build 13 — parity with the build-10 carousel card.
+            // A skipped outfit dims in the carousel; tapping into
+            // the detail view shouldn't suddenly restore full
+            // saturation as if the skip didn't happen. Same
+            // numbers (0.45 opacity / 0.4 saturation) so the
+            // transition into / out of detail feels continuous.
+            // Applied to the content VStack instead of the
+            // ScrollView so the toolbar share button stays at
+            // full opacity for the action affordance.
+            .opacity(isSkipped ? 0.45 : 1.0)
+            .saturation(isSkipped ? 0.4 : 1.0)
+            .animation(Theme.Animation.standard, value: isSkipped)
         }
         .background(Color(Theme.Colors.background))
         .navigationTitle(outfit.editorialName)
@@ -56,6 +68,12 @@ struct OutfitDetailView: View {
             }
         }
     }
+
+    /// Build 13 — same skip predicate as `OutfitCardView`.
+    /// Drives the dim + desaturation treatment so a skipped
+    /// outfit looks visibly de-prioritized in both the carousel
+    /// and the detail view.
+    private var isSkipped: Bool { outfit.reaction == "skip" }
 
     /// Build 11 — text representation of the outfit for the
     /// share sheet. Keeps it short enough to fit in a single
