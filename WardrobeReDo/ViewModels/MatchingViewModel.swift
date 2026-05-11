@@ -113,6 +113,7 @@ final class MatchingViewModel {
             return
         }
 
+        VibeTelemetry.logGenerationVibe(selectedVibe, source: "match")
         do {
             // Race the two history fetches the engine consumes:
             // 7-day recency for the frequency penalty and the

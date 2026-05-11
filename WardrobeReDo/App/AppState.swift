@@ -112,6 +112,10 @@ final class AppState {
             currentUser = profile
             profileLoadFailed = false
             logger.info("loadProfile: success, displayName=\(profile.displayName)")
+            // Build 6: tag the user's stored default vibe once per
+            // app session so we can see the distribution across
+            // active users without sampling per-generation events.
+            VibeTelemetry.logProfileDefault(profile.defaultVibe)
         } else {
             profileLoadFailed = true
             logger.warning("loadProfile: failed or timed out for userId=\(userId)")

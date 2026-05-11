@@ -378,6 +378,7 @@ struct OnboardingView: View {
             // even when they picked `.balanced` explicitly (their
             // intent — not a "user didn't pick" default).
             try await userRepository.updateDefaultVibe(userId: userId, vibe: selectedVibe)
+            VibeTelemetry.logDefaultChanged(to: selectedVibe, via: "onboarding")
 
             // Mark onboarding completed
             try await userRepository.completeOnboarding(userId: userId)

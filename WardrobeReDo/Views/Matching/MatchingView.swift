@@ -180,6 +180,9 @@ struct MatchingView: View {
                 get: { viewModel.selectedVibe },
                 set: { newVibe in
                     viewModel.selectedVibe = newVibe
+                    if let defaultVibe = appState.currentUser?.defaultVibe {
+                        VibeTelemetry.logOverride(default: defaultVibe, selected: newVibe, source: "match")
+                    }
                     guard let userId = appState.currentUser?.id else { return }
                     Task { await viewModel.regenerateMatches(userId: userId) }
                 }

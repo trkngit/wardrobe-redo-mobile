@@ -91,7 +91,17 @@ struct DailyOutfitsView: View {
     private var vibePickerRow: some View {
         VibeSelector(vibe: Binding(
             get: { viewModel.selectedVibe },
-            set: { viewModel.selectedVibe = $0 }
+            set: { newValue in
+                viewModel.selectedVibe = newValue
+                // Build 6 — log overrides so we can see how often
+                // users pick something other than their saved
+                // default. Sampled at chip-tap rather than on every
+                // generate because most generates inherit the
+                // existing slider state.
+                if let defaultVibe = appState.currentUser?.defaultVibe {
+                    VibeTelemetry.logOverride(default: defaultVibe, selected: newValue, source: "outfits")
+                }
+            }
         ))
         .padding(.horizontal, Theme.Spacing.lg)
         .padding(.bottom, Theme.Spacing.sm)

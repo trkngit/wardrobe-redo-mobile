@@ -141,6 +141,7 @@ struct ProfileView: View {
         }
         do {
             try await UserRepository().updateDefaultVibe(userId: userId, vibe: vibe)
+            VibeTelemetry.logDefaultChanged(to: vibe, via: "settings")
         } catch {
             if var profile = appState.currentUser {
                 profile.defaultVibe = previous

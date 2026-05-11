@@ -225,6 +225,7 @@
 		BDBA5BA78537D1D6D2CE8B48 /* ProfileDefaultVibeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB9F7EB5118D642B94B6F753 /* ProfileDefaultVibeTests.swift */; };
 		BDCA26E766243A7934DF85CB /* ItemDetailViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7423FE53B01FD026F811E99 /* ItemDetailViewTests.swift */; };
 		C08A66331DB9FD1EFF3729D9 /* LocalCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 797AEDE9A63C7C91D9D7EFF3 /* LocalCache.swift */; };
+		C484F1C9FF19B26ADA5D32E4 /* VibeTelemetry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30B2B2AD3635F9A237F60D64 /* VibeTelemetry.swift */; };
 		C53B931792C24B363FAD1E3F /* AuthViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C5ED3AC7EFDFC86DD91D4DF /* AuthViewModelTests.swift */; };
 		C66A438F99021BD4F692C0F9 /* cluttered_05.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 3F0F92C918581515AEAC6C32 /* cluttered_05.jpg */; };
 		C6D23E8DF6B9942CF5E34FA0 /* OutfitViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67EB615A4916E722BF973F75 /* OutfitViewModelTests.swift */; };
@@ -403,6 +404,7 @@
 		2E919CB1705C069652DC5700 /* cluttered_09.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = cluttered_09.png; sourceTree = "<group>"; };
 		2FB218A3E5982759A27575EF /* FormalityCoherenceScorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormalityCoherenceScorer.swift; sourceTree = "<group>"; };
 		307933CEB602AED8C7ACD99B /* AttributeClassifier.mlpackage */ = {isa = PBXFileReference; path = AttributeClassifier.mlpackage; sourceTree = "<group>"; };
+		30B2B2AD3635F9A237F60D64 /* VibeTelemetry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VibeTelemetry.swift; sourceTree = "<group>"; };
 		30CEFA6A7B5A6DA1D58FA150 /* ClothingCategory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingCategory.swift; sourceTree = "<group>"; };
 		31EA96C3FBBEB65A987231AF /* VibeEndToEndTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VibeEndToEndTests.swift; sourceTree = "<group>"; };
 		330E5FD9F8488464914C3C6F /* VibeSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VibeSelector.swift; sourceTree = "<group>"; };
@@ -1173,6 +1175,7 @@
 			children = (
 				09B6177F055B8350472C2188 /* MLTelemetryService.swift */,
 				44D3E39B8E56769EE8DC1A3F /* SentryService.swift */,
+				30B2B2AD3635F9A237F60D64 /* VibeTelemetry.swift */,
 			);
 			path = Telemetry;
 			sourceTree = "<group>";
@@ -1734,6 +1737,7 @@
 				60A713A486EE2CDCDD87A844 /* VersatilityScorer.swift in Sources */,
 				836F27345CCD2E0B1D1DF4E4 /* VibePreset.swift in Sources */,
 				8CFB45A601092CEB3380E884 /* VibeSelector.swift in Sources */,
+				C484F1C9FF19B26ADA5D32E4 /* VibeTelemetry.swift in Sources */,
 				0E61FA5B396B76DAE8B8E85E /* VisionForegroundExtractor.swift in Sources */,
 				D95FCD511EF60476DCEA9308 /* WardrobeGridView.swift in Sources */,
 				E4014DF209EF9BEEB202C489 /* WardrobeItem.swift in Sources */,

@@ -221,6 +221,7 @@ final class OutfitViewModel {
 
             // Race generation against a 60-second timeout. The outcome
             // enum lets us distinguish empty results from real timeouts.
+            VibeTelemetry.logGenerationVibe(selectedVibe, source: "outfits")
             let outcome: GenerationOutcome = await withTaskGroup(of: GenerationOutcome.self) {
                 [outfitRepository, generationService, selectedOccasion, selectedVibe, wardrobeItems, seed] group in
                 group.addTask {
