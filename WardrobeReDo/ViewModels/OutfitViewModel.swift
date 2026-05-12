@@ -366,7 +366,15 @@ final class OutfitViewModel {
                     return .timeout
                 }
 
-                let result = await group.next()!
+                // Build 19 — defensive: `group.next()` returns nil
+                // only when the group is empty (impossible here — we
+                // added two tasks above) OR when both tasks resolved
+                // before `next()` polled, which the structured-concurrency
+                // contract doesn't guarantee won't happen. Force-unwrap
+                // would crash in that edge case; treating it as a timeout
+                // is the safe interpretation since we're racing against
+                // a 60s timer anyway.
+                let result = await group.next() ?? .timeout
                 group.cancelAll()
                 return result
             }

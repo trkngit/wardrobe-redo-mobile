@@ -1169,6 +1169,14 @@
         }
       }
     },
+    "Offline. Network connectivity unavailable." : {
+      "comment" : "Offline banner a11y label",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Çevrimdışı. Ağ bağlantısı yok." } } }
+    },
+    "You're offline" : {
+      "comment" : "Offline banner visible label",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Çevrimdışısın" } } }
+    },
     "Close image viewer" : {
       "comment" : "FullScreenImageViewer close button a11y label",
       "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Görsel görüntüleyiciyi kapat" } } }

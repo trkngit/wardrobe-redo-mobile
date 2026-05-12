@@ -28,6 +28,14 @@ final class AppState {
     /// repeated tab switches don't keep re-presenting it.
     var pendingAddItem: Bool = false
 
+    // MARK: - Build 19 — network reachability
+
+    /// Reachability monitor for the app. Single instance shared
+    /// across views via the `AppState` environment. Read
+    /// `networkMonitor.isOnline` to decide whether to short-circuit
+    /// network calls or surface an offline banner.
+    let networkMonitor = NetworkMonitor()
+
     private let supabase = SupabaseManager.shared.client
     private let userRepository = UserRepository()
     private let logger = Logger(subsystem: "com.wardroberedo", category: "AppState")
@@ -102,7 +110,12 @@ final class AppState {
                 try? await Task.sleep(for: .seconds(5))
                 return nil
             }
-            let result = await group.next()!
+            // Build 19 — coalesce nil to nil rather than force-unwrap.
+            // The original `!` would crash if `next()` ever returned nil
+            // (theoretically impossible here, but the cost of being
+            // defensive is one extra `??` operator and zero behavior
+            // change in the happy path).
+            let result = (await group.next()) ?? nil
             group.cancelAll()
             return result
         }
@@ -120,7 +133,8 @@ final class AppState {
                 try? await Task.sleep(for: .seconds(10))
                 return nil
             }
-            let result = await group.next()!
+            // Build 19 — same defensive coalesce as fetchSessionUserId.
+            let result = (await group.next()) ?? nil
             group.cancelAll()
             return result
         }
