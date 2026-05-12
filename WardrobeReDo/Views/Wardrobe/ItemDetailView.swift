@@ -23,6 +23,11 @@ struct ItemDetailView: View {
     @State private var showArchiveConfirm = false
     @State private var isArchiving = false
     @State private var errorMessage: String?
+    // Build 18 — drives the fullscreen image viewer cover. Tapping
+    // the hero image flips this true; the viewer's close button (or
+    // a drag-down gesture) flips it back. Local @State because the
+    // viewer is presentational and doesn't need to survive a navigate.
+    @State private var showFullScreenImage = false
 
     private let imageService = ImageService()
 
@@ -65,6 +70,13 @@ struct ItemDetailView: View {
         // catalog translation surfaces here too.
         .navigationTitle(Text(item.subcategory.localizedName))
         .navigationBarTitleDisplayMode(.inline)
+        // Build 18 — tap-to-zoom for the hero image. Lives at the
+        // root of the view so the cover's dismiss animation owns
+        // the full screen rather than being clipped inside the
+        // ScrollView.
+        .fullScreenCover(isPresented: $showFullScreenImage) {
+            FullScreenImageViewer(url: imageURL, isPresented: $showFullScreenImage)
+        }
         .toolbar {
             // Edit button lives in the trailing slot so the iOS-standard
             // back-chevron stays leading. Pushing `EditItemView` rather
@@ -148,6 +160,27 @@ struct ItemDetailView: View {
         // capture the loaded image's intrinsic size via
         // `KFImage.onSuccess` and project the bbox onto the actual
         // rendered image rect inside the frame.
+        //
+        // Build 18 — wrapped in a Button so the whole image is a
+        // single hit target that flips into the fullscreen viewer.
+        // `.buttonStyle(.plain)` keeps the rendering exactly as
+        // before (no system tint, no press-state recoloring) so
+        // visually nothing changes; only the tap behavior does.
+        // The bbox overlay above sets `.allowsHitTesting(false)`,
+        // so the Button still receives the tap on the underlying
+        // image even where the overlay is rendered.
+        Button {
+            HapticManager.light()
+            showFullScreenImage = true
+        } label: {
+            imageContent
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("View item photo full screen")
+        .accessibilityHint("Double-tap to enlarge")
+    }
+
+    private var imageContent: some View {
         GeometryReader { geo in
             ZStack {
                 KFImage(imageURL)

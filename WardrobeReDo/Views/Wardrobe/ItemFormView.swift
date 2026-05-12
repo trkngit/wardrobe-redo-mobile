@@ -132,7 +132,10 @@ struct ItemFormView: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             sectionHeader("Fit", auto: isSectionAutoDetected(.fit))
 
-            HStack(spacing: Theme.Spacing.sm) {
+            // Build 18 — same adaptive grid swap as seasons: 6 fits
+            // × Turkish ("Yapılandırılmış" is 16 characters) blow
+            // past the iPhone SE width otherwise.
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: Theme.Spacing.sm) {
                 ForEach(FitAttribute.allCases, id: \.self) { fit in
                     chipButton(
                         fit.localizedName,
@@ -149,7 +152,12 @@ struct ItemFormView: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             sectionHeader("Seasons", auto: isSectionAutoDetected(.seasons))
 
-            HStack(spacing: Theme.Spacing.sm) {
+            // Build 18 — switched from fixed HStack to an adaptive
+            // LazyVGrid because Turkish season names ("İlkbahar",
+            // "Sonbahar") are wider than English equivalents and
+            // overflow the row on iPhone SE. The grid wraps to two
+            // rows when needed and packs back to one on a wider phone.
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: Theme.Spacing.sm) {
                 ForEach(Season.allCases, id: \.self) { season in
                     chipButton(
                         season.localizedName,

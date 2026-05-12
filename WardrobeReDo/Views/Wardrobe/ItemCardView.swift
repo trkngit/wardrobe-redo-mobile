@@ -27,9 +27,15 @@ struct ItemCardView: View {
                 ItemThumbnailView(item: item, url: thumbnailURL, size: .medium)
 
                 // Category badge — Build 17 localized subcategory.
+                // Build 18 — lineLimit + minimumScaleFactor for
+                // long Turkish names ("Tasarımcı Sneaker",
+                // "Bilekli Spor Ayakkabı") so the badge doesn't
+                // wrap and double its height on the card.
                 Text(item.subcategory.localizedName)
                     .font(Theme.Fonts.caption)
                     .foregroundStyle(Color(Theme.Colors.textPrimary))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                     .padding(.horizontal, Theme.Spacing.sm)
                     .padding(.vertical, Theme.Spacing.xs)
                     .background(.ultraThinMaterial)

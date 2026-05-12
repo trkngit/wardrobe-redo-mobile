@@ -1169,6 +1169,18 @@
         }
       }
     },
+    "Close image viewer" : {
+      "comment" : "FullScreenImageViewer close button a11y label",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Görsel görüntüleyiciyi kapat" } } }
+    },
+    "Double-tap to enlarge" : {
+      "comment" : "ItemDetail image a11y hint",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Büyütmek için çift dokun" } } }
+    },
+    "View item photo full screen" : {
+      "comment" : "ItemDetail image a11y label",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ürün fotoğrafını tam ekran gör" } } }
+    },
     "Clear search" : {
       "localizations" : {
         "tr" : {
