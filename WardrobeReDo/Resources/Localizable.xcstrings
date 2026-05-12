@@ -1,6 +1,238 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Archive Item" : {
+      "comment" : "ItemDetail destructive section header",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ürünü Arşivle"
+          }
+        }
+      }
+    },
+    "Archived items hide from your wardrobe and outfit suggestions. You can restore them later from the archive view." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arşivlenen ürünler gardırobundan ve kombin önerilerinden gizlenir. Daha sonra arşiv görünümünden geri yükleyebilirsin."
+          }
+        }
+      }
+    },
+    "Auto-detected" : {
+      "comment" : "ItemForm a11y badge for auto-detected fields",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otomatik algılandı"
+          }
+        }
+      }
+    },
+    "Category" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kategori"
+          }
+        }
+      }
+    },
+    "Delete" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sil"
+          }
+        }
+      }
+    },
+    "Delete Item" : {
+      "comment" : "ItemDetail destructive section header",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ürünü Sil"
+          }
+        }
+      }
+    },
+    "Edit" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Düzenle"
+          }
+        }
+      }
+    },
+    "Loading image..." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görsel yükleniyor..."
+          }
+        }
+      }
+    },
+    "Subcategory" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alt kategori"
+          }
+        }
+      }
+    },
+    "This will permanently remove the item and its photos." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu, ürünü ve fotoğraflarını kalıcı olarak siler."
+          }
+        }
+      }
+    },
+    "Add a photo" : {
+      "comment" : "AddItemView empty state",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotoğraf ekle"
+          }
+        }
+      }
+    },
+    "Add Item" : {
+      "comment" : "AddItemView navigation title",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ürün Ekle"
+          }
+        }
+      }
+    },
+    "Cancelled" : {
+      "comment" : "AddItemView cancellation toast",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İptal edildi"
+          }
+        }
+      }
+    },
+    "Extracted Colors" : {
+      "comment" : "AddItemView color section header",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çıkarılan Renkler"
+          }
+        }
+      }
+    },
+    "Item %lld of %lld" : {
+      "comment" : "AddItemView multi-garment progress header",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld / %lld ürün"
+          }
+        }
+      }
+    },
+    "Photograph your item against a clean background, or choose from your library." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ürünü temiz bir arka planda fotoğrafla veya kütüphaneden seç."
+          }
+        }
+      }
+    },
+    "Resumed your batch" : {
+      "comment" : "AddItemView toast after recovering a draft",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bekleyen ürünlerin geri yüklendi"
+          }
+        }
+      }
+    },
+    "Save & add another garment" : {
+      "comment" : "Multi-garment save+continue label",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaydet ve başka bir parça ekle"
+          }
+        }
+      }
+    },
+    "Save to Wardrobe" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gardıroba Kaydet"
+          }
+        }
+      }
+    },
+    "Saving to your wardrobe..." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gardırobuna kaydediliyor..."
+          }
+        }
+      }
+    },
+    "Skip this item" : {
+      "comment" : "AddItemView multi-garment skip-current button",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu ürünü atla"
+          }
+        }
+      }
+    },
+    "Take a new photo" : {
+      "comment" : "AddItemView VoiceOver label for the camera button",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni fotoğraf çek"
+          }
+        }
+      }
+    },
     "Wardrobe Stats" : {
       "comment" : "Profile section header",
       "localizations" : {
