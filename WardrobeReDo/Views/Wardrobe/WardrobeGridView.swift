@@ -67,6 +67,10 @@ struct WardrobeGridView: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(Color(Theme.Colors.primary))
                 }
+                // Build 21 — icon-only button needs an explicit label
+                // for VoiceOver, otherwise it reads as "plus, button"
+                // with no indication of what it does.
+                .accessibilityLabel("Add Item")
             }
         }
         .sheet(isPresented: $viewModel.showAddItem) {

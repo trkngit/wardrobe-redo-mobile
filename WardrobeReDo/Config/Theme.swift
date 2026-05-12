@@ -24,10 +24,17 @@ enum Theme {
         static let h1 = Font.custom("CormorantGaramond-SemiBold", size: 28, relativeTo: .title)
         static let h2 = Font.custom("CormorantGaramond-Medium", size: 22, relativeTo: .title2)
         static let h3 = Font.custom("CormorantGaramond-Medium", size: 18, relativeTo: .title3)
-        static let body = Font.system(size: 16, weight: .regular)
-        static let bodySmall = Font.system(size: 14, weight: .regular)
-        static let caption = Font.system(size: 12, weight: .regular)
-        static let overline = Font.system(size: 11, weight: .medium)
+        // Build 21 — `.system(size:)` does NOT respect Dynamic Type.
+        // Switching to `.system(_:weight:)` with semantic styles maps
+        // our visual hierarchy to the iOS scale so users with Larger
+        // Accessibility Sizes see proportionally bigger body / caption
+        // text. The default body size at default Dynamic Type setting
+        // is 17pt — close enough to our prior 16pt that no card layout
+        // changes are needed.
+        static let body = Font.system(.body, weight: .regular)
+        static let bodySmall = Font.system(.subheadline, weight: .regular)
+        static let caption = Font.system(.caption, weight: .regular)
+        static let overline = Font.system(.caption2, weight: .medium)
     }
 
     // MARK: - Spacing (4pt base unit)
