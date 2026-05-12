@@ -298,7 +298,10 @@ struct MatchingView: View {
                             viewModel.requestRegeneration(userId: userId, reason: .pickerChange)
                         }
                     } label: {
-                        Text(occasion.displayName)
+                        // Build 14 — see DailyOutfitsView for the
+                        // same pattern. Pull from the catalog so the
+                        // chip reads Turkish under a Turkish locale.
+                        Text(occasion.localizedName)
                             .font(Theme.Fonts.bodySmall)
                             .foregroundStyle(
                                 viewModel.selectedOccasion == occasion

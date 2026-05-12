@@ -243,7 +243,14 @@ final class OutfitViewModel {
             // Only the picker-change path surfaces a toast — the
             // re-roll path's feedback is the visible card swap.
             if reason == .pickerChange, self.lastFailure == nil {
-                self.statusToastMessage = "Updated for \(self.selectedOccasion.displayName) · \(self.selectedVibe.displayName)"
+                // Build 14 — pull localized labels via
+                // `String(localized:)` so a Turkish phone renders
+                // the Turkish chip names inside the toast, not the
+                // English ones. Catalog key is "Updated for %@ · %@";
+                // interpolation provides the two %@ slots.
+                let occasion = String(localized: self.selectedOccasion.localizedName)
+                let vibe = String(localized: self.selectedVibe.localizedName)
+                self.statusToastMessage = String(localized: "Updated for \(occasion) · \(vibe)")
             }
         }
     }

@@ -22,7 +22,9 @@ struct VibeSelector: View {
                     pill(for: stop)
                 }
             }
-            Text(vibe.tagline)
+            // Build 14 — localized tagline. Pulls from the catalog
+            // ("Polished classics" → "Şık klasikler" under tr).
+            Text(vibe.localizedTagline)
                 .font(Theme.Fonts.bodySmall)
                 .foregroundStyle(Color(Theme.Colors.textSecondary))
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -38,7 +40,8 @@ struct VibeSelector: View {
             vibe = stop
             onChange?(stop)
         } label: {
-            Text(stop.displayName)
+            // Build 14 — localized stop label.
+            Text(stop.localizedName)
                 .font(Theme.Fonts.bodySmall.weight(.medium))
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)

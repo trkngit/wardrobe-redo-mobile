@@ -1,0 +1,718 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%lld found" : {
+      "comment" : "Match results count (e.g. \"3 found\")",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld bulundu"
+          }
+        }
+      }
+    },
+    "%lld outfits" : {
+      "comment" : "Outfit count in the Outfits header",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld kombin"
+          }
+        }
+      }
+    },
+    "🎲 Surprise me" : {
+      "comment" : "Re-roll button label on Outfits and Match tabs",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "🎲 Şaşırt beni"
+          }
+        }
+      }
+    },
+    "Add a few items to start generating outfits." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kombin oluşturmaya başlamak için birkaç ürün ekle."
+          }
+        }
+      }
+    },
+    "Add an Item" : {
+      "comment" : "Failure-state deep-link CTA to the Wardrobe Add sheet",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ürün Ekle"
+          }
+        }
+      }
+    },
+    "Add at least one more item — outfits need at least two pieces." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir ürün daha ekle — kombinler en az iki parçaya ihtiyaç duyar."
+          }
+        }
+      }
+    },
+    "Add First Item" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İlk Ürünü Ekle"
+          }
+        }
+      }
+    },
+    "Add items to your wardrobe first" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Önce gardırobuna ürün ekle"
+          }
+        }
+      }
+    },
+    "Add more variety to your wardrobe to generate outfits." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kombin oluşturmak için gardırobuna çeşit ekle."
+          }
+        }
+      }
+    },
+    "Add your first item to get started with personalized outfit suggestions." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kişiselleştirilmiş kombin önerileri için ilk ürününü ekle."
+          }
+        }
+      }
+    },
+    "All" : {
+      "comment" : "Category filter pill — show every category",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hepsi"
+          }
+        }
+      }
+    },
+    "A balanced look" : {
+      "comment" : "Vibe tagline",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dengeli bir görünüm"
+          }
+        }
+      }
+    },
+    "Adventurous" : {
+      "comment" : "Vibe stop label",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cesur"
+          }
+        }
+      }
+    },
+    "Adventurous mix" : {
+      "comment" : "Vibe tagline",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cesur karışım"
+          }
+        }
+      }
+    },
+    "Archive" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arşivle"
+          }
+        }
+      }
+    },
+    "Athletic" : {
+      "comment" : "Occasion chip label",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spor"
+          }
+        }
+      }
+    },
+    "Balanced" : {
+      "comment" : "Vibe stop label",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dengeli"
+          }
+        }
+      }
+    },
+    "Bold" : {
+      "comment" : "Vibe stop label",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İddialı"
+          }
+        }
+      }
+    },
+    "Break the rules" : {
+      "comment" : "Vibe tagline",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kuralları çiğne"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İptal"
+          }
+        }
+      }
+    },
+    "Casual" : {
+      "comment" : "Occasion chip label",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Günlük"
+          }
+        }
+      }
+    },
+    "Clear search" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aramayı temizle"
+          }
+        }
+      }
+    },
+    "Curating your outfits..." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kombinlerin hazırlanıyor..."
+          }
+        }
+      }
+    },
+    "Date" : {
+      "comment" : "Occasion chip label (a date/evening out)",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buluşma"
+          }
+        }
+      }
+    },
+    "Finding matches..." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eşleşmeler aranıyor..."
+          }
+        }
+      }
+    },
+    "Formal" : {
+      "comment" : "Occasion chip label",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resmi"
+          }
+        }
+      }
+    },
+    "Generate Today's Outfits" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugünün Kombinlerini Oluştur"
+          }
+        }
+      }
+    },
+    "Generate styled outfit suggestions\nfrom your wardrobe." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gardırobundan stilize\nkombin önerileri oluştur."
+          }
+        }
+      }
+    },
+    "Lounge" : {
+      "comment" : "Occasion chip label",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rahat"
+          }
+        }
+      }
+    },
+    "Least worn" : {
+      "comment" : "Wardrobe sort option",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En Az Giyilen"
+          }
+        }
+      }
+    },
+    "Loading wardrobe..." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gardırop yükleniyor..."
+          }
+        }
+      }
+    },
+    "Match" : {
+      "comment" : "Tab name",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eşleştir"
+          }
+        }
+      }
+    },
+    "Most worn" : {
+      "comment" : "Wardrobe sort option",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En Çok Giyilen"
+          }
+        }
+      }
+    },
+    "Newest" : {
+      "comment" : "Wardrobe sort option (most recent first)",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En Yeni"
+          }
+        }
+      }
+    },
+    "No items match your search" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aramayla eşleşen ürün yok"
+          }
+        }
+      }
+    },
+    "No matching outfits found." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eşleşen kombin bulunamadı."
+          }
+        }
+      }
+    },
+    "Open the Wardrobe tab to add a piece." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parça eklemek için Gardırop sekmesini aç."
+          }
+        }
+      }
+    },
+    "Play it safe" : {
+      "comment" : "Vibe tagline",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Güvenli oyna"
+          }
+        }
+      }
+    },
+    "Polished" : {
+      "comment" : "Vibe stop label",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şık"
+          }
+        }
+      }
+    },
+    "Polished classics" : {
+      "comment" : "Vibe tagline",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şık klasikler"
+          }
+        }
+      }
+    },
+    "Safe" : {
+      "comment" : "Vibe stop label",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Güvenli"
+          }
+        }
+      }
+    },
+    "Outfit suggestions" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kombin önerileri"
+          }
+        }
+      }
+    },
+    "Outfits" : {
+      "comment" : "Tab name",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kombinler"
+          }
+        }
+      }
+    },
+    "Profile" : {
+      "comment" : "Tab name",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profil"
+          }
+        }
+      }
+    },
+    "Rolling…" : {
+      "comment" : "Surprise-me button loading state",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karıştırılıyor…"
+          }
+        }
+      }
+    },
+    "Save" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaydet"
+          }
+        }
+      }
+    },
+    "Save all" : {
+      "comment" : "Bulk save action on Match tab",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tümünü kaydet"
+          }
+        }
+      }
+    },
+    "Saved" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaydedildi"
+          }
+        }
+      }
+    },
+    "Saving…" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaydediliyor…"
+          }
+        }
+      }
+    },
+    "Scoring combinations across 7 style dimensions" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 stil boyutunda kombinasyonlar puanlanıyor"
+          }
+        }
+      }
+    },
+    "Search wardrobe" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gardıropta ara"
+          }
+        }
+      }
+    },
+    "Select a piece" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir parça seç"
+          }
+        }
+      }
+    },
+    "Share outfit" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kombini paylaş"
+          }
+        }
+      }
+    },
+    "Something went wrong: %@. Tap Try Again." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir şeyler ters gitti: %@. Tekrar Dene'ye dokun."
+          }
+        }
+      }
+    },
+    "Sort by" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sıralama"
+          }
+        }
+      }
+    },
+    "Tap an item above to find\noutfits built around it" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yukarıdan bir parça seçince\nona göre kombin oluşturulur"
+          }
+        }
+      }
+    },
+    "The connection is slow. Tap Try Again." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bağlantı yavaş. Tekrar Dene'ye dokun."
+          }
+        }
+      }
+    },
+    "Today's Outfits" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugünün Kombinleri"
+          }
+        }
+      }
+    },
+    "Try a different item" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Farklı bir parça dene"
+          }
+        }
+      }
+    },
+    "Try Again" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tekrar Dene"
+          }
+        }
+      }
+    },
+    "Updated for %@ · %@" : {
+      "comment" : "Status toast after a debounced regen. First %@ is occasion display name, second is vibe display name.",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %@ için güncellendi"
+          }
+        }
+      }
+    },
+    "Wardrobe" : {
+      "comment" : "Tab name",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gardırop"
+          }
+        }
+      }
+    },
+    "We couldn't build any outfits with your current wardrobe. Try a different occasion, or add more variety." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mevcut gardırobunla kombin oluşturamadık. Farklı bir durum dene veya çeşit ekle."
+          }
+        }
+      }
+    },
+    "Work" : {
+      "comment" : "Occasion chip label",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İş"
+          }
+        }
+      }
+    },
+    "Worn" : {
+      "comment" : "Footer badge on a worn outfit card",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giyildi"
+          }
+        }
+      }
+    },
+    "Your Daily Outfits" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Günlük Kombinlerin"
+          }
+        }
+      }
+    },
+    "Your wardrobe is empty" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gardırobun boş"
+          }
+        }
+      }
+    },
+    "You'll need at least a few items\nbefore we can find matches." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eşleşme bulabilmemiz için\nbirkaç parçaya ihtiyacın var."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

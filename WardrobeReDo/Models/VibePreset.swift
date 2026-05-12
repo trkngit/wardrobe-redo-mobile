@@ -43,6 +43,19 @@ enum VibeStop: String, Codable, CaseIterable, Sendable, Identifiable {
         }
     }
 
+    /// Build 14 — localized slider label. Same shape as
+    /// `Occasion.localizedName`; catalog keys equal the English
+    /// `displayName` so the source language stays canonical.
+    var localizedName: LocalizedStringResource {
+        switch self {
+        case .safe:        LocalizedStringResource("Safe")
+        case .polished:    LocalizedStringResource("Polished")
+        case .balanced:    LocalizedStringResource("Balanced")
+        case .adventurous: LocalizedStringResource("Adventurous")
+        case .bold:        LocalizedStringResource("Bold")
+        }
+    }
+
     /// Short tagline shown under the slider.
     var tagline: String {
         switch self {
@@ -51,6 +64,17 @@ enum VibeStop: String, Codable, CaseIterable, Sendable, Identifiable {
         case .balanced: "A balanced look"
         case .adventurous: "Adventurous mix"
         case .bold: "Break the rules"
+        }
+    }
+
+    /// Build 14 — localized variant of `tagline` for SwiftUI.
+    var localizedTagline: LocalizedStringResource {
+        switch self {
+        case .safe:        LocalizedStringResource("Play it safe")
+        case .polished:    LocalizedStringResource("Polished classics")
+        case .balanced:    LocalizedStringResource("A balanced look")
+        case .adventurous: LocalizedStringResource("Adventurous mix")
+        case .bold:        LocalizedStringResource("Break the rules")
         }
     }
 

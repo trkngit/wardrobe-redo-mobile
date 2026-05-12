@@ -5,6 +5,11 @@ options:
     iOS: "17.0"
   xcodeVersion: "16.0"
   generateEmptyDirectories: true
+  developmentLanguage: en
+  knownRegions:
+    - en
+    - tr
+    - Base
 
 settings:
   base:

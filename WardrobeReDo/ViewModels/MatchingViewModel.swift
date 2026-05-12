@@ -289,7 +289,11 @@ final class MatchingViewModel {
             await self.findMatches(userId: userId)
 
             if reason == .pickerChange, self.lastFailure == nil {
-                self.statusToastMessage = "Updated for \(self.selectedOccasion.displayName) · \(self.selectedVibe.displayName)"
+                // Build 14 — localized toast template (see
+                // `OutfitViewModel` for the same pattern).
+                let occasion = String(localized: self.selectedOccasion.localizedName)
+                let vibe = String(localized: self.selectedVibe.localizedName)
+                self.statusToastMessage = String(localized: "Updated for \(occasion) · \(vibe)")
             }
         }
     }

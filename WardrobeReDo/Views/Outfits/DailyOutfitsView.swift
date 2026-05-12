@@ -400,7 +400,13 @@ struct DailyOutfitsView: View {
                             viewModel.requestRegeneration(userId: userId, reason: .pickerChange)
                         }
                     } label: {
-                        Text(occasion.displayName)
+                        // Build 14 — `Text(_ resource:)` pulls from
+                        // the String Catalog so the chip reads
+                        // "Casual" or "Günlük" depending on system
+                        // language. Was `Text(occasion.displayName)`,
+                        // which passed a plain String and bypassed
+                        // localization entirely.
+                        Text(occasion.localizedName)
                             .font(Theme.Fonts.bodySmall)
                             .foregroundStyle(
                                 viewModel.selectedOccasion == occasion
