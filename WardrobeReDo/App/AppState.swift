@@ -43,7 +43,10 @@ final class AppState {
     func initialize() async {
         logger.info("initialize: starting")
         if let userId = await fetchSessionUserId() {
-            logger.info("initialize: session found, userId=\(userId)")
+            // Build 20 — hash-mask the user ID so log correlation
+            // still works (same input → same hash) without leaking
+            // the raw UUID to Console / Sentry.
+            LogPrivacy.info(logger, category: "initialize.sessionFound", userId: userId)
             isAuthenticated = true
             await loadProfile(userId: userId)
             logger.info("initialize: profile load complete, currentUser=\(self.currentUser != nil)")
@@ -84,7 +87,10 @@ final class AppState {
             WidgetDataService.clearWidget()
             NotificationService.shared.cancelDailyReminder()
         } catch {
-            logger.error("signOut failed: \(error)")
+            // Build 20 — privacy split: "signOut failed" is the
+            // searchable public marker; the wrapped error (which
+            // can contain auth state) is masked in release.
+            LogPrivacy.error(logger, category: "signOut", reason: error)
         }
     }
 
@@ -124,7 +130,8 @@ final class AppState {
     /// Loads the user profile with a 10-second timeout to prevent hanging
     /// when the Supabase database query is slow or unreachable.
     private func loadProfile(userId: UUID) async {
-        logger.info("loadProfile: starting for userId=\(userId)")
+        // Build 20 — see initialize() for the rationale.
+        LogPrivacy.info(logger, category: "loadProfile.starting", userId: userId)
         let profile: Profile? = await withTaskGroup(of: Profile?.self) { group in
             group.addTask {
                 try? await UserRepository().fetchProfile(userId: userId)
@@ -149,7 +156,8 @@ final class AppState {
             VibeTelemetry.logProfileDefault(profile.defaultVibe)
         } else {
             profileLoadFailed = true
-            logger.warning("loadProfile: failed or timed out for userId=\(userId)")
+            // Build 20 — same hash-masking as the success-path log.
+            LogPrivacy.info(logger, category: "loadProfile.failedOrTimedOut", userId: userId)
         }
     }
 }
