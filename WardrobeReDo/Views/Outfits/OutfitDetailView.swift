@@ -179,7 +179,8 @@ struct OutfitDetailView: View {
                 .frame(height: 120)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
-            Text(item.subcategory.displayName)
+            // Build 17 — localized subcategory in detail gallery.
+            Text(item.subcategory.localizedName)
                 .font(Theme.Fonts.caption)
                 .foregroundStyle(Color(Theme.Colors.textPrimary))
                 .lineLimit(1)

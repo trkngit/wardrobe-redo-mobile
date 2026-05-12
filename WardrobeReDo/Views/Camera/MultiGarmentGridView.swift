@@ -265,7 +265,9 @@ private struct GridCard: View {
 
     private var label: some View {
         HStack(spacing: 4) {
-            Text(proposal.predictedCategory?.displayName ?? "Item")
+            // Build 17 — pull localized category name when known,
+            // fall back to a translated "Item" otherwise.
+            Text(proposal.predictedCategory?.localizedName ?? LocalizedStringResource("Item"))
                 .font(Theme.Fonts.bodySmall.weight(.medium))
                 .foregroundStyle(Color(Theme.Colors.textPrimary))
                 .lineLimit(1)

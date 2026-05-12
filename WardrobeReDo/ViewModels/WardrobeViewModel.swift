@@ -45,6 +45,15 @@ enum SortOrder: String, CaseIterable, Sendable {
         }
     }
 
+    /// Build 17 — localized form for the WardrobeGridView sort menu.
+    var localizedName: LocalizedStringResource {
+        switch self {
+        case .newest:    LocalizedStringResource("Newest")
+        case .mostWorn:  LocalizedStringResource("Most worn")
+        case .leastWorn: LocalizedStringResource("Least worn")
+        }
+    }
+
     /// SF Symbol that matches the visual semantic of each option.
     var iconName: String {
         switch self {
@@ -278,9 +287,20 @@ final class WardrobeViewModel {
     var itemCountText: String {
         let count = filteredItems.count
         if let category = selectedCategory {
-            return "\(count) \(category.displayName)"
+            // Build 17 — pull localized category name so the count
+            // line ("3 Tops" / "3 Üst Giyim") matches the surrounding
+            // UI's language.
+            let name = String(localized: category.localizedName)
+            return "\(count) \(name)"
         }
-        return "\(count) item\(count == 1 ? "" : "s")"
+        // Build 17 — separate singular vs plural keys keep Turkish
+        // pluralization clean ("1 ürün" / "5 ürün" — Turkish doesn't
+        // pluralize counted nouns the way English does, but we keep
+        // the key shape for symmetry).
+        if count == 1 {
+            return String(localized: "1 item")
+        }
+        return String(localized: "\(count) items")
     }
 
     var isEmpty: Bool {

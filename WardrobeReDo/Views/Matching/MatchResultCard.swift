@@ -91,7 +91,8 @@ struct MatchResultCard: View {
                         )
                 )
 
-            Text(item.subcategory.displayName)
+            // Build 17 — localized subcategory.
+            Text(item.subcategory.localizedName)
                 .font(.system(size: 9))
                 .foregroundStyle(Color(Theme.Colors.textSecondary))
                 .lineLimit(1)

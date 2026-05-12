@@ -189,13 +189,14 @@ struct WardrobeGridView: View {
     private var categoryFilters: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Theme.Spacing.sm) {
-                filterChip("All", isSelected: viewModel.selectedCategory == nil) {
+                // Build 17 — localized "All" pill + each category.
+                filterChip(LocalizedStringResource("All"), isSelected: viewModel.selectedCategory == nil) {
                     viewModel.selectCategory(nil)
                 }
 
                 ForEach(ClothingCategory.allCases, id: \.self) { category in
                     filterChip(
-                        category.displayName,
+                        category.localizedName,
                         icon: category.iconName,
                         isSelected: viewModel.selectedCategory == category
                     ) {
@@ -207,7 +208,7 @@ struct WardrobeGridView: View {
     }
 
     private func filterChip(
-        _ title: String,
+        _ title: LocalizedStringResource,
         icon: String? = nil,
         isSelected: Bool,
         action: @escaping () -> Void
@@ -267,7 +268,12 @@ struct WardrobeGridView: View {
                     HapticManager.selection()
                     viewModel.sortOrder = order
                 } label: {
-                    Label(order.displayName, systemImage: order.iconName)
+                    // Build 17 — localized sort option label.
+                    Label {
+                        Text(order.localizedName)
+                    } icon: {
+                        Image(systemName: order.iconName)
+                    }
                     if viewModel.sortOrder == order {
                         // SwiftUI menu items render a trailing
                         // checkmark when the body contains both
@@ -283,7 +289,8 @@ struct WardrobeGridView: View {
             HStack(spacing: 4) {
                 Image(systemName: viewModel.sortOrder.iconName)
                     .font(.system(size: 11, weight: .semibold))
-                Text(viewModel.sortOrder.displayName)
+                // Build 17 — localized current-sort label.
+                Text(viewModel.sortOrder.localizedName)
                     .font(Theme.Fonts.caption)
                 Image(systemName: "chevron.down")
                     .font(.system(size: 9, weight: .semibold))

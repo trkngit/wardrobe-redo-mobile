@@ -43,6 +43,26 @@
         }
       }
     },
+    "Details" : {
+      "comment" : "ItemDetailView section header",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Detaylar" } } }
+    },
+    "Fit" : {
+      "comment" : "ItemForm + ItemDetail label",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kalıp" } } }
+    },
+    "Last worn" : {
+      "comment" : "ItemDetail row label",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Son giyildiği zaman" } } }
+    },
+    "Seasons" : {
+      "comment" : "ItemForm + ItemDetail label",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mevsimler" } } }
+    },
+    "Texture" : {
+      "comment" : "ItemForm + ItemDetail label",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Doku" } } }
+    },
     "Delete" : {
       "localizations" : {
         "tr" : {
@@ -74,6 +94,10 @@
         }
       }
     },
+    "Item" : {
+      "comment" : "MultiGarmentGridView fallback label for unknown category",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ürün" } } }
+    },
     "Loading image..." : {
       "localizations" : {
         "tr" : {
@@ -103,6 +127,382 @@
           }
         }
       }
+    },
+    "Accessories" : {
+      "comment" : "Category — plural form",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Aksesuarlar" } } }
+    },
+    "Backpack" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sırt çantası" } } }
+    },
+    "Bag" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Çanta" } } }
+    },
+    "Ballet Flat" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Babet" } } }
+    },
+    "Baseball Cap" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Beyzbol Şapkası" } } }
+    },
+    "Beanie" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bere" } } }
+    },
+    "Belt" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kemer" } } }
+    },
+    "Blazer" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Blazer" } } }
+    },
+    "Blouse" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bluz" } } }
+    },
+    "Bomber" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bomber Mont" } } }
+    },
+    "Boots" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bot" } } }
+    },
+    "Bottoms" : {
+      "comment" : "Category — plural form",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Alt Giyim" } } }
+    },
+    "Bracelet" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bileklik" } } }
+    },
+    "Button-Down" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Düğmeli Gömlek" } } }
+    },
+    "Camisole" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "İçlik" } } }
+    },
+    "Cardigan" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Hırka" } } }
+    },
+    "Cargo" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kargo" } } }
+    },
+    "Casual Dress" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Günlük Elbise" } } }
+    },
+    "Chelsea Boots" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Chelsea Bot" } } }
+    },
+    "Chiffon" : {
+      "comment" : "Texture",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Şifon" } } }
+    },
+    "Chinos" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Chino Pantolon" } } }
+    },
+    "Cocktail Dress" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kokteyl Elbisesi" } } }
+    },
+    "Corduroy" : {
+      "comment" : "Texture",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Fitilli Kadife" } } }
+    },
+    "Cotton" : {
+      "comment" : "Texture",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Pamuk" } } }
+    },
+    "Crop Top" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kısa Üst" } } }
+    },
+    "Cropped" : {
+      "comment" : "Fit attribute",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kısaltılmış" } } }
+    },
+    "Denim" : {
+      "comment" : "Texture",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Denim" } } }
+    },
+    "Denim Jacket" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kot Ceket" } } }
+    },
+    "Derby" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Derby Ayakkabı" } } }
+    },
+    "Designer Sneakers" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Tasarımcı Sneaker" } } }
+    },
+    "Dress Pants" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Klasik Pantolon" } } }
+    },
+    "Dress Shirt" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Klasik Gömlek" } } }
+    },
+    "Dress Shoes" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Klasik Ayakkabı" } } }
+    },
+    "Dresses" : {
+      "comment" : "Category — plural form",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Elbiseler" } } }
+    },
+    "Earrings" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Küpe" } } }
+    },
+    "Fall" : {
+      "comment" : "Season",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sonbahar" } } }
+    },
+    "Fedora Hat" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Fötr Şapka" } } }
+    },
+    "Flats" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Düz Ayakkabı" } } }
+    },
+    "Graphic Tee" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Baskılı Tişört" } } }
+    },
+    "Hat" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Şapka" } } }
+    },
+    "Heels" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Topuklu Ayakkabı" } } }
+    },
+    "Henley" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Henley" } } }
+    },
+    "High Sneaker" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bilekli Sneaker" } } }
+    },
+    "High Tops" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bilekli Spor Ayakkabı" } } }
+    },
+    "Hoodie" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kapüşonlu Sweatshirt" } } }
+    },
+    "Jeans" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kot Pantolon" } } }
+    },
+    "Joggers" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Eşofman Altı" } } }
+    },
+    "Knit" : {
+      "comment" : "Texture",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Örgü" } } }
+    },
+    "Knit Sweater" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Örgü Kazak" } } }
+    },
+    "Leather" : {
+      "comment" : "Texture",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Deri" } } }
+    },
+    "Leather Jacket" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Deri Ceket" } } }
+    },
+    "Leggings" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Tayt" } } }
+    },
+    "Linen" : {
+      "comment" : "Texture",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Keten" } } }
+    },
+    "Loafers" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Loafer" } } }
+    },
+    "Low Sneaker" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Alçak Sneaker" } } }
+    },
+    "Maxi Dress" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Maksi Elbise" } } }
+    },
+    "Midi Dress" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Midi Elbise" } } }
+    },
+    "Midi Skirt" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Midi Etek" } } }
+    },
+    "Mini Dress" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mini Elbise" } } }
+    },
+    "Mini Skirt" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mini Etek" } } }
+    },
+    "Necklace" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kolye" } } }
+    },
+    "Nylon" : {
+      "comment" : "Texture",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Naylon" } } }
+    },
+    "Outerwear" : {
+      "comment" : "Category",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Dış Giyim" } } }
+    },
+    "Overcoat" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Palto" } } }
+    },
+    "Oversized" : {
+      "comment" : "Fit attribute",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bol" } } }
+    },
+    "Oxford" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Oxford Ayakkabı" } } }
+    },
+    "Parka" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Parka" } } }
+    },
+    "Pencil Skirt" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kalem Etek" } } }
+    },
+    "Polo" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Polo Yaka" } } }
+    },
+    "Puffer" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Şişme Mont" } } }
+    },
+    "Regular" : {
+      "comment" : "Fit attribute",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Normal" } } }
+    },
+    "Relaxed" : {
+      "comment" : "Fit attribute",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Rahat" } } }
+    },
+    "Running Shoe" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Koşu Ayakkabısı" } } }
+    },
+    "Sandals" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sandalet" } } }
+    },
+    "Satin" : {
+      "comment" : "Texture",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Saten" } } }
+    },
+    "Scarf" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Eşarp" } } }
+    },
+    "Sheath Dress" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kalem Elbise" } } }
+    },
+    "Shirt Dress" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Gömlek Elbise" } } }
+    },
+    "Shirt Jacket" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Gömlek Ceket" } } }
+    },
+    "Shoes" : {
+      "comment" : "Category — plural form",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ayakkabılar" } } }
+    },
+    "Shorts" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Şort" } } }
+    },
+    "Silk" : {
+      "comment" : "Texture",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "İpek" } } }
+    },
+    "Skirt" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Etek" } } }
+    },
+    "Slim" : {
+      "comment" : "Fit attribute",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Dar" } } }
+    },
+    "Slim Fit" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Dar Kesim" } } }
+    },
+    "Slip Dress" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Askılı Elbise" } } }
+    },
+    "Sneakers" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sneaker" } } }
+    },
+    "Spring" : {
+      "comment" : "Season",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "İlkbahar" } } }
+    },
+    "Straight Leg" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Düz Kesim" } } }
+    },
+    "Structured" : {
+      "comment" : "Fit attribute",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Yapılandırılmış" } } }
+    },
+    "Suede" : {
+      "comment" : "Texture",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Süet" } } }
+    },
+    "Suit Jacket" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Takım Ceketi" } } }
+    },
+    "Summer" : {
+      "comment" : "Season",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Yaz" } } }
+    },
+    "Sundress" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Yazlık Elbise" } } }
+    },
+    "Sunglasses" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Güneş Gözlüğü" } } }
+    },
+    "Sweater" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kazak" } } }
+    },
+    "Sweatshirt" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sweatshirt" } } }
+    },
+    "Synthetic" : {
+      "comment" : "Texture",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sentetik" } } }
+    },
+    "T-Shirt" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Tişört" } } }
+    },
+    "Tank" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Atlet" } } }
+    },
+    "Tank Top" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Askılı Üst" } } }
+    },
+    "Tops" : {
+      "comment" : "Category — plural form",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Üst Giyim" } } }
+    },
+    "Trench" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Trençkot" } } }
+    },
+    "Turtleneck" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Boğazlı" } } }
+    },
+    "Tweed" : {
+      "comment" : "Texture",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Tüvit" } } }
+    },
+    "V-Neck" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "V Yaka" } } }
+    },
+    "Varsity Jacket" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Üniversite Ceketi" } } }
+    },
+    "Velvet" : {
+      "comment" : "Texture",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kadife" } } }
+    },
+    "Watch" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Saat" } } }
+    },
+    "Wide Leg" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bol Paça" } } }
+    },
+    "Windbreaker" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Rüzgarlık" } } }
+    },
+    "Winter" : {
+      "comment" : "Season",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kış" } } }
+    },
+    "Winter Coat" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kışlık Palto" } } }
+    },
+    "Wool" : {
+      "comment" : "Texture",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Yün" } } }
+    },
+    "Wrap Dress" : {
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Anvelop Elbise" } } }
     },
     "Add a photo" : {
       "comment" : "AddItemView empty state",
@@ -548,6 +948,14 @@
           }
         }
       }
+    },
+    "%lld items" : {
+      "comment" : "Wardrobe count line (plural)",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "%lld ürün" } } }
+    },
+    "1 item" : {
+      "comment" : "Wardrobe count line (singular)",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "1 ürün" } } }
     },
     "%lld outfits" : {
       "comment" : "Outfit count in the Outfits header",

@@ -19,6 +19,21 @@ enum ClothingCategory: String, Codable, CaseIterable, Sendable {
         }
     }
 
+    /// Build 17 — localized form for SwiftUI surfaces. Keys match
+    /// the English `displayName` (plural-form noun: "Tops" not
+    /// "Top") so the wardrobe chip + form pickers display the
+    /// translated plural in Turkish.
+    var localizedName: LocalizedStringResource {
+        switch self {
+        case .top:       LocalizedStringResource("Tops")
+        case .bottom:    LocalizedStringResource("Bottoms")
+        case .shoe:      LocalizedStringResource("Shoes")
+        case .dress:     LocalizedStringResource("Dresses")
+        case .outerwear: LocalizedStringResource("Outerwear")
+        case .accessory: LocalizedStringResource("Accessories")
+        }
+    }
+
     var iconName: String {
         switch self {
         case .top: "tshirt"

@@ -7,6 +7,31 @@ enum TextureType: String, Codable, CaseIterable, Sendable {
 
     var displayName: String { rawValue.capitalized }
 
+    /// Build 17 — localized form used by all SwiftUI surfaces.
+    /// Keys equal the English `displayName` so the catalog stays
+    /// canonical. Was reported as a coverage gap (leather → deri)
+    /// after Build 16 — the displayName path was the only thing
+    /// wired into ItemDetailView / ItemFormView pickers.
+    var localizedName: LocalizedStringResource {
+        switch self {
+        case .cotton:    LocalizedStringResource("Cotton")
+        case .silk:      LocalizedStringResource("Silk")
+        case .denim:     LocalizedStringResource("Denim")
+        case .leather:   LocalizedStringResource("Leather")
+        case .suede:     LocalizedStringResource("Suede")
+        case .wool:      LocalizedStringResource("Wool")
+        case .linen:     LocalizedStringResource("Linen")
+        case .knit:      LocalizedStringResource("Knit")
+        case .synthetic: LocalizedStringResource("Synthetic")
+        case .velvet:    LocalizedStringResource("Velvet")
+        case .satin:     LocalizedStringResource("Satin")
+        case .chiffon:   LocalizedStringResource("Chiffon")
+        case .tweed:     LocalizedStringResource("Tweed")
+        case .corduroy:  LocalizedStringResource("Corduroy")
+        case .nylon:     LocalizedStringResource("Nylon")
+        }
+    }
+
     var visualWeight: VisualWeight {
         switch self {
         case .silk, .chiffon, .satin, .nylon: .light
@@ -33,6 +58,18 @@ enum FitAttribute: String, Codable, CaseIterable, Sendable {
     case oversized, relaxed, regular, slim, structured, cropped
 
     var displayName: String { rawValue.capitalized }
+
+    /// Build 17 — localized fit label for ItemForm picker.
+    var localizedName: LocalizedStringResource {
+        switch self {
+        case .oversized:  LocalizedStringResource("Oversized")
+        case .relaxed:    LocalizedStringResource("Relaxed")
+        case .regular:    LocalizedStringResource("Regular")
+        case .slim:       LocalizedStringResource("Slim")
+        case .structured: LocalizedStringResource("Structured")
+        case .cropped:    LocalizedStringResource("Cropped")
+        }
+    }
 }
 
 enum VisualWeight: String, Codable, Sendable {
@@ -43,6 +80,16 @@ enum Season: String, Codable, CaseIterable, Sendable {
     case spring, summer, fall, winter
 
     var displayName: String { rawValue.capitalized }
+
+    /// Build 17 — localized season label.
+    var localizedName: LocalizedStringResource {
+        switch self {
+        case .spring: LocalizedStringResource("Spring")
+        case .summer: LocalizedStringResource("Summer")
+        case .fall:   LocalizedStringResource("Fall")
+        case .winter: LocalizedStringResource("Winter")
+        }
+    }
 }
 
 enum Occasion: String, Codable, CaseIterable, Sendable {

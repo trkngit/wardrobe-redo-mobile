@@ -155,7 +155,8 @@ struct MatchingView: View {
                     .scaleEffect(isSelected ? 1.05 : 1.0)
                     .animation(Theme.Animation.spring, value: isSelected)
 
-                Text(item.subcategory.displayName)
+                // Build 17 — localized subcategory name.
+                Text(item.subcategory.localizedName)
                     .font(.system(size: 10))
                     .foregroundStyle(
                         isSelected
@@ -183,13 +184,15 @@ struct MatchingView: View {
     private var categoryFilter: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Theme.Spacing.sm) {
-                chipButton("All", isSelected: viewModel.selectedCategory == nil) {
+                // Build 17 — chips take a `LocalizedStringResource`
+                // so the "All" pill + each category pill localize.
+                chipButton(LocalizedStringResource("All"), isSelected: viewModel.selectedCategory == nil) {
                     viewModel.selectedCategory = nil
                 }
 
                 ForEach(ClothingCategory.allCases, id: \.self) { category in
                     chipButton(
-                        category.displayName,
+                        category.localizedName,
                         isSelected: viewModel.selectedCategory == category
                     ) {
                         viewModel.selectedCategory = viewModel.selectedCategory == category ? nil : category
@@ -200,7 +203,7 @@ struct MatchingView: View {
         }
     }
 
-    private func chipButton(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+    private func chipButton(_ title: LocalizedStringResource, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
                 .font(Theme.Fonts.caption)

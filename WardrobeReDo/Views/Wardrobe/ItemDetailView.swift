@@ -60,7 +60,10 @@ struct ItemDetailView: View {
             .padding(.bottom, Theme.Spacing.xxl)
         }
         .background(Color(Theme.Colors.background))
-        .navigationTitle(item.subcategory.displayName)
+        // Build 17 — localized title. SwiftUI accepts `Text(_:)`
+        // via the navigationTitle/Text initializer chain so the
+        // catalog translation surfaces here too.
+        .navigationTitle(Text(item.subcategory.localizedName))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             // Edit button lives in the trailing slot so the iOS-standard
@@ -225,23 +228,27 @@ struct ItemDetailView: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             sectionHeader("Details")
 
-            detailRow("Category", value: item.category.displayName, icon: item.category.iconName)
-            detailRow("Subcategory", value: item.subcategory.displayName)
+            // Build 17 — values resolved through `String(localized:)`
+            // so the locale-current translation lands in the value
+            // column. Labels remain catalog keys via the detailRow
+            // signature.
+            detailRow("Category", value: String(localized: item.category.localizedName), icon: item.category.iconName)
+            detailRow("Subcategory", value: String(localized: item.subcategory.localizedName))
 
             if let texture = item.texture {
-                detailRow("Texture", value: texture.displayName)
+                detailRow("Texture", value: String(localized: texture.localizedName))
             }
 
             if let fit = item.fitAttribute {
-                detailRow("Fit", value: fit.displayName)
+                detailRow("Fit", value: String(localized: fit.localizedName))
             }
 
             if !item.seasons.isEmpty {
-                detailTagRow("Seasons", tags: item.seasons.map(\.displayName))
+                detailTagRow("Seasons", tags: item.seasons.map { String(localized: $0.localizedName) })
             }
 
             if !item.occasions.isEmpty {
-                detailTagRow("Occasions", tags: item.occasions.map(\.displayName))
+                detailTagRow("Occasions", tags: item.occasions.map { String(localized: $0.localizedName) })
             }
 
             detailRow("Worn", value: "\(item.wearCount) time\(item.wearCount == 1 ? "" : "s")", icon: "arrow.counterclockwise")
@@ -297,13 +304,21 @@ struct ItemDetailView: View {
 
     // MARK: - Helpers
 
-    private func sectionHeader(_ title: String) -> some View {
+    /// Build 17 — LocalizedStringResource so the section header
+    /// pulls from the catalog ("Details" → "Detaylar").
+    private func sectionHeader(_ title: LocalizedStringResource) -> some View {
         Text(title)
             .font(Theme.Fonts.h3)
             .foregroundStyle(Color(Theme.Colors.textPrimary))
     }
 
-    private func detailRow(_ label: String, value: String, icon: String? = nil) -> some View {
+    /// Build 17 — `label` is a `LocalizedStringResource` so static
+    /// keys like "Category" / "Subcategory" / "Texture" pass through
+    /// the catalog. The `value` stays a String because callers
+    /// already pre-resolve via `String(localized:)` for translated
+    /// enum values, and plain-text values like "3 times" don't
+    /// belong in the catalog.
+    private func detailRow(_ label: LocalizedStringResource, value: String, icon: String? = nil) -> some View {
         HStack {
             if let icon {
                 Image(systemName: icon)
@@ -321,7 +336,7 @@ struct ItemDetailView: View {
         }
     }
 
-    private func detailTagRow(_ label: String, tags: [String]) -> some View {
+    private func detailTagRow(_ label: LocalizedStringResource, tags: [String]) -> some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
             Text(label)
                 .font(Theme.Fonts.bodySmall)

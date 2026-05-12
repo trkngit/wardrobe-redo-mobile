@@ -89,9 +89,11 @@ struct ItemFormView: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             sectionHeader("Category", auto: isSectionAutoDetected(.category))
 
+            // Build 17 — Picker label is a catalog key; per-row
+            // Text uses the enum's localizedName.
             Picker("Category", selection: $category) {
                 ForEach(ClothingCategory.allCases, id: \.self) { cat in
-                    Text(cat.displayName).tag(cat)
+                    Text(cat.localizedName).tag(cat)
                 }
             }
             .pickerStyle(.segmented)
@@ -101,7 +103,7 @@ struct ItemFormView: View {
 
             Picker("Subcategory", selection: $subcategory) {
                 ForEach(availableSubcategories, id: \.self) { sub in
-                    Text(sub.displayName).tag(sub)
+                    Text(sub.localizedName).tag(sub)
                 }
             }
             .pickerStyle(.menu)
@@ -116,7 +118,7 @@ struct ItemFormView: View {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: Theme.Spacing.sm) {
                 ForEach(TextureType.allCases, id: \.self) { tex in
                     chipButton(
-                        tex.displayName,
+                        tex.localizedName,
                         isSelected: texture == tex
                     ) {
                         texture = (texture == tex) ? nil : tex
@@ -133,7 +135,7 @@ struct ItemFormView: View {
             HStack(spacing: Theme.Spacing.sm) {
                 ForEach(FitAttribute.allCases, id: \.self) { fit in
                     chipButton(
-                        fit.displayName,
+                        fit.localizedName,
                         isSelected: fitAttribute == fit
                     ) {
                         fitAttribute = (fitAttribute == fit) ? nil : fit
@@ -150,7 +152,7 @@ struct ItemFormView: View {
             HStack(spacing: Theme.Spacing.sm) {
                 ForEach(Season.allCases, id: \.self) { season in
                     chipButton(
-                        season.displayName,
+                        season.localizedName,
                         isSelected: selectedSeasons.contains(season)
                     ) {
                         if selectedSeasons.contains(season) {
@@ -171,7 +173,7 @@ struct ItemFormView: View {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: Theme.Spacing.sm) {
                 ForEach(Occasion.allCases, id: \.self) { occasion in
                     chipButton(
-                        occasion.displayName,
+                        occasion.localizedName,
                         isSelected: selectedOccasions.contains(occasion)
                     ) {
                         if selectedOccasions.contains(occasion) {
@@ -189,7 +191,11 @@ struct ItemFormView: View {
 
     /// Section header. Lights up a sparkle badge when the caller signals
     /// the value was auto-detected by the attribute classifier.
-    private func sectionHeader(_ title: String, auto: Bool) -> some View {
+    /// Build 17 — `LocalizedStringResource` argument so callers can
+    /// pass enum-derived `localizedName` directly. The plain-string
+    /// overload below stays for headers that are statically labeled
+    /// at the catalog key level ("Category", "Texture", …).
+    private func sectionHeader(_ title: LocalizedStringResource, auto: Bool) -> some View {
         HStack(spacing: Theme.Spacing.xs) {
             Text(title)
                 .font(Theme.Fonts.h3)
@@ -203,7 +209,9 @@ struct ItemFormView: View {
         }
     }
 
-    private func chipButton(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+    /// Build 17 — same LocalizedStringResource pattern as the
+    /// match-tab chip helper.
+    private func chipButton(_ title: LocalizedStringResource, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
                 .font(Theme.Fonts.caption)

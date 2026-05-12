@@ -161,6 +161,107 @@ enum ClothingSubcategory: String, Codable, CaseIterable, Sendable {
         }
     }
 
+    /// Build 17 — localized form. Mirrors the `displayName` switch
+    /// case-for-case; catalog keys match the English values. This
+    /// is the only subcategory rendering path SwiftUI sees after
+    /// the Build 17 view sweep — `displayName` stays public so
+    /// log lines and accessibility labels can still read in
+    /// English when needed.
+    var localizedName: LocalizedStringResource {
+        switch self {
+        // Tops
+        case .tshirt: LocalizedStringResource("T-Shirt")
+        case .buttonDown: LocalizedStringResource("Button-Down")
+        case .polo: LocalizedStringResource("Polo")
+        case .blazer: LocalizedStringResource("Blazer")
+        case .hoodie: LocalizedStringResource("Hoodie")
+        case .sweater: LocalizedStringResource("Sweater")
+        case .tankTop: LocalizedStringResource("Tank Top")
+        case .henley: LocalizedStringResource("Henley")
+        case .cropTop: LocalizedStringResource("Crop Top")
+        case .blouse: LocalizedStringResource("Blouse")
+        case .turtleneck: LocalizedStringResource("Turtleneck")
+        case .vneck: LocalizedStringResource("V-Neck")
+        case .graphicTee: LocalizedStringResource("Graphic Tee")
+        case .dressShirt: LocalizedStringResource("Dress Shirt")
+        case .knitSweater: LocalizedStringResource("Knit Sweater")
+        case .sweatshirt: LocalizedStringResource("Sweatshirt")
+        case .camisole: LocalizedStringResource("Camisole")
+        case .tank: LocalizedStringResource("Tank")
+        // Bottoms
+        case .jeans: LocalizedStringResource("Jeans")
+        case .chinos: LocalizedStringResource("Chinos")
+        case .dressPants: LocalizedStringResource("Dress Pants")
+        case .shorts: LocalizedStringResource("Shorts")
+        case .cargo: LocalizedStringResource("Cargo")
+        case .joggers: LocalizedStringResource("Joggers")
+        case .skirt: LocalizedStringResource("Skirt")
+        case .miniSkirt: LocalizedStringResource("Mini Skirt")
+        case .midiSkirt: LocalizedStringResource("Midi Skirt")
+        case .wideLeg: LocalizedStringResource("Wide Leg")
+        case .straightLeg: LocalizedStringResource("Straight Leg")
+        case .slimFit: LocalizedStringResource("Slim Fit")
+        case .leggings: LocalizedStringResource("Leggings")
+        case .pencilSkirt: LocalizedStringResource("Pencil Skirt")
+        // Shoes
+        case .sneakers: LocalizedStringResource("Sneakers")
+        case .dressShoes: LocalizedStringResource("Dress Shoes")
+        case .boots: LocalizedStringResource("Boots")
+        case .sandals: LocalizedStringResource("Sandals")
+        case .loafers: LocalizedStringResource("Loafers")
+        case .highTops: LocalizedStringResource("High Tops")
+        case .heels: LocalizedStringResource("Heels")
+        case .flats: LocalizedStringResource("Flats")
+        case .designerSneakers: LocalizedStringResource("Designer Sneakers")
+        case .chelseaBoots: LocalizedStringResource("Chelsea Boots")
+        case .sneakerLow: LocalizedStringResource("Low Sneaker")
+        case .sneakerHigh: LocalizedStringResource("High Sneaker")
+        case .runningShoe: LocalizedStringResource("Running Shoe")
+        case .oxford: LocalizedStringResource("Oxford")
+        case .derby: LocalizedStringResource("Derby")
+        case .balletFlat: LocalizedStringResource("Ballet Flat")
+        // Dresses
+        case .casualDress: LocalizedStringResource("Casual Dress")
+        case .cocktailDress: LocalizedStringResource("Cocktail Dress")
+        case .maxiDress: LocalizedStringResource("Maxi Dress")
+        case .miniDress: LocalizedStringResource("Mini Dress")
+        case .shirtDress: LocalizedStringResource("Shirt Dress")
+        case .wrapDress: LocalizedStringResource("Wrap Dress")
+        case .midiDress: LocalizedStringResource("Midi Dress")
+        case .sundress: LocalizedStringResource("Sundress")
+        case .slipDress: LocalizedStringResource("Slip Dress")
+        case .sheathDress: LocalizedStringResource("Sheath Dress")
+        // Outerwear
+        case .winterCoat: LocalizedStringResource("Winter Coat")
+        case .leatherJacket: LocalizedStringResource("Leather Jacket")
+        case .denimJacket: LocalizedStringResource("Denim Jacket")
+        case .windbreaker: LocalizedStringResource("Windbreaker")
+        case .cardigan: LocalizedStringResource("Cardigan")
+        case .varsityJacket: LocalizedStringResource("Varsity Jacket")
+        case .trench: LocalizedStringResource("Trench")
+        case .parka: LocalizedStringResource("Parka")
+        case .bomber: LocalizedStringResource("Bomber")
+        case .puffer: LocalizedStringResource("Puffer")
+        case .suitJacket: LocalizedStringResource("Suit Jacket")
+        case .overcoat: LocalizedStringResource("Overcoat")
+        case .shirtJacket: LocalizedStringResource("Shirt Jacket")
+        // Accessories
+        case .baseballCap: LocalizedStringResource("Baseball Cap")
+        case .beanie: LocalizedStringResource("Beanie")
+        case .scarf: LocalizedStringResource("Scarf")
+        case .belt: LocalizedStringResource("Belt")
+        case .watch: LocalizedStringResource("Watch")
+        case .sunglasses: LocalizedStringResource("Sunglasses")
+        case .necklace: LocalizedStringResource("Necklace")
+        case .bracelet: LocalizedStringResource("Bracelet")
+        case .bag: LocalizedStringResource("Bag")
+        case .backpack: LocalizedStringResource("Backpack")
+        case .fedoraHat: LocalizedStringResource("Fedora Hat")
+        case .earrings: LocalizedStringResource("Earrings")
+        case .hat: LocalizedStringResource("Hat")
+        }
+    }
+
     var category: ClothingCategory {
         switch self {
         case .tshirt, .buttonDown, .polo, .blazer, .hoodie,

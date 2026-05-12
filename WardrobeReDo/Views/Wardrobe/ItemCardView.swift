@@ -26,8 +26,8 @@ struct ItemCardView: View {
             ZStack(alignment: .topTrailing) {
                 ItemThumbnailView(item: item, url: thumbnailURL, size: .medium)
 
-                // Category badge
-                Text(item.subcategory.displayName)
+                // Category badge — Build 17 localized subcategory.
+                Text(item.subcategory.localizedName)
                     .font(Theme.Fonts.caption)
                     .foregroundStyle(Color(Theme.Colors.textPrimary))
                     .padding(.horizontal, Theme.Spacing.sm)
@@ -63,7 +63,8 @@ struct ItemCardView: View {
                     }
                 }
 
-                Text(item.category.displayName)
+                // Build 17 — localized category label.
+                Text(item.category.localizedName)
                     .font(Theme.Fonts.caption)
                     .foregroundStyle(Color(Theme.Colors.textSecondary))
             }
