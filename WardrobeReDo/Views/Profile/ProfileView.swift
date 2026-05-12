@@ -10,6 +10,11 @@ struct ProfileView: View {
     @State private var isLoadingStats = false
     @State private var cacheSize: String = "—"
     @State private var isClearingCache = false
+    // Build 15 — language picker state. Seeded from
+    // `LanguageManager.current` so the row reflects whatever
+    // override is already in effect on this device.
+    @State private var selectedLanguage: AppLanguage = LanguageManager.current
+    @State private var showLanguageRestartHint = false
 
     private let wardrobeRepository = WardrobeRepository()
     private let outfitRepository = OutfitRepository()
@@ -21,6 +26,12 @@ struct ProfileView: View {
             defaultVibeSection
             preferencesSection
             notificationsSection
+            // Build 15 — language picker between Notifications
+            // and Image Cache. Lives near the bottom of the list
+            // because it's an infrequent change, but above About
+            // so users actually see it without scrolling all the
+            // way down.
+            languageSection
             cacheSection
             aboutSection
             #if DEBUG
@@ -218,6 +229,46 @@ struct ProfileView: View {
                         notificationsEnabled = result
                     }
                 }
+            }
+        }
+    }
+
+    // MARK: - Language (build 15)
+
+    /// Build 15 — in-app language picker. Writing through
+    /// `LanguageManager.set(_:)` updates the `AppleLanguages`
+    /// UserDefaults entry; the change takes effect at next launch
+    /// (same as iOS's own per-app picker in Settings.app). We
+    /// surface a "Restart the app to apply" hint after a change
+    /// instead of trying to swap the localization bundle live —
+    /// the bundle swizzle hacks people post for this are fragile
+    /// and a launch is cheap.
+    private var languageSection: some View {
+        Section("Language") {
+            Picker(selection: $selectedLanguage) {
+                ForEach(AppLanguage.allCases) { language in
+                    Text(language.localizedName).tag(language)
+                }
+            } label: {
+                HStack(spacing: Theme.Spacing.md) {
+                    Image(systemName: "globe")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color(Theme.Colors.primary))
+                        .frame(width: 20)
+                    Text("Language")
+                        .font(Theme.Fonts.body)
+                }
+            }
+            .onChange(of: selectedLanguage) { _, newValue in
+                LanguageManager.set(newValue)
+                HapticManager.selection()
+                showLanguageRestartHint = true
+            }
+
+            if showLanguageRestartHint {
+                Text("Restart the app to apply the new language.")
+                    .font(Theme.Fonts.caption)
+                    .foregroundStyle(Color(Theme.Colors.textSecondary))
             }
         }
     }

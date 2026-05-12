@@ -1,6 +1,311 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Wardrobe Stats" : {
+      "comment" : "Profile section header",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gardırop İstatistikleri"
+          }
+        }
+      }
+    },
+    "Total Items" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toplam Ürün"
+          }
+        }
+      }
+    },
+    "Outfits Generated" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oluşturulan Kombinler"
+          }
+        }
+      }
+    },
+    "Items Worn" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Giyilen Ürünler"
+          }
+        }
+      }
+    },
+    "Most Worn" : {
+      "comment" : "Profile stat row (most-worn category)",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En Çok Giyilen"
+          }
+        }
+      }
+    },
+    "Default vibe" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Varsayılan vibe"
+          }
+        }
+      }
+    },
+    "Where every outfit-generation session starts. You can still slide between Safe and Bold on the Outfits screen." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Her kombin oluşturma oturumunun başlangıcı. Kombin ekranında yine Güvenli ile İddialı arasında kaydırabilirsin."
+          }
+        }
+      }
+    },
+    "Style Preferences" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stil Tercihleri"
+          }
+        }
+      }
+    },
+    "Families" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aileler"
+          }
+        }
+      }
+    },
+    "Occasions" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Durumlar"
+          }
+        }
+      }
+    },
+    "No preferences set" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tercih ayarlanmadı"
+          }
+        }
+      }
+    },
+    "Edit Preferences" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tercihleri Düzenle"
+          }
+        }
+      }
+    },
+    "Style Families" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stil Aileleri"
+          }
+        }
+      }
+    },
+    "Select the styles you gravitate toward." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İlgini çeken stilleri seç."
+          }
+        }
+      }
+    },
+    "Usual Occasions" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sıkça Gittiğin Durumlar"
+          }
+        }
+      }
+    },
+    "Notifications" : {
+      "comment" : "Profile section header",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bildirimler"
+          }
+        }
+      }
+    },
+    "Daily Reminder" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Günlük Hatırlatıcı"
+          }
+        }
+      }
+    },
+    "Get notified when outfits are ready" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kombinler hazır olduğunda bildirim al"
+          }
+        }
+      }
+    },
+    "Language" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dil"
+          }
+        }
+      }
+    },
+    "System default" : {
+      "comment" : "Language picker option — fall back to device language",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sistem varsayılanı"
+          }
+        }
+      }
+    },
+    "English" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İngilizce"
+          }
+        }
+      }
+    },
+    "Türkçe" : {
+      "comment" : "Turkish (own language label — same in both)",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Türkçe"
+          }
+        }
+      }
+    },
+    "Restart the app to apply the new language." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni dilin uygulanması için uygulamayı yeniden başlat."
+          }
+        }
+      }
+    },
+    "Image Cache" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görsel Önbelleği"
+          }
+        }
+      }
+    },
+    "Disk Usage" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disk Kullanımı"
+          }
+        }
+      }
+    },
+    "Clear Image Cache" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görsel Önbelleğini Temizle"
+          }
+        }
+      }
+    },
+    "Clearing..." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Temizleniyor..."
+          }
+        }
+      }
+    },
+    "About" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hakkında"
+          }
+        }
+      }
+    },
+    "Version" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sürüm"
+          }
+        }
+      }
+    },
+    "Sign Out" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çıkış Yap"
+          }
+        }
+      }
+    },
     "%lld found" : {
       "comment" : "Match results count (e.g. \"3 found\")",
       "localizations" : {
