@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import os
 
 /// View-facing model combining an outfit with its resolved items.
 struct DailyOutfit: Identifiable, Sendable {
@@ -14,6 +15,16 @@ struct DailyOutfit: Identifiable, Sendable {
 @MainActor
 @Observable
 final class OutfitViewModel {
+
+    // MARK: - Logger (build 24)
+
+    /// Subsystem-scoped logger for surfaces that previously
+    /// `try? await`-swallowed errors. All call sites go through
+    /// `LogPrivacy` so the error message itself stays private but
+    /// the category prefix (e.g. "loadOutfits.wardrobeFetch") is
+    /// public for log correlation.
+    @ObservationIgnored
+    private let logger = Logger(subsystem: "com.wardroberedo", category: "OutfitViewModel")
 
     // MARK: - Published State
 
@@ -152,10 +163,22 @@ final class OutfitViewModel {
                 // user to tap "Generate" and hit the same wall. Skips
                 // the network call when wardrobe is rich (count >= 2)
                 // since the generic empty-state is fine then.
-                let wardrobeItems = (try? await wardrobeRepository.fetchItems(userId: userId)) ?? []
-                let activeCount = wardrobeItems.filter { !$0.isArchived }.count
-                if activeCount < 2 {
-                    applyFailure(.wardrobeTooSmall(itemCount: activeCount))
+                //
+                // Build 24 — was `(try? await ...) ?? []` which
+                // silently treated a network error as "user has no
+                // wardrobe", surfacing the wrong failure message
+                // ("wardrobe too small" instead of "couldn't load").
+                // Now we distinguish the two: on fetch failure we
+                // surface `.unknown` so the user knows to retry.
+                do {
+                    let wardrobeItems = try await wardrobeRepository.fetchItems(userId: userId)
+                    let activeCount = wardrobeItems.filter { !$0.isArchived }.count
+                    if activeCount < 2 {
+                        applyFailure(.wardrobeTooSmall(itemCount: activeCount))
+                    }
+                } catch {
+                    LogPrivacy.error(logger, category: "loadOutfits.wardrobeFetch", reason: error)
+                    applyFailure(.unknown(String(describing: error)))
                 }
                 return
             }
