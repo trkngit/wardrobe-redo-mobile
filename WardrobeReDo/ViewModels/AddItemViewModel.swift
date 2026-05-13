@@ -373,7 +373,18 @@ final class AddItemViewModel {
     /// jumps straight to details when extraction fell through.
     func onCameraPhotoCaptured(_ image: UIImage) async {
         isShowingCamera = false
-        selectedImage = image
+        // Build 26 / Bug F — downsample the raw capture before
+        // anything else touches it. A fresh iPhone capture is
+        // ~12 MP / ~50 MB decoded; running it through SAM2 session
+        // load + the processing-with-timeout task in parallel was
+        // pushing real devices past the foreground app memory limit
+        // and the OS was killing the process. The library flow
+        // doesn't crash because PhotosPicker already returns a
+        // pre-downsized representation. We mirror that here.
+        // 2048 px on the long edge is well above SAM2's 1024 px
+        // input resolution, so cutout quality is unaffected.
+        let downsampled = ImageDownsampler.downsampled(image)
+        selectedImage = downsampled
         stampFreshCapture()
         isProcessing = true
         errorMessage = nil
@@ -384,7 +395,7 @@ final class AddItemViewModel {
         // cancel any prior in-flight session load before starting.
         sessionLoadTask?.cancel()
         let sessionTask = Task { [clothingExtractor] in
-            await clothingExtractor.makeSession(for: image)
+            await clothingExtractor.makeSession(for: downsampled)
         }
         sessionLoadTask = sessionTask
 
@@ -392,10 +403,13 @@ final class AddItemViewModel {
         // `processingTask` — same cancel-via-popup mechanism applies.
         // The timeout race inside `processWithTimeout` matches the
         // library path so a hung capture also surfaces an error.
+        // Bug F — pass the DOWNSAMPLED image, not the raw capture.
+        // The raw `image` is now released as soon as this function
+        // returns; only the 2048 px copy stays in memory.
         processingTask?.cancel()
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
-            let outcome = await self.processWithTimeout(image)
+            let outcome = await self.processWithTimeout(downsampled)
             guard !Task.isCancelled else {
                 sessionTask.cancel()
                 self.sessionLoadTask = nil

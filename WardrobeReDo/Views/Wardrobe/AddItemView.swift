@@ -704,8 +704,13 @@ struct AddItemView: View {
 
 private struct SourceOptionLabel: View {
     let systemImage: String
-    let title: String
-    let subtitle: String
+    // Build 26 / Bug D — was `String`, which silently passed
+    // through the call site's inline literal and bypassed the
+    // String Catalog. Switching to `LocalizedStringResource` makes
+    // the catalog the only path — future call sites can't
+    // accidentally drop a hard-coded English literal.
+    let title: LocalizedStringResource
+    let subtitle: LocalizedStringResource
     let isPrimary: Bool
 
     var body: some View {

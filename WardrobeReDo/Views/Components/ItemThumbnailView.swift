@@ -80,11 +80,18 @@ struct ItemThumbnailView: View {
 
     /// Padding shrinks for the 44pt strip cell so the garment stays
     /// readable at small sizes — 16pt of inset on a 44pt frame leaves no
-    /// room for the image. Medium and large keep the spec's 16pt.
+    /// room for the image. Build 26 / Bug A — the grid `.medium` cell
+    /// dropped to 8pt because user testing read the prior 16pt as
+    /// "items look too small". The white-card breathing room aesthetic
+    /// stays (8pt is still real padding around the cutout) but the
+    /// garment now occupies ~85% of the card area instead of ~55%
+    /// for short-aspect items like sneakers. Detail view stays at
+    /// 16pt — that surface has the room to spare.
     private var thumbnailPadding: CGFloat {
         switch size {
         case .small: return 4
-        case .medium, .large: return 16
+        case .medium: return 8
+        case .large: return 16
         }
     }
 

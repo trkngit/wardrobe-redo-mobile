@@ -65,16 +65,33 @@ struct CameraOverlay: View {
     /// Capture-ready composite. Drives the advisory green border and
     /// the quality pill's "Looks great" copy. Does NOT gate the
     /// shutter — see class docstring.
+    ///
+    /// Build 26 / Bug E — added the explicit "lens-covered" floor
+    /// (`coverage < coveredFloor` returns false). A fully covered
+    /// lens has no salient object so Vision's saliency request
+    /// returns ~0 coverage; without this guard a stale `quality ==
+    /// .good` value from the moment-before-covering can briefly let
+    /// the green border show. The existing `coverage >= minCoverage`
+    /// check should already catch this in steady state, but a
+    /// near-zero floor makes the contract explicit and survives any
+    /// future re-tune that lowers `minCoverage`.
     static func isCapturable(
         quality: BackgroundQuality,
         sharpness: Float,
         coverage: Float
     ) -> Bool {
-        quality == .good
+        guard coverage >= coveredFloor else { return false }
+        return quality == .good
             && sharpness >= minSharpness
             && coverage >= minCoverage
             && coverage <= maxCoverage
     }
+
+    /// Hard floor below which the lens is treated as fully covered.
+    /// Any signal below this is interpreted as "nothing in frame",
+    /// not "small item far away" — the saliency request returns
+    /// effectively zero on a uniform dark frame.
+    static let coveredFloor: Float = 0.02
 
     /// Minimum normalized Laplacian-variance value for the frame to
     /// be considered sharp. Tuned via `SharpnessMetric` constants.

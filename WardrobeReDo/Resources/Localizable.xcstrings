@@ -622,6 +622,50 @@
         }
       }
     },
+    "Take Photo" : {
+      "comment" : "AddItemView source-picker — camera option title",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotoğraf Çek"
+          }
+        }
+      }
+    },
+    "Live background check + smart crop" : {
+      "comment" : "AddItemView source-picker — camera option subtitle",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anlık arka plan kontrolü + akıllı kırpma"
+          }
+        }
+      }
+    },
+    "Choose from Library" : {
+      "comment" : "AddItemView source-picker — photo library option title",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kütüphaneden Seç"
+          }
+        }
+      }
+    },
+    "Pick an existing photo" : {
+      "comment" : "AddItemView source-picker — photo library option subtitle",
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mevcut bir fotoğraf seç"
+          }
+        }
+      }
+    },
     "Take a new photo" : {
       "comment" : "AddItemView VoiceOver label for the camera button",
       "localizations" : {

@@ -379,6 +379,14 @@ struct DailyOutfitsView: View {
     // MARK: - Occasion Picker
 
     private var occasionPicker: some View {
+        // Build 26 / Bug C — `.scrollBounceBehavior(.basedOnSize)`
+        // disables the rubber-band bounce when content is shorter
+        // than the scroll area. Without it, iOS 17's
+        // `ScrollView(.horizontal)` lets the user drag the row
+        // VERTICALLY in a tiny window (the bounce direction is
+        // perpendicular to the axis), which on this surface
+        // bubbled up to the outer `.refreshable` and triggered an
+        // unintended pull-to-refresh.
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Theme.Spacing.sm) {
                 ForEach(Occasion.allCases, id: \.self) { occasion in
@@ -439,6 +447,8 @@ struct DailyOutfitsView: View {
             .padding(.horizontal, Theme.Spacing.lg)
             .padding(.vertical, Theme.Spacing.sm)
         }
+        // Build 26 / Bug C — see comment above the ScrollView.
+        .scrollBounceBehavior(.basedOnSize)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Occasion picker")
     }

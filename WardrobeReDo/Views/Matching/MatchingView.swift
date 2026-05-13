@@ -331,6 +331,10 @@ struct MatchingView: View {
             }
             .padding(.horizontal, Theme.Spacing.md)
         }
+        // Build 26 / Bug C parity — same `.scrollBounceBehavior`
+        // fix as DailyOutfitsView so the Match-tab chip row can't
+        // intercept the pull-to-refresh gesture either.
+        .scrollBounceBehavior(.basedOnSize)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Occasion picker")
     }

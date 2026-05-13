@@ -236,7 +236,15 @@ struct ItemDetailView: View {
                 }
             }
         }
-        .frame(maxHeight: 400)
+        // Build 26 / Bug B — was `.frame(maxHeight: 400)`. The
+        // `GeometryReader` doesn't propose a size to its parent; in a
+        // `Button` inside a `ScrollView` that meant the available
+        // height collapsed to ~0 and the hero image rendered as a
+        // sliver. A fixed `height: 360` gives the GeometryReader a
+        // real proposal to work with. 360 fits iPhone SE / 13 mini
+        // above the fold (~568 pt content area) without overflowing
+        // the scroll view on bigger phones.
+        .frame(height: 360)
         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
         .cardShadow()
     }
