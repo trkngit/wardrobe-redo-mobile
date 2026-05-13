@@ -150,6 +150,13 @@ struct OutfitCardView: View {
     /// with the count: 1-2 reads subtle, 5+ reads "rotation-heavy".
     /// Numbers above 9 collapse to "9+" so the pill stays
     /// fixed-width and the thumbnail strip doesn't reflow.
+    ///
+    /// Build 25 — contrast tune. Was `Color(primary).opacity(0.92)`
+    /// fill, which in dark mode reads as a dim gold-on-dark pill
+    /// that doesn't pop against the cutout's transparent
+    /// background. Solid `primary` + a stronger drop shadow lifts
+    /// the badge off the thumbnail in both modes. White stroke
+    /// kept for the cut-from-photo halo effect on busy items.
     private func wearCountBadge(count: Int) -> some View {
         Text(count > 9 ? "9+" : "\(count)")
             .font(.system(size: 10, weight: .semibold, design: .rounded))
@@ -158,7 +165,8 @@ struct OutfitCardView: View {
             .padding(.horizontal, 4)
             .background(
                 Capsule()
-                    .fill(Color(Theme.Colors.primary).opacity(0.92))
+                    .fill(Color(Theme.Colors.primary))
+                    .shadow(color: .black.opacity(0.25), radius: 2, y: 1)
             )
             .overlay(
                 Capsule()

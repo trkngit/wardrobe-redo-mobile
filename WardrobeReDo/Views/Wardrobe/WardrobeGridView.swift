@@ -52,6 +52,14 @@ struct WardrobeGridView: View {
                 }
                 .refreshable {
                     guard let userId = appState.currentUser?.id else { return }
+                    // Build 25 — confirmation haptic when the user
+                    // commits to the pull-to-refresh gesture.
+                    // Matches the cadence the Outfits + Match tabs
+                    // already have from their picker-change paths
+                    // (build 8) and gives the wardrobe the same
+                    // tactile feedback iOS Mail / Notes already
+                    // provide on swipe-down refresh.
+                    HapticManager.medium()
                     await viewModel.loadItems(userId: userId)
                     await loadThumbnails()
                 }

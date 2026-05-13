@@ -45,6 +45,8 @@ struct DailyOutfitsView: View {
         }
         .refreshable {
             guard let userId = appState.currentUser?.id else { return }
+            // Build 25 — confirmation haptic on pull-to-refresh.
+            HapticManager.medium()
             await viewModel.loadOutfits(userId: userId)
         }
         .navigationDestination(for: UUID.self) { outfitId in

@@ -41,6 +41,8 @@ struct MatchingView: View {
         // wardrobe snapshot.
         .refreshable {
             guard let userId = appState.currentUser?.id else { return }
+            // Build 25 — confirmation haptic on pull-to-refresh.
+            HapticManager.medium()
             await viewModel.loadWardrobe(userId: userId)
             if viewModel.selectedItem != nil {
                 await viewModel.findMatches(userId: userId)
