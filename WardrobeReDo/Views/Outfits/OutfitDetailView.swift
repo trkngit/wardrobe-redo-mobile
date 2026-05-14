@@ -127,17 +127,22 @@ struct OutfitDetailView: View {
     // MARK: - Total Score Badge
 
     private var totalScoreBadge: some View {
+        // Build 28 — uses the demoted `gold` accent. The Editorial
+        // Heritage palette moved `primary` to ink everywhere else;
+        // this is one of two surfaces (along with the carousel's
+        // score badge) that keeps the warm gold treatment so the
+        // editorial pop still lands somewhere intentional.
         VStack(spacing: 2) {
             Text("\(Int(outfit.score * 100))")
                 .font(.system(size: 28, weight: .bold, design: .rounded))
-                .foregroundStyle(Color(Theme.Colors.primary))
+                .foregroundStyle(Color(Theme.Colors.gold))
 
             Text("Score")
                 .font(Theme.Fonts.caption)
                 .foregroundStyle(Color(Theme.Colors.textSecondary))
         }
         .padding(Theme.Spacing.md)
-        .background(Color(Theme.Colors.primaryMuted).opacity(0.15))
+        .background(Color(Theme.Colors.gold).opacity(0.12))
         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
     }
 

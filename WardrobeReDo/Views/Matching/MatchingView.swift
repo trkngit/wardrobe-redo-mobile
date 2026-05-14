@@ -258,8 +258,10 @@ struct MatchingView: View {
     /// an explicit seed. Loading title mirrors the Outfits tab
     /// ("Rolling…") for cross-surface consistency.
     private var surpriseMeButton: some View {
+        // Build 28 — dice emoji dropped; see DailyOutfitsView for
+        // the same rationale.
         GoldButton(
-            viewModel.isMatching ? "Rolling…" : "🎲 Surprise me",
+            viewModel.isMatching ? "Rolling…" : "Surprise me",
             isLoading: viewModel.isMatching
         ) {
             guard !viewModel.isMatching else { return }

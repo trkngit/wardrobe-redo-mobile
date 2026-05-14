@@ -223,8 +223,13 @@ struct DailyOutfitsView: View {
     /// explicit "give me variety" affordance — runs the engine
     /// with the same occasion + vibe but a fresh random seed.
     private var regenerateButton: some View {
+        // Build 28 — dice emoji removed. The 🎲 prefix read
+        // "AI-sloppy" on a serious editorial CTA; the button now
+        // says "Surprise me" / "Şaşırt beni" plain. Visual weight
+        // comes from the new ink-primary palette and the press-
+        // scale haptic, not from chrome.
         GoldButton(
-            viewModel.isRegenerating ? "Rolling…" : "🎲 Surprise me",
+            viewModel.isRegenerating ? "Rolling…" : "Surprise me",
             isLoading: viewModel.isRegenerating
         ) {
             guard !viewModel.isRegenerating else { return }

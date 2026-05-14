@@ -1076,13 +1076,13 @@
         }
       }
     },
-    "🎲 Surprise me" : {
-      "comment" : "Re-roll button label on Outfits and Match tabs",
+    "Surprise me" : {
+      "comment" : "Re-roll button label on Outfits and Match tabs. Build 28 dropped the leading 🎲 emoji.",
       "localizations" : {
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "🎲 Şaşırt beni"
+            "value" : "Şaşırt beni"
           }
         }
       }

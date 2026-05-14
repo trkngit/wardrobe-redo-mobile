@@ -76,12 +76,18 @@ struct OutfitCardView: View {
 
     private var scoreBadge: some View {
         let percentage = Int(outfit.score * 100)
+        // Build 28 — uses the demoted `gold` accent (was the old
+        // `primary` gold pre-Build 28). The Editorial Heritage
+        // palette swap moved `primary` to ink/charcoal everywhere
+        // else; the score badge is one of two surfaces (along
+        // with the Hero label) that keeps the warm gold treatment
+        // so the editorial pop still lands somewhere intentional.
         return Text("\(percentage)")
             .font(.system(size: 18, weight: .semibold, design: .rounded))
-            .foregroundStyle(Color(Theme.Colors.primary))
+            .foregroundStyle(Color(Theme.Colors.gold))
             .padding(.horizontal, Theme.Spacing.sm)
             .padding(.vertical, Theme.Spacing.xs)
-            .background(Color(Theme.Colors.primaryMuted).opacity(0.2))
+            .background(Color(Theme.Colors.gold).opacity(0.12))
             .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.chip))
     }
 
@@ -135,11 +141,14 @@ struct OutfitCardView: View {
 
             // Slot role indicator
             if let slot = dailyOutfit.slots.first(where: { $0.wardrobeItemId == item.id }) {
+                // Build 28 — "Hero" reads in the demoted gold
+                // accent so it still pops as the editorial
+                // highlight after the primary-color flip to ink.
                 Text(slot.role.capitalized)
                     .font(Theme.Fonts.caption)
                     .foregroundStyle(
                         slot.role == "hero"
-                            ? Color(Theme.Colors.primary)
+                            ? Color(Theme.Colors.gold)
                             : Color(Theme.Colors.textSecondary)
                     )
             }

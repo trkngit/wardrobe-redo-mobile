@@ -24,7 +24,7 @@ struct GoldButton: View {
     // entirely. Switching to `LocalizedStringResource` routes
     // every literal call site through the catalog automatically
     // (literals coerce via `ExpressibleByStringLiteral`), so
-    // existing `GoldButton("🎲 Surprise me")` calls render Turkish
+    // existing `GoldButton("Surprise me")` calls render Turkish
     // when the locale is `tr` instead of staying English forever.
     let title: LocalizedStringResource
     let isLoading: Bool

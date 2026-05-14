@@ -15,6 +15,22 @@ enum Theme {
         static let destructive = "Destructive"
         static let muted = "Muted"
         static let border = "Border"
+
+        // Build 28 — Editorial Heritage palette. The 100 sites that
+        // read `primary` now resolve to ink (`#1F2937`) instead of
+        // the old gold. These two tokens preserve the gold + sage
+        // accents for selective use:
+        //
+        //   • `gold` — premium-accent role on the score badge and
+        //     "Hero" label. The same warm gold we used to apply to
+        //     every CTA, now reserved for moments that earn the
+        //     editorial pop.
+        //   • `accentSage` — micro-accent for future success / OK
+        //     surfaces (capture-good frame, "matched well" ticks).
+        //     Defined now so the next UI surface that needs it can
+        //     pull it without an asset roundtrip.
+        static let gold = "Gold"
+        static let accentSage = "AccentSage"
     }
 
     // MARK: - Typography
