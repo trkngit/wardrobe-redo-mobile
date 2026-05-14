@@ -718,6 +718,70 @@
         }
       }
     },
+    "Items" : {
+      "comment" : "OutfitDetailView section header above the item gallery",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ürünler" } } }
+    },
+    "Score" : {
+      "comment" : "OutfitDetailView total-score badge label",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Puan" } } }
+    },
+    "Style Analysis" : {
+      "comment" : "OutfitDetailView section header above the dimension bars",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Stil Analizi" } } }
+    },
+    "Proportion" : {
+      "comment" : "OutfitDetailView dimension bar label",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Oran" } } }
+    },
+    "Color" : {
+      "comment" : "OutfitDetailView dimension bar label",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Renk" } } }
+    },
+    "Formality" : {
+      "comment" : "OutfitDetailView dimension bar label",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Resmiyet" } } }
+    },
+    "Formula" : {
+      "comment" : "OutfitDetailView dimension bar label",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Formül" } } }
+    },
+    "Versatility" : {
+      "comment" : "OutfitDetailView dimension bar label",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Çok yönlülük" } } }
+    },
+    "Context" : {
+      "comment" : "OutfitDetailView dimension bar label (occasion fit)",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bağlam" } } }
+    },
+    "Score breakdown not available" : {
+      "comment" : "OutfitDetailView fallback when score breakdown missing",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Puan dökümü mevcut değil" } } }
+    },
+    "How do you feel about this outfit?" : {
+      "comment" : "OutfitDetailView reaction bar prompt",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bu kombin hakkında ne düşünüyorsun?" } } }
+    },
+    "Love" : {
+      "comment" : "OutfitDetailView reaction button — love / heart",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Beğen" } } }
+    },
+    "Like" : {
+      "comment" : "OutfitDetailView reaction button — thumbs up",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Hoşlandım" } } }
+    },
+    "Skip" : {
+      "comment" : "OutfitDetailView reaction button — skip / not for me",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Atla" } } }
+    },
+    "Worn today" : {
+      "comment" : "OutfitDetailView mark-as-worn toggle (active state)",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bugün giyildi" } } }
+    },
+    "Mark as worn" : {
+      "comment" : "OutfitDetailView mark-as-worn toggle (inactive state)",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Giyildi olarak işaretle" } } }
+    },
     "Most Worn" : {
       "comment" : "Profile stat row (most-worn category)",
       "localizations" : {

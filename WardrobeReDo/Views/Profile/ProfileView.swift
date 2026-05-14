@@ -95,12 +95,27 @@ struct ProfileView: View {
             statRow(label: "Items Worn", value: "\(stats.itemsWorn)", icon: "checkmark.circle")
 
             if let mostWorn = stats.mostWornCategory {
-                statRow(label: "Most Worn", value: mostWorn, icon: "flame")
+                // Build 27 — resolve the localized category name
+                // at render time. See `ProfileStats` for why we
+                // stopped storing the displayName.
+                statRow(
+                    label: "Most Worn",
+                    value: String(localized: mostWorn.localizedName),
+                    icon: "flame"
+                )
             }
         }
     }
 
-    private func statRow(label: String, value: String, icon: String) -> some View {
+    // Build 27 — was `label: String`, which routed through
+    // `Text(verbatim:)` and bypassed the catalog even though every
+    // label (Total Items / Outfits Generated / Items Worn / Most
+    // Worn) HAS a Turkish translation in `Localizable.xcstrings`.
+    // `LocalizedStringResource` is the correct carrier; existing
+    // call sites pass string literals which auto-coerce.
+    // `value` stays `String` because it's interpolated user data
+    // ("12", "39") — not a localized string.
+    private func statRow(label: LocalizedStringResource, value: String, icon: String) -> some View {
         HStack(spacing: Theme.Spacing.md) {
             Image(systemName: icon)
                 .font(.system(size: 14))
@@ -191,7 +206,12 @@ struct ProfileView: View {
         }
     }
 
-    private func preferenceRow(label: String, values: [String]) -> some View {
+    // Build 27 — same `String` → `LocalizedStringResource` fix as
+    // `statRow`. `label` is the chrome ("Families" / "Occasions");
+    // `values` stays `String` because it's the user's DB-driven
+    // preference list ("Streetwear, Edgy, Classic") — those are
+    // raw archetype names and aren't localized today.
+    private func preferenceRow(label: LocalizedStringResource, values: [String]) -> some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
             Text(label)
                 .font(Theme.Fonts.caption)
@@ -377,12 +397,14 @@ struct ProfileView: View {
                     $1.value.reduce(0) { $0 + $1.wearCount }
             })
 
+            // Build 27 — store the category enum, not the
+            // displayName. See `ProfileStats.mostWornCategory`.
             stats = ProfileStats(
                 totalItems: items.count,
                 outfitsGenerated: outfits.count,
                 itemsWorn: items.filter { $0.wearCount > 0 }.count,
                 mostWornCategory: mostWorn?.value.first(where: { $0.wearCount > 0 }) != nil
-                    ? mostWorn?.key.displayName : nil
+                    ? mostWorn?.key : nil
             )
         } catch {
             // Stats are non-critical — fail silently
@@ -396,7 +418,12 @@ private struct ProfileStats {
     var totalItems = 0
     var outfitsGenerated = 0
     var itemsWorn = 0
-    var mostWornCategory: String?
+    // Build 27 — was `String?` (storing the category's English
+    // displayName at fetch time), which baked in English even
+    // under Turkish locale. Storing the enum lets the renderer
+    // resolve `localizedName` at display time so the row reads
+    // "Üst Giyim" in tr without an extra catalog round-trip.
+    var mostWornCategory: ClothingCategory?
 }
 
 // MARK: - Style Preferences Editor
@@ -430,7 +457,17 @@ struct StylePreferencesEditor: View {
 
                     FlowLayoutOnboarding(spacing: Theme.Spacing.sm) {
                         ForEach(allFamilies, id: \.self) { family in
-                            toggleChip(family.capitalized, isSelected: selectedFamilies.contains(family)) {
+                            // Build 27 — `family` is a raw DB string
+                            // ("streetwear", "edgy", ...) — not a
+                            // catalog key yet. Wrap in
+                            // `LocalizedStringResource(...)` via
+                            // interpolation so the API matches
+                            // `toggleChip`'s `LocalizedStringResource`
+                            // signature. Family names will fall back
+                            // to their capitalized raw value until a
+                            // future build adds per-family catalog
+                            // entries.
+                            toggleChip(LocalizedStringResource("\(family.capitalized)"), isSelected: selectedFamilies.contains(family)) {
                                 if selectedFamilies.contains(family) {
                                     selectedFamilies.remove(family)
                                 } else {
@@ -449,7 +486,10 @@ struct StylePreferencesEditor: View {
 
                     FlowLayoutOnboarding(spacing: Theme.Spacing.sm) {
                         ForEach(Occasion.allCases, id: \.self) { occasion in
-                            toggleChip(occasion.displayName, isSelected: selectedOccasions.contains(occasion.rawValue)) {
+                            // Build 27 — was `occasion.displayName`
+                            // (raw English); now `localizedName`
+                            // routes through the catalog.
+                            toggleChip(occasion.localizedName, isSelected: selectedOccasions.contains(occasion.rawValue)) {
                                 if selectedOccasions.contains(occasion.rawValue) {
                                     selectedOccasions.remove(occasion.rawValue)
                                 } else {
@@ -479,7 +519,11 @@ struct StylePreferencesEditor: View {
         .onAppear { loadExisting() }
     }
 
-    private func toggleChip(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+    // Build 27 — `title: String` → `LocalizedStringResource`.
+    // Call sites pass either string literals ("Family X" — auto-
+    // coerced) or `occasion.localizedName` for the Occasions row,
+    // both of which route through the catalog.
+    private func toggleChip(_ title: LocalizedStringResource, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
                 .font(Theme.Fonts.bodySmall)

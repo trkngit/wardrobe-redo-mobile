@@ -207,6 +207,16 @@ struct ItemDetailView: View {
                     }
                     .resizable()
                     .scaledToFit()
+                    // Build 27 — was hugging the leading edge of
+                    // the GeometryReader because ZStack's default
+                    // alignment is .topLeading and `.scaledToFit`
+                    // produces a smaller rectangle. Explicit
+                    // `maxWidth/.infinity` + `.center` alignment
+                    // centers the scaled image inside the 360 pt
+                    // hero frame. The bbox overlay below still
+                    // uses `loadedImageSize` + `aspectFitRect`
+                    // math so its rect stays accurate.
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 
                 if let bbox = item.boundingBox?.cgRect,
                    let imageSize = loadedImageSize {

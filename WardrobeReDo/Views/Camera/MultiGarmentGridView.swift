@@ -81,9 +81,16 @@ struct MultiGarmentGridView: View {
     }
 
     /// Pluralized CTA text. "Save 1 item" vs "Save 3 items".
-    var confirmButtonTitle: String {
+    ///
+    /// Build 27 — return type changed to `LocalizedStringResource`
+    /// after the GoldButton signature update. Catalog provides the
+    /// translated singular + plural variants; the count slots into
+    /// the format specifier.
+    var confirmButtonTitle: LocalizedStringResource {
         let n = selectedIDs.count
-        return n == 1 ? "Save 1 item" : "Save \(n) items"
+        return n == 1
+            ? LocalizedStringResource("Save 1 item")
+            : LocalizedStringResource("Save \(n) items")
     }
 
     /// Heuristic for the layered-look help tip. The model often fuses a

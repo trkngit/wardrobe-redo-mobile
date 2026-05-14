@@ -19,11 +19,18 @@ extension ButtonStyle where Self == PressScaleButtonStyle {
 }
 
 struct GoldButton: View {
-    let title: String
+    // Build 27 — was `String`, which silently picked SwiftUI's
+    // `Text(verbatim: String)` overload and bypassed the catalog
+    // entirely. Switching to `LocalizedStringResource` routes
+    // every literal call site through the catalog automatically
+    // (literals coerce via `ExpressibleByStringLiteral`), so
+    // existing `GoldButton("🎲 Surprise me")` calls render Turkish
+    // when the locale is `tr` instead of staying English forever.
+    let title: LocalizedStringResource
     let isLoading: Bool
     let action: () -> Void
 
-    init(_ title: String, isLoading: Bool = false, action: @escaping () -> Void) {
+    init(_ title: LocalizedStringResource, isLoading: Bool = false, action: @escaping () -> Void) {
         self.title = title
         self.isLoading = isLoading
         self.action = action
@@ -57,10 +64,12 @@ struct GoldButton: View {
 }
 
 struct GhostButton: View {
-    let title: String
+    // Build 27 — same `String` → `LocalizedStringResource` fix as
+    // GoldButton. See that struct's comment for the rationale.
+    let title: LocalizedStringResource
     let action: () -> Void
 
-    init(_ title: String, action: @escaping () -> Void) {
+    init(_ title: LocalizedStringResource, action: @escaping () -> Void) {
         self.title = title
         self.action = action
     }

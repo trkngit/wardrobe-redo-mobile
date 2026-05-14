@@ -43,12 +43,16 @@ struct DailyOutfitsView: View {
             viewModel.selectedOccasion = OccasionMemory.outfitsLastOccasion()
             await viewModel.loadOutfits(userId: user.id)
         }
-        .refreshable {
-            guard let userId = appState.currentUser?.id else { return }
-            // Build 25 — confirmation haptic on pull-to-refresh.
-            HapticManager.medium()
-            await viewModel.loadOutfits(userId: userId)
-        }
+        // Build 27 — `.refreshable` removed. It was attaching to
+        // the horizontal occasion-chip ScrollView (the only
+        // scrollable descendant of the body), so the user could
+        // drag the chip row downward and trigger an unintended
+        // refresh. The Build 26 `.scrollBounceBehavior` mitigation
+        // wasn't sufficient. The Outfits tab already has two
+        // explicit refresh paths (picker-change auto-regen +
+        // Surprise me button), so pull-to-refresh was redundant
+        // chrome anyway — removing it eliminates the gesture
+        // conflict at the root rather than fighting it.
         .navigationDestination(for: UUID.self) { outfitId in
             OutfitDetailView(outfitId: outfitId, viewModel: viewModel)
         }
@@ -439,8 +443,14 @@ struct DailyOutfitsView: View {
                     // when it's the active occasion, which is the
                     // visual signal a sighted user gets from the
                     // gold capsule background.
-                    .accessibilityLabel("\(occasion.displayName) occasion")
-                    .accessibilityHint("Generates outfits for \(occasion.displayName.lowercased()) settings")
+                    // Build 27 — was `occasion.displayName` (raw
+                    // English from the enum), which made Turkish
+                    // VoiceOver users hear "Casual occasion" even
+                    // under a Turkish locale. Routing through
+                    // `String(localized: occasion.localizedName)`
+                    // pulls the same catalog value the visible
+                    // chip uses.
+                    .accessibilityLabel("\(String(localized: occasion.localizedName))")
                     .accessibilityAddTraits(viewModel.selectedOccasion == occasion ? [.isSelected, .isButton] : .isButton)
                 }
             }

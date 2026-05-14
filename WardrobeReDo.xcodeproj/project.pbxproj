@@ -136,6 +136,7 @@
 		669EEB54431DB7BCA36ED44E /* MatchingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60AE0B5951035C08C305DD2E /* MatchingViewModel.swift */; };
 		66B72629B1C7F23EFB68C6CA /* cluttered_06.png in Resources */ = {isa = PBXBuildFile; fileRef = D85862D9F6082BC406086E6E /* cluttered_06.png */; };
 		673173AFD7A79D706E7E6AE6 /* OutfitFormulaScorerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A843300BF6B185DAEFCDC024 /* OutfitFormulaScorerTests.swift */; };
+		68052C0E2E9D3556643D5033 /* CatalogCoverageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0377B0DCCF20DC7D9EC5842 /* CatalogCoverageTests.swift */; };
 		68FB0EFF557C5039BE89B908 /* MultiGarmentProposalServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D36414C7C1815048C85CF8 /* MultiGarmentProposalServiceTests.swift */; };
 		6937423795FF63A0D27C9D4B /* VibePresetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D69A87DEE93491C4C1C0DD0 /* VibePresetTests.swift */; };
 		6A8D1D1930FBA7A07CF0F44E /* StyleArchetype.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25C01BB3FED8903F9F539095 /* StyleArchetype.swift */; };
@@ -569,6 +570,7 @@
 		9F8B93ACED5FE7CC1E74AA56 /* WardrobeWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeWidget.swift; sourceTree = "<group>"; };
 		9FA6CF94AA4B0A79425BEFD0 /* clean_bg_08.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = clean_bg_08.jpg; sourceTree = "<group>"; };
 		A0081F6CA15F242DF0714713 /* clean_bg_07.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = clean_bg_07.png; sourceTree = "<group>"; };
+		A0377B0DCCF20DC7D9EC5842 /* CatalogCoverageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogCoverageTests.swift; sourceTree = "<group>"; };
 		A068245655FACB9B07793700 /* WardrobeViewModelSessionsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeViewModelSessionsTests.swift; sourceTree = "<group>"; };
 		A09DAF3C2144C4E27768FBC0 /* RetryPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetryPolicy.swift; sourceTree = "<group>"; };
 		A16198F92A540EAEF0840A64 /* NetworkMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitorTests.swift; sourceTree = "<group>"; };
@@ -808,6 +810,7 @@
 				81364DC122BF6AF103A8575E /* Extensions */,
 				AC7772C3F96B1FD68636BCC3 /* Fixtures */,
 				7BD98756180ADC767E334D9D /* Helpers */,
+				B7958B8D735EAAAC854F657B /* Localization */,
 				F620CA09C9981B8DA2994EAF /* Middleware */,
 				AD9BB7B70D004FBEF1FB3CA5 /* Models */,
 				11389A58AC6D92C3D66690FB /* Services */,
@@ -1348,6 +1351,14 @@
 				83DCDE7A00CA93056888BB86 /* VibeIntegrationTests.swift */,
 			);
 			path = StyleEngine;
+			sourceTree = "<group>";
+		};
+		B7958B8D735EAAAC854F657B /* Localization */ = {
+			isa = PBXGroup;
+			children = (
+				A0377B0DCCF20DC7D9EC5842 /* CatalogCoverageTests.swift */,
+			);
+			path = Localization;
 			sourceTree = "<group>";
 		};
 		C49E885B48BB04F153B8C3F8 /* VibeSelectorSnapshotTests */ = {
@@ -1918,6 +1929,7 @@
 				648A48F88F2E38D95D8A5589 /* BatchPersistenceServiceTests.swift in Sources */,
 				F011F99766019E7B7897A5F4 /* BoostPenaltyTests.swift in Sources */,
 				A3B1581C51A7389B2BE98DB4 /* CameraOverlayTests.swift in Sources */,
+				68052C0E2E9D3556643D5033 /* CatalogCoverageTests.swift in Sources */,
 				185E00FB228C8A38AFFCF726 /* ClothingCategoryFashionpediaTests.swift in Sources */,
 				2BBC8B9F54B7084C73205141 /* ClothingCategoryTests.swift in Sources */,
 				92CF957050AF45F7156A45B4 /* ClothingExtractionChainingTests.swift in Sources */,

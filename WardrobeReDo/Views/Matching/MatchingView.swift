@@ -324,8 +324,9 @@ struct MatchingView: View {
                     }
                     .animation(Theme.Animation.standard, value: viewModel.selectedOccasion == occasion)
                     // Build 8 — VoiceOver parity with Outfits tab.
-                    .accessibilityLabel("\(occasion.displayName) occasion")
-                    .accessibilityHint("Re-ranks matches for \(occasion.displayName.lowercased()) settings")
+                    // Build 27 — see DailyOutfitsView for the same
+                    // localizedName routing rationale.
+                    .accessibilityLabel("\(String(localized: occasion.localizedName))")
                     .accessibilityAddTraits(viewModel.selectedOccasion == occasion ? [.isSelected, .isButton] : .isButton)
                 }
             }

@@ -235,7 +235,12 @@ struct OutfitDetailView: View {
         }
     }
 
-    private func dimensionBar(label: String, value: Double, weight: Double) -> some View {
+    // Build 27 — `label` was `String`, which routed through
+    // `Text(verbatim:)` even for catalog-bound names like
+    // "Proportion" / "Color" / "Texture". Switching to
+    // `LocalizedStringResource` makes the call sites route through
+    // the catalog automatically.
+    private func dimensionBar(label: LocalizedStringResource, value: Double, weight: Double) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(label)
@@ -302,7 +307,11 @@ struct OutfitDetailView: View {
         }
     }
 
-    private func reactionButton(reaction: String, icon: String, label: String, activeColor: Color) -> some View {
+    // Build 27 — `label` was `String` so the Love/Like/Skip
+    // captions never picked up the Turkish translations even
+    // though they're in the catalog. `LocalizedStringResource`
+    // is the carrier that routes via Text(_ resource:).
+    private func reactionButton(reaction: String, icon: String, label: LocalizedStringResource, activeColor: Color) -> some View {
         let isActive = outfit.reaction == reaction
 
         return Button {
