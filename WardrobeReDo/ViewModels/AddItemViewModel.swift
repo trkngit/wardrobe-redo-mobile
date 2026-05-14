@@ -240,17 +240,28 @@ final class AddItemViewModel {
     func onPhotoSelected() async {
         guard let item = selectedPhoto else { return }
 
+        // Build 30 — breadcrumb logging at every step of the photo
+        // pipeline. After Build 29 reduced peak memory via the lazy
+        // CGImageSource downsample, the user reports the app still
+        // crashes during library/camera photo flow on real devices.
+        // Without device logs we can't pinpoint which step dies, so
+        // we instrument every transition. These show up in Console.app
+        // when the device is wired up + in Sentry breadcrumbs.
+        logger.info("library.onPhotoSelected: start")
+
         captureMethod = .library
         isProcessing = true
         errorMessage = nil
         currentStep = .analysis
 
         guard let image = await imageService.loadImage(from: item) else {
+            logger.error("library.loadImage: returned nil")
             errorMessage = "Couldn't load that image. Try another one."
             currentStep = .photo
             isProcessing = false
             return
         }
+        logger.info("library.loadImage: ok, size=\(image.size.width, privacy: .public)x\(image.size.height, privacy: .public)")
 
         selectedImage = image
         stampFreshCapture()
@@ -282,7 +293,9 @@ final class AddItemViewModel {
         processingTask?.cancel()
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
+            self.logger.info("library.processWithTimeout: start")
             let outcome = await self.processWithTimeout(image)
+            self.logger.info("library.processWithTimeout: done outcome=\(String(describing: outcome), privacy: .public)")
             guard !Task.isCancelled else {
                 sessionTask.cancel()
                 self.sessionLoadTask = nil
@@ -290,14 +303,17 @@ final class AddItemViewModel {
             }
             switch outcome {
             case .completed(let processed):
+                self.logger.info("library.apply: processed=\(processed != nil ? "ok" : "nil", privacy: .public)")
                 await self.applyProcessedFromLibrary(processed, sessionTask: sessionTask)
             case .timedOut:
+                self.logger.error("library.timeout: 30s elapsed")
                 self.handleProcessingTimeout(sessionTask: sessionTask)
             }
         }
         processingTask = task
         await task.value
         processingTask = nil
+        logger.info("library.onPhotoSelected: end")
     }
 
     /// Post-processing branch for library-picked images. As of the
@@ -372,6 +388,10 @@ final class AddItemViewModel {
     /// sheet when a mask was produced (so the user can refine it), or
     /// jumps straight to details when extraction fell through.
     func onCameraPhotoCaptured(_ image: UIImage) async {
+        // Build 30 — same breadcrumb instrumentation as
+        // `onPhotoSelected`. See that method for the rationale.
+        logger.info("camera.onPhotoCaptured: start size=\(image.size.width, privacy: .public)x\(image.size.height, privacy: .public)")
+
         isShowingCamera = false
         // Build 26 / Bug F — downsample the raw capture before
         // anything else touches it. A fresh iPhone capture is
@@ -383,7 +403,12 @@ final class AddItemViewModel {
         // pre-downsized representation. We mirror that here.
         // 2048 px on the long edge is well above SAM2's 1024 px
         // input resolution, so cutout quality is unaffected.
+        //
+        // Build 29 moved the actual downsample upstream into the
+        // AVCapture delegate so this call is typically a no-op
+        // (input is already ≤ 2048 px). Defense in depth.
         let downsampled = ImageDownsampler.downsampled(image)
+        logger.info("camera.downsampled: size=\(downsampled.size.width, privacy: .public)x\(downsampled.size.height, privacy: .public)")
         selectedImage = downsampled
         stampFreshCapture()
         isProcessing = true
@@ -409,7 +434,9 @@ final class AddItemViewModel {
         processingTask?.cancel()
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
+            self.logger.info("camera.processWithTimeout: start")
             let outcome = await self.processWithTimeout(downsampled)
+            self.logger.info("camera.processWithTimeout: done outcome=\(String(describing: outcome), privacy: .public)")
             guard !Task.isCancelled else {
                 sessionTask.cancel()
                 self.sessionLoadTask = nil
@@ -417,14 +444,17 @@ final class AddItemViewModel {
             }
             switch outcome {
             case .completed(let processed):
+                self.logger.info("camera.apply: processed=\(processed != nil ? "ok" : "nil", privacy: .public)")
                 await self.applyProcessedFromCamera(processed, sessionTask: sessionTask)
             case .timedOut:
+                self.logger.error("camera.timeout: 30s elapsed")
                 self.handleProcessingTimeout(sessionTask: sessionTask)
             }
         }
         processingTask = task
         await task.value
         processingTask = nil
+        logger.info("camera.onPhotoCaptured: end")
     }
 
     /// Post-processing branch for camera captures. As of the

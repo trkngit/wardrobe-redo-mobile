@@ -83,9 +83,53 @@ enum ImageDownsampler {
             kCGImageSourceShouldCacheImmediately: true,
             kCGImageSourceThumbnailMaxPixelSize: maxDimension
         ] as CFDictionary
-        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions) else {
+        guard let thumb = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions) else {
             return nil
         }
-        return UIImage(cgImage: cgImage)
+
+        // Build 30 — normalize the thumbnail to a guaranteed sRGB +
+        // premultiplied-RGBA bitmap. CGImageSource preserves the
+        // source colorspace (sRGB / DisplayP3 / ProPhoto / wide-gamut
+        // HEIC), and the alpha info can be `.none` / `.first` /
+        // `.last` / `.skipFirst` depending on the codec. Downstream
+        // Vision + Core Image expect predictable byte order; some
+        // versions of `VNGenerateForegroundInstanceMaskRequest`
+        // crash with `EXC_BREAKPOINT` when handed a CGImage in
+        // CMYK or 16-bit RGBA. Redrawing through a known-good sRGB
+        // context costs one extra ~12 MB allocation (which the
+        // caller is already paying for elsewhere) and guarantees a
+        // safe pixel format.
+        //
+        // Falls back to the raw CGImageSource thumbnail if the
+        // sRGB redraw fails — the alternative is to return nil,
+        // which loses the user's image. The thumbnail is still a
+        // legit CGImage even if its colorspace is unusual.
+        let width = thumb.width
+        let height = thumb.height
+        let bitsPerComponent = 8
+        let bytesPerRow = width * 4
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue
+                       | CGBitmapInfo.byteOrder32Big.rawValue
+        guard let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: bitsPerComponent,
+            bytesPerRow: bytesPerRow,
+            space: colorSpace,
+            bitmapInfo: bitmapInfo
+        ) else {
+            // Bitmap context allocation failed (extreme memory
+            // pressure). Use the raw thumbnail — Vision still
+            // accepts it on most paths.
+            return UIImage(cgImage: thumb)
+        }
+        context.interpolationQuality = .high
+        context.draw(thumb, in: CGRect(x: 0, y: 0, width: width, height: height))
+        guard let normalized = context.makeImage() else {
+            return UIImage(cgImage: thumb)
+        }
+        return UIImage(cgImage: normalized)
     }
 }
