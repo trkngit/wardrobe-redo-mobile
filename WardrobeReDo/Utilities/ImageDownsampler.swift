@@ -1,4 +1,5 @@
 import UIKit
+import ImageIO
 
 /// Build 26 — pure helper for camera-capture memory pressure.
 ///
@@ -46,5 +47,45 @@ enum ImageDownsampler {
         return renderer.image { _ in
             image.draw(in: CGRect(origin: .zero, size: newSize))
         }
+    }
+
+    /// Build 29 — memory-safe path for raw image `Data` (the library
+    /// flow). Uses `CGImageSourceCreateThumbnailAtIndex` which reads
+    /// the source lazily and emits a thumbnail at the requested size
+    /// **without ever fully decoding the original**. Critical for
+    /// modern phone photos: a 48 MP HEIC from an iPhone 16 Pro Max
+    /// would be 100+ MB decoded; the lazy path keeps memory usage
+    /// proportional to the thumbnail size (~12 MB at 2048 px) instead
+    /// of the source.
+    ///
+    /// Returns `nil` if the data isn't a recognized image format or
+    /// the source can't be decoded. Callers should fall back to a
+    /// user-facing "couldn't load that image" message rather than
+    /// crashing.
+    ///
+    /// `kCGImageSourceShouldCacheImmediately = true` decodes the
+    /// thumbnail on the work thread so the main thread never blocks
+    /// on first-render decode — matters because callers immediately
+    /// hand the image to SwiftUI for layout.
+    static func downsampled(from data: Data, maxDimension: CGFloat = extractionMaxDimension) -> UIImage? {
+        let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
+        guard let source = CGImageSourceCreateWithData(data as CFData, sourceOptions) else {
+            return nil
+        }
+        // `kCGImageSourceThumbnailMaxPixelSize` is in pixels, not
+        // points — we feed `maxDimension` directly (default 2048).
+        // `kCGImageSourceCreateThumbnailWithTransform: true` applies
+        // the EXIF orientation so portrait-shot photos don't render
+        // sideways, matching the behavior of `UIImage(data:)`.
+        let thumbnailOptions = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxDimension
+        ] as CFDictionary
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions) else {
+            return nil
+        }
+        return UIImage(cgImage: cgImage)
     }
 }

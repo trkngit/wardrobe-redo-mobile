@@ -301,11 +301,26 @@ final class ImageService: ImageServiceProtocol {
 // MARK: - PhotosPickerItem Helper
 
 extension ImageService {
+    /// Loads a `PhotosPickerItem` as a downsampled `UIImage`.
+    ///
+    /// Build 29 — was decoding the full image via `UIImage(data:)`,
+    /// which on modern phones (24–48 MP HEICs) holds 100+ MB in
+    /// memory before downstream processing even starts. The Build 26
+    /// camera-path downsample mirrored "what PhotosPicker does",
+    /// but the audit's assumption was wrong: `loadTransferable(
+    /// type: Data.self)` returns the FULL image data. Real-device
+    /// testing on TF32 showed library uploads OOM-crashing just like
+    /// the pre-fix camera path.
+    ///
+    /// Now routes through `ImageDownsampler.downsampled(from:)`,
+    /// which uses `CGImageSourceCreateThumbnailAtIndex` to read the
+    /// source lazily and emit a max-2048 px thumbnail without ever
+    /// decoding the original at full resolution. EXIF orientation
+    /// is applied so portrait photos render upright.
     func loadImage(from item: PhotosPickerItem) async -> UIImage? {
-        guard let data = try? await item.loadTransferable(type: Data.self),
-              let image = UIImage(data: data) else {
+        guard let data = try? await item.loadTransferable(type: Data.self) else {
             return nil
         }
-        return image
+        return ImageDownsampler.downsampled(from: data)
     }
 }

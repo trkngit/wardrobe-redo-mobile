@@ -329,9 +329,25 @@ private final class PhotoCaptureDelegate: NSObject,
             completion(.failure(error))
             return
         }
-        guard let data = photo.fileDataRepresentation(),
-              let image = UIImage(data: data)
-        else {
+        // Build 29 — downsample at the source rather than letting
+        // UIImage(data:) decode the full 48 MP capture into memory.
+        // The Build 26 fix downsampled AFTER the full image was
+        // already in memory; under high memory pressure (sim or
+        // older device) that brief window was enough to OOM-kill
+        // the process. Routing through CGImageSourceCreate-
+        // ThumbnailAtIndex means only the ~2048 px buffer ever
+        // exists. Falls back to the legacy UIImage(data:) path only
+        // if the lazy thumbnail extraction fails (unlikely — same
+        // ImageIO codec the system would use anyway).
+        guard let data = photo.fileDataRepresentation() else {
+            completion(.failure(PhotoCaptureError.invalidPhotoData))
+            return
+        }
+        if let image = ImageDownsampler.downsampled(from: data) {
+            completion(.success(image))
+            return
+        }
+        guard let image = UIImage(data: data) else {
             completion(.failure(PhotoCaptureError.invalidPhotoData))
             return
         }
