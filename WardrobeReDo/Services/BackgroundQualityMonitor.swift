@@ -3,6 +3,7 @@ import CoreMedia
 import CoreVideo
 import Foundation
 import Observation
+import Vision
 
 /// Steady-state classification of the live camera preview's background.
 /// Drives the capture HUD (`CameraOverlay`) traffic light and coaching
@@ -126,9 +127,34 @@ protocol BackgroundQualityObserving: AnyObject, Sendable {
 final class BackgroundQualityMonitor: NSObject, BackgroundQualityObserving {
 
     private(set) var quality: BackgroundQuality = .unknown
+    /// Normalized [0,1] sharpness from `SharpnessMetric` on a center
+    /// patch of every frame. Drives the advisory green border in
+    /// `CameraOverlay`. `0.0` is the pre-first-sample state.
+    private(set) var sharpness: Float = 0.0
+    /// Subject-coverage estimate in [0,1] from Vision's
+    /// attention-based saliency request, sampled every 8 frames to
+    /// keep cost low. `0.0` is the pre-first-sample state.
+    private(set) var coverage: Float = 0.0
 
     private var lastUpdate: Date = .distantPast
     private let debounceInterval: TimeInterval = 0.25   // 4 Hz cap
+    /// `nonisolated(unsafe)` because `processSampleBuffer` reads + bumps
+    /// the counter outside the main actor (it runs on the AVCapture
+    /// delegate queue). A single 64-bit increment / read is atomic
+    /// enough for cadence gating; we don't require strict ordering.
+    nonisolated(unsafe) private var frameCounter: UInt = 0
+    /// Same reasoning as `frameCounter`. `deinit` can also run off
+    /// the main actor, and we need the flag to be writable from
+    /// there. The flag's only consumer is a `guard` short-circuit;
+    /// a torn read is harmless.
+    nonisolated(unsafe) private var isCancelled = false
+    /// `DispatchQueue` is `Sendable` — no `nonisolated(unsafe)` needed.
+    private let saliencyQueue = DispatchQueue(label: "com.wardroberedo.camera.saliency", qos: .userInitiated)
+    /// Cadence — saliency every 8th frame at the monitor's 4 Hz
+    /// classification cap = roughly every 2 s. That's responsive
+    /// enough for the HUD without burning the Neural Engine on
+    /// every buffer.
+    nonisolated private static let saliencyEvery: UInt = 8
 
     /// Edge-magnitude threshold on Y values in [0, 255]. 30 picks up
     /// text edges and object silhouettes but ignores sensor noise.
@@ -143,24 +169,103 @@ final class BackgroundQualityMonitor: NSObject, BackgroundQualityObserving {
 
     override init() { super.init() }
 
+    deinit {
+        // Flip the cancellation flag so any in-flight
+        // `processSampleBuffer` calls bail before publishing back.
+        // Direct write of a `nonisolated(unsafe)` Bool is legal
+        // from any context.
+        isCancelled = true
+    }
+
+    /// Mark the monitor as inactive. Future sample buffers short-
+    /// circuit. Called from the camera VC's `viewWillDisappear` so
+    /// in-flight processing tasks stop before the cover dismisses.
+    nonisolated func cancel() {
+        isCancelled = true
+    }
+
     /// Runs on the capture delegate queue (NOT main). Must be
     /// synchronous with respect to the sample buffer lifetime — once
     /// this returns, AVFoundation may recycle the buffer.
     nonisolated func processSampleBuffer(_ sampleBuffer: CMSampleBuffer) {
+        guard !isCancelled else { return }
         guard let metrics = Self.sampleMetrics(from: sampleBuffer) else { return }
         let newQuality = BackgroundQualityClassifier.classify(metrics: metrics)
+        guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
+        let sharpness = SharpnessMetric.sharpness(from: pixelBuffer) ?? 0.0
+
+        // Cadence-gate saliency synchronously: increment the
+        // `nonisolated(unsafe)` counter inline so we don't pay for a
+        // main-actor hop on every frame. Schedule the saliency dispatch
+        // before publishing back to the main actor so the pixel buffer
+        // reference doesn't have to cross the main-actor boundary.
+        frameCounter &+= 1
+        if frameCounter % Self.saliencyEvery == 0 {
+            Self.scheduleSaliency(
+                pixelBuffer: pixelBuffer,
+                queue: saliencyQueue,
+                isCancelled: { [weak self] in self?.isCancelled ?? true },
+                publish: { [weak self] coverage in
+                    Task { @MainActor [weak self] in
+                        self?.publishCoverage(coverage)
+                    }
+                }
+            )
+        }
+
         Task { @MainActor [weak self] in
-            self?.publish(newQuality)
+            self?.publish(quality: newQuality, sharpness: sharpness)
         }
     }
 
     /// Runs on the main actor. Debounces so a noisy frame can't flip
     /// the HUD back and forth in the same UI frame.
-    private func publish(_ newQuality: BackgroundQuality) {
+    private func publish(quality newQuality: BackgroundQuality, sharpness newSharpness: Float) {
+        guard !isCancelled else { return }
         let now = Date()
         guard now.timeIntervalSince(lastUpdate) >= debounceInterval else { return }
         lastUpdate = now
         if newQuality != quality { quality = newQuality }
+        if abs(newSharpness - sharpness) > 0.02 { sharpness = newSharpness }
+    }
+
+    /// Vision attention-based saliency on the supplied pixel buffer.
+    /// Static + nonisolated so we can dispatch it from
+    /// `processSampleBuffer` without dragging the `@MainActor`
+    /// monitor across the queue boundary. `CVPixelBuffer` is wrapped
+    /// in a thin retain box so the Swift 6 compiler accepts the
+    /// non-Sendable capture — CF types are documented as safe to
+    /// retain across threads when locked, which Vision handles
+    /// internally.
+    nonisolated private static func scheduleSaliency(
+        pixelBuffer: CVPixelBuffer,
+        queue: DispatchQueue,
+        isCancelled: @escaping @Sendable () -> Bool,
+        publish: @escaping @Sendable (Float) -> Void
+    ) {
+        guard !isCancelled() else { return }
+        let box = PixelBufferBox(buffer: pixelBuffer)
+        queue.async {
+            guard !isCancelled() else { return }
+            let request = VNGenerateAttentionBasedSaliencyImageRequest()
+            let handler = VNImageRequestHandler(cvPixelBuffer: box.buffer, options: [:])
+            do {
+                try handler.perform([request])
+            } catch {
+                return
+            }
+            guard let observation = request.results?.first as? VNSaliencyImageObservation,
+                  let region = observation.salientObjects?.first
+            else { return }
+            // boundingBox is in unit coordinates ([0,1] × [0,1]).
+            let area = Float(region.boundingBox.width * region.boundingBox.height)
+            publish(area)
+        }
+    }
+
+    private func publishCoverage(_ newCoverage: Float) {
+        guard !isCancelled else { return }
+        if abs(newCoverage - coverage) > 0.02 { coverage = newCoverage }
     }
 
     /// Pull the 4 corner patches out of the Y plane and reduce them to
@@ -274,6 +379,18 @@ final class BackgroundQualityMonitor: NSObject, BackgroundQualityObserving {
 
         return PatchStats(mean: mean, stddev: stddev, edgeDensity: edgeDensity)
     }
+}
+
+// MARK: - Pixel buffer wrapper
+
+/// `@unchecked Sendable` retain-box around `CVPixelBuffer` so the
+/// non-isolated saliency dispatch can capture a buffer reference
+/// without triggering the Swift 6 strict-concurrency checker. CF
+/// pixel buffers are documented as thread-safe for read access when
+/// locked (Vision handles its own locking on the perform queue), so
+/// the manual safety claim is well-grounded.
+private struct PixelBufferBox: @unchecked Sendable {
+    let buffer: CVPixelBuffer
 }
 
 // MARK: - AVCapture bridge

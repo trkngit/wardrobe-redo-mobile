@@ -63,24 +63,28 @@ struct MultiGarmentGridViewTests {
 
     // MARK: - confirmButtonTitle
 
+    // Build 27 — `confirmButtonTitle` returns `LocalizedStringResource`
+    // (was `String`). Compare via `String(localized:)` to resolve
+    // against the test bundle's locale before equality.
+
     @Test func confirmButtonTitleIsSingularForOneItem() {
         let proposals = (0..<3).map { _ in MaskProposalFixture.make() }
         let selected: Set<MaskProposal.ID> = [proposals[0].id]
         let view = makeView(proposals: proposals, selectedIDs: selected)
-        #expect(view.confirmButtonTitle == "Save 1 item")
+        #expect(String(localized: view.confirmButtonTitle) == "Save 1 item")
     }
 
     @Test func confirmButtonTitleIsPluralForMultipleItems() {
         let proposals = (0..<4).map { _ in MaskProposalFixture.make() }
         let selected = Set(proposals.prefix(3).map(\.id))
         let view = makeView(proposals: proposals, selectedIDs: selected)
-        #expect(view.confirmButtonTitle == "Save 3 items")
+        #expect(String(localized: view.confirmButtonTitle) == "Save 3 items")
     }
 
     @Test func confirmButtonTitleIsZeroWhenNothingSelected() {
         let proposals = (0..<4).map { _ in MaskProposalFixture.make() }
         let view = makeView(proposals: proposals, selectedIDs: [])
-        #expect(view.confirmButtonTitle == "Save 0 items")
+        #expect(String(localized: view.confirmButtonTitle) == "Save 0 items")
     }
 
     // MARK: - shouldShowLayeredLookHint

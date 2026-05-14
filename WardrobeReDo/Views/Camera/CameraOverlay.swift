@@ -1,35 +1,137 @@
 import SwiftUI
+import UIKit
 
 /// HUD drawn on top of the live camera preview. Shows a traffic-light
-/// pill with coaching copy, a cancel button, and the shutter button.
+/// pill with coaching copy, a cancel button, the shutter button, and
+/// (when the live frame is favorable) a thin green stroke around the
+/// preview rect.
 ///
-/// **The HUD is advisory, not gating.** Background quality drives the
-/// pill color + coaching copy only — the shutter is tappable the moment
-/// the user has granted camera permission, regardless of quality. We
-/// coach, we don't gatekeep. Users who are shooting a garment worn on a
-/// person, or who can't get to a plain wall, still need to be able to
-/// capture.
+/// **The HUD is advisory, not gating.** Background quality, sharpness,
+/// and subject-coverage drive the pill color, coaching copy, and green
+/// stroke — the shutter is tappable the moment camera permission is
+/// granted AND the session has emitted at least one frame, regardless
+/// of quality. We coach, we don't gatekeep. Users who shoot garments
+/// worn on a person, or who can't reach a plain wall, still need to
+/// be able to capture.
 struct CameraOverlay: View {
     let quality: BackgroundQuality
+    let sharpness: Float
+    let coverage: Float
     let authorization: CameraAuthorizationState
+    let sessionState: CameraSessionState
     var onShutter: () -> Void
     var onCancel: () -> Void
 
-    /// Whether the shutter is tappable for a given authorization state.
-    /// Split out as a static function so unit tests can exercise the
-    /// gate without constructing a SwiftUI view.
+    /// Combines authorization × session lifecycle into a single
+    /// user-visible state. Pure function for unit tests; the view body
+    /// just dispatches on the result.
+    static func overlayPhase(
+        authorization: CameraAuthorizationState,
+        sessionState: CameraSessionState
+    ) -> OverlayPhase {
+        switch authorization {
+        case .denied: return .denied
+        case .notAvailable: return .notAvailable
+        case .notDetermined: return .starting
+        case .authorized:
+            switch sessionState {
+            case .running: return .live
+            case .configuring, .failed, .stopped: return .preparing
+            }
+        }
+    }
+
+    /// Backward-compat shutter gate keyed on authorization only. The
+    /// pre-build-6 tests assert this exact contract: shutter is
+    /// enabled iff the user has explicitly granted permission. Kept
+    /// intact so existing call sites and `CameraOverlayTests` continue
+    /// to compile.
     static func shutterEnabled(for authorization: CameraAuthorizationState) -> Bool {
         authorization == .authorized
     }
 
-    private var isShutterEnabled: Bool {
-        Self.shutterEnabled(for: authorization)
+    /// New gate used by the live overlay — shutter is enabled only in
+    /// the `.live` phase. `.starting` and `.preparing` hide the
+    /// button; `.denied` / `.notAvailable` swap in their own copy.
+    ///
+    /// Uses the `in:` label rather than `for:` so the compiler can
+    /// disambiguate from the legacy `shutterEnabled(for:)`
+    /// authorization-based overload without forcing callers (or the
+    /// pre-build-6 tests) to qualify enum cases.
+    static func shutterEnabled(in phase: OverlayPhase) -> Bool {
+        phase == .live
+    }
+
+    /// Capture-ready composite. Drives the advisory green border and
+    /// the quality pill's "Looks great" copy. Does NOT gate the
+    /// shutter — see class docstring.
+    ///
+    /// Build 26 / Bug E — added the explicit "lens-covered" floor
+    /// (`coverage < coveredFloor` returns false). A fully covered
+    /// lens has no salient object so Vision's saliency request
+    /// returns ~0 coverage; without this guard a stale `quality ==
+    /// .good` value from the moment-before-covering can briefly let
+    /// the green border show. The existing `coverage >= minCoverage`
+    /// check should already catch this in steady state, but a
+    /// near-zero floor makes the contract explicit and survives any
+    /// future re-tune that lowers `minCoverage`.
+    static func isCapturable(
+        quality: BackgroundQuality,
+        sharpness: Float,
+        coverage: Float
+    ) -> Bool {
+        guard coverage >= coveredFloor else { return false }
+        return quality == .good
+            && sharpness >= minSharpness
+            && coverage >= minCoverage
+            && coverage <= maxCoverage
+    }
+
+    /// Hard floor below which the lens is treated as fully covered.
+    /// Any signal below this is interpreted as "nothing in frame",
+    /// not "small item far away" — the saliency request returns
+    /// effectively zero on a uniform dark frame.
+    static let coveredFloor: Float = 0.02
+
+    /// Minimum normalized Laplacian-variance value for the frame to
+    /// be considered sharp. Tuned via `SharpnessMetric` constants.
+    static let minSharpness: Float = 0.6
+    /// Lower bound of subject coverage — below this the garment is too
+    /// small to extract reliably.
+    static let minCoverage: Float = 0.15
+    /// Upper bound of subject coverage — above this the user is too
+    /// close and the frame likely cuts off the silhouette.
+    static let maxCoverage: Float = 0.80
+
+    private var phase: OverlayPhase {
+        Self.overlayPhase(authorization: authorization, sessionState: sessionState)
+    }
+
+    private var isShutterEnabled: Bool { Self.shutterEnabled(in: phase) }
+    private var isCapturable: Bool {
+        Self.isCapturable(quality: quality, sharpness: sharpness, coverage: coverage)
     }
 
     var body: some View {
         ZStack {
-            switch authorization {
-            case .notDetermined, .authorized:
+            // Live preview rect indicator — a thin advisory stroke
+            // that turns green when capture conditions are favorable.
+            // Wrapped in a ZStack so we can animate the color
+            // independently of the rest of the HUD.
+            if phase == .live {
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(isCapturable ? Color.green : Color.clear, lineWidth: 3)
+                    .padding(1.5)
+                    .ignoresSafeArea()
+                    .animation(Theme.Animation.standard, value: isCapturable)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+
+            switch phase {
+            case .starting:
+                startingOverlay
+            case .preparing, .live:
                 authorizedOverlay
             case .denied:
                 deniedOverlay
@@ -38,16 +140,36 @@ struct CameraOverlay: View {
             }
         }
         .animation(Theme.Animation.standard, value: quality)
-        .animation(Theme.Animation.standard, value: authorization)
+        .animation(Theme.Animation.standard, value: phase)
     }
 
-    // MARK: - Authorized
+    // MARK: - Starting (permission decision in flight)
+
+    private var startingOverlay: some View {
+        VStack(spacing: Theme.Spacing.md) {
+            topBar
+            Spacer()
+            ProgressView()
+                .progressViewStyle(.circular)
+                .tint(.white)
+            Text("Starting camera…")
+                .font(Theme.Fonts.body.weight(.medium))
+                .foregroundStyle(.white)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black.opacity(0.35))
+    }
+
+    // MARK: - Authorized (preparing + live)
 
     private var authorizedOverlay: some View {
         VStack {
             topBar
             Spacer()
             qualityPill
+                .padding(.bottom, Theme.Spacing.sm)
+            coachingText
                 .padding(.bottom, Theme.Spacing.lg)
             shutterRow
                 .padding(.bottom, Theme.Spacing.xl)
@@ -71,7 +193,7 @@ struct CameraOverlay: View {
                     Circle()
                         .stroke(.white.opacity(0.25), lineWidth: 1)
                 )
-            Text(quality.coachingText)
+            Text(phase == .preparing ? "Framing up…" : quality.coachingText)
                 .font(Theme.Fonts.bodySmall.weight(.medium))
                 .foregroundStyle(.white)
                 .lineLimit(1)
@@ -90,21 +212,26 @@ struct CameraOverlay: View {
         .padding(.horizontal, Theme.Spacing.lg)
     }
 
+    private var coachingText: some View {
+        Text("Place clothing on a clean, flat surface")
+            .font(Theme.Fonts.bodySmall)
+            .foregroundStyle(.white.opacity(0.85))
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, Theme.Spacing.lg)
+    }
+
     private var shutterRow: some View {
-        // The shutter follows `isShutterEnabled` (camera authorization
-        // only). We keep the `.disabled` binding so the button is inert
-        // on the brief pre-authorization frame; we don't need a "Take
-        // anyway" escape hatch any more because quality is advisory.
-        Button(action: onShutter) {
-            ZStack {
-                Circle()
-                    .fill(.white.opacity(isShutterEnabled ? 1.0 : 0.5))
-                    .frame(width: 72, height: 72)
-                Circle()
-                    .stroke(.white.opacity(0.9), lineWidth: 4)
-                    .frame(width: 84, height: 84)
-            }
+        Button {
+            // Synchronous haptic on tap. UIImpactFeedbackGenerator
+            // dispatches before the SwiftUI re-render cycle, so the
+            // user feels the bump *before* the photo flash — that
+            // immediacy is what makes the shutter feel reliable.
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            onShutter()
+        } label: {
+            Color.clear.frame(width: 84, height: 84)
         }
+        .buttonStyle(ShutterButtonStyle(isEnabled: isShutterEnabled))
         .disabled(!isShutterEnabled)
         .accessibilityLabel("Capture photo")
     }
@@ -195,6 +322,38 @@ struct CameraOverlay: View {
     }
 }
 
+// MARK: - Overlay phase
+
+/// Composite state surfaced to the SwiftUI body. Maps onto
+/// `authorization × sessionState` so the view can switch on a single
+/// enum rather than nest conditions.
+enum OverlayPhase: Sendable, Equatable {
+    case starting       // permission decision in flight
+    case preparing      // .authorized but no frames yet
+    case live           // ready to capture
+    case denied
+    case notAvailable
+}
+
+// MARK: - Shutter button style
+
+private struct ShutterButtonStyle: ButtonStyle {
+    let isEnabled: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        ZStack {
+            Circle()
+                .fill(.white.opacity(isEnabled ? 1.0 : 0.5))
+                .frame(width: 72, height: 72)
+            Circle()
+                .stroke(.white.opacity(0.9), lineWidth: 4)
+                .frame(width: 84, height: 84)
+        }
+        .scaleEffect(configuration.isPressed ? 0.92 : 1.0)
+        .animation(.spring(response: 0.18, dampingFraction: 0.55), value: configuration.isPressed)
+    }
+}
+
 #Preview {
     ZStack {
         LinearGradient(
@@ -205,7 +364,10 @@ struct CameraOverlay: View {
         .ignoresSafeArea()
         CameraOverlay(
             quality: .good,
+            sharpness: 0.8,
+            coverage: 0.4,
             authorization: .authorized,
+            sessionState: .running,
             onShutter: {},
             onCancel: {}
         )

@@ -24,12 +24,29 @@ struct ItemCardView: View {
             // putting cutouts on a uniform background; routing through
             // `ItemThumbnailView` is what keeps that consistent.
             ZStack(alignment: .topTrailing) {
+                // Build 27 — center the fixed-size thumbnail in
+                // its flexible parent column. `ItemThumbnailView`
+                // renders a fixed 160 × 160 pt square (the size
+                // `.medium`'s `dimension`). Without an explicit
+                // `maxWidth: .infinity` wrapper, the square hugs
+                // the leading edge of its LazyVGrid cell and
+                // leaves visible empty space on the right —
+                // which is what the user kept reporting after
+                // the Build 26 padding tweak. The padding fixed
+                // the SIZE; this fixes the ALIGNMENT.
                 ItemThumbnailView(item: item, url: thumbnailURL, size: .medium)
+                    .frame(maxWidth: .infinity, alignment: .center)
 
-                // Category badge
-                Text(item.subcategory.displayName)
+                // Category badge — Build 17 localized subcategory.
+                // Build 18 — lineLimit + minimumScaleFactor for
+                // long Turkish names ("Tasarımcı Sneaker",
+                // "Bilekli Spor Ayakkabı") so the badge doesn't
+                // wrap and double its height on the card.
+                Text(item.subcategory.localizedName)
                     .font(Theme.Fonts.caption)
                     .foregroundStyle(Color(Theme.Colors.textPrimary))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                     .padding(.horizontal, Theme.Spacing.sm)
                     .padding(.vertical, Theme.Spacing.xs)
                     .background(.ultraThinMaterial)
@@ -63,7 +80,8 @@ struct ItemCardView: View {
                     }
                 }
 
-                Text(item.category.displayName)
+                // Build 17 — localized category label.
+                Text(item.category.localizedName)
                     .font(Theme.Fonts.caption)
                     .foregroundStyle(Color(Theme.Colors.textSecondary))
             }

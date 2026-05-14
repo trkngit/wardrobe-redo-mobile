@@ -8,48 +8,87 @@ struct ColorHarmonyScorer: OutfitScorer {
     func score(items: [WardrobeItem], archetype: StyleArchetype, rule: StyleRule, context: ScoringContext) -> DimensionScore {
         let allColors = items.flatMap(\.dominantColors)
         guard !allColors.isEmpty else {
-            return DimensionScore(dimension: dimension, value: 0.5, reasoning: "No color data available")
+            return DimensionScore(
+                dimension: dimension,
+                value: 0.5,
+                coverage: 0.0,
+                reasoning: "No color data available"
+            )
         }
 
         var totalScore = 0.0
         var reasons: [String] = []
 
-        // 1. Color count (3-color max principle)
+        // 1. Color count. Build 6 reads `vibePreset.colorMaxFamilies`
+        // so a `.bold` outfit can pass at 4-5 families while a
+        // `.safe` outfit is held to ≤2. The score is full credit
+        // when the count is ≤ the cap and drops off above it.
         let uniqueFamilies = Set(allColors.map(\.colorFamily))
         let familyCount = uniqueFamilies.count
+        let maxFamilies = context.vibePreset.colorMaxFamilies
 
-        switch familyCount {
-        case 1:
+        if familyCount <= maxFamilies {
             totalScore += 0.25
-            reasons.append("Monochromatic palette")
-        case 2:
-            totalScore += 0.25
-            reasons.append("Clean two-color palette")
-        case 3:
-            totalScore += 0.25
-            reasons.append("Ideal three-color palette")
-        case 4:
+            switch familyCount {
+            case 0, 1:
+                reasons.append("Monochromatic palette")
+            case 2:
+                reasons.append("Clean two-color palette")
+            case 3:
+                reasons.append("Three-color palette")
+            default:
+                reasons.append("\(familyCount)-color palette within your vibe's range")
+            }
+        } else if familyCount == maxFamilies + 1 {
             totalScore += 0.15
-            reasons.append("Four colors — slightly busy")
-        default:
+            reasons.append("\(familyCount) colors — slightly above your vibe's cap of \(maxFamilies)")
+        } else {
             totalScore += 0.05
-            reasons.append("Too many colors compete for attention")
+            reasons.append("Too many colors compete for attention (\(familyCount) > \(maxFamilies))")
         }
 
-        // 2. 60-30-10 allocation check
-        let colorsByFamily = Dictionary(grouping: allColors, by: \.colorFamily)
-        let percentages = colorsByFamily.mapValues { colors in
-            colors.reduce(0.0) { $0 + $1.percentage } / Double(items.count)
+        // 2. 60-30-10 allocation check — Phase 8A area-weighted.
+        //
+        // Pre-build-6-phase-8 the divisor was `Double(items.count)`,
+        // which treated every item as equal-weight. A black t-shirt
+        // + white pants scored 50/50 even though it visually reads
+        // ~47/53 (top occupies less silhouette than bottom).
+        //
+        // Phase 8A weights each item's per-family contribution by
+        // `ClothingCategory.defaultSilhouetteFraction`, then
+        // normalizes to a per-family fraction in [0, 1]. Phase 8B
+        // layers per-item `silhouetteArea` on top via
+        // `itemSilhouetteWeight(_:)`.
+        //
+        // We normalize each item's per-color shares to sum to 1.0
+        // before multiplying by silhouette weight — this is
+        // robust to the two scales `ColorProfile.percentage` is
+        // observed in (production fills [0, 100] from k-means
+        // clusters; test fixtures sometimes pass [0, 1] shares).
+        let totalWeight = items.reduce(0.0) { $0 + itemSilhouetteWeight($1) }
+        let weightedFamily: [String: Double] = items.reduce(into: [:]) { acc, item in
+            let weight = itemSilhouetteWeight(item)
+            let itemTotal = item.dominantColors.reduce(0.0) { $0 + $1.percentage }
+            guard itemTotal > 0 else { return }
+            for color in item.dominantColors {
+                // Share-within-item normalizes whatever scale the
+                // percentages came in on to a [0, 1] domain.
+                let shareWithinItem = color.percentage / itemTotal
+                acc[color.colorFamily, default: 0] += weight * shareWithinItem
+            }
         }
-        .values
-        .sorted(by: >)
+        // Per-family share of the outfit's visible color area in
+        // [0, 1]. Sum across families = 1.0 (modulo rounding).
+        let percentages = weightedFamily.values
+            .map { totalWeight > 0 ? $0 / totalWeight : 0 }
+            .sorted(by: >)
 
         if percentages.count >= 2 {
             let dominant = percentages[0]
-            if dominant >= 45 && dominant <= 75 {
+            if dominant >= 0.45 && dominant <= 0.75 {
                 totalScore += 0.2
-                reasons.append("Good dominant color proportion (\(Int(dominant))%)")
-            } else if dominant >= 35 {
+                reasons.append("Good dominant color proportion (\(Int(dominant * 100))%)")
+            } else if dominant >= 0.35 {
                 totalScore += 0.1
                 reasons.append("Acceptable color distribution")
             } else {
@@ -125,6 +164,30 @@ struct ColorHarmonyScorer: OutfitScorer {
             value: min(1.0, max(0.0, totalScore)),
             reasoning: reasons.joined(separator: ". ")
         )
+    }
+
+    // MARK: - Silhouette weight (build 6 Phase 8)
+
+    /// Returns the silhouette weight to use for `item` in the
+    /// area-weighted 60-30-10 aggregation.
+    ///
+    /// - Phase 8A: category default only (fallback path).
+    /// - Phase 8B: when `item.silhouetteArea` is populated, the
+    ///   category default is multiplied by a damped coverage
+    ///   ratio. An oversized top that filled 60% of its frame
+    ///   counts as ~1.2× a typical top; a fitted top at 30%
+    ///   coverage counts as ~0.8×. The multiplier is clamped
+    ///   to [0.5, 1.5] so a single outlier item can't crowd the
+    ///   rest of the outfit out of the color math.
+    private func itemSilhouetteWeight(_ item: WardrobeItem) -> Double {
+        let categoryDefault = item.category.defaultSilhouetteFraction
+        guard let area = item.silhouetteArea else { return categoryDefault }
+        // Rough mean of the category defaults, weighted by typical
+        // item counts in an outfit (1 top + 1 bottom + 1 shoes +
+        // occasional outerwear/accessory). Hand-picked baseline.
+        let categoryAverage = 0.45
+        let multiplier = 0.7 + 0.6 * (area / categoryAverage)
+        return categoryDefault * min(1.5, max(0.5, multiplier))
     }
 
     // MARK: - Harmony Classification

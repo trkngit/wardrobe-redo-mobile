@@ -248,6 +248,13 @@ struct NewWardrobeItem: Codable, Sendable {
     /// (see migration 00013). Nil for single-item captures where no
     /// bbox was recorded — matches the shape of legacy rows.
     let boundingBox: BoundingBoxCodable?
+    /// Build 6 Phase 8B — fraction of the source frame the
+    /// extracted mask covered, in [0, 1]. Sourced from
+    /// `ProcessedImage.silhouetteArea`. Nil when extraction was
+    /// skipped or failed; the row hydrates with the column null
+    /// and `ColorHarmonyScorer` falls back to the category default
+    /// alone (Phase 8A behaviour).
+    let silhouetteArea: Double?
 
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
@@ -265,6 +272,7 @@ struct NewWardrobeItem: Codable, Sendable {
         case detectedAttributes = "detected_attributes"
         case idempotencyKey = "idempotency_key"
         case boundingBox = "bounding_box"
+        case silhouetteArea = "silhouette_area"
     }
 
     init(
@@ -284,7 +292,8 @@ struct NewWardrobeItem: Codable, Sendable {
         occasions: [String],
         detectedAttributes: [String: String]?,
         idempotencyKey: UUID?,
-        boundingBox: BoundingBoxCodable? = nil
+        boundingBox: BoundingBoxCodable? = nil,
+        silhouetteArea: Double? = nil
     ) {
         self.userId = userId
         self.imagePath = imagePath
@@ -303,6 +312,7 @@ struct NewWardrobeItem: Codable, Sendable {
         self.detectedAttributes = detectedAttributes
         self.idempotencyKey = idempotencyKey
         self.boundingBox = boundingBox
+        self.silhouetteArea = silhouetteArea
     }
 }
 

@@ -8,7 +8,12 @@ struct TextureMixScorer: OutfitScorer {
     func score(items: [WardrobeItem], archetype: StyleArchetype, rule: StyleRule, context: ScoringContext) -> DimensionScore {
         let textures = items.compactMap(\.texture)
         guard !textures.isEmpty else {
-            return DimensionScore(dimension: dimension, value: 0.5, reasoning: "No texture data available")
+            return DimensionScore(
+                dimension: dimension,
+                value: 0.5,
+                coverage: 0.0,
+                reasoning: "No texture data available"
+            )
         }
 
         var totalScore = 0.0

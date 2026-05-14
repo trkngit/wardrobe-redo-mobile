@@ -16,9 +16,13 @@ import os.log
 /// want to pre-fill a picker should respect
 /// `AttributePrefill.shouldPrefill(…)` on the confidence rather than
 /// simply branching on the optional.
+///
+/// **Build 6.** Texture was retired from the ML head: Fashionpedia v2
+/// carried no fabric labels and the head emitted `nil` in production.
+/// Texture now flows exclusively from `AttributeRulesEngine.deriveTexture`
+/// (deterministic subcategory→texture lookup, e.g. jeans → denim) or
+/// user input. The fit head remains active.
 struct AttributePrediction: Equatable, Sendable {
-    var texture: TextureType?
-    var textureConfidence: Float
     var fit: FitAttribute?
     var fitConfidence: Float
 
@@ -28,8 +32,6 @@ struct AttributePrediction: Equatable, Sendable {
     /// "rules-engine only" and every per-field pre-fill naturally
     /// short-circuits below the 0.80 threshold.
     static let empty = AttributePrediction(
-        texture: nil,
-        textureConfidence: 0.0,
         fit: nil,
         fitConfidence: 0.0
     )
@@ -114,9 +116,16 @@ enum AttributeClassifierError: LocalizedError, Equatable {
 // MARK: - Production service
 
 /// Production `AttributeClassifying` implementation. Loads a Core ML
-/// `AttributeClassifier.mlmodelc` (MobileNetV3-Small with two softmax
-/// heads trained on Fashionpedia attribute crops) on first use and
-/// decodes its output into an `AttributePrediction`.
+/// `AttributeClassifier.mlmodelc` (MobileNetV3-Small with a single
+/// fit-only softmax head trained on Fashionpedia attribute crops) on
+/// first use and decodes its output into an `AttributePrediction`.
+///
+/// **Build 6 — texture retired.** Earlier builds shipped this service
+/// with a dormant texture head (Fashionpedia v2 has no fabric
+/// labels, so it never emitted a confident prediction). The texture
+/// path has been removed end-to-end; texture is now exclusively
+/// rules-derived via `AttributeRulesEngine.deriveTexture` or set by
+/// the user in the picker.
 ///
 /// **Graceful missing-model fallback.** Mirrors
 /// `MultiGarmentProposalService`: if the model file isn't in the bundle
@@ -145,33 +154,6 @@ final class AttributeClassifierService: AttributeClassifying, @unchecked Sendabl
     /// threshold just keeps the classifier from emitting obviously-random
     /// guesses, while still letting the VM layer apply the stricter bar.
     static let minEnumConfidence: Float = 0.35
-
-    /// Texture labels in the exact order the training notebook emits
-    /// them. Index `i` in the softmax corresponds to `textureLabels[i]`.
-    /// Must stay in lock-step with the Python side —
-    /// `export_attribute_classifier.py` writes the same array into the
-    /// mlpackage metadata so a drift-guard test can diff them at
-    /// runtime.
-    ///
-    /// **Option C dormant.** Per
-    /// `docs/plans/2026-04-19-auto-attribute-detection/ATTRIBUTE_TAXONOMY.md`
-    /// § Section 0, Fashionpedia v2 carries no main-fabric-type
-    /// attributes (cotton/silk/wool/denim/etc. are NOT labeled). The v1
-    /// mlpackage ships with a **single fit head only** — no
-    /// `texture_probs` output. The decode path below handles the missing
-    /// output gracefully (multiArray → nil → argmax → nil → texture
-    /// stays nil with 0.0 confidence), so every existing caller
-    /// short-circuits correctly under the 0.80 pre-fill threshold.
-    ///
-    /// This array stays defined so v1.1 can reactivate a multi-head
-    /// mlpackage (Option B: DeepFashion-backed texture training) without
-    /// re-introducing the label order from scratch. See
-    /// `BLOCKERS.md#D-3`.
-    static let textureLabels: [TextureType] = [
-        .cotton, .silk, .denim, .leather, .suede,
-        .wool, .linen, .knit, .synthetic, .velvet,
-        .satin, .chiffon, .tweed, .corduroy, .nylon
-    ]
 
     /// Fit labels in the order the training notebook emits them. Mirrors
     /// `fashionpedia_attr_to_ios_enum.TRAINABLE_FIT_LABELS` exactly — same
@@ -373,26 +355,22 @@ final class AttributeClassifierService: AttributeClassifying, @unchecked Sendabl
     // MARK: - Output decode
 
     /// Preferred output names (training notebook writes these; we also
-    /// accept a couple of coremltools-defaulted alternates).
-    static let textureOutputKeys = ["texture_probs", "texture_logits", "texture"]
+    /// accept a couple of coremltools-defaulted alternates). Build 6
+    /// removed the parallel texture output keys — the texture path
+    /// was retired and the v1 mlpackage no longer ships a texture
+    /// head.
     static let fitOutputKeys = ["fit_probs", "fit_logits", "fit"]
 
     /// Decode the classifier outputs into an `AttributePrediction`.
     /// Split out as a pure function so tests can construct
     /// `MLFeatureProvider`s directly (via `MLDictionaryFeatureProvider`)
     /// and exercise the full decode path without a live model.
+    ///
+    /// Build 6 — fit-only. Texture decode was removed; the rules
+    /// engine is the texture source of truth (see class docstring).
     static func decode(prediction: MLFeatureProvider) -> AttributePrediction {
-        let textureArray = multiArray(for: textureOutputKeys, in: prediction)
         let fitArray = multiArray(for: fitOutputKeys, in: prediction)
-
-        let (textureIdx, textureConf) = argmaxSoftmax(textureArray, labelCount: textureLabels.count)
         let (fitIdx, fitConf) = argmaxSoftmax(fitArray, labelCount: fitLabels.count)
-
-        let texture: TextureType? = {
-            guard let idx = textureIdx, textureConf >= minEnumConfidence,
-                  idx < textureLabels.count else { return nil }
-            return textureLabels[idx]
-        }()
 
         let fit: FitAttribute? = {
             guard let idx = fitIdx, fitConf >= minEnumConfidence,
@@ -401,8 +379,6 @@ final class AttributeClassifierService: AttributeClassifying, @unchecked Sendabl
         }()
 
         return AttributePrediction(
-            texture: texture,
-            textureConfidence: textureConf,
             fit: fit,
             fitConfidence: fitConf
         )

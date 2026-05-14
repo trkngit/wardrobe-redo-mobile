@@ -240,17 +240,28 @@ final class AddItemViewModel {
     func onPhotoSelected() async {
         guard let item = selectedPhoto else { return }
 
+        // Build 30 — breadcrumb logging at every step of the photo
+        // pipeline. After Build 29 reduced peak memory via the lazy
+        // CGImageSource downsample, the user reports the app still
+        // crashes during library/camera photo flow on real devices.
+        // Without device logs we can't pinpoint which step dies, so
+        // we instrument every transition. These show up in Console.app
+        // when the device is wired up + in Sentry breadcrumbs.
+        logger.info("library.onPhotoSelected: start")
+
         captureMethod = .library
         isProcessing = true
         errorMessage = nil
         currentStep = .analysis
 
         guard let image = await imageService.loadImage(from: item) else {
+            logger.error("library.loadImage: returned nil")
             errorMessage = "Couldn't load that image. Try another one."
             currentStep = .photo
             isProcessing = false
             return
         }
+        logger.info("library.loadImage: ok, size=\(image.size.width, privacy: .public)x\(image.size.height, privacy: .public)")
 
         selectedImage = image
         stampFreshCapture()
@@ -282,7 +293,9 @@ final class AddItemViewModel {
         processingTask?.cancel()
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
+            self.logger.info("library.processWithTimeout: start")
             let outcome = await self.processWithTimeout(image)
+            self.logger.info("library.processWithTimeout: done outcome=\(String(describing: outcome), privacy: .public)")
             guard !Task.isCancelled else {
                 sessionTask.cancel()
                 self.sessionLoadTask = nil
@@ -290,14 +303,17 @@ final class AddItemViewModel {
             }
             switch outcome {
             case .completed(let processed):
+                self.logger.info("library.apply: processed=\(processed != nil ? "ok" : "nil", privacy: .public)")
                 await self.applyProcessedFromLibrary(processed, sessionTask: sessionTask)
             case .timedOut:
+                self.logger.error("library.timeout: 30s elapsed")
                 self.handleProcessingTimeout(sessionTask: sessionTask)
             }
         }
         processingTask = task
         await task.value
         processingTask = nil
+        logger.info("library.onPhotoSelected: end")
     }
 
     /// Post-processing branch for library-picked images. As of the
@@ -372,8 +388,28 @@ final class AddItemViewModel {
     /// sheet when a mask was produced (so the user can refine it), or
     /// jumps straight to details when extraction fell through.
     func onCameraPhotoCaptured(_ image: UIImage) async {
+        // Build 30 — same breadcrumb instrumentation as
+        // `onPhotoSelected`. See that method for the rationale.
+        logger.info("camera.onPhotoCaptured: start size=\(image.size.width, privacy: .public)x\(image.size.height, privacy: .public)")
+
         isShowingCamera = false
-        selectedImage = image
+        // Build 26 / Bug F — downsample the raw capture before
+        // anything else touches it. A fresh iPhone capture is
+        // ~12 MP / ~50 MB decoded; running it through SAM2 session
+        // load + the processing-with-timeout task in parallel was
+        // pushing real devices past the foreground app memory limit
+        // and the OS was killing the process. The library flow
+        // doesn't crash because PhotosPicker already returns a
+        // pre-downsized representation. We mirror that here.
+        // 2048 px on the long edge is well above SAM2's 1024 px
+        // input resolution, so cutout quality is unaffected.
+        //
+        // Build 29 moved the actual downsample upstream into the
+        // AVCapture delegate so this call is typically a no-op
+        // (input is already ≤ 2048 px). Defense in depth.
+        let downsampled = ImageDownsampler.downsampled(image)
+        logger.info("camera.downsampled: size=\(downsampled.size.width, privacy: .public)x\(downsampled.size.height, privacy: .public)")
+        selectedImage = downsampled
         stampFreshCapture()
         isProcessing = true
         errorMessage = nil
@@ -384,7 +420,7 @@ final class AddItemViewModel {
         // cancel any prior in-flight session load before starting.
         sessionLoadTask?.cancel()
         let sessionTask = Task { [clothingExtractor] in
-            await clothingExtractor.makeSession(for: image)
+            await clothingExtractor.makeSession(for: downsampled)
         }
         sessionLoadTask = sessionTask
 
@@ -392,10 +428,15 @@ final class AddItemViewModel {
         // `processingTask` — same cancel-via-popup mechanism applies.
         // The timeout race inside `processWithTimeout` matches the
         // library path so a hung capture also surfaces an error.
+        // Bug F — pass the DOWNSAMPLED image, not the raw capture.
+        // The raw `image` is now released as soon as this function
+        // returns; only the 2048 px copy stays in memory.
         processingTask?.cancel()
         let task = Task { @MainActor [weak self] in
             guard let self else { return }
-            let outcome = await self.processWithTimeout(image)
+            self.logger.info("camera.processWithTimeout: start")
+            let outcome = await self.processWithTimeout(downsampled)
+            self.logger.info("camera.processWithTimeout: done outcome=\(String(describing: outcome), privacy: .public)")
             guard !Task.isCancelled else {
                 sessionTask.cancel()
                 self.sessionLoadTask = nil
@@ -403,14 +444,17 @@ final class AddItemViewModel {
             }
             switch outcome {
             case .completed(let processed):
+                self.logger.info("camera.apply: processed=\(processed != nil ? "ok" : "nil", privacy: .public)")
                 await self.applyProcessedFromCamera(processed, sessionTask: sessionTask)
             case .timedOut:
+                self.logger.error("camera.timeout: 30s elapsed")
                 self.handleProcessingTimeout(sessionTask: sessionTask)
             }
         }
         processingTask = task
         await task.value
         processingTask = nil
+        logger.info("camera.onPhotoCaptured: end")
     }
 
     /// Post-processing branch for camera captures. As of the
@@ -674,6 +718,25 @@ final class AddItemViewModel {
     func onCameraCancelled() {
         isShowingCamera = false
         captureMethod = .library
+        // Build 6: clear a stale capture error so a transient camera-
+        // init failure doesn't survive into the next open. Without
+        // this, dismissing then reopening the camera leaves the
+        // "Couldn't capture: …" banner sitting on the photo step.
+        errorMessage = nil
+    }
+
+    /// Hook fired by `AddItemView`'s camera-cover `.onDisappear` so
+    /// the VM has a single, testable seam for "user navigated away
+    /// from the camera." Build 6 doesn't keep state inside the VM
+    /// for the camera flow — that lives in `AddItemView.@State` —
+    /// so this is intentionally a logging-only no-op today.
+    ///
+    /// Kept as a real entry point because:
+    ///   1. Tests can spy on it without poking at view internals.
+    ///   2. Future builds that move sharpness/coverage observers
+    ///      back into the VM have an obvious owner for teardown.
+    func onCameraCoverDismissed() {
+        logger.info("camera.coverDismissed")
     }
 
     /// User tapped Cancel on the analyzing-popup overlay while
@@ -1110,18 +1173,12 @@ final class AddItemViewModel {
            AttributePrefill.shouldPrefill(proposal.predictedTextureConfidence) {
             texture = tex
             snapshot["texture"] = tex.rawValue
-            // Tag the source so the dogfood telemetry can separate
-            // correction stats per origin. Rules-derived textures stamp
-            // a 0.85 sentinel confidence (see
-            // `AttributeRulesEngine.rulesTextureConfidence`); ML
-            // predictions land at the classifier's actual softmax. We
-            // use exact equality on the rules sentinel — false-positive
-            // matches require a coincidentally-equal ML score, which
-            // for a softmax over 15 classes is vanishingly unlikely.
-            let rulesSentinel = AttributeRulesEngine.rulesTextureConfidence
-            snapshot["texture_source"] = (proposal.predictedTextureConfidence == rulesSentinel)
-                ? "rules"
-                : "ml"
+            // Build 6: texture is exclusively rules-derived (ML
+            // inference for texture was retired — see
+            // `AttributeClassifierService` docstring). The source tag
+            // stays in telemetry so historical rows remain comparable;
+            // every new row stamps `"rules"`.
+            snapshot["texture_source"] = "rules"
         } else {
             texture = nil
         }
@@ -1336,7 +1393,14 @@ final class AddItemViewModel {
                         // thing outside this garment's rect when
                         // rendering the source photo. Nil for single-
                         // item captures (no proposal was ever computed).
-                        boundingBox: capturedBoundingBox
+                        boundingBox: capturedBoundingBox,
+                        // Build 6 Phase 8B — persist mask coverage so
+                        // `ColorHarmonyScorer` can modulate the
+                        // category-default silhouette weight by
+                        // actual visual mass. Nil on extraction
+                        // failure; the scorer falls back to the
+                        // category default alone.
+                        silhouetteArea: processed.silhouetteArea
                     )
 
                     // Primary path: hit the repo synchronously so the UX
@@ -1470,6 +1534,32 @@ final class AddItemViewModel {
         isProcessing = false
         isShowingTouchup = false
         currentStep = .details
+    }
+
+    /// Build 6 — releases heavy state held by the VM when iOS
+    /// deallocates the sheet. SwiftUI tears down `@State`
+    /// view models on the main actor, so `MainActor.assumeIsolated`
+    /// is safe in practice; Swift 6's checker can't statically prove
+    /// it, hence the dynamic assumption.
+    ///
+    /// We stick to direct property writes — no method calls, no
+    /// `await`s, no Task spawns. The `reset()` flow handles the
+    /// "user starts a new add" case; this handles the "AddItemView
+    /// is torn down while still holding a big UIImage" case, which
+    /// previously left those images sitting in memory until iOS
+    /// reclaimed them under pressure.
+    deinit {
+        MainActor.assumeIsolated {
+            sessionLoadTask?.cancel()
+            processingTask?.cancel()
+            cancellationDismissTask?.cancel()
+            selectedImage = nil
+            processedImage = nil
+            sam2Session = nil
+            proposals = nil
+            pendingProposalQueue.removeAll()
+            currentProposal = nil
+        }
     }
 
     func reset() {

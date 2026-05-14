@@ -49,6 +49,7 @@ enum TestFixtures {
         sourcePhotoId: UUID? = nil,
         sourcePhotoPath: String? = nil,
         boundingBox: BoundingBoxCodable? = nil,
+        silhouetteArea: Double? = nil,
         createdAt: Date = Date()
     ) -> WardrobeItem {
         WardrobeItem(
@@ -74,6 +75,7 @@ enum TestFixtures {
             lastWornAt: nil,
             isArchived: isArchived,
             boundingBox: boundingBox,
+            silhouetteArea: silhouetteArea,
             createdAt: createdAt,
             updatedAt: createdAt
         )
@@ -148,14 +150,16 @@ enum TestFixtures {
         occasion: Occasion = .casual,
         dayOfWeek: String = "wednesday",
         wardrobeItemCount: Int = 20,
-        recentOutfitItemIds: Set<UUID> = []
+        recentOutfitItemIds: Set<UUID> = [],
+        recentOutfitItemPairs: Set<UnorderedItemPair> = []
     ) -> ScoringContext {
         ScoringContext(
             season: season,
             occasion: occasion,
             dayOfWeek: dayOfWeek,
             wardrobeItemCount: wardrobeItemCount,
-            recentOutfitItemIds: recentOutfitItemIds
+            recentOutfitItemIds: recentOutfitItemIds,
+            recentOutfitItemPairs: recentOutfitItemPairs
         )
     }
 

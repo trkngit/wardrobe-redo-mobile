@@ -1,13 +1,42 @@
 import Foundation
 
-/// Scores outfit formula adherence: hero piece method, 2-of-3 color matching,
-/// third piece rule, slot requirement satisfaction.
+/// Scores outfit formula adherence. Build 6 decomposed this dimension
+/// into four named sub-functions, each with its provenance, so the
+/// reasoning text reads honestly and future tuning happens on one
+/// component at a time:
+///
+///   1. **Slot satisfaction** — structural check that the rule's
+///      required slots (category + subcategory aliases) are filled.
+///      Inherited from the seed `rules.json`; not derived from any
+///      external styling source.
+///   2. **Hero piece method** — credit to stylist Allison Bornstein
+///      ("3-Word Method"): every outfit has one "voice" piece
+///      that carries the look. We approximate via outerwear/dress
+///      anchoring OR a saturation-standout fallback. This is a
+///      hand-rolled approximation, not a published algorithm.
+///      Reference: https://www.allisonbornstein.com/
+///   3. **Color-family match** — informal "2-of-3 color match" from
+///      the general styling guideline that paired pieces should
+///      share at least one hue family. NOT the 60-30-10
+///      visual-area rule from interior design (that requires
+///      per-pixel area extraction we don't have yet — see Phase 5
+///      future-work).
+///   4. **Third-piece rule** — credit to Tim Gunn: a layered third
+///      piece (cardigan, blazer, vest, scarf) elevates a basic
+///      top+bottom outfit. Full credit when a non-(top|bottom)
+///      layer is present, half credit for top+bottom only.
+///      Reference: https://en.wikipedia.org/wiki/Tim_Gunn
 struct OutfitFormulaScorer: OutfitScorer {
     let dimension = ScoringDimension.outfitFormula
 
     func score(items: [WardrobeItem], archetype: StyleArchetype, rule: StyleRule, context: ScoringContext) -> DimensionScore {
         guard !items.isEmpty else {
-            return DimensionScore(dimension: dimension, value: 0.0, reasoning: "No items")
+            return DimensionScore(
+                dimension: dimension,
+                value: 0.0,
+                coverage: 0.0,
+                reasoning: "No items"
+            )
         }
 
         var totalScore = 0.0
@@ -33,9 +62,19 @@ struct OutfitFormulaScorer: OutfitScorer {
         totalScore += thirdPieceScore.value
         reasons.append(thirdPieceScore.reason)
 
+        // Build 6 — apply the vibe preset's `formulaStrictness`
+        // multiplier. Safe / Polished read >1.0 (we want strict
+        // adherence to the four formula components); Adventurous /
+        // Bold read <1.0 (formulas are guidelines, not gates). The
+        // multiplier scales the dimension's raw value before
+        // clamping; the per-dimension weight is still adjusted
+        // separately by `VibePreset.weightDeltas` in
+        // `OutfitScore.init`.
+        let strictness = context.vibePreset.formulaStrictness
+        let scaled = totalScore * strictness
         return DimensionScore(
             dimension: dimension,
-            value: min(1.0, max(0.0, totalScore)),
+            value: min(1.0, max(0.0, scaled)),
             reasoning: reasons.joined(separator: ". ")
         )
     }
@@ -74,15 +113,18 @@ struct OutfitFormulaScorer: OutfitScorer {
         return (value, reason)
     }
 
-    // MARK: - Hero Piece
+    // MARK: - Hero Piece (Bornstein)
 
+    /// Allison Bornstein's hero-piece concept (see class docstring).
+    /// First-pass anchor: outerwear or dress. Fallback: a saturation
+    /// standout that visually carries the look.
     private func scoreHeroPiece(items: [WardrobeItem]) -> (value: Double, reason: String) {
-        // Hero piece = item with most saturated/distinctive colors OR outerwear piece
         let hasOuterwear = items.contains { $0.category == .outerwear }
         let hasDress = items.contains { $0.category == .dress }
 
         if hasOuterwear || hasDress {
-            return (0.2, "Clear hero piece anchors the outfit")
+            let anchorName = hasDress ? "dress" : "outerwear"
+            return (0.2, "Clear hero piece (\(anchorName)) anchors the outfit")
         }
 
         // Check for a color-standout item
@@ -95,13 +137,13 @@ struct OutfitFormulaScorer: OutfitScorer {
         }
 
         if standoutItem != nil {
-            return (0.15, "One item stands out as the color focal point")
+            return (0.15, "One item stands out as the color focal point — hero by saturation")
         }
 
         return (0.08, "No clear hero piece — outfit may lack a focal point")
     }
 
-    // MARK: - Two-of-Three Color Match
+    // MARK: - Color-family match (folk styling)
 
     private func scoreTwoOfThreeMatch(items: [WardrobeItem]) -> (value: Double, reason: String) {
         guard items.count >= 2 else { return (0.1, "Too few items for color matching") }
@@ -127,8 +169,13 @@ struct OutfitFormulaScorer: OutfitScorer {
         return (0.08, "Items lack a shared color thread")
     }
 
-    // MARK: - Third Piece Rule
+    // MARK: - Third Piece (Gunn)
 
+    /// Tim Gunn's "third piece" guideline (see class docstring): a
+    /// layered third piece (cardigan, blazer, vest, scarf, statement
+    /// accessory) elevates a basic top+bottom outfit. Full credit
+    /// when a non-(top|bottom) layer is present; half credit for
+    /// a bare top+bottom; minimal credit otherwise.
     private func scoreThirdPiece(items: [WardrobeItem]) -> (value: Double, reason: String) {
         let hasTop = items.contains { $0.category == .top }
         let hasBottom = items.contains { $0.category == .bottom }
@@ -136,11 +183,11 @@ struct OutfitFormulaScorer: OutfitScorer {
         let hasAccessory = items.contains { $0.category == .accessory }
 
         if hasTop && hasBottom && (hasOuterwear || hasAccessory) {
-            return (0.2, "Third piece elevates the outfit")
+            return (0.2, "Third piece (Gunn) elevates the outfit")
         }
 
         if hasTop && hasBottom {
-            return (0.1, "Solid base — a jacket or accessory would elevate")
+            return (0.1, "Solid top+bottom base — a jacket or accessory would elevate")
         }
 
         return (0.05, "Incomplete formula")

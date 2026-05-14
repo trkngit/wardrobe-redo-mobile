@@ -10,6 +10,11 @@ struct ProfileView: View {
     @State private var isLoadingStats = false
     @State private var cacheSize: String = "—"
     @State private var isClearingCache = false
+    // Build 15 — language picker state. Seeded from
+    // `LanguageManager.current` so the row reflects whatever
+    // override is already in effect on this device.
+    @State private var selectedLanguage: AppLanguage = LanguageManager.current
+    @State private var showLanguageRestartHint = false
 
     private let wardrobeRepository = WardrobeRepository()
     private let outfitRepository = OutfitRepository()
@@ -18,8 +23,15 @@ struct ProfileView: View {
         List {
             userInfoSection
             statsSection
+            defaultVibeSection
             preferencesSection
             notificationsSection
+            // Build 15 — language picker between Notifications
+            // and Image Cache. Lives near the bottom of the list
+            // because it's an infrequent change, but above About
+            // so users actually see it without scrolling all the
+            // way down.
+            languageSection
             cacheSection
             aboutSection
             #if DEBUG
@@ -83,12 +95,27 @@ struct ProfileView: View {
             statRow(label: "Items Worn", value: "\(stats.itemsWorn)", icon: "checkmark.circle")
 
             if let mostWorn = stats.mostWornCategory {
-                statRow(label: "Most Worn", value: mostWorn, icon: "flame")
+                // Build 27 — resolve the localized category name
+                // at render time. See `ProfileStats` for why we
+                // stopped storing the displayName.
+                statRow(
+                    label: "Most Worn",
+                    value: String(localized: mostWorn.localizedName),
+                    icon: "flame"
+                )
             }
         }
     }
 
-    private func statRow(label: String, value: String, icon: String) -> some View {
+    // Build 27 — was `label: String`, which routed through
+    // `Text(verbatim:)` and bypassed the catalog even though every
+    // label (Total Items / Outfits Generated / Items Worn / Most
+    // Worn) HAS a Turkish translation in `Localizable.xcstrings`.
+    // `LocalizedStringResource` is the correct carrier; existing
+    // call sites pass string literals which auto-coerce.
+    // `value` stays `String` because it's interpolated user data
+    // ("12", "39") — not a localized string.
+    private func statRow(label: LocalizedStringResource, value: String, icon: String) -> some View {
         HStack(spacing: Theme.Spacing.md) {
             Image(systemName: icon)
                 .font(.system(size: 14))
@@ -104,6 +131,48 @@ struct ProfileView: View {
             Text(value)
                 .font(.system(size: 15, weight: .medium, design: .rounded))
                 .foregroundStyle(Color(Theme.Colors.textSecondary))
+        }
+    }
+
+    // MARK: - Default Vibe (build 6)
+
+    private var defaultVibeSection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+                Text("Default vibe")
+                    .font(Theme.Fonts.body)
+                Text("Where every outfit-generation session starts. You can still slide between Safe and Bold on the Outfits screen.")
+                    .font(Theme.Fonts.caption)
+                    .foregroundStyle(Color(Theme.Colors.textSecondary))
+                VibeSelector(vibe: Binding(
+                    get: { appState.currentUser?.defaultVibe ?? .balanced },
+                    set: { newValue in
+                        Task { await saveDefaultVibe(newValue) }
+                    }
+                ))
+            }
+            .padding(.vertical, Theme.Spacing.xs)
+        }
+    }
+
+    private func saveDefaultVibe(_ vibe: VibeStop) async {
+        guard let userId = appState.currentUser?.id else { return }
+        // Optimistic UI: write through to the in-memory profile so
+        // the slider doesn't snap back while the network call is
+        // in flight. Roll back if the persistence fails.
+        let previous = appState.currentUser?.defaultVibe ?? .balanced
+        if var profile = appState.currentUser {
+            profile.defaultVibe = vibe
+            appState.currentUser = profile
+        }
+        do {
+            try await UserRepository().updateDefaultVibe(userId: userId, vibe: vibe)
+            VibeTelemetry.logDefaultChanged(to: vibe, via: "settings")
+        } catch {
+            if var profile = appState.currentUser {
+                profile.defaultVibe = previous
+                appState.currentUser = profile
+            }
         }
     }
 
@@ -137,7 +206,12 @@ struct ProfileView: View {
         }
     }
 
-    private func preferenceRow(label: String, values: [String]) -> some View {
+    // Build 27 — same `String` → `LocalizedStringResource` fix as
+    // `statRow`. `label` is the chrome ("Families" / "Occasions");
+    // `values` stays `String` because it's the user's DB-driven
+    // preference list ("Streetwear, Edgy, Classic") — those are
+    // raw archetype names and aren't localized today.
+    private func preferenceRow(label: LocalizedStringResource, values: [String]) -> some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
             Text(label)
                 .font(Theme.Fonts.caption)
@@ -175,6 +249,46 @@ struct ProfileView: View {
                         notificationsEnabled = result
                     }
                 }
+            }
+        }
+    }
+
+    // MARK: - Language (build 15)
+
+    /// Build 15 — in-app language picker. Writing through
+    /// `LanguageManager.set(_:)` updates the `AppleLanguages`
+    /// UserDefaults entry; the change takes effect at next launch
+    /// (same as iOS's own per-app picker in Settings.app). We
+    /// surface a "Restart the app to apply" hint after a change
+    /// instead of trying to swap the localization bundle live —
+    /// the bundle swizzle hacks people post for this are fragile
+    /// and a launch is cheap.
+    private var languageSection: some View {
+        Section("Language") {
+            Picker(selection: $selectedLanguage) {
+                ForEach(AppLanguage.allCases) { language in
+                    Text(language.localizedName).tag(language)
+                }
+            } label: {
+                HStack(spacing: Theme.Spacing.md) {
+                    Image(systemName: "globe")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Color(Theme.Colors.primary))
+                        .frame(width: 20)
+                    Text("Language")
+                        .font(Theme.Fonts.body)
+                }
+            }
+            .onChange(of: selectedLanguage) { _, newValue in
+                LanguageManager.set(newValue)
+                HapticManager.selection()
+                showLanguageRestartHint = true
+            }
+
+            if showLanguageRestartHint {
+                Text("Restart the app to apply the new language.")
+                    .font(Theme.Fonts.caption)
+                    .foregroundStyle(Color(Theme.Colors.textSecondary))
             }
         }
     }
@@ -283,12 +397,14 @@ struct ProfileView: View {
                     $1.value.reduce(0) { $0 + $1.wearCount }
             })
 
+            // Build 27 — store the category enum, not the
+            // displayName. See `ProfileStats.mostWornCategory`.
             stats = ProfileStats(
                 totalItems: items.count,
                 outfitsGenerated: outfits.count,
                 itemsWorn: items.filter { $0.wearCount > 0 }.count,
                 mostWornCategory: mostWorn?.value.first(where: { $0.wearCount > 0 }) != nil
-                    ? mostWorn?.key.displayName : nil
+                    ? mostWorn?.key : nil
             )
         } catch {
             // Stats are non-critical — fail silently
@@ -302,7 +418,12 @@ private struct ProfileStats {
     var totalItems = 0
     var outfitsGenerated = 0
     var itemsWorn = 0
-    var mostWornCategory: String?
+    // Build 27 — was `String?` (storing the category's English
+    // displayName at fetch time), which baked in English even
+    // under Turkish locale. Storing the enum lets the renderer
+    // resolve `localizedName` at display time so the row reads
+    // "Üst Giyim" in tr without an extra catalog round-trip.
+    var mostWornCategory: ClothingCategory?
 }
 
 // MARK: - Style Preferences Editor
@@ -336,7 +457,17 @@ struct StylePreferencesEditor: View {
 
                     FlowLayoutOnboarding(spacing: Theme.Spacing.sm) {
                         ForEach(allFamilies, id: \.self) { family in
-                            toggleChip(family.capitalized, isSelected: selectedFamilies.contains(family)) {
+                            // Build 27 — `family` is a raw DB string
+                            // ("streetwear", "edgy", ...) — not a
+                            // catalog key yet. Wrap in
+                            // `LocalizedStringResource(...)` via
+                            // interpolation so the API matches
+                            // `toggleChip`'s `LocalizedStringResource`
+                            // signature. Family names will fall back
+                            // to their capitalized raw value until a
+                            // future build adds per-family catalog
+                            // entries.
+                            toggleChip(LocalizedStringResource("\(family.capitalized)"), isSelected: selectedFamilies.contains(family)) {
                                 if selectedFamilies.contains(family) {
                                     selectedFamilies.remove(family)
                                 } else {
@@ -355,7 +486,10 @@ struct StylePreferencesEditor: View {
 
                     FlowLayoutOnboarding(spacing: Theme.Spacing.sm) {
                         ForEach(Occasion.allCases, id: \.self) { occasion in
-                            toggleChip(occasion.displayName, isSelected: selectedOccasions.contains(occasion.rawValue)) {
+                            // Build 27 — was `occasion.displayName`
+                            // (raw English); now `localizedName`
+                            // routes through the catalog.
+                            toggleChip(occasion.localizedName, isSelected: selectedOccasions.contains(occasion.rawValue)) {
                                 if selectedOccasions.contains(occasion.rawValue) {
                                     selectedOccasions.remove(occasion.rawValue)
                                 } else {
@@ -385,7 +519,11 @@ struct StylePreferencesEditor: View {
         .onAppear { loadExisting() }
     }
 
-    private func toggleChip(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+    // Build 27 — `title: String` → `LocalizedStringResource`.
+    // Call sites pass either string literals ("Family X" — auto-
+    // coerced) or `occasion.localizedName` for the Occasions row,
+    // both of which route through the catalog.
+    private func toggleChip(_ title: LocalizedStringResource, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
                 .font(Theme.Fonts.bodySmall)

@@ -31,7 +31,7 @@ final class StyleEngineService {
         let breakdown = scorers.map { scorer in
             scorer.score(items: items, archetype: archetype, rule: rule, context: context)
         }
-        return OutfitScore(breakdown: breakdown)
+        return OutfitScore(breakdown: breakdown, vibePreset: context.vibePreset)
     }
 
     // MARK: - Score Multiple Candidates
@@ -67,13 +67,17 @@ final class StyleEngineService {
             .map { rule in
                 let score = scoreOutfit(items: items, archetype: archetype, rule: rule, context: context)
                 // Weight the score by the rule's weight multiplier
-                let weightedScore = OutfitScore(breakdown: score.breakdown.map { dim in
-                    DimensionScore(
-                        dimension: dim.dimension,
-                        value: dim.value,
-                        reasoning: dim.reasoning
-                    )
-                })
+                let weightedScore = OutfitScore(
+                    breakdown: score.breakdown.map { dim in
+                        DimensionScore(
+                            dimension: dim.dimension,
+                            value: dim.value,
+                            coverage: dim.coverage,
+                            reasoning: dim.reasoning
+                        )
+                    },
+                    vibePreset: context.vibePreset
+                )
                 return (rule: rule, score: weightedScore)
             }
             .max { ($0.score.totalScore * $0.rule.weight) < ($1.score.totalScore * $1.rule.weight) }
@@ -81,12 +85,18 @@ final class StyleEngineService {
 
     // MARK: - Build Scoring Context
 
-    /// Construct a ScoringContext from current conditions.
+    /// Construct a ScoringContext from current conditions. Build 6
+    /// added `vibe` so the caller can ask the engine to evaluate
+    /// candidates against a specific strictness profile (Safe →
+    /// Bold). Defaults to `.balanced` so existing call sites keep
+    /// build-5 behaviour.
     static func buildContext(
         season: Season? = nil,
         occasion: Occasion = .casual,
         wardrobeSize: Int = 0,
-        recentItemIds: Set<UUID> = []
+        recentItemIds: Set<UUID> = [],
+        recentItemPairs: Set<UnorderedItemPair> = [],
+        vibe: VibeStop = .balanced
     ) -> ScoringContext {
         let calendar = Calendar.current
         let weekday = calendar.component(.weekday, from: Date())
@@ -100,7 +110,9 @@ final class StyleEngineService {
             occasion: occasion,
             dayOfWeek: dayOfWeek,
             wardrobeItemCount: wardrobeSize,
-            recentOutfitItemIds: recentItemIds
+            recentOutfitItemIds: recentItemIds,
+            recentOutfitItemPairs: recentItemPairs,
+            vibePreset: VibePreset.preset(for: vibe)
         )
     }
 

@@ -83,7 +83,12 @@ final class AuthViewModel {
             _ = try await authService.signIn(email: email, password: password)
             clearForm()
         } catch {
-            logger.error("signIn failed: \(String(describing: error))")
+            // Build 20 — split public category + private reason so
+            // we can grep "signIn failed" across production logs
+            // without the error description (which can contain the
+            // attempted email / a session token in some error
+            // shapes) leaking into Console / Sentry.
+            LogPrivacy.error(logger, category: "signIn", reason: error)
             errorMessage = mapError(error)
         }
 
@@ -114,7 +119,9 @@ final class AuthViewModel {
                 displayName = ""
             }
         } catch {
-            logger.error("signUp failed: \(String(describing: error))")
+            // Build 20 — same privacy split as signIn. signUp errors
+            // can carry the display name + email; treat as private.
+            LogPrivacy.error(logger, category: "signUp", reason: error)
             errorMessage = mapError(error)
         }
 

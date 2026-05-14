@@ -33,10 +33,70 @@ struct OutfitDetailView: View {
             }
             .padding(.horizontal, Theme.Spacing.md)
             .padding(.bottom, Theme.Spacing.xxl)
+            // Build 13 — parity with the build-10 carousel card.
+            // A skipped outfit dims in the carousel; tapping into
+            // the detail view shouldn't suddenly restore full
+            // saturation as if the skip didn't happen. Same
+            // numbers (0.45 opacity / 0.4 saturation) so the
+            // transition into / out of detail feels continuous.
+            // Applied to the content VStack instead of the
+            // ScrollView so the toolbar share button stays at
+            // full opacity for the action affordance.
+            .opacity(isSkipped ? 0.45 : 1.0)
+            .saturation(isSkipped ? 0.4 : 1.0)
+            .animation(Theme.Animation.standard, value: isSkipped)
         }
         .background(Color(Theme.Colors.background))
         .navigationTitle(outfit.editorialName)
         .navigationBarTitleDisplayMode(.inline)
+        // Build 11 — share affordance in the nav bar. Uses
+        // SwiftUI's `ShareLink` so we get the standard iOS share
+        // sheet (Messages / Mail / AirDrop / WhatsApp / Notes /
+        // ...) for free instead of hand-rolling
+        // UIActivityViewController. Shares the editorial copy +
+        // a per-item breakdown — text-only on purpose, since the
+        // visual is hard to reproduce reliably without screenshot
+        // capture. A future iteration can attach a rendered card.
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                ShareLink(item: shareText) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Color(Theme.Colors.primary))
+                }
+                .accessibilityLabel("Share outfit")
+            }
+        }
+    }
+
+    /// Build 13 — same skip predicate as `OutfitCardView`.
+    /// Drives the dim + desaturation treatment so a skipped
+    /// outfit looks visibly de-prioritized in both the carousel
+    /// and the detail view.
+    private var isSkipped: Bool { outfit.reaction == "skip" }
+
+    /// Build 11 — text representation of the outfit for the
+    /// share sheet. Keeps it short enough to fit in a single
+    /// iMessage bubble while still naming every piece. Score is
+    /// rounded to a percentage because no recipient outside the
+    /// app reads raw 0.0–1.0 floats. Includes a soft brand
+    /// signature so the receiver can find the app if they care.
+    private var shareText: String {
+        var lines: [String] = []
+        lines.append(outfit.editorialName)
+        if let description = outfit.editorialDescription, !description.isEmpty {
+            lines.append(description)
+        }
+        if !items.isEmpty {
+            lines.append("")
+            for item in items {
+                lines.append("• \(item.subcategory.displayName)")
+            }
+        }
+        lines.append("")
+        lines.append("Score: \(Int(outfit.score * 100))%")
+        lines.append("— Curated with Wardrobe")
+        return lines.joined(separator: "\n")
     }
 
     // MARK: - Editorial Header
@@ -67,17 +127,22 @@ struct OutfitDetailView: View {
     // MARK: - Total Score Badge
 
     private var totalScoreBadge: some View {
+        // Build 28 — uses the demoted `gold` accent. The Editorial
+        // Heritage palette moved `primary` to ink everywhere else;
+        // this is one of two surfaces (along with the carousel's
+        // score badge) that keeps the warm gold treatment so the
+        // editorial pop still lands somewhere intentional.
         VStack(spacing: 2) {
             Text("\(Int(outfit.score * 100))")
                 .font(.system(size: 28, weight: .bold, design: .rounded))
-                .foregroundStyle(Color(Theme.Colors.primary))
+                .foregroundStyle(Color(Theme.Colors.gold))
 
             Text("Score")
                 .font(Theme.Fonts.caption)
                 .foregroundStyle(Color(Theme.Colors.textSecondary))
         }
         .padding(Theme.Spacing.md)
-        .background(Color(Theme.Colors.primaryMuted).opacity(0.15))
+        .background(Color(Theme.Colors.gold).opacity(0.12))
         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
     }
 
@@ -119,7 +184,8 @@ struct OutfitDetailView: View {
                 .frame(height: 120)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 
-            Text(item.subcategory.displayName)
+            // Build 17 — localized subcategory in detail gallery.
+            Text(item.subcategory.localizedName)
                 .font(Theme.Fonts.caption)
                 .foregroundStyle(Color(Theme.Colors.textPrimary))
                 .lineLimit(1)
@@ -174,7 +240,12 @@ struct OutfitDetailView: View {
         }
     }
 
-    private func dimensionBar(label: String, value: Double, weight: Double) -> some View {
+    // Build 27 — `label` was `String`, which routed through
+    // `Text(verbatim:)` even for catalog-bound names like
+    // "Proportion" / "Color" / "Texture". Switching to
+    // `LocalizedStringResource` makes the call sites route through
+    // the catalog automatically.
+    private func dimensionBar(label: LocalizedStringResource, value: Double, weight: Double) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(label)
@@ -241,7 +312,11 @@ struct OutfitDetailView: View {
         }
     }
 
-    private func reactionButton(reaction: String, icon: String, label: String, activeColor: Color) -> some View {
+    // Build 27 — `label` was `String` so the Love/Like/Skip
+    // captions never picked up the Turkish translations even
+    // though they're in the catalog. `LocalizedStringResource`
+    // is the carrier that routes via Text(_ resource:).
+    private func reactionButton(reaction: String, icon: String, label: LocalizedStringResource, activeColor: Color) -> some View {
         let isActive = outfit.reaction == reaction
 
         return Button {

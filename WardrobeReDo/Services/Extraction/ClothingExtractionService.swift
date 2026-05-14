@@ -60,6 +60,12 @@ struct ExtractionResult: @unchecked Sendable {
     let mask: CVPixelBuffer?
     let confidence: ExtractionConfidence
     let method: ExtractionMethod
+    /// Build 6 Phase 8B — fraction of the source frame the
+    /// extracted mask covers, in [0, 1]. Source: whichever
+    /// extractor branch fired (Vision or SAM2 — both produce a
+    /// `coverageRatio: Double` natively). Nil when extraction
+    /// failed outright (no mask).
+    let silhouetteArea: Double?
 }
 
 /// Injection seam so view models and tests can swap in a mock
@@ -151,7 +157,8 @@ final class ClothingExtractionService: ClothingExtracting, @unchecked Sendable {
                     maskedImage: vision.maskedImage,
                     mask: vision.mask,
                     confidence: confidence,
-                    method: .vision
+                    method: .vision,
+                    silhouetteArea: vision.coverageRatio
                 )
             }
 
@@ -167,7 +174,8 @@ final class ClothingExtractionService: ClothingExtracting, @unchecked Sendable {
                     maskedImage: sam2.maskedImage,
                     mask: sam2.mask,
                     confidence: sam2Confidence,
-                    method: .sam2Auto
+                    method: .sam2Auto,
+                    silhouetteArea: sam2.coverageRatio
                 )
             }
 
@@ -179,7 +187,8 @@ final class ClothingExtractionService: ClothingExtracting, @unchecked Sendable {
                 maskedImage: vision.maskedImage,
                 mask: vision.mask,
                 confidence: confidence,
-                method: .vision
+                method: .vision,
+                silhouetteArea: vision.coverageRatio
             )
         }
 
@@ -195,7 +204,8 @@ final class ClothingExtractionService: ClothingExtracting, @unchecked Sendable {
                 maskedImage: sam2.maskedImage,
                 mask: sam2.mask,
                 confidence: sam2Confidence,
-                method: .sam2Auto
+                method: .sam2Auto,
+                silhouetteArea: sam2.coverageRatio
             )
         }
 
@@ -205,7 +215,8 @@ final class ClothingExtractionService: ClothingExtracting, @unchecked Sendable {
             maskedImage: normalized,
             mask: nil,
             confidence: .failed,
-            method: .none
+            method: .none,
+            silhouetteArea: nil
         )
     }
 
@@ -233,7 +244,8 @@ final class ClothingExtractionService: ClothingExtracting, @unchecked Sendable {
             maskedImage: sam2.maskedImage,
             mask: sam2.mask,
             confidence: confidence,
-            method: .sam2Manual
+            method: .sam2Manual,
+            silhouetteArea: sam2.coverageRatio
         )
     }
 

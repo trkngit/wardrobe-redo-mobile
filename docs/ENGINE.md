@@ -6,7 +6,18 @@ date: "2026-04-17"
 
 # 1. Overview
 
-**Wardrobe Re-Do** is a native iOS app that helps you decide what to wear. It ingests photos of your clothing, extracts structured style metadata (color, texture, fit, formality), and runs a beam-search outfit generator over a library of 50 style archetypes and 200 combination rules. Every outfit is scored across seven independent dimensions rooted in professional fashion theory.
+**Wardrobe Re-Do** is a native iOS app that helps you decide what to wear. It ingests photos of your clothing, extracts structured style metadata (color, fit, formality, plus rules-derived texture and seasonality), and runs a beam-search outfit generator over a library of 50 style archetypes and 200 combination rules. Every outfit is scored across seven independent dimensions inspired by common styling guidance.
+
+> **Build 6 — honesty note on the seven-dimension framework.** The
+> seven dimensions and their weight vector are the developer's
+> design. Individual scorers approximate published heuristics where
+> a named source exists (Tim Gunn's third-piece rule, Allison
+> Bornstein's hero-piece concept) and use hand-rolled scoring
+> functions elsewhere. Specific tuning thresholds are not derived
+> from controlled experiments; they are sensible defaults intended
+> to be revisited as user-engagement data accumulates. See
+> [`.build6-research/RULES_AUDIT.md`](../.build6-research/RULES_AUDIT.md)
+> for the full audit that drove the build-6 cleanup.
 
 Two user-facing flows sit on top of the engine:
 
@@ -28,6 +39,32 @@ Professional stylists evaluate outfits on many intersecting axes simultaneously.
 | Occasion context | 0.10 | Season, day of week, occasion appropriateness |
 
 No single dimension dominates. Color harmony gets the largest slice because visual coherence is the single easiest way for an outfit to fail, but 75 % of the score still comes from other axes — which is why a boring monochromatic "safe" outfit can score lower than a bold three-color combination with great proportions.
+
+## Build 6 — Coverage-aware aggregation
+
+Each scorer reports both a `value` in `[0, 1]` and a `coverage ∈ [0, 1]` measuring how much of its math actually fired. The aggregate is a weight-renormalized average:
+
+```
+totalScore = Σ (value × weight × coverage) / Σ (weight × coverage)
+```
+
+A dimension with `coverage = 0` (no input data — e.g. all items lack texture) is excluded from both sides entirely. Outfits with fewer than 4 of 7 covered dimensions are flagged `isLowCoverage` and the UI surfaces them as "Insufficient data" rather than a numeric score.
+
+## Build 6 — Vibe slider
+
+A per-generation 5-stop slider (Safe / Polished / Balanced / Adventurous / Bold) modulates the dimension weights and per-scorer tolerance bands. Picking `.bold` doesn't change the archetype selection — it relaxes color-harmony / proportion strictness and boosts versatility (novelty) and texture variety; `.safe` does the opposite. See `VibePreset.swift` for the preset table.
+
+## Build 6 — ML texture inference retired
+
+`AttributeClassifierService`'s texture head was already dormant in production (Fashionpedia v2 carries no main-fabric labels). Build 6 removes the dead contract: `AttributePrediction` no longer carries a texture field, and texture flows exclusively from the `AttributeRulesEngine.deriveTexture` deterministic lookup (jeans → denim, sweater → knit) or user input. The fit head remains active.
+
+## Build 6 — Rules integrity fixes
+
+- **VersatilityScorer** now actually awards the "novel combination bonus" the docstring has always promised — pairs of items seen in the user's last 30 outfits are discounted vs novel pairs.
+- **FormalityCoherenceScorer** now uses all four declared inputs (color brightness, texture smoothness, pattern proxy, structure) rather than texture smoothness alone.
+- **OutfitFormulaScorer** is decomposed into named sub-functions with explicit citations: slot satisfaction (structural), hero piece (Bornstein), color-family match (folk styling), third piece (Gunn). Reasoning text per outfit names each fired component.
+
+See [`.build6-research/RULES_AUDIT.md`](../.build6-research/RULES_AUDIT.md) for the audit that motivated these fixes.
 
 ## Stack at a glance
 

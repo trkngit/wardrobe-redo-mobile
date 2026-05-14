@@ -32,8 +32,17 @@ protocol OutfitRepositoryProtocol: Sendable {
     func fetchOutfitsByDate(userId: UUID, date: String) async throws -> [Outfit]
     func fetchSlotsForOutfits(outfitIds: [UUID]) async throws -> [UUID: [OutfitSlot]]
     func fetchRecentItemIds(userId: UUID, days: Int) async throws -> Set<UUID>
+    /// Build 6: returns every unordered item-pair the user has worn
+    /// together across their most-recent `limit` outfits. Powers
+    /// the VersatilityScorer novelty bonus.
+    func fetchRecentItemPairs(userId: UUID, limit: Int) async throws -> Set<UnorderedItemPair>
     func updateReaction(outfitId: UUID, reaction: String?) async throws
     func markAsWorn(outfitId: UUID, isWorn: Bool) async throws
+    /// Build 6: bump `wear_count` + `last_worn_at` for the supplied
+    /// wardrobe-item IDs. Fired when the user toggles an outfit
+    /// from un-worn to worn (NOT the reverse direction — wear is
+    /// monotonically increasing).
+    func incrementWearCounts(itemIds: [UUID]) async throws
     func hasOutfitsForDate(userId: UUID, date: String) async throws -> Bool
     /// Delete every outfit a user has on a given date (cascade-deletes
     /// `outfit_slots`). Used by the "Generate New Outfits" path so a
@@ -45,6 +54,11 @@ protocol OutfitRepositoryProtocol: Sendable {
 extension OutfitRepositoryProtocol {
     func fetchRecentItemIds(userId: UUID) async throws -> Set<UUID> {
         try await fetchRecentItemIds(userId: userId, days: 7)
+    }
+
+    /// Convenience: 30-outfit history matches the Phase 5.1 plan.
+    func fetchRecentItemPairs(userId: UUID) async throws -> Set<UnorderedItemPair> {
+        try await fetchRecentItemPairs(userId: userId, limit: 30)
     }
 }
 

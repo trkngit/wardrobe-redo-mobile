@@ -23,6 +23,11 @@ struct ItemDetailView: View {
     @State private var showArchiveConfirm = false
     @State private var isArchiving = false
     @State private var errorMessage: String?
+    // Build 18 — drives the fullscreen image viewer cover. Tapping
+    // the hero image flips this true; the viewer's close button (or
+    // a drag-down gesture) flips it back. Local @State because the
+    // viewer is presentational and doesn't need to survive a navigate.
+    @State private var showFullScreenImage = false
 
     private let imageService = ImageService()
 
@@ -60,8 +65,18 @@ struct ItemDetailView: View {
             .padding(.bottom, Theme.Spacing.xxl)
         }
         .background(Color(Theme.Colors.background))
-        .navigationTitle(item.subcategory.displayName)
+        // Build 17 — localized title. SwiftUI accepts `Text(_:)`
+        // via the navigationTitle/Text initializer chain so the
+        // catalog translation surfaces here too.
+        .navigationTitle(Text(item.subcategory.localizedName))
         .navigationBarTitleDisplayMode(.inline)
+        // Build 18 — tap-to-zoom for the hero image. Lives at the
+        // root of the view so the cover's dismiss animation owns
+        // the full screen rather than being clipped inside the
+        // ScrollView.
+        .fullScreenCover(isPresented: $showFullScreenImage) {
+            FullScreenImageViewer(url: imageURL, isPresented: $showFullScreenImage)
+        }
         .toolbar {
             // Edit button lives in the trailing slot so the iOS-standard
             // back-chevron stays leading. Pushing `EditItemView` rather
@@ -145,6 +160,27 @@ struct ItemDetailView: View {
         // capture the loaded image's intrinsic size via
         // `KFImage.onSuccess` and project the bbox onto the actual
         // rendered image rect inside the frame.
+        //
+        // Build 18 — wrapped in a Button so the whole image is a
+        // single hit target that flips into the fullscreen viewer.
+        // `.buttonStyle(.plain)` keeps the rendering exactly as
+        // before (no system tint, no press-state recoloring) so
+        // visually nothing changes; only the tap behavior does.
+        // The bbox overlay above sets `.allowsHitTesting(false)`,
+        // so the Button still receives the tap on the underlying
+        // image even where the overlay is rendered.
+        Button {
+            HapticManager.light()
+            showFullScreenImage = true
+        } label: {
+            imageContent
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("View item photo full screen")
+        .accessibilityHint("Double-tap to enlarge")
+    }
+
+    private var imageContent: some View {
         GeometryReader { geo in
             ZStack {
                 KFImage(imageURL)
@@ -171,6 +207,16 @@ struct ItemDetailView: View {
                     }
                     .resizable()
                     .scaledToFit()
+                    // Build 27 — was hugging the leading edge of
+                    // the GeometryReader because ZStack's default
+                    // alignment is .topLeading and `.scaledToFit`
+                    // produces a smaller rectangle. Explicit
+                    // `maxWidth/.infinity` + `.center` alignment
+                    // centers the scaled image inside the 360 pt
+                    // hero frame. The bbox overlay below still
+                    // uses `loadedImageSize` + `aspectFitRect`
+                    // math so its rect stays accurate.
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 
                 if let bbox = item.boundingBox?.cgRect,
                    let imageSize = loadedImageSize {
@@ -200,7 +246,15 @@ struct ItemDetailView: View {
                 }
             }
         }
-        .frame(maxHeight: 400)
+        // Build 26 / Bug B — was `.frame(maxHeight: 400)`. The
+        // `GeometryReader` doesn't propose a size to its parent; in a
+        // `Button` inside a `ScrollView` that meant the available
+        // height collapsed to ~0 and the hero image rendered as a
+        // sliver. A fixed `height: 360` gives the GeometryReader a
+        // real proposal to work with. 360 fits iPhone SE / 13 mini
+        // above the fold (~568 pt content area) without overflowing
+        // the scroll view on bigger phones.
+        .frame(height: 360)
         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
         .cardShadow()
     }
@@ -225,23 +279,27 @@ struct ItemDetailView: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             sectionHeader("Details")
 
-            detailRow("Category", value: item.category.displayName, icon: item.category.iconName)
-            detailRow("Subcategory", value: item.subcategory.displayName)
+            // Build 17 — values resolved through `String(localized:)`
+            // so the locale-current translation lands in the value
+            // column. Labels remain catalog keys via the detailRow
+            // signature.
+            detailRow("Category", value: String(localized: item.category.localizedName), icon: item.category.iconName)
+            detailRow("Subcategory", value: String(localized: item.subcategory.localizedName))
 
             if let texture = item.texture {
-                detailRow("Texture", value: texture.displayName)
+                detailRow("Texture", value: String(localized: texture.localizedName))
             }
 
             if let fit = item.fitAttribute {
-                detailRow("Fit", value: fit.displayName)
+                detailRow("Fit", value: String(localized: fit.localizedName))
             }
 
             if !item.seasons.isEmpty {
-                detailTagRow("Seasons", tags: item.seasons.map(\.displayName))
+                detailTagRow("Seasons", tags: item.seasons.map { String(localized: $0.localizedName) })
             }
 
             if !item.occasions.isEmpty {
-                detailTagRow("Occasions", tags: item.occasions.map(\.displayName))
+                detailTagRow("Occasions", tags: item.occasions.map { String(localized: $0.localizedName) })
             }
 
             detailRow("Worn", value: "\(item.wearCount) time\(item.wearCount == 1 ? "" : "s")", icon: "arrow.counterclockwise")
@@ -297,13 +355,21 @@ struct ItemDetailView: View {
 
     // MARK: - Helpers
 
-    private func sectionHeader(_ title: String) -> some View {
+    /// Build 17 — LocalizedStringResource so the section header
+    /// pulls from the catalog ("Details" → "Detaylar").
+    private func sectionHeader(_ title: LocalizedStringResource) -> some View {
         Text(title)
             .font(Theme.Fonts.h3)
             .foregroundStyle(Color(Theme.Colors.textPrimary))
     }
 
-    private func detailRow(_ label: String, value: String, icon: String? = nil) -> some View {
+    /// Build 17 — `label` is a `LocalizedStringResource` so static
+    /// keys like "Category" / "Subcategory" / "Texture" pass through
+    /// the catalog. The `value` stays a String because callers
+    /// already pre-resolve via `String(localized:)` for translated
+    /// enum values, and plain-text values like "3 times" don't
+    /// belong in the catalog.
+    private func detailRow(_ label: LocalizedStringResource, value: String, icon: String? = nil) -> some View {
         HStack {
             if let icon {
                 Image(systemName: icon)
@@ -321,7 +387,7 @@ struct ItemDetailView: View {
         }
     }
 
-    private func detailTagRow(_ label: String, tags: [String]) -> some View {
+    private func detailTagRow(_ label: LocalizedStringResource, tags: [String]) -> some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
             Text(label)
                 .font(Theme.Fonts.bodySmall)

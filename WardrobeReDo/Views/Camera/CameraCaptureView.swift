@@ -19,6 +19,27 @@ enum CameraAuthorizationState: Sendable, Equatable {
     case notAvailable  // simulator, or device has no back camera
 }
 
+/// Lifecycle of the live AVCaptureSession, surfaced to the overlay
+/// alongside `CameraAuthorizationState`. This split matters because
+/// "permission decision pending" and "session not yet running" are
+/// different states that produce different HUD content — the overlay
+/// must be able to tell them apart so a user tapping shutter during
+/// the permission flight doesn't see a dead button without
+/// explanation.
+///
+/// Transition to `.running` is driven externally by the SwiftUI
+/// caller: the controller emits `.configuring` once permission is
+/// granted, and the caller flips to `.running` when the
+/// `BackgroundQualityMonitor` publishes its first non-`.unknown`
+/// frame. This keeps AVFoundation lifecycle in the VC and "first
+/// frame seen" in SwiftUI where it can drive view re-renders.
+enum CameraSessionState: Sendable, Equatable {
+    case configuring     // permission granted, session setup in flight on sessionQueue
+    case running         // session.isRunning && first sample buffer received
+    case stopped         // viewWillDisappear path
+    case failed(String)  // input/output guard failed; payload for telemetry
+}
+
 /// Exposes imperative camera actions (shutter) to the SwiftUI layer
 /// while keeping the UIViewController as the source of truth for
 /// AVCapture lifecycle. The representable wires the weak ref; the
@@ -46,12 +67,16 @@ struct CameraCaptureView: UIViewControllerRepresentable {
     let controller: CameraController
     var onPhotoCaptured: (UIImage) -> Void
     var onAuthorizationChanged: (CameraAuthorizationState) -> Void
+    var onSessionStateChanged: ((CameraSessionState) -> Void)? = nil
+    var onCaptureFailed: ((String) -> Void)? = nil
 
     func makeUIViewController(context: Context) -> CameraCaptureViewController {
         let vc = CameraCaptureViewController()
         vc.monitor = monitor
         vc.onPhotoCaptured = onPhotoCaptured
         vc.onAuthorizationChanged = onAuthorizationChanged
+        vc.onSessionStateChanged = onSessionStateChanged
+        vc.onCaptureFailed = onCaptureFailed
         controller.viewController = vc
         return vc
     }
@@ -76,6 +101,8 @@ final class CameraCaptureViewController: UIViewController {
     nonisolated(unsafe) weak var monitor: BackgroundQualityMonitor?
     var onPhotoCaptured: ((UIImage) -> Void)?
     var onAuthorizationChanged: ((CameraAuthorizationState) -> Void)?
+    var onSessionStateChanged: ((CameraSessionState) -> Void)?
+    var onCaptureFailed: ((String) -> Void)?
 
     // MARK: - Internals
     //
@@ -120,10 +147,33 @@ final class CameraCaptureViewController: UIViewController {
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        // Stop the cancellation race: zero out callbacks BEFORE
+        // dispatching the stop. A late-arriving `requestAccess`
+        // completion or photo capture must not fire after the cover
+        // has dismissed.
+        onAuthorizationChanged = nil
+        onSessionStateChanged?(.stopped)
+        onSessionStateChanged = nil
+        onCaptureFailed = nil
+        videoOutput.setSampleBufferDelegate(nil, queue: nil)
+        monitor?.cancel()
         sessionQueue.async { [weak self] in
             guard let self, self.session.isRunning else { return }
             self.session.stopRunning()
         }
+    }
+
+    deinit {
+        // Belt-and-suspenders cleanup if the VC is released without
+        // viewWillDisappear firing (e.g. SwiftUI re-renders the
+        // cameraCover under us). Drop the sample-buffer delegate so
+        // any in-flight `processSampleBuffer` Task sees a nil
+        // reference and bails. Don't touch session configuration from
+        // deinit — it expects sessionQueue isolation that we can't
+        // guarantee on the deallocation thread.
+        videoOutput.setSampleBufferDelegate(nil, queue: nil)
+        captureDelegate = nil
+        qualityBridge = nil
     }
 
     override func viewDidLayoutSubviews() {
@@ -138,13 +188,18 @@ final class CameraCaptureViewController: UIViewController {
         switch status {
         case .authorized:
             onAuthorizationChanged?(.authorized)
+            onSessionStateChanged?(.configuring)
             configureSession()
         case .notDetermined:
             onAuthorizationChanged?(.notDetermined)
             AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
                 DispatchQueue.main.async {
-                    self?.onAuthorizationChanged?(granted ? .authorized : .denied)
-                    if granted { self?.configureSession() }
+                    guard let self else { return }
+                    self.onAuthorizationChanged?(granted ? .authorized : .denied)
+                    if granted {
+                        self.onSessionStateChanged?(.configuring)
+                        self.configureSession()
+                    }
                 }
             }
         case .denied, .restricted:
@@ -182,6 +237,7 @@ final class CameraCaptureViewController: UIViewController {
                 self.session.commitConfiguration()
                 DispatchQueue.main.async { [weak self] in
                     self?.onAuthorizationChanged?(.notAvailable)
+                    self?.onSessionStateChanged?(.failed("No usable camera device"))
                 }
                 return
             }
@@ -220,14 +276,26 @@ final class CameraCaptureViewController: UIViewController {
     // MARK: - Capture
 
     /// Called by the SwiftUI layer when the shutter button is tapped.
-    /// Must be invoked on the main thread.
+    /// Must be invoked on the main thread. Generates a medium-impact
+    /// haptic synchronously on entry so the user gets immediate
+    /// confirmation that the tap registered, even before AVFoundation
+    /// returns the photo. Errors are propagated through
+    /// `onCaptureFailed` so the cover can surface a banner — silently
+    /// swallowing them (as the pre-build-6 code did) is the single
+    /// most common cause of "the shutter didn't work" reports.
     func capturePhoto() {
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         let settings = AVCapturePhotoSettings()
         settings.isHighResolutionPhotoEnabled = true
-        let delegate = PhotoCaptureDelegate { [weak self] image in
+        let delegate = PhotoCaptureDelegate { [weak self] result in
             DispatchQueue.main.async {
-                guard let self, let image else { return }
-                self.onPhotoCaptured?(image)
+                guard let self else { return }
+                switch result {
+                case .success(let image):
+                    self.onPhotoCaptured?(image)
+                case .failure(let error):
+                    self.onCaptureFailed?(error.localizedDescription)
+                }
             }
         }
         captureDelegate = delegate
@@ -245,9 +313,9 @@ private final class PhotoCaptureDelegate: NSObject,
     AVCapturePhotoCaptureDelegate,
     @unchecked Sendable
 {
-    private let completion: (UIImage?) -> Void
+    private let completion: (Result<UIImage, Error>) -> Void
 
-    init(completion: @escaping (UIImage?) -> Void) {
+    init(completion: @escaping (Result<UIImage, Error>) -> Void) {
         self.completion = completion
         super.init()
     }
@@ -257,16 +325,46 @@ private final class PhotoCaptureDelegate: NSObject,
         didFinishProcessingPhoto photo: AVCapturePhoto,
         error: Error?
     ) {
-        if error != nil {
-            completion(nil)
+        if let error {
+            completion(.failure(error))
             return
         }
-        guard let data = photo.fileDataRepresentation(),
-              let image = UIImage(data: data)
-        else {
-            completion(nil)
+        // Build 29 — downsample at the source rather than letting
+        // UIImage(data:) decode the full 48 MP capture into memory.
+        // The Build 26 fix downsampled AFTER the full image was
+        // already in memory; under high memory pressure (sim or
+        // older device) that brief window was enough to OOM-kill
+        // the process. Routing through CGImageSourceCreate-
+        // ThumbnailAtIndex means only the ~2048 px buffer ever
+        // exists. Falls back to the legacy UIImage(data:) path only
+        // if the lazy thumbnail extraction fails (unlikely — same
+        // ImageIO codec the system would use anyway).
+        guard let data = photo.fileDataRepresentation() else {
+            completion(.failure(PhotoCaptureError.invalidPhotoData))
             return
         }
-        completion(image)
+        if let image = ImageDownsampler.downsampled(from: data) {
+            completion(.success(image))
+            return
+        }
+        guard let image = UIImage(data: data) else {
+            completion(.failure(PhotoCaptureError.invalidPhotoData))
+            return
+        }
+        completion(.success(image))
+    }
+}
+
+/// Failure modes for `PhotoCaptureDelegate` distinct from AVFoundation
+/// errors — when the capture itself succeeds but we can't decode a
+/// usable `UIImage` from the bytes.
+private enum PhotoCaptureError: LocalizedError {
+    case invalidPhotoData
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidPhotoData:
+            return "Couldn't decode the captured photo."
+        }
     }
 }

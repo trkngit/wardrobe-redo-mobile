@@ -22,6 +22,10 @@ enum FeatureFlags {
         static let multiGarmentEnabled = "feature.multiGarment.enabled"
         static let attributeDetectionEnabled = "feature.attributeDetection.enabled"
         static let mlTelemetryEnabled = "feature.mlTelemetry.enabled"
+        // Build 6 — engine-feature kill switches
+        static let coverageAwareScoringEnabled = "feature.coverageAwareScoring.enabled"
+        static let noveltyBonusEnabled = "feature.noveltyBonus.enabled"
+        static let vibeSliderEnabled = "feature.vibeSlider.enabled"
     }
 
     // MARK: - Flags
@@ -93,6 +97,55 @@ enum FeatureFlags {
         }
     }
 
+    // MARK: - Build 6 kill switches
+
+    /// Master switch for the coverage-aware outfit-score aggregation
+    /// (Phase 3). When `false`, callers should fall back to the
+    /// pre-build-6 raw weighted sum `Σ wᵢ · sᵢ`. Default `true`;
+    /// flip off via the Developer menu if user feedback shows the
+    /// renormalized scores rank outfits worse than the legacy
+    /// formula. Reading this flag inside `OutfitScore.init` is a
+    /// follow-up — for now it documents the kill-switch intent.
+    static var isCoverageAwareScoringEnabled: Bool {
+        get {
+            if defaults.object(forKey: Key.coverageAwareScoringEnabled) == nil { return true }
+            return defaults.bool(forKey: Key.coverageAwareScoringEnabled)
+        }
+        set {
+            defaults.set(newValue, forKey: Key.coverageAwareScoringEnabled)
+            logger.info("coverageAwareScoring toggled -> \(newValue, privacy: .public)")
+        }
+    }
+
+    /// Gate for `VersatilityScorer`'s novel-combination bonus
+    /// (Phase 5.1). Default `true`. Disable if the novelty math
+    /// over-penalizes long-time users whose entire wardrobe has
+    /// been paired against itself.
+    static var isNoveltyBonusEnabled: Bool {
+        get {
+            if defaults.object(forKey: Key.noveltyBonusEnabled) == nil { return true }
+            return defaults.bool(forKey: Key.noveltyBonusEnabled)
+        }
+        set {
+            defaults.set(newValue, forKey: Key.noveltyBonusEnabled)
+            logger.info("noveltyBonus toggled -> \(newValue, privacy: .public)")
+        }
+    }
+
+    /// Gate for the Phase 6 vibe slider. When `false` the UI hides
+    /// the selector and the engine defaults every generation to
+    /// `.balanced`. Default `true`.
+    static var isVibeSliderEnabled: Bool {
+        get {
+            if defaults.object(forKey: Key.vibeSliderEnabled) == nil { return true }
+            return defaults.bool(forKey: Key.vibeSliderEnabled)
+        }
+        set {
+            defaults.set(newValue, forKey: Key.vibeSliderEnabled)
+            logger.info("vibeSlider toggled -> \(newValue, privacy: .public)")
+        }
+    }
+
     // MARK: - Test / Preview helpers
 
     /// Reset every flag to its compiled-in default. Used by tests so the
@@ -101,6 +154,9 @@ enum FeatureFlags {
         defaults.removeObject(forKey: Key.multiGarmentEnabled)
         defaults.removeObject(forKey: Key.attributeDetectionEnabled)
         defaults.removeObject(forKey: Key.mlTelemetryEnabled)
+        defaults.removeObject(forKey: Key.coverageAwareScoringEnabled)
+        defaults.removeObject(forKey: Key.noveltyBonusEnabled)
+        defaults.removeObject(forKey: Key.vibeSliderEnabled)
         logger.debug("all flags reset")
     }
 }

@@ -73,8 +73,12 @@ final class MockOutfitRepository: OutfitRepositoryProtocol {
     var fetchOutfitsByDateResult: Result<[Outfit], Error> = .success([])
     var fetchSlotsResult: Result<[UUID: [OutfitSlot]], Error> = .success([:])
     var fetchRecentItemIdsResult: Result<Set<UUID>, Error> = .success([])
+    var fetchRecentItemPairsResult: Result<Set<UnorderedItemPair>, Error> = .success([])
     var updateReactionError: Error?
     var markAsWornError: Error?
+    var incrementWearCountsError: Error?
+    var incrementWearCountsCallCount = 0
+    var lastIncrementWearCountIds: [UUID] = []
 
     var hasOutfitsForDateResult: Bool = false
     var deleteOutfitsError: Error?
@@ -83,6 +87,12 @@ final class MockOutfitRepository: OutfitRepositoryProtocol {
     var markAsWornCallCount = 0
     var hasOutfitsForDateCallCount = 0
     var deleteOutfitsCallCount = 0
+    /// Build 7 — call counters for the recent-item history fetches so
+    /// tests can verify the in-VM cache populates once and re-uses on
+    /// subsequent regens. The funnel re-fetches only when the VM
+    /// invalidates (after `toggleWorn` or `saveAsOutfit`).
+    var fetchRecentItemIdsCallCount = 0
+    var fetchRecentItemPairsCallCount = 0
     var lastReaction: String??
     var lastIsWorn: Bool?
     var lastOutfitId: UUID?
@@ -102,7 +112,19 @@ final class MockOutfitRepository: OutfitRepositoryProtocol {
     }
 
     func fetchRecentItemIds(userId: UUID, days: Int) async throws -> Set<UUID> {
+        fetchRecentItemIdsCallCount += 1
         return try fetchRecentItemIdsResult.get()
+    }
+
+    func fetchRecentItemPairs(userId: UUID, limit: Int) async throws -> Set<UnorderedItemPair> {
+        fetchRecentItemPairsCallCount += 1
+        return try fetchRecentItemPairsResult.get()
+    }
+
+    func incrementWearCounts(itemIds: [UUID]) async throws {
+        incrementWearCountsCallCount += 1
+        lastIncrementWearCountIds = itemIds
+        if let error = incrementWearCountsError { throw error }
     }
 
     func updateReaction(outfitId: UUID, reaction: String?) async throws {
@@ -263,7 +285,8 @@ final class MockClothingExtractionService: ClothingExtracting, @unchecked Sendab
             maskedImage: image,
             mask: nil,
             confidence: confidence,
-            method: method
+            method: method,
+            silhouetteArea: nil
         )
     }
 }

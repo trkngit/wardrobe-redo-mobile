@@ -59,7 +59,9 @@ final class OutfitGenerationService: @unchecked Sendable {
         items: [WardrobeItem],
         occasion: Occasion = .casual,
         recentItemIds: Set<UUID> = [],
-        seed: UInt64? = nil
+        recentItemPairs: Set<UnorderedItemPair> = [],
+        seed: UInt64? = nil,
+        vibe: VibeStop = .balanced
     ) async -> [OutfitCandidate] {
         let activeItems = items.filter { !$0.isArchived }
         guard activeItems.count >= 2 else { return [] }
@@ -70,7 +72,9 @@ final class OutfitGenerationService: @unchecked Sendable {
         let context = StyleEngineService.buildContext(
             occasion: occasion,
             wardrobeSize: activeItems.count,
-            recentItemIds: recentItemIds
+            recentItemIds: recentItemIds,
+            recentItemPairs: recentItemPairs,
+            vibe: vibe
         )
 
         // Over-select 3× so the post-loop item-set dedup has enough
@@ -227,7 +231,9 @@ final class OutfitGenerationService: @unchecked Sendable {
         heroItem: WardrobeItem,
         allItems: [WardrobeItem],
         occasion: Occasion = .casual,
-        recentItemIds: Set<UUID> = []
+        recentItemIds: Set<UUID> = [],
+        recentItemPairs: Set<UnorderedItemPair> = [],
+        vibe: VibeStop = .balanced
     ) async -> [OutfitCandidate] {
         let activeItems = allItems.filter { !$0.isArchived && $0.id != heroItem.id }
         guard !activeItems.isEmpty else { return [] }
@@ -238,7 +244,9 @@ final class OutfitGenerationService: @unchecked Sendable {
         let context = StyleEngineService.buildContext(
             occasion: occasion,
             wardrobeSize: allItems.count,
-            recentItemIds: recentItemIds
+            recentItemIds: recentItemIds,
+            recentItemPairs: recentItemPairs,
+            vibe: vibe
         )
 
         var results: [OutfitCandidate] = []

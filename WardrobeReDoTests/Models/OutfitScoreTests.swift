@@ -33,8 +33,15 @@ import Testing
     #expect(dimensions == Set(ScoringDimension.allCases))
 }
 
-@Test func outfitScoreWithEmptyBreakdownIsZero() {
+@Test func outfitScoreWithEmptyBreakdownReturnsNeutralFallback() {
+    // Build 6: coverage-aware aggregation. An empty breakdown has no
+    // covered dimensions, so the weighted-average denominator is 0 and
+    // we fall back to 0.5 (a neutral "no information" score) rather
+    // than 0.0. `isLowCoverage` is true because zero dimensions
+    // contributed real data — UI surfaces this as "Insufficient data".
     let score = OutfitScore(breakdown: [])
-    #expect(score.totalScore == 0.0)
+    #expect(score.totalScore == 0.5)
     #expect(score.breakdown.isEmpty)
+    #expect(score.coveredDimensionCount == 0)
+    #expect(score.isLowCoverage == true)
 }

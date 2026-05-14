@@ -26,6 +26,11 @@ struct ProcessedImage: Sendable {
     /// single-item `TapToSelectView`. `count >= 2` → present the
     /// `MultiGarmentGridView` and queue per-item details.
     let proposals: [MaskProposal]?
+    /// Build 6 Phase 8B — fraction of the source frame the
+    /// extracted mask covers, in [0, 1]. Sourced from
+    /// `ExtractionResult.silhouetteArea`. Nil when extraction was
+    /// skipped or failed outright.
+    let silhouetteArea: Double?
 
     init(
         originalData: Data,
@@ -34,7 +39,8 @@ struct ProcessedImage: Sendable {
         extractionConfidence: ExtractionConfidence?,
         extractionMethod: ExtractionMethod?,
         dominantColors: [ExtractedColor],
-        proposals: [MaskProposal]? = nil
+        proposals: [MaskProposal]? = nil,
+        silhouetteArea: Double? = nil
     ) {
         self.originalData = originalData
         self.thumbnailData = thumbnailData
@@ -43,6 +49,7 @@ struct ProcessedImage: Sendable {
         self.extractionMethod = extractionMethod
         self.dominantColors = dominantColors
         self.proposals = proposals
+        self.silhouetteArea = silhouetteArea
     }
 }
 
@@ -113,7 +120,8 @@ final class ImageService: ImageServiceProtocol {
             extractionConfidence: extraction.confidence,
             extractionMethod: extraction.method,
             dominantColors: colors,
-            proposals: proposals
+            proposals: proposals,
+            silhouetteArea: extraction.silhouetteArea
         )
     }
 
@@ -251,7 +259,13 @@ final class ImageService: ImageServiceProtocol {
             extractionConfidence: processed.extractionConfidence,
             extractionMethod: processed.extractionMethod,
             dominantColors: colors,
-            proposals: processed.proposals
+            proposals: processed.proposals,
+            // Build 6 Phase 8B — touchup edits typically refine mask
+            // edges, not silhouette mass. Carrying the previously
+            // computed value is "good enough" for v1; a future build
+            // can re-count alpha pixels on `editedMask` if engagement
+            // data shows touchup users substantially redrawing.
+            silhouetteArea: processed.silhouetteArea
         )
     }
 
@@ -287,11 +301,26 @@ final class ImageService: ImageServiceProtocol {
 // MARK: - PhotosPickerItem Helper
 
 extension ImageService {
+    /// Loads a `PhotosPickerItem` as a downsampled `UIImage`.
+    ///
+    /// Build 29 — was decoding the full image via `UIImage(data:)`,
+    /// which on modern phones (24–48 MP HEICs) holds 100+ MB in
+    /// memory before downstream processing even starts. The Build 26
+    /// camera-path downsample mirrored "what PhotosPicker does",
+    /// but the audit's assumption was wrong: `loadTransferable(
+    /// type: Data.self)` returns the FULL image data. Real-device
+    /// testing on TF32 showed library uploads OOM-crashing just like
+    /// the pre-fix camera path.
+    ///
+    /// Now routes through `ImageDownsampler.downsampled(from:)`,
+    /// which uses `CGImageSourceCreateThumbnailAtIndex` to read the
+    /// source lazily and emit a max-2048 px thumbnail without ever
+    /// decoding the original at full resolution. EXIF orientation
+    /// is applied so portrait photos render upright.
     func loadImage(from item: PhotosPickerItem) async -> UIImage? {
-        guard let data = try? await item.loadTransferable(type: Data.self),
-              let image = UIImage(data: data) else {
+        guard let data = try? await item.loadTransferable(type: Data.self) else {
             return nil
         }
-        return image
+        return ImageDownsampler.downsampled(from: data)
     }
 }

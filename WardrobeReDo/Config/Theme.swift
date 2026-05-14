@@ -15,6 +15,22 @@ enum Theme {
         static let destructive = "Destructive"
         static let muted = "Muted"
         static let border = "Border"
+
+        // Build 28 — Editorial Heritage palette. The 100 sites that
+        // read `primary` now resolve to ink (`#1F2937`) instead of
+        // the old gold. These two tokens preserve the gold + sage
+        // accents for selective use:
+        //
+        //   • `gold` — premium-accent role on the score badge and
+        //     "Hero" label. The same warm gold we used to apply to
+        //     every CTA, now reserved for moments that earn the
+        //     editorial pop.
+        //   • `accentSage` — micro-accent for future success / OK
+        //     surfaces (capture-good frame, "matched well" ticks).
+        //     Defined now so the next UI surface that needs it can
+        //     pull it without an asset roundtrip.
+        static let gold = "Gold"
+        static let accentSage = "AccentSage"
     }
 
     // MARK: - Typography
@@ -24,10 +40,17 @@ enum Theme {
         static let h1 = Font.custom("CormorantGaramond-SemiBold", size: 28, relativeTo: .title)
         static let h2 = Font.custom("CormorantGaramond-Medium", size: 22, relativeTo: .title2)
         static let h3 = Font.custom("CormorantGaramond-Medium", size: 18, relativeTo: .title3)
-        static let body = Font.system(size: 16, weight: .regular)
-        static let bodySmall = Font.system(size: 14, weight: .regular)
-        static let caption = Font.system(size: 12, weight: .regular)
-        static let overline = Font.system(size: 11, weight: .medium)
+        // Build 21 — `.system(size:)` does NOT respect Dynamic Type.
+        // Switching to `.system(_:weight:)` with semantic styles maps
+        // our visual hierarchy to the iOS scale so users with Larger
+        // Accessibility Sizes see proportionally bigger body / caption
+        // text. The default body size at default Dynamic Type setting
+        // is 17pt — close enough to our prior 16pt that no card layout
+        // changes are needed.
+        static let body = Font.system(.body, weight: .regular)
+        static let bodySmall = Font.system(.subheadline, weight: .regular)
+        static let caption = Font.system(.caption, weight: .regular)
+        static let overline = Font.system(.caption2, weight: .medium)
     }
 
     // MARK: - Spacing (4pt base unit)

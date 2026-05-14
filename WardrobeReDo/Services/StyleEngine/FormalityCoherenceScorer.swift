@@ -8,16 +8,37 @@ struct FormalityCoherenceScorer: OutfitScorer {
 
     func score(items: [WardrobeItem], archetype: StyleArchetype, rule: StyleRule, context: ScoringContext) -> DimensionScore {
         guard !items.isEmpty else {
-            return DimensionScore(dimension: dimension, value: 0.5, reasoning: "No items to evaluate")
+            return DimensionScore(
+                dimension: dimension,
+                value: 0.5,
+                coverage: 0.0,
+                reasoning: "No items to evaluate"
+            )
         }
 
         var totalScore = 0.0
         var reasons: [String] = []
 
-        // 1. Compute effective formality for each item
-        let formalities = items.compactMap { effectiveFormality(for: $0) }
+        // 1. Compute effective formality for each item. Each item
+        // returns both a value and a coverage fraction tracking how
+        // many of the four declared inputs actually fired. We
+        // average the per-item coverage to get the dimension-level
+        // coverage so an outfit of well-tagged items scores with
+        // higher confidence than one assembled from minimal-data
+        // items.
+        let perItem = items.compactMap { effectiveFormality(for: $0) }
+        let formalities = perItem.map(\.value)
+        let perItemCoverage = perItem.map(\.coverage)
+        let dimensionCoverage = perItemCoverage.isEmpty
+            ? 0.0
+            : perItemCoverage.reduce(0.0, +) / Double(perItemCoverage.count)
         guard formalities.count >= 2 else {
-            return DimensionScore(dimension: dimension, value: 0.7, reasoning: "Single item — formality is self-coherent")
+            return DimensionScore(
+                dimension: dimension,
+                value: 0.7,
+                coverage: dimensionCoverage,
+                reasoning: "Single item — formality is self-coherent"
+            )
         }
 
         // 2. Formality spread (how close are items to each other?)
@@ -68,28 +89,122 @@ struct FormalityCoherenceScorer: OutfitScorer {
         return DimensionScore(
             dimension: dimension,
             value: min(1.0, max(0.0, totalScore)),
+            coverage: dimensionCoverage,
             reasoning: reasons.joined(separator: ". ")
         )
     }
 
-    // MARK: - Effective Formality
+    // MARK: - Effective Formality (build 6 — 4 inputs)
+    //
+    // ENGINE.md has always claimed formality is derived from
+    // "color brightness, texture smoothness, pattern, and
+    // structure." Before build 6, the implementation used texture
+    // smoothness only. The 4-input formula below restores the
+    // documented behaviour using proxies we can compute from
+    // existing fields:
+    //
+    //   • Texture smoothness (weight 0.50). Existing.
+    //   • Color brightness (weight 0.20). Mean lightness of
+    //     `dominantColors`; darker → more formal. Inverse so high
+    //     lightness *reduces* the delta.
+    //   • Pattern proxy (weight 0.15). If the item has ≥3 distinct
+    //     dominant colors we treat it as patterned/multicolor,
+    //     which reduces formality by a small constant.
+    //   • Structure (weight 0.15). Derived from `fitAttribute`:
+    //     structured > slim/regular > relaxed > oversized.
+    //
+    // Per-item coverage is reported back to the dimension as the
+    // share of components that actually contributed — so a fully-
+    // tagged item gives coverage = 1.0, a category-only item
+    // (no texture, no fit, no colors) gives coverage = 0.15
+    // (pattern proxy is always inferable from `dominantColors.count`,
+    // even if the array is empty).
 
-    /// Computes formality from components if available, else estimates from texture/category.
-    private func effectiveFormality(for item: WardrobeItem) -> Double? {
+    /// Computes effective formality + a coverage fraction in [0,1]
+    /// for a single item. Returns nil only when the item itself
+    /// lacks a category (which can't happen in practice — category
+    /// is NOT NULL — but the optional return keeps the call site
+    /// honest).
+    fileprivate func effectiveFormality(for item: WardrobeItem) -> (value: Double, coverage: Double)? {
+        // If we have a precomputed formality, trust it — coverage
+        // = 1.0 because some upstream layer did the full
+        // multi-input computation.
         if let computed = item.formalityComputed {
-            return computed
+            return (computed, 1.0)
         }
 
-        // Estimate from category and texture
-        var base: Double = categoryFormality(item.category)
+        let categoryBase = categoryFormality(item.category)
 
+        // Component 1 — texture smoothness (weight 0.50).
+        let textureDelta: Double
+        let textureCov: Double
         if let texture = item.texture {
-            // Smoothness 0-10, map to formality adjustment
-            let smoothnessBoost = (texture.formalitySmoothness - 5.0) * 0.03
-            base += smoothnessBoost
+            textureDelta = 0.50 * (Double(texture.formalitySmoothness) - 5.0) * 0.03
+            textureCov = 1.0
+        } else {
+            textureDelta = 0
+            textureCov = 0
         }
 
-        return min(1.0, max(0.0, base))
+        // Component 2 — color brightness (weight 0.20). Average
+        // lightness across the dominant-color palette; darker
+        // reads more formal.
+        let brightnessDelta: Double
+        let brightnessCov: Double
+        if !item.dominantColors.isEmpty {
+            let avgLightness = item.dominantColors
+                .map(\.lightness)
+                .reduce(0.0, +) / Double(item.dominantColors.count)
+            // Lightness in [0,1]. Centered at 0.5; values closer to
+            // 0 push formality up by up to 0.20 × 0.5 × 0.4 = 0.04.
+            brightnessDelta = 0.20 * (0.5 - avgLightness) * 0.4
+            brightnessCov = 1.0
+        } else {
+            brightnessDelta = 0
+            brightnessCov = 0
+        }
+
+        // Component 3 — pattern proxy (weight 0.15). ≥3 dominant
+        // color clusters → likely patterned → reduce formality
+        // slightly. Always covered: `dominantColors.count` is
+        // always defined (the array may be empty, which we treat
+        // as "solid color, no pattern").
+        let isPatterned = item.dominantColors.count >= 3
+        let patternDelta = isPatterned ? -0.15 * 0.10 : 0.0
+        let patternCov = 1.0
+
+        // Component 4 — structure (weight 0.15). Map fitAttribute
+        // to a [-0.10, +0.10] structure score; missing fit drops
+        // the component from coverage.
+        let structureDelta: Double
+        let structureCov: Double
+        if let fit = item.fitAttribute {
+            let s = structureScore(for: fit)
+            structureDelta = 0.15 * s
+            structureCov = 1.0
+        } else {
+            structureDelta = 0
+            structureCov = 0
+        }
+
+        let value = min(1.0, max(0.0,
+            categoryBase + textureDelta + brightnessDelta + patternDelta + structureDelta
+        ))
+        let coverage = 0.50 * textureCov
+            + 0.20 * brightnessCov
+            + 0.15 * patternCov
+            + 0.15 * structureCov
+        return (value, coverage)
+    }
+
+    private func structureScore(for fit: FitAttribute) -> Double {
+        switch fit {
+        case .structured: 0.10
+        case .slim, .regular: 0.05
+        case .relaxed: -0.05
+        case .oversized: -0.10
+        case .cropped: 0.0
+        }
     }
 
     private func categoryFormality(_ category: ClothingCategory) -> Double {

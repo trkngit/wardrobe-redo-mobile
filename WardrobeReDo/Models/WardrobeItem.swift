@@ -52,6 +52,18 @@ struct WardrobeItem: Codable, Identifiable, Sendable {
     /// where no bbox was recorded — the detail view falls back to a
     /// plain image render in that case.
     var boundingBox: BoundingBoxCodable?
+
+    /// Build 6 Phase 8B — fraction of the source photo frame
+    /// covered by this item's extracted mask, in [0, 1]. Set at
+    /// extraction time by `VisionForegroundExtractor` /
+    /// `SAM2Extractor`. Nil for rows uploaded before migration
+    /// 00016 or when extraction failed outright (no mask to
+    /// measure). `ColorHarmonyScorer` modulates the
+    /// category-default silhouette weight by this value when
+    /// present; falls back to the category default alone when
+    /// nil (Phase 8A behaviour).
+    var silhouetteArea: Double?
+
     let createdAt: Date
     var updatedAt: Date
 
@@ -77,6 +89,7 @@ struct WardrobeItem: Codable, Identifiable, Sendable {
         case isArchived = "is_archived"
         case detectedAttributes = "detected_attributes"
         case boundingBox = "bounding_box"
+        case silhouetteArea = "silhouette_area"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
@@ -105,6 +118,7 @@ struct WardrobeItem: Codable, Identifiable, Sendable {
         isArchived: Bool = false,
         detectedAttributes: [String: String] = [:],
         boundingBox: BoundingBoxCodable? = nil,
+        silhouetteArea: Double? = nil,
         createdAt: Date,
         updatedAt: Date
     ) {
@@ -131,6 +145,7 @@ struct WardrobeItem: Codable, Identifiable, Sendable {
         self.isArchived = isArchived
         self.detectedAttributes = detectedAttributes
         self.boundingBox = boundingBox
+        self.silhouetteArea = silhouetteArea
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -166,6 +181,10 @@ struct WardrobeItem: Codable, Identifiable, Sendable {
         // where the column is null, and for single-item captures where
         // no bbox was recorded.
         boundingBox = try c.decodeIfPresent(BoundingBoxCodable.self, forKey: .boundingBox)
+        // Nil for rows predating migration 00016, for legacy rows
+        // where the column is null, and for items where extraction
+        // failed (no mask to measure).
+        silhouetteArea = try c.decodeIfPresent(Double.self, forKey: .silhouetteArea)
         createdAt = try c.decode(Date.self, forKey: .createdAt)
         updatedAt = try c.decode(Date.self, forKey: .updatedAt)
     }

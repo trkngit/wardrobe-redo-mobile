@@ -49,21 +49,23 @@ struct MaskProposal: Identifiable, Hashable, @unchecked Sendable {
     /// `ClothingSubcategory.fromFashionpediaClass`.
     let predictedSubcategory: ClothingSubcategory?
 
-    /// Texture prediction from the attribute classifier. **Nil in v1**
-    /// — Fashionpedia v2 doesn't carry main-fabric-type attributes, so
-    /// Option C of the auto-attribute plan ships fit-only and leaves
-    /// texture as user-input. v1.1 revisits with a richer dataset
-    /// (Option B, DeepFashion-backed training). See
-    /// `docs/plans/2026-04-19-auto-attribute-detection/ATTRIBUTE_TAXONOMY.md`
-    /// § Section 0. Rely on `predictedTextureConfidence == 0.0` as the
-    /// "no prediction" sentinel rather than optional-chaining.
+    /// Texture for the proposal. Populated by
+    /// `AttributeRulesEngine.deriveTexture` (deterministic
+    /// subcategory→texture lookup, e.g. jeans → denim, sweater →
+    /// knit). **Build 6** retired the parallel ML inference path —
+    /// Fashionpedia v2 carried no main-fabric-type attributes so the
+    /// head emitted nil in production. Nil here means neither the
+    /// rules table nor a category-default lookup committed to a
+    /// texture; the user picks from `ItemFormView`.
     let predictedTexture: TextureType?
 
-    /// Softmaxed confidence of the texture prediction in [0, 1].
+    /// Confidence in [0, 1]. Rules-derived textures stamp a 0.85
+    /// sentinel (see `AttributeRulesEngine.rulesTextureConfidence`)
+    /// so they pass the 0.80 prefill gate while staying tagged in
+    /// telemetry; `0.0` means no rules-table match.
     let predictedTextureConfidence: Float
 
-    /// Fit prediction from the attribute classifier. Same lifecycle as
-    /// `predictedTexture`.
+    /// Fit prediction from the attribute classifier.
     let predictedFit: FitAttribute?
 
     /// Softmaxed confidence of the fit prediction in [0, 1].

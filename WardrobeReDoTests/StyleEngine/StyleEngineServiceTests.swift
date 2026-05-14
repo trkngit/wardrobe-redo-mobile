@@ -36,10 +36,19 @@ import Testing
 
     let result = engine.scoreOutfit(items: items, archetype: archetype, rule: rule, context: context)
 
-    // Verify weighted total matches sum of (value * weight)
-    let manualTotal = result.breakdown.reduce(0.0) { sum, dim in
-        sum + dim.value * dim.dimension.weight
+    // Build 6 — coverage-aware weighted average. Manual calculation
+    // mirrors `OutfitScore.init(breakdown:)`: each covered
+    // dimension contributes (value × weight × coverage) to the
+    // numerator and (weight × coverage) to the denominator;
+    // zero-coverage dimensions are excluded entirely.
+    let covered = result.breakdown.filter { $0.coverage > 0 }
+    let weightedSum = covered.reduce(0.0) { sum, dim in
+        sum + dim.value * dim.dimension.weight * dim.coverage
     }
+    let weightDenom = covered.reduce(0.0) { sum, dim in
+        sum + dim.dimension.weight * dim.coverage
+    }
+    let manualTotal = weightDenom > 0 ? weightedSum / weightDenom : 0.5
     #expect(abs(result.totalScore - manualTotal) < 0.001)
 }
 

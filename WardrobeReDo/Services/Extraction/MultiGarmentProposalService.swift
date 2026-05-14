@@ -1192,22 +1192,19 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
             ?? .tshirt
 
         // Texture: prefer the ML prediction when present. When the
-        // classifier didn't predict (texture head still dormant in v1
-        // — Fashionpedia v2 lacks main-fabric-type attributes), fall
-        // back to the deterministic subcategory→texture rule (jeans →
-        // denim, sweater → knit, …). Rules-derived textures stamp a
-        // 0.85 confidence sentinel — just above the 0.80 prefill gate
-        // in `AttributePrefill`, so they pass the gate while remaining
-        // distinguishable from any future ML score in the
-        // `detected_attributes` JSONB telemetry.
+        // Build 6: texture is exclusively rules-derived. The
+        // deterministic subcategory→texture lookup (jeans → denim,
+        // sweater → knit, …) is the only auto-population path; ML
+        // inference for texture was retired (`AttributePrediction`
+        // no longer carries a texture field). Rules-derived textures
+        // stamp a 0.85 confidence sentinel — just above the 0.80
+        // prefill gate in `AttributePrefill` — so they pass the gate
+        // while staying distinguishable from user-confirmed values in
+        // the `detected_attributes` JSONB telemetry.
         let resolvedTexture: TextureType?
         let resolvedTextureConfidence: Float
         let textureSource: String
-        if let mlTexture = prediction.texture {
-            resolvedTexture = mlTexture
-            resolvedTextureConfidence = prediction.textureConfidence
-            textureSource = "prediction"
-        } else if let rulesTexture = AttributeRulesEngine.deriveTexture(
+        if let rulesTexture = AttributeRulesEngine.deriveTexture(
             category: category, subcategory: subcategory
         ) {
             resolvedTexture = rulesTexture

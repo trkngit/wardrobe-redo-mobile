@@ -468,7 +468,8 @@ private func makeProcessedImage(
         maskedImage: makePixelImage(color: .systemGreen),
         mask: nil,
         confidence: .medium,
-        method: .sam2Manual
+        method: .sam2Manual,
+        silhouetteArea: nil
     )
     await vm.onTapToSelectDone(result)
 

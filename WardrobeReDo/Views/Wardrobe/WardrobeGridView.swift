@@ -32,9 +32,19 @@ struct WardrobeGridView: View {
             } else {
                 ScrollView {
                     VStack(spacing: Theme.Spacing.md) {
+                        // Build 9 — search bar above the category
+                        // chips. Substring match across the visible
+                        // strings on each card. Sits above the chips
+                        // so the user can think "filter by category
+                        // OR type a name" — both narrow the same list.
+                        searchBar
                         categoryFilters
                         itemCount
-                        sessionList
+                        if viewModel.filteredItems.isEmpty {
+                            searchEmptyState
+                        } else {
+                            sessionList
+                        }
                     }
                     .padding(.horizontal, Theme.Spacing.md)
                     .padding(.top, Theme.Spacing.sm)
@@ -42,6 +52,14 @@ struct WardrobeGridView: View {
                 }
                 .refreshable {
                     guard let userId = appState.currentUser?.id else { return }
+                    // Build 25 — confirmation haptic when the user
+                    // commits to the pull-to-refresh gesture.
+                    // Matches the cadence the Outfits + Match tabs
+                    // already have from their picker-change paths
+                    // (build 8) and gives the wardrobe the same
+                    // tactile feedback iOS Mail / Notes already
+                    // provide on swipe-down refresh.
+                    HapticManager.medium()
                     await viewModel.loadItems(userId: userId)
                     await loadThumbnails()
                 }
@@ -57,6 +75,10 @@ struct WardrobeGridView: View {
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(Color(Theme.Colors.primary))
                 }
+                // Build 21 — icon-only button needs an explicit label
+                // for VoiceOver, otherwise it reads as "plus, button"
+                // with no indication of what it does.
+                .accessibilityLabel("Add Item")
             }
         }
         .sheet(isPresented: $viewModel.showAddItem) {
@@ -77,6 +99,17 @@ struct WardrobeGridView: View {
             await viewModel.loadItems(userId: userId)
             await loadThumbnails()
         }
+        // Build 8 — honor cross-tab deep-link from the Outfits /
+        // Match failure CTAs. Clear the flag immediately so a
+        // later tab switch doesn't re-present the sheet
+        // unexpectedly. Runs in `onAppear` (vs `task`) because
+        // tab switches don't recreate the view's task.
+        .onAppear {
+            if appState.pendingAddItem {
+                appState.pendingAddItem = false
+                viewModel.showAddItem = true
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .wardrobeDidChange)) { _ in
             guard let userId = appState.currentUser?.id else { return }
             Task {
@@ -91,18 +124,91 @@ struct WardrobeGridView: View {
         }
     }
 
+    // MARK: - Search Bar (build 9)
+
+    /// Build 9 — free-text wardrobe filter. Matches on subcategory
+    /// name ("Sneakers"), category name ("Shoe"), and texture
+    /// ("Denim"). Uses a `@Bindable` shortcut on the VM so the
+    /// TextField writes directly to `searchQuery`, which already
+    /// triggers `recomputeSessions()` via its `didSet`.
+    private var searchBar: some View {
+        @Bindable var vm = viewModel
+        return HStack(spacing: Theme.Spacing.sm) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(Color(Theme.Colors.textSecondary))
+
+            TextField("Search wardrobe", text: $vm.searchQuery)
+                .font(Theme.Fonts.body)
+                .foregroundStyle(Color(Theme.Colors.textPrimary))
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+
+            if !viewModel.searchQuery.isEmpty {
+                Button {
+                    HapticManager.light()
+                    viewModel.searchQuery = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(Color(Theme.Colors.textSecondary))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Clear search")
+            }
+        }
+        .padding(.horizontal, Theme.Spacing.md)
+        .padding(.vertical, Theme.Spacing.sm)
+        .background(Color(Theme.Colors.surface))
+        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.chip))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.chip)
+                .stroke(Color(Theme.Colors.border), lineWidth: 1)
+        )
+    }
+
+    /// Empty state shown when a search / category combination
+    /// returns zero items. Stays in-flow with the search bar
+    /// above so the user can keep typing or clear the query
+    /// without losing context.
+    private var searchEmptyState: some View {
+        VStack(spacing: Theme.Spacing.sm) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 32, weight: .ultraLight))
+                .foregroundStyle(Color(Theme.Colors.muted))
+                .padding(.top, Theme.Spacing.xl)
+
+            Text("No items match your search")
+                .font(Theme.Fonts.bodySmall)
+                .foregroundStyle(Color(Theme.Colors.textSecondary))
+
+            if !viewModel.searchQuery.isEmpty {
+                Button("Clear search") {
+                    HapticManager.light()
+                    viewModel.searchQuery = ""
+                }
+                .font(Theme.Fonts.caption)
+                .foregroundStyle(Color(Theme.Colors.primary))
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Theme.Spacing.lg)
+    }
+
     // MARK: - Category Filters
 
     private var categoryFilters: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Theme.Spacing.sm) {
-                filterChip("All", isSelected: viewModel.selectedCategory == nil) {
+                // Build 17 — localized "All" pill + each category.
+                filterChip(LocalizedStringResource("All"), isSelected: viewModel.selectedCategory == nil) {
                     viewModel.selectCategory(nil)
                 }
 
                 ForEach(ClothingCategory.allCases, id: \.self) { category in
                     filterChip(
-                        category.displayName,
+                        category.localizedName,
                         icon: category.iconName,
                         isSelected: viewModel.selectedCategory == category
                     ) {
@@ -114,7 +220,7 @@ struct WardrobeGridView: View {
     }
 
     private func filterChip(
-        _ title: String,
+        _ title: LocalizedStringResource,
         icon: String? = nil,
         isSelected: Bool,
         action: @escaping () -> Void
@@ -142,13 +248,74 @@ struct WardrobeGridView: View {
         .animation(Theme.Animation.spring, value: isSelected)
     }
 
-    // MARK: - Item Count
+    // MARK: - Item Count + sort menu (build 11)
 
+    /// Row showing the filtered item count on the left and a sort
+    /// menu on the right. Pre-Build-11 this was just text; the
+    /// menu lives here because it lines up visually with the count
+    /// the user is staring at — "X items, sorted by Y" reads as one
+    /// thought.
     private var itemCount: some View {
-        Text(viewModel.itemCountText)
-            .font(Theme.Fonts.bodySmall)
-            .foregroundStyle(Color(Theme.Colors.textSecondary))
-            .frame(maxWidth: .infinity, alignment: .leading)
+        HStack {
+            Text(viewModel.itemCountText)
+                .font(Theme.Fonts.bodySmall)
+                .foregroundStyle(Color(Theme.Colors.textSecondary))
+
+            Spacer()
+
+            sortMenu
+        }
+    }
+
+    /// Build 11 — SwiftUI `Menu` picker for sort order. Uses the
+    /// system menu look (button + caret) and the enum's icon names
+    /// so each option carries a glyph that hints at the semantic
+    /// (clock = newest, flame = most worn, sparkles = least worn).
+    /// Selection mutates the VM and the `didSet` recomputes the
+    /// session list, which the grid re-renders.
+    private var sortMenu: some View {
+        Menu {
+            ForEach(SortOrder.allCases, id: \.self) { order in
+                Button {
+                    HapticManager.selection()
+                    viewModel.sortOrder = order
+                } label: {
+                    // Build 17 — localized sort option label.
+                    Label {
+                        Text(order.localizedName)
+                    } icon: {
+                        Image(systemName: order.iconName)
+                    }
+                    if viewModel.sortOrder == order {
+                        // SwiftUI menu items render a trailing
+                        // checkmark when the body contains both
+                        // a Label and a system-style indicator
+                        // implicit on iOS — keeping this Image
+                        // explicit makes the selection state
+                        // unmissable on older OS versions too.
+                        Image(systemName: "checkmark")
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: viewModel.sortOrder.iconName)
+                    .font(.system(size: 11, weight: .semibold))
+                // Build 17 — localized current-sort label.
+                Text(viewModel.sortOrder.localizedName)
+                    .font(Theme.Fonts.caption)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 9, weight: .semibold))
+            }
+            .foregroundStyle(Color(Theme.Colors.primary))
+            .padding(.horizontal, Theme.Spacing.sm)
+            .padding(.vertical, 4)
+            .background(Color(Theme.Colors.primaryMuted).opacity(0.6))
+            .clipShape(Capsule())
+        }
+        .accessibilityLabel("Sort by")
+        .accessibilityValue(viewModel.sortOrder.displayName)
+        .accessibilityHint("Change how wardrobe items are ordered")
     }
 
     // MARK: - Session List
@@ -191,6 +358,11 @@ struct WardrobeGridView: View {
                     .staggeredFadeIn(index: staggerStart + offset)
                 }
                 .buttonStyle(.plain)
+                // Build 13 — long-press for quick actions on a card
+                // without navigating into the detail view. Today
+                // that's just Archive; future iterations can add
+                // Edit / Share without re-plumbing.
+                .contextMenu { itemContextMenu(for: item) }
             }
         }
     }
@@ -259,7 +431,29 @@ struct WardrobeGridView: View {
                     .staggeredFadeIn(index: staggerIndex + itemIndex)
                 }
                 .buttonStyle(.plain)
+                // Build 13 — same context menu as the singles
+                // grid. Multi-garment session cards deserve the
+                // same shortcut.
+                .contextMenu { itemContextMenu(for: item) }
             }
+        }
+    }
+
+    // MARK: - Build 13 — item context menu
+
+    /// Long-press menu on a wardrobe card. Archive is the one
+    /// destructive action we surface from here — delete stays
+    /// gated behind the detail view's full confirmation flow.
+    /// The item.archive path on the VM removes the row from
+    /// `items` optimistically, so the card disappears as soon
+    /// as the user confirms the menu choice.
+    @ViewBuilder
+    private func itemContextMenu(for item: WardrobeItem) -> some View {
+        Button(role: .destructive) {
+            HapticManager.warning()
+            Task { await viewModel.archiveItem(item) }
+        } label: {
+            Label("Archive", systemImage: "archivebox")
         }
     }
 

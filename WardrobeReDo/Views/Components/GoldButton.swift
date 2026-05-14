@@ -1,11 +1,36 @@
 import SwiftUI
 
+/// Build 8 — extracted press-scale style so both GoldButton and
+/// GhostButton get the same tactile feedback. Scale 0.96 is the
+/// same number iOS system buttons use (~4 % shrink); the spring
+/// snap-back feels like a physical button release. Applied via
+/// `.buttonStyle(.pressScale)` on the underlying SwiftUI Button.
+private struct PressScaleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.7),
+                       value: configuration.isPressed)
+    }
+}
+
+extension ButtonStyle where Self == PressScaleButtonStyle {
+    static var pressScale: PressScaleButtonStyle { PressScaleButtonStyle() }
+}
+
 struct GoldButton: View {
-    let title: String
+    // Build 27 — was `String`, which silently picked SwiftUI's
+    // `Text(verbatim: String)` overload and bypassed the catalog
+    // entirely. Switching to `LocalizedStringResource` routes
+    // every literal call site through the catalog automatically
+    // (literals coerce via `ExpressibleByStringLiteral`), so
+    // existing `GoldButton("Surprise me")` calls render Turkish
+    // when the locale is `tr` instead of staying English forever.
+    let title: LocalizedStringResource
     let isLoading: Bool
     let action: () -> Void
 
-    init(_ title: String, isLoading: Bool = false, action: @escaping () -> Void) {
+    init(_ title: LocalizedStringResource, isLoading: Bool = false, action: @escaping () -> Void) {
         self.title = title
         self.isLoading = isLoading
         self.action = action
@@ -28,16 +53,23 @@ struct GoldButton: View {
             .background(Color(Theme.Colors.primary))
             .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.button))
         }
+        // Build 8 — press scale-down for tactile feedback. Bare
+        // Button (no style) on iOS draws no visible press state
+        // when wrapped in a custom label, so a Surprise-me tap
+        // felt unresponsive before the regen kicked in.
+        .buttonStyle(.pressScale)
         .disabled(isLoading)
         .opacity(isLoading ? 0.7 : 1)
     }
 }
 
 struct GhostButton: View {
-    let title: String
+    // Build 27 — same `String` → `LocalizedStringResource` fix as
+    // GoldButton. See that struct's comment for the rationale.
+    let title: LocalizedStringResource
     let action: () -> Void
 
-    init(_ title: String, action: @escaping () -> Void) {
+    init(_ title: LocalizedStringResource, action: @escaping () -> Void) {
         self.title = title
         self.action = action
     }
@@ -54,6 +86,10 @@ struct GhostButton: View {
                         .stroke(Color(Theme.Colors.primary), lineWidth: 1)
                 )
         }
+        // Build 8 — same press feedback as GoldButton for visual
+        // consistency. Useful for the secondary "Try a different
+        // item" CTA in the Match tab failure state.
+        .buttonStyle(.pressScale)
     }
 }
 
