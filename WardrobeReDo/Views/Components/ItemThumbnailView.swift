@@ -45,6 +45,13 @@ struct ItemThumbnailView: View {
     let url: URL?
     let size: Size
 
+    /// Build 31 — holds the alpha-trimmed copy of the loaded
+    /// thumbnail once `AlphaTrimmer` produces it. `nil` while the
+    /// trim is in flight OR for items where the original image had
+    /// no trimmable padding. The overlay below renders this if
+    /// present, falling through to the original KFImage otherwise.
+    @State private var trimmedImage: UIImage?
+
     /// Storage path the thumbnail prefers — the per-item cutout
     /// (`maskedImagePath`) when available, falling back to the framed
     /// source-photo thumbnail. Mirrors `ItemCardView.displayPath` so
@@ -65,6 +72,18 @@ struct ItemThumbnailView: View {
 
             KFImage(url)
                 .placeholder { placeholder }
+                // Build 31 — when the image lands, kick off an
+                // alpha-trim on a background task so the cutout's
+                // tight non-transparent bounds become the visual
+                // bbox. See `AlphaTrimmer` for why: items with loose
+                // masks previously looked ~50% smaller than items
+                // with tight masks. The trimmed result lands in the
+                // cache and the overlay below picks it up. While the
+                // trim is in flight we render the original — that's
+                // ~5ms on A15+, only on first paint per URL.
+                .onSuccess { result in
+                    triggerTrim(for: result.image)
+                }
                 .resizable()
                 // `scaledToFit` (not `.scaledToFill`) is the load-bearing
                 // change in PR #27: the cutout sits centred on the white
@@ -73,9 +92,67 @@ struct ItemThumbnailView: View {
                 // ~70% fill point industry mockups land on.
                 .scaledToFit()
                 .padding(thumbnailPadding)
+
+            // Build 31 — overlays the trimmed image once
+            // `triggerTrim` completes. Until then we render the
+            // original KFImage above (a short visual blip on first
+            // paint per URL, never on cache hits).
+            if let trimmed = trimmedImage {
+                Image(uiImage: trimmed)
+                    .resizable()
+                    .scaledToFit()
+                    .padding(thumbnailPadding)
+                    .background(cardBackground)
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+                    .transition(.opacity)
+            }
         }
         .aspectRatio(1, contentMode: .fit)
         .frame(width: size.dimension, height: size.dimension)
+        .animation(Theme.Animation.standard, value: trimmedImage)
+        .onChange(of: url) { _, _ in
+            // Reset when the URL changes (e.g. cell reuse in a
+            // LazyVGrid) — otherwise the previous item's trim
+            // briefly bleeds through before the new one lands.
+            trimmedImage = nil
+            if let url, let cached = AlphaTrimCache.shared.image(forKey: url.absoluteString) {
+                trimmedImage = cached
+            }
+        }
+        .onAppear {
+            // Prime from the cache on first appear so cache hits
+            // skip the KFImage round-trip entirely.
+            if let url, let cached = AlphaTrimCache.shared.image(forKey: url.absoluteString) {
+                trimmedImage = cached
+            }
+        }
+    }
+
+    /// Background-task trim. Reads the cache first so a cache hit
+    /// is a no-op. On miss, runs `AlphaTrimmer.trimmed(_:)` off the
+    /// main actor, stores it in the cache, and assigns
+    /// `trimmedImage` on the main actor to publish to SwiftUI.
+    /// `@State`'s setter is `nonmutating` so writing from a
+    /// captured closure works the same as writing from the body.
+    private func triggerTrim(for image: UIImage) {
+        guard let url else { return }
+        let key = url.absoluteString
+        if let cached = AlphaTrimCache.shared.image(forKey: key) {
+            trimmedImage = cached
+            return
+        }
+        Task.detached(priority: .userInitiated) {
+            guard let trimmed = AlphaTrimmer.trimmed(image) else { return }
+            AlphaTrimCache.shared.store(trimmed, forKey: key)
+            await MainActor.run {
+                // Ignore if the URL changed mid-flight — the
+                // `.onChange(of: url)` handler above already
+                // surfaced whatever the new URL's trim happens
+                // to be.
+                guard self.url?.absoluteString == key else { return }
+                self.trimmedImage = trimmed
+            }
+        }
     }
 
     /// Padding shrinks for the 44pt strip cell so the garment stays
