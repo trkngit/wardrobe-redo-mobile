@@ -4,6 +4,17 @@ import SwiftUI
 struct LoginView: View {
     @State private var viewModel = AuthViewModel()
 
+    /// Build 32 — Apple Sign In ships in two parts:
+    /// 1. **TF36 (this build)** — code wired, capability OFF.
+    ///    Button hidden so users don't see a non-functional control.
+    /// 2. **TF37** — after the user enables Sign In with Apple +
+    ///    App Groups on the App ID at developer.apple.com (see
+    ///    `docs/runbooks/apple-sign-in-setup.md`), this flag flips
+    ///    to `true`, the entitlements block in project.yml uncomments,
+    ///    and the button activates.
+    /// Single source of truth so the flip is one line.
+    private static let appleSignInAvailable = false
+
     var body: some View {
         ZStack {
             Color(Theme.Colors.background)
@@ -24,17 +35,20 @@ struct LoginView: View {
                     .padding(.top, 80)
                     .padding(.bottom, Theme.Spacing.xxl)
 
-                    // Build 32 — Apple Sign In is the primary path.
-                    // Tap the native button → iOS sheet → Face/Touch
-                    // ID → instant session. Bypasses email confirmation
-                    // entirely, which is the most common failure mode
-                    // for the email path. Sits above both sign-in and
-                    // sign-up forms because it covers both cases (Apple
-                    // creates the account on first use, signs in on
-                    // subsequent uses).
-                    appleSignInSection
-
-                    orDivider
+                    // Build 32 — Apple Sign In is the primary path
+                    // once the entitlement lands (see the flag at
+                    // the top of this file). Tap the native button →
+                    // iOS sheet → Face/Touch ID → instant session.
+                    // Bypasses email confirmation entirely, which is
+                    // the most common failure mode for the email
+                    // path. Sits above both sign-in and sign-up
+                    // forms because it covers both cases (Apple
+                    // creates the account on first use, signs in
+                    // on subsequent uses).
+                    if Self.appleSignInAvailable {
+                        appleSignInSection
+                        orDivider
+                    }
 
                     if viewModel.showSignUp {
                         signUpForm

@@ -65,13 +65,24 @@ targets:
         product: Sentry
       - sdk: AuthenticationServices.framework
       - target: WardrobeReDoWidget
-    entitlements:
-      path: WardrobeReDo/WardrobeReDo.entitlements
-      properties:
-        com.apple.developer.applesignin:
-          - Default
-        com.apple.security.application-groups:
-          - group.com.digitalatelier.wardroberedo
+    # Build 32 — Sign In with Apple + App Groups entitlements are
+    # WIRED in the .entitlements file but NOT attached here yet.
+    # Enabling them on the project requires matching capabilities
+    # on the App ID at developer.apple.com:
+    #   * Sign In with Apple
+    #   * App Groups → group.com.digitalatelier.wardroberedo
+    # Once both are toggled on (see docs/runbooks/apple-sign-in-setup.md),
+    # uncomment the block below and bump CFBundleVersion to land
+    # the capability. Until then archives still build cleanly via
+    # automatic provisioning's "no entitlements file" fallback.
+    #
+    # entitlements:
+    #   path: WardrobeReDo/WardrobeReDo.entitlements
+    #   properties:
+    #     com.apple.developer.applesignin:
+    #       - Default
+    #     com.apple.security.application-groups:
+    #       - group.com.digitalatelier.wardroberedo
     info:
       path: WardrobeReDo/Info.plist
       properties:
