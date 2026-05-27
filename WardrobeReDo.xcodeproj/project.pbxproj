@@ -261,6 +261,7 @@
 		C8F82C2368604457EAC8E676 /* clean_bg_01.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 1CDB34DC849F094DBEABE2F6 /* clean_bg_01.jpg */; };
 		CA55E2DA88ED79C87FB225C5 /* cluttered_04.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 8AC5CFD39AE9C2A5288561F0 /* cluttered_04.jpg */; };
 		CB2CAC5E420DA6A2B0B5B563 /* WidgetDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C592BAD5B2ABC33292A5FD4C /* WidgetDataService.swift */; };
+		CC054AE8F0503D7840746813 /* AppleSignInCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6110B2A78910C4F2E204FF3C /* AppleSignInCoordinator.swift */; };
 		CCFDE2FC7EF34F21CB777A9D /* ClothingExtractionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99FD5C0ED7995AAE927B8E99 /* ClothingExtractionService.swift */; };
 		CE1318DB750121C0E6E1D00D /* clean_bg_02.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 48FE68206EDDD56ED1169A9E /* clean_bg_02.jpg */; };
 		CE296BE2B558752BA32CEFFC /* AddItemViewModelBatchProgressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A6BFD43D0F9135B6147AF9C /* AddItemViewModelBatchProgressTests.swift */; };
@@ -490,6 +491,7 @@
 		60476B2C5B7C794922058FC9 /* AutoAttributeE2ETests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoAttributeE2ETests.swift; sourceTree = "<group>"; };
 		60AE0B5951035C08C305DD2E /* MatchingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MatchingViewModel.swift; sourceTree = "<group>"; };
 		61022F84DE673666464888C5 /* on_person_01.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = on_person_01.jpg; sourceTree = "<group>"; };
+		6110B2A78910C4F2E204FF3C /* AppleSignInCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleSignInCoordinator.swift; sourceTree = "<group>"; };
 		61A23AF9FEF5ABC600B92EEF /* cluttered_01.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = cluttered_01.png; sourceTree = "<group>"; };
 		620A7A2BE704F24A054E2785 /* ClothingSubcategoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClothingSubcategoryTests.swift; sourceTree = "<group>"; };
 		6227E043096FCC04C8921342 /* WardrobeRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeRepository.swift; sourceTree = "<group>"; };
@@ -507,6 +509,7 @@
 		67EB615A4916E722BF973F75 /* OutfitViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitViewModelTests.swift; sourceTree = "<group>"; };
 		682C2BDB1176E39F68D0EE61 /* TimeoutRaceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeoutRaceTests.swift; sourceTree = "<group>"; };
 		68BBCC0EEF618425D0DF0599 /* on_person_10.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = on_person_10.png; sourceTree = "<group>"; };
+		68CC47DC1024C20AE03B494B /* WardrobeReDo.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WardrobeReDo.entitlements; sourceTree = "<group>"; };
 		699012CEBBBB7AEEE0FD05D0 /* LanguageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageManager.swift; sourceTree = "<group>"; };
 		6ABFAD415749D4A96C958D19 /* UploadQueueTestIsolation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadQueueTestIsolation.swift; sourceTree = "<group>"; };
 		6B6D377567EAE2466BD3D20C /* OrientationUtil.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrientationUtil.swift; sourceTree = "<group>"; };
@@ -781,6 +784,7 @@
 			children = (
 				063B6D8EB12F97EC8FB4C8E3 /* Info.plist */,
 				C8A29BD830D9D48C451DEFDC /* Secrets.plist */,
+				68CC47DC1024C20AE03B494B /* WardrobeReDo.entitlements */,
 				2979D8FF9DB8A1CB9FE264E0 /* App */,
 				D0B48BEC54A36144D21C7265 /* Config */,
 				C8BFE8B3FF293C60FCE46455 /* Extensions */,
@@ -1194,6 +1198,7 @@
 				BA55FBDF7E52F2F26303F71B /* SharpnessMetric.swift */,
 				C592BAD5B2ABC33292A5FD4C /* WidgetDataService.swift */,
 				11E55475317E16F608E5CC45 /* AttributeRules */,
+				D90BE10B64CD2C601A5273C3 /* Auth */,
 				1E631278AB1483FB2BC54860 /* Extraction */,
 				945523C6DA40C6E6CBB59B71 /* Logging */,
 				8BC8F30ACA44A022DA33E3DF /* Maintenance */,
@@ -1446,6 +1451,14 @@
 				2319F69BC9A3156EA5983DFF /* ground_truth */,
 			);
 			path = Extraction;
+			sourceTree = "<group>";
+		};
+		D90BE10B64CD2C601A5273C3 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				6110B2A78910C4F2E204FF3C /* AppleSignInCoordinator.swift */,
+			);
+			path = Auth;
 			sourceTree = "<group>";
 		};
 		DD3ED9B7C7EE7FDD795996D0 /* SeedData */ = {
@@ -1800,6 +1813,7 @@
 				4D61BBC3447F56943A406831 /* AnalyzingPopup.swift in Sources */,
 				7CA48C2BB6591A47130F10B2 /* AnimationModifiers.swift in Sources */,
 				481401688CA1B3731549F756 /* AppState.swift in Sources */,
+				CC054AE8F0503D7840746813 /* AppleSignInCoordinator.swift in Sources */,
 				38DAEC25AEB8D9BDB8E70B55 /* AttributeBackfillService.swift in Sources */,
 				6B3161B163AA4EF7EA448529 /* AttributeClassifier.mlpackage in Sources */,
 				1F430172E22478508E509B78 /* AttributeClassifierService.swift in Sources */,
@@ -2104,6 +2118,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = WardrobeReDo/WardrobeReDo.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = SCX8LHNYXZ;
@@ -2353,6 +2368,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = WardrobeReDo/WardrobeReDo.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = SCX8LHNYXZ;

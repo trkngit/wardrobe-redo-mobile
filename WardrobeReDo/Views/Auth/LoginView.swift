@@ -1,3 +1,4 @@
+import AuthenticationServices
 import SwiftUI
 
 struct LoginView: View {
@@ -23,6 +24,18 @@ struct LoginView: View {
                     .padding(.top, 80)
                     .padding(.bottom, Theme.Spacing.xxl)
 
+                    // Build 32 — Apple Sign In is the primary path.
+                    // Tap the native button → iOS sheet → Face/Touch
+                    // ID → instant session. Bypasses email confirmation
+                    // entirely, which is the most common failure mode
+                    // for the email path. Sits above both sign-in and
+                    // sign-up forms because it covers both cases (Apple
+                    // creates the account on first use, signs in on
+                    // subsequent uses).
+                    appleSignInSection
+
+                    orDivider
+
                     if viewModel.showSignUp {
                         signUpForm
                     } else {
@@ -34,6 +47,66 @@ struct LoginView: View {
             .scrollDismissesKeyboard(.interactively)
         }
         .animation(Theme.Animation.standard, value: viewModel.showSignUp)
+    }
+
+    // MARK: - Apple Sign In
+
+    private var appleSignInSection: some View {
+        VStack(spacing: Theme.Spacing.md) {
+            SignInWithAppleButton(
+                .signIn,
+                onRequest: { _ in
+                    // No-op: the AppleSignInCoordinator on the VM
+                    // owns the nonce + scope setup. The native
+                    // button still has to be present to render the
+                    // system-styled chrome; we just don't use its
+                    // request hook.
+                },
+                onCompletion: { _ in
+                    // Same: the coordinator owns the completion
+                    // handling. We use the button purely for its
+                    // visual treatment. Tap fires `signInWithApple`
+                    // which drives the coordinator's own request.
+                    Task { await viewModel.signInWithApple() }
+                }
+            )
+            .signInWithAppleButtonStyle(.black)
+            .frame(height: 48)
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.button))
+            // Eat the native button's own action so our `Task`
+            // path is the only one that fires. Without this iOS
+            // also kicks off its own (uncoordinated) request when
+            // the user taps.
+            .allowsHitTesting(false)
+            .overlay {
+                Button {
+                    Task { await viewModel.signInWithApple() }
+                } label: {
+                    Color.clear
+                }
+                .accessibilityLabel("Sign in with Apple")
+            }
+
+            if let error = viewModel.errorMessage, !viewModel.showSignUp {
+                errorBanner(error)
+            }
+        }
+        .padding(.bottom, Theme.Spacing.md)
+    }
+
+    private var orDivider: some View {
+        HStack(spacing: Theme.Spacing.md) {
+            Rectangle()
+                .fill(Color(Theme.Colors.border))
+                .frame(height: 1)
+            Text("or")
+                .font(Theme.Fonts.caption)
+                .foregroundStyle(Color(Theme.Colors.textSecondary))
+            Rectangle()
+                .fill(Color(Theme.Colors.border))
+                .frame(height: 1)
+        }
+        .padding(.bottom, Theme.Spacing.lg)
     }
 
     // MARK: - Sign In Form

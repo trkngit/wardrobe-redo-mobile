@@ -1,3 +1,4 @@
+import AuthenticationServices
 import Foundation
 import Observation
 import os
@@ -71,6 +72,12 @@ final class AuthViewModel {
     private let authService = AuthService()
     private let logger = Logger(subsystem: "com.wardroberedo", category: "Auth")
 
+    /// Build 32 — long-lived coordinator. The Apple Sign In sheet
+    /// needs the delegate + presentation context provider to be
+    /// retained for the lifetime of the modal; storing the
+    /// coordinator on the VM is the simplest way.
+    private let appleCoordinator = AppleSignInCoordinator()
+
     // MARK: - Actions
 
     func signIn() async {
@@ -125,6 +132,39 @@ final class AuthViewModel {
             errorMessage = mapError(error)
         }
 
+        isLoading = false
+    }
+
+    /// Build 32 — Apple Sign In entry point. Drives the native
+    /// iOS sheet via `AppleSignInCoordinator`, then forwards the
+    /// identity token + raw nonce to `AuthService.signInWithApple`,
+    /// which calls Supabase's `signInWithIdToken` to create or
+    /// link the user and return a session. The auth state listener
+    /// in `AppState` picks up the new session automatically — same
+    /// path as email sign in.
+    ///
+    /// User-cancellation (tapping outside the sheet) returns
+    /// `ASAuthorizationError.canceled`; we swallow that silently
+    /// instead of showing an "error" because cancelling is a
+    /// normal UX, not a failure.
+    func signInWithApple() async {
+        isLoading = true
+        errorMessage = nil
+        infoMessage = nil
+        do {
+            let credential = try await appleCoordinator.requestCredential()
+            _ = try await authService.signInWithApple(
+                idToken: credential.idToken,
+                nonce: credential.rawNonce
+            )
+            clearForm()
+        } catch let error as ASAuthorizationError where error.code == .canceled {
+            // User dismissed the sheet — no error UI, just reset.
+            logger.info("appleSignIn.cancelled")
+        } catch {
+            LogPrivacy.error(logger, category: "appleSignIn", reason: error)
+            errorMessage = mapError(error)
+        }
         isLoading = false
     }
 

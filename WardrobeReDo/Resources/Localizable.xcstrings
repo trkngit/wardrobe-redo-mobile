@@ -1281,6 +1281,14 @@
       "comment" : "Offline banner a11y label",
       "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Çevrimdışı. Ağ bağlantısı yok." } } }
     },
+    "Sign in with Apple" : {
+      "comment" : "Apple Sign In button a11y label on the login screen",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Apple ile giriş yap" } } }
+    },
+    "or" : {
+      "comment" : "Divider between Apple Sign In and the email form",
+      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "ya da" } } }
+    },
     "You're offline" : {
       "comment" : "Offline banner visible label",
       "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Çevrimdışısın" } } }

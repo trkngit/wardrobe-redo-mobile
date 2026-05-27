@@ -65,6 +65,13 @@ targets:
         product: Sentry
       - sdk: AuthenticationServices.framework
       - target: WardrobeReDoWidget
+    entitlements:
+      path: WardrobeReDo/WardrobeReDo.entitlements
+      properties:
+        com.apple.developer.applesignin:
+          - Default
+        com.apple.security.application-groups:
+          - group.com.digitalatelier.wardroberedo
     info:
       path: WardrobeReDo/Info.plist
       properties:
