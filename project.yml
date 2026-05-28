@@ -65,31 +65,29 @@ targets:
         product: Sentry
       - sdk: AuthenticationServices.framework
       - target: WardrobeReDoWidget
-    # Build 32 — Sign In with Apple + App Groups entitlements are
-    # WIRED in the .entitlements file but NOT attached here yet.
-    # Enabling them on the project requires matching capabilities
-    # on the App ID at developer.apple.com:
-    #   * Sign In with Apple
-    #   * App Groups → group.com.digitalatelier.wardroberedo
-    # Once both are toggled on (see docs/runbooks/apple-sign-in-setup.md),
-    # uncomment the block below and bump CFBundleVersion to land
-    # the capability. Until then archives still build cleanly via
-    # automatic provisioning's "no entitlements file" fallback.
-    #
-    # entitlements:
-    #   path: WardrobeReDo/WardrobeReDo.entitlements
-    #   properties:
-    #     com.apple.developer.applesignin:
-    #       - Default
-    #     com.apple.security.application-groups:
-    #       - group.com.digitalatelier.wardroberedo
+    # Build 37 — Sign In with Apple + App Groups capabilities are
+    # enabled on the App ID at developer.apple.com (Sign In with
+    # Apple + group.com.digitalatelier.wardroberedo), the Supabase
+    # Apple provider is configured with Client ID
+    # com.digitalatelier.wardroberedo, and the LoginView flag
+    # appleSignInAvailable was flipped to true. Attaching the
+    # entitlements file here was the last step needed for the
+    # button to actually authenticate. See
+    # docs/runbooks/apple-sign-in-setup.md for the dashboard config.
+    entitlements:
+      path: WardrobeReDo/WardrobeReDo.entitlements
+      properties:
+        com.apple.developer.applesignin:
+          - Default
+        com.apple.security.application-groups:
+          - group.com.digitalatelier.wardroberedo
     info:
       path: WardrobeReDo/Info.plist
       properties:
         CFBundleName: Wardrobe
         CFBundleDisplayName: Wardrobe
         CFBundleShortVersionString: "1.0.0"
-        CFBundleVersion: "36"
+        CFBundleVersion: "37"
         UILaunchScreen:
           UIColorName: ""
         UIAppFonts:
@@ -109,7 +107,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.digitalatelier.wardroberedo.widget
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "36"
+        CURRENT_PROJECT_VERSION: "37"
         SWIFT_VERSION: "6.0"
         TARGETED_DEVICE_FAMILY: "1"
         INFOPLIST_FILE: WardrobeReDoWidget/Info.plist

@@ -4,16 +4,18 @@ import SwiftUI
 struct LoginView: View {
     @State private var viewModel = AuthViewModel()
 
-    /// Build 32 — Apple Sign In ships in two parts:
-    /// 1. **TF36 (this build)** — code wired, capability OFF.
-    ///    Button hidden so users don't see a non-functional control.
-    /// 2. **TF37** — after the user enables Sign In with Apple +
-    ///    App Groups on the App ID at developer.apple.com (see
-    ///    `docs/runbooks/apple-sign-in-setup.md`), this flag flips
-    ///    to `true`, the entitlements block in project.yml uncomments,
-    ///    and the button activates.
-    /// Single source of truth so the flip is one line.
-    private static let appleSignInAvailable = false
+    /// Build 32–37 — Apple Sign In shipped in two parts:
+    /// 1. **TF36** — code wired, capability OFF, button hidden.
+    /// 2. **TF37 (this build)** — App ID capability enabled at
+    ///    developer.apple.com (Sign In with Apple + App Groups),
+    ///    Services ID + .p8 key registered, Supabase Apple
+    ///    provider configured with Team ID `SCX8LHNYXZ` and Key
+    ///    ID `D32Z7D4HNA` (see `docs/runbooks/apple-sign-in-setup.md`),
+    ///    entitlements block in project.yml uncommented, this
+    ///    flag flipped to `true`, button now active.
+    /// Kept as a one-line kill switch in case the provider has
+    /// to be disabled in a hurry without a full re-archive.
+    private static let appleSignInAvailable = true
 
     var body: some View {
         ZStack {
