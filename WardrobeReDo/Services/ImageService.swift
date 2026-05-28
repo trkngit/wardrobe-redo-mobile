@@ -53,6 +53,21 @@ struct ProcessedImage: Sendable {
     }
 }
 
+/// Build 41 — errors thrown explicitly by ImageService for cases the
+/// underlying Supabase / Vision / Core Image SDKs don't model with a
+/// useful type. Currently only models the per-file upload timeout
+/// (H3 mitigation); other failure modes still surface the SDK error.
+enum ImageServiceError: LocalizedError {
+    case uploadTimeout(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .uploadTimeout(let label):
+            return "Upload timed out for \(label)."
+        }
+    }
+}
+
 @MainActor
 final class ImageService: ImageServiceProtocol {
     private let supabase = SupabaseManager.shared.client
@@ -64,6 +79,21 @@ final class ImageService: ImageServiceProtocol {
     private let maxOriginalDimension: CGFloat = 1200
     private let thumbnailDimension: CGFloat = 400
     private let compressionQuality: CGFloat = 0.8
+
+    /// Build 41 (H3 mitigation) — per-file Supabase Storage upload
+    /// budget. The save-level 45 s timeout in `AddItemViewModel`
+    /// catches a stalled save overall, but a single hung file
+    /// (network blip on the largest payload) eats most of that
+    /// budget before the race fires. Wrapping each individual
+    /// `.upload(...)` in a 20 s per-file race makes the breadcrumb
+    /// chain ("upload.thumbnail.start" with no matching
+    /// "upload.thumbnail.end" in 20 s) point directly at the file
+    /// that hung, AND surfaces a faster, more actionable user-
+    /// visible failure. 20 s is comfortably above the 99th-
+    /// percentile happy path (< 2 s per file on LTE) and well under
+    /// the save-level 45 s ceiling so a single timeout still leaves
+    /// room for cleanup.
+    private let perFileUploadTimeoutSeconds: UInt64 = 20
 
     init(
         clothingExtractor: any ClothingExtracting = ClothingExtractionService(),
@@ -178,40 +208,37 @@ final class ImageService: ImageServiceProtocol {
         // Build 40 — per-file breadcrumbs around each Supabase upload.
         // Distinguishes a true crash (no `.end` log after `.start`) from
         // a silent hang (long gap between `.start` and `.end`) from a
-        // user-cancelled flow (no logs at all). The `path` is hashed
-        // to avoid leaking the userFolder/itemId pair into Console;
-        // size is fine to log in the clear since it's bounded info.
-        logger.info("upload.original.start bytes=\(processed.originalData.count, privacy: .public)")
-        try await supabase.storage
-            .from("wardrobe-images")
-            .upload(
-                imagePath,
-                data: processed.originalData,
-                options: FileOptions(contentType: "image/jpeg")
-            )
-        logger.info("upload.original.end ok=true")
-
-        logger.info("upload.thumbnail.start bytes=\(processed.thumbnailData.count, privacy: .public)")
-        try await supabase.storage
-            .from("wardrobe-images")
-            .upload(
-                thumbnailPath,
-                data: processed.thumbnailData,
-                options: FileOptions(contentType: "image/jpeg")
-            )
-        logger.info("upload.thumbnail.end ok=true")
+        // user-cancelled flow (no logs at all).
+        //
+        // Build 41 — each per-file upload now runs through
+        // `uploadWithTimeout` (defined below) so a single hung file
+        // surfaces as `upload.X.timeout` after 20 s instead of letting
+        // the save-level 45 s budget absorb it. The breadcrumb chain
+        // points directly at the offending file.
+        try await uploadWithTimeout(
+            label: "original",
+            bytes: processed.originalData.count,
+            path: imagePath,
+            data: processed.originalData,
+            contentType: "image/jpeg"
+        )
+        try await uploadWithTimeout(
+            label: "thumbnail",
+            bytes: processed.thumbnailData.count,
+            path: thumbnailPath,
+            data: processed.thumbnailData,
+            contentType: "image/jpeg"
+        )
 
         let uploadedMaskedPath: String?
         if let maskedData = processed.maskedData {
-            logger.info("upload.masked.start bytes=\(maskedData.count, privacy: .public)")
-            try await supabase.storage
-                .from("wardrobe-images")
-                .upload(
-                    maskedPath,
-                    data: maskedData,
-                    options: FileOptions(contentType: "image/png")
-                )
-            logger.info("upload.masked.end ok=true")
+            try await uploadWithTimeout(
+                label: "masked",
+                bytes: maskedData.count,
+                path: maskedPath,
+                data: maskedData,
+                contentType: "image/png"
+            )
             uploadedMaskedPath = maskedPath
         } else {
             uploadedMaskedPath = nil
@@ -228,15 +255,13 @@ final class ImageService: ImageServiceProtocol {
                 resolvedSourcePath = existing
             } else {
                 let sourcePath = "\(userFolder)/source/\(sourcePhotoId.uuidString.lowercased())/original.jpg"
-                logger.info("upload.source.start bytes=\(processed.originalData.count, privacy: .public)")
-                try await supabase.storage
-                    .from("wardrobe-images")
-                    .upload(
-                        sourcePath,
-                        data: processed.originalData,
-                        options: FileOptions(contentType: "image/jpeg")
-                    )
-                logger.info("upload.source.end ok=true")
+                try await uploadWithTimeout(
+                    label: "source",
+                    bytes: processed.originalData.count,
+                    path: sourcePath,
+                    data: processed.originalData,
+                    contentType: "image/jpeg"
+                )
                 resolvedSourcePath = sourcePath
             }
         } else {
@@ -244,6 +269,48 @@ final class ImageService: ImageServiceProtocol {
         }
 
         return (imagePath, thumbnailPath, uploadedMaskedPath, resolvedSourcePath)
+    }
+
+    /// Build 41 (H3 mitigation) — wrap a single Supabase Storage
+    /// upload in a `Task.sleep` race so we surface a clear timeout
+    /// per file rather than absorbing the silent hang into the
+    /// `save`-level 45 s budget. The `label` is the same string used
+    /// by the breadcrumb pair (`upload.original.start` /
+    /// `upload.original.end`); on timeout we emit
+    /// `upload.X.timeout` so a Console / Sentry breadcrumb scan
+    /// names the offending file directly.
+    ///
+    /// Throws `ImageServiceError.uploadTimeout(label)` on race-loss
+    /// so the caller's existing catch-and-cleanup path runs.
+    /// Throws whatever Supabase threw if the upload itself fails.
+    private func uploadWithTimeout(
+        label: StaticString,
+        bytes: Int,
+        path: String,
+        data: Data,
+        contentType: String
+    ) async throws {
+        logger.info("upload.\(label).start bytes=\(bytes, privacy: .public)")
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            group.addTask { [supabase] in
+                try await supabase.storage
+                    .from("wardrobe-images")
+                    .upload(
+                        path,
+                        data: data,
+                        options: FileOptions(contentType: contentType)
+                    )
+            }
+            group.addTask { [perFileUploadTimeoutSeconds] in
+                try await Task.sleep(nanoseconds: perFileUploadTimeoutSeconds * 1_000_000_000)
+                throw ImageServiceError.uploadTimeout(String(describing: label))
+            }
+            // First-to-finish wins; cancel the other (sleep + the
+            // upload's URLSession task both honour cancellation).
+            try await group.next()
+            group.cancelAll()
+        }
+        logger.info("upload.\(label).end ok=true")
     }
 
     /// Get a signed URL for an image in storage.

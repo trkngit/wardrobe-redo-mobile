@@ -280,6 +280,17 @@
         }
       }
     },
+    "App-Launch Smoke Test": {
+      "comment": "MLDiagnosticsView row label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açılış Test Olayı"
+          }
+        }
+      }
+    },
     "Archive": {
       "localizations": {
         "tr": {
@@ -318,6 +329,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Spor"
+          }
+        }
+      }
+    },
+    "Auto-Attribute Pre-fill": {
+      "comment": "DeveloperMenuView feature-flag toggle label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otomatik Öznitelik Önyükleme"
           }
         }
       }
@@ -972,6 +994,17 @@
         }
       }
     },
+    "Detect multiple clothing items in one photo and present them as selectable proposals.": {
+      "comment": "DeveloperMenuView feature-flag toggle detail",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir fotoğrafta birden fazla giysi algılayıp seçilebilir öneriler olarak sunar."
+          }
+        }
+      }
+    },
     "Detecting clothing and preparing tap-to-select": {
       "comment": "AnalyzingPopup body",
       "localizations": {
@@ -994,6 +1027,17 @@
         }
       }
     },
+    "Diagnostics": {
+      "comment": "DeveloperMenuView section header",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tanılama"
+          }
+        }
+      }
+    },
     "Disk Usage": {
       "localizations": {
         "tr": {
@@ -1011,6 +1055,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Görünen Ad"
+          }
+        }
+      }
+    },
+    "Dogfood": {
+      "comment": "DeveloperMenuView section header",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İç Kullanım"
           }
         }
       }
@@ -1140,6 +1195,17 @@
         }
       }
     },
+    "Experimental Features": {
+      "comment": "DeveloperMenuView section header",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deneysel Özellikler"
+          }
+        }
+      }
+    },
     "Extracted Colors": {
       "comment": "AddItemView color section header",
       "localizations": {
@@ -1199,6 +1265,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Eşleşmeler aranıyor..."
+          }
+        }
+      }
+    },
+    "Fire Sentry smoke event": {
+      "comment": "DeveloperMenuView button label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sentry test olayı gönder"
           }
         }
       }
@@ -1494,6 +1571,17 @@
         }
       }
     },
+    "Latency, compute unit, smoke-test status, and last 10 inferences.": {
+      "comment": "DeveloperMenuView ML diagnostics caption",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gecikme, hesaplama birimi, test durumu ve son 10 çıkarım."
+          }
+        }
+      }
+    },
     "Least worn": {
       "comment": "Wardrobe sort option",
       "localizations": {
@@ -1631,6 +1719,28 @@
         }
       }
     },
+    "ML Diagnostics": {
+      "comment": "DeveloperMenuView nav-link label + MLDiagnosticsView title",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ML Tanılaması"
+          }
+        }
+      }
+    },
+    "ML Inference Telemetry": {
+      "comment": "DeveloperMenuView feature-flag toggle label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ML Çıkarım Telemetrisi"
+          }
+        }
+      }
+    },
     "Mark as worn": {
       "comment": "OutfitDetailView mark-as-worn toggle (inactive state)",
       "localizations": {
@@ -1725,6 +1835,17 @@
         }
       }
     },
+    "Multi-Garment Detection": {
+      "comment": "DeveloperMenuView feature-flag toggle label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çoklu Parça Algılama"
+          }
+        }
+      }
+    },
     "Necklace": {
       "localizations": {
         "tr": {
@@ -1742,6 +1863,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "En Yeni"
+          }
+        }
+      }
+    },
+    "No inferences yet. Capture a photo with multi-garment detection enabled to populate this list.": {
+      "comment": "MLDiagnosticsView empty state",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz çıkarım yok. Çoklu-parça algılama açıkken bir fotoğraf çek; liste burada görünecek."
           }
         }
       }
@@ -2063,6 +2195,17 @@
         }
       }
     },
+    "Pre-select category, fit, seasons, and occasions after capture. Texture stays user-input until v1.1. Off → legacy hard-reset defaults.": {
+      "comment": "DeveloperMenuView feature-flag toggle detail",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çekimden sonra kategori, kalıp, sezon ve durumları önceden seçer. Doku v1.1'e kadar kullanıcı girdisi olarak kalır. Kapalı → eski sabit varsayılanlar."
+          }
+        }
+      }
+    },
     "Profile": {
       "comment": "Tab name",
       "localizations": {
@@ -2117,6 +2260,17 @@
         }
       }
     },
+    "Report issue (share diagnostics)": {
+      "comment": "DeveloperMenuView ShareLink label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sorun bildir (tanılamayı paylaş)"
+          }
+        }
+      }
+    },
     "Restart the app to apply the new language.": {
       "localizations": {
         "tr": {
@@ -2155,6 +2309,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Koşu Ayakkabısı"
+          }
+        }
+      }
+    },
+    "Runs once at launch in DEBUG builds. If the model throws, the multi-garment feature flag auto-disables so users never see a broken state.": {
+      "comment": "MLDiagnosticsView row caption",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "DEBUG sürümlerde açılışta bir kez çalışır. Model hata atarsa, çoklu-parça özelliği otomatik olarak kapatılır ve kullanıcılar bozuk bir ekranla karşılaşmaz."
           }
         }
       }
@@ -2587,6 +2752,17 @@
         }
       }
     },
+    "Status": {
+      "comment": "MLDiagnosticsView section header",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durum"
+          }
+        }
+      }
+    },
     "Straight Leg": {
       "localizations": {
         "tr": {
@@ -2645,6 +2821,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Alt kategori"
+          }
+        }
+      }
+    },
+    "Submit a non-fatal test event to verify crash-reporting plumbing. Safe to call with or without a DSN.": {
+      "comment": "DeveloperMenuView button caption",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çökme raporlamasının çalıştığını doğrulamak için kritik olmayan bir test olayı gönderir. DSN olsa da olmasa da güvenle çağrılabilir."
           }
         }
       }
@@ -2837,6 +3024,17 @@
         }
       }
     },
+    "These toggles are only available in developer builds. Toggling a flag takes effect the next time a photo is processed.": {
+      "comment": "DeveloperMenuView section footer",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu düğmeler yalnızca geliştirici sürümlerinde kullanılabilir. Bir bayrağı değiştirmek bir sonraki fotoğraf işleminde etkili olur."
+          }
+        }
+      }
+    },
     "This device or environment doesn't have a usable camera. Try choosing a photo from your library instead.": {
       "comment": "CameraOverlay hardware-unavailable detail",
       "localizations": {
@@ -2984,6 +3182,28 @@
         }
       }
     },
+    "Upload latency, top class, and pre-fill correction flags to ml_inference_telemetry. No image bytes or crops are included.": {
+      "comment": "DeveloperMenuView feature-flag toggle detail",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gecikme, üst sınıf ve önyükleme düzeltme bayraklarını ml_inference_telemetry tablosuna gönderir. Görsel verisi veya kırpma içermez."
+          }
+        }
+      }
+    },
+    "Use these when something breaks in day-to-day use. The diagnostics bundle carries enough signal to reproduce an issue without leaking photo content.": {
+      "comment": "DeveloperMenuView section footer",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Günlük kullanımda bir şey bozulduğunda bunları kullan. Tanılama paketi, fotoğraf içeriğini sızdırmadan sorunu yeniden üretmeye yetecek sinyali taşır."
+          }
+        }
+      }
+    },
     "Usual Occasions": {
       "localizations": {
         "tr": {
@@ -3075,6 +3295,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Gardırop İstatistikleri"
+          }
+        }
+      }
+    },
+    "Wardrobe dogfood diagnostics": {
+      "comment": "DeveloperMenuView ShareLink subject",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wardrobe iç-kullanım tanılaması"
           }
         }
       }

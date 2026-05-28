@@ -129,6 +129,17 @@ final class CameraCaptureViewController: UIViewController {
     private var previewLayer: AVCaptureVideoPreviewLayer?
     private var captureDelegate: PhotoCaptureDelegate?
 
+    /// Build 41 (H4 mitigation) — single-shot guard against rapid
+    /// shutter taps. The user can fire two captures within ~80 ms by
+    /// drumming the shutter; AVFoundation accepts the second
+    /// `capturePhoto(with:delegate:)` call before the first delegate
+    /// completes, leading to overlapping `PhotoCaptureDelegate` lives,
+    /// a second `onPhotoCaptured` callback, and `AddItemViewModel`
+    /// state being clobbered between the first and second photo's
+    /// `processWithTimeout`. Flag flips true on capture entry, false
+    /// in the delegate completion (regardless of success/failure).
+    private var isCapturing = false
+
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
@@ -285,12 +296,26 @@ final class CameraCaptureViewController: UIViewController {
     /// swallowing them (as the pre-build-6 code did) is the single
     /// most common cause of "the shutter didn't work" reports.
     func capturePhoto() {
+        // Build 41 (H4 mitigation) — debounce against double-tap.
+        // A second tap arriving while the first AVFoundation callback
+        // is still in flight would queue another `capturePhoto` and
+        // create overlapping `PhotoCaptureDelegate` lifetimes; the
+        // overlap was the suspected race underlying H4 in the upload
+        // crash investigation. Silently dropping the second tap is
+        // the right UX — the user still gets the haptic from the
+        // first tap and the photo it captured.
+        guard !isCapturing else { return }
+        isCapturing = true
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
         let settings = AVCapturePhotoSettings()
         settings.isHighResolutionPhotoEnabled = true
         let delegate = PhotoCaptureDelegate { [weak self] result in
             DispatchQueue.main.async {
                 guard let self else { return }
+                // Clear the in-flight flag BEFORE invoking the
+                // completion callback so the SwiftUI handler can
+                // immediately re-arm if it wants to take another shot.
+                self.isCapturing = false
                 switch result {
                 case .success(let image):
                     self.onPhotoCaptured?(image)

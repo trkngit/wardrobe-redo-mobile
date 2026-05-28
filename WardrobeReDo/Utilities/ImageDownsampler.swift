@@ -114,6 +114,22 @@ enum ImageDownsampler {
         // sRGB redraw fails — the alternative is to return nil,
         // which loses the user's image. The thumbnail is still a
         // legit CGImage even if its colorspace is unusual.
+        //
+        // Build 41 (H1 mitigation) — if the heap is ALREADY near the
+        // foreground jetsam ceiling when we're about to allocate the
+        // 12 MB bitmap context, skip the redraw and return the raw
+        // thumb instead. Vision handles the raw thumbnail on most
+        // paths (the redraw was defense-in-depth for unusual
+        // colorspaces, not a hard requirement). 400 MB is a
+        // conservative ceiling — iPhone 12 has a ~1.5 GB foreground
+        // limit, but jetsam routinely kicks in 200–400 MB earlier
+        // for foreground apps under system load. Avoiding the alloc
+        // is strictly safer than risking the SIGKILL.
+        let heap = MemoryMonitor.currentHeapUsageMB
+        if heap > 400 {
+            logger.warning("downsample.colorspaceRedraw: skippedDueToMemPressure mem=\(heap, privacy: .public)")
+            return UIImage(cgImage: thumb)
+        }
         let width = thumb.width
         let height = thumb.height
         let bitsPerComponent = 8
