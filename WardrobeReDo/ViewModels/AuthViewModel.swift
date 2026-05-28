@@ -153,10 +153,25 @@ final class AuthViewModel {
         infoMessage = nil
         do {
             let credential = try await appleCoordinator.requestCredential()
-            _ = try await authService.signInWithApple(
+            let session = try await authService.signInWithApple(
                 idToken: credential.idToken,
                 nonce: credential.rawNonce
             )
+
+            // Build 39 — Apple returns `fullName` only on the FIRST
+            // sign-in for a given Apple ID; capture it now or lose
+            // it forever. The trigger that created the profile row
+            // could only see JWT claims (no name in Apple's JWT),
+            // so it fell back to the email prefix. Overwrite with
+            // the actual name, then move on. Non-fatal on failure —
+            // the user is already signed in.
+            if let displayName = Self.displayName(from: credential.fullName) {
+                await authService.updateProfileDisplayName(
+                    displayName,
+                    userId: session.user.id
+                )
+            }
+
             clearForm()
         } catch let error as ASAuthorizationError where error.code == .canceled {
             // User dismissed the sheet — no error UI, just reset.
@@ -166,6 +181,21 @@ final class AuthViewModel {
             errorMessage = mapError(error)
         }
         isLoading = false
+    }
+
+    /// Format Apple's `PersonNameComponents` into a single display
+    /// string. Uses `PersonNameComponentsFormatter` so the result
+    /// honours locale conventions (e.g. surname-first for `ja_JP`
+    /// without us having to special-case it). Returns nil if the
+    /// formatter would yield an empty string — Apple frequently
+    /// returns a non-nil `PersonNameComponents` with all fields
+    /// nil on subsequent sign-ins.
+    private static func displayName(from components: PersonNameComponents?) -> String? {
+        guard let components else { return nil }
+        let formatter = PersonNameComponentsFormatter()
+        formatter.style = .default
+        let formatted = formatter.string(from: components).trimmingCharacters(in: .whitespacesAndNewlines)
+        return formatted.isEmpty ? nil : formatted
     }
 
     func toggleMode() {

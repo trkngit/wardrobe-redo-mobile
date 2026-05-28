@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Build 8 — extracted press-scale style so both GoldButton and
+/// Build 8 — extracted press-scale style so both PrimaryButton and
 /// GhostButton get the same tactile feedback. Scale 0.96 is the
 /// same number iOS system buttons use (~4 % shrink); the spring
 /// snap-back feels like a physical button release. Applied via
@@ -18,13 +18,13 @@ extension ButtonStyle where Self == PressScaleButtonStyle {
     static var pressScale: PressScaleButtonStyle { PressScaleButtonStyle() }
 }
 
-struct GoldButton: View {
+struct PrimaryButton: View {
     // Build 27 — was `String`, which silently picked SwiftUI's
     // `Text(verbatim: String)` overload and bypassed the catalog
     // entirely. Switching to `LocalizedStringResource` routes
     // every literal call site through the catalog automatically
     // (literals coerce via `ExpressibleByStringLiteral`), so
-    // existing `GoldButton("Surprise me")` calls render Turkish
+    // existing `PrimaryButton("Surprise me")` calls render Turkish
     // when the locale is `tr` instead of staying English forever.
     let title: LocalizedStringResource
     let isLoading: Bool
@@ -65,7 +65,7 @@ struct GoldButton: View {
 
 struct GhostButton: View {
     // Build 27 — same `String` → `LocalizedStringResource` fix as
-    // GoldButton. See that struct's comment for the rationale.
+    // PrimaryButton. See that struct's comment for the rationale.
     let title: LocalizedStringResource
     let action: () -> Void
 
@@ -86,7 +86,7 @@ struct GhostButton: View {
                         .stroke(Color(Theme.Colors.primary), lineWidth: 1)
                 )
         }
-        // Build 8 — same press feedback as GoldButton for visual
+        // Build 8 — same press feedback as PrimaryButton for visual
         // consistency. Useful for the secondary "Try a different
         // item" CTA in the Match tab failure state.
         .buttonStyle(.pressScale)
@@ -95,8 +95,8 @@ struct GhostButton: View {
 
 #Preview {
     VStack(spacing: 16) {
-        GoldButton("Sign In") {}
-        GoldButton("Loading...", isLoading: true) {}
+        PrimaryButton("Sign In") {}
+        PrimaryButton("Loading...", isLoading: true) {}
         GhostButton("Create Account") {}
     }
     .padding()

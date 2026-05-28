@@ -260,7 +260,7 @@ struct MatchingView: View {
     private var surpriseMeButton: some View {
         // Build 28 — dice emoji dropped; see DailyOutfitsView for
         // the same rationale.
-        GoldButton(
+        PrimaryButton(
             viewModel.isMatching ? "Rolling…" : "Surprise me",
             isLoading: viewModel.isMatching
         ) {
@@ -477,7 +477,7 @@ struct MatchingView: View {
             // Only shown when there's a recoverable failure (i.e. a hero
             // is still selected).
             if viewModel.selectedItem != nil && viewModel.lastFailure != nil {
-                GoldButton("Try Again", isLoading: viewModel.isMatching) {
+                PrimaryButton("Try Again", isLoading: viewModel.isMatching) {
                     guard let userId = appState.currentUser?.id else { return }
                     Task { await viewModel.findMatches(userId: userId) }
                 }
@@ -516,7 +516,7 @@ struct MatchingView: View {
             // Build 8 — direct deep-link to the Wardrobe Add sheet.
             // Saves the user from hunting for the + button in the
             // wardrobe toolbar after switching tabs.
-            GoldButton("Add an Item") {
+            PrimaryButton("Add an Item") {
                 HapticManager.medium()
                 appState.pendingAddItem = true
                 appState.selectedTab = 0

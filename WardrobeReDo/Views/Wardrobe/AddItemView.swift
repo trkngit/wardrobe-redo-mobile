@@ -571,7 +571,7 @@ struct AddItemView: View {
             if viewModel.savedItemsFromSource > 0 {
                 savedFromSourceBadge
             }
-            GoldButton("Save to Wardrobe", isLoading: viewModel.isSaving) {
+            PrimaryButton("Save to Wardrobe", isLoading: viewModel.isSaving) {
                 guard let userId = appState.currentUser?.id else {
                     viewModel.errorMessage = "Not signed in. Please restart the app and try again."
                     return

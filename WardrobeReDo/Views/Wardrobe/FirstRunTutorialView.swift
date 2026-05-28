@@ -102,7 +102,7 @@ struct FirstRunTutorialView: View {
 
     private var primaryButton: some View {
         let isLast = selection == slides.count - 1
-        return GoldButton(isLast ? "Got it" : "Next") {
+        return PrimaryButton(isLast ? "Got it" : "Next") {
             if isLast { dismiss() }
             else { withAnimation { selection += 1 } }
         }

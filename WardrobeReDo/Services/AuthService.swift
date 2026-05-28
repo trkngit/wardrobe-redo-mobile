@@ -47,6 +47,42 @@ final class AuthService {
         )
     }
 
+    /// Build 39 — Apple gives us the user's `fullName` exactly once
+    /// (on the FIRST sign in for a given Apple ID) as a
+    /// `PersonNameComponents`. The Supabase `signInWithIdToken`
+    /// flow doesn't accept supplementary metadata, so the
+    /// `handle_new_user` trigger that fires on user creation can't
+    /// see this name — it falls back to the email prefix.
+    ///
+    /// This method, called from `AuthViewModel.signInWithApple`
+    /// right after a successful sign-in, writes the name directly
+    /// into `public.profiles.display_name`. RLS allows the
+    /// authenticated user to update their own profile row, so the
+    /// session we just established is sufficient.
+    ///
+    /// Silently no-ops on failure: a stale display name ("User")
+    /// is strictly nicer than a sign-in flow that "succeeds" then
+    /// throws an error from a polish path. The session is already
+    /// live by the time we get here.
+    func updateProfileDisplayName(_ name: String, userId: UUID) async {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        do {
+            try await supabase
+                .from("profiles")
+                .update(["display_name": trimmed])
+                .eq("id", value: userId)
+                .execute()
+        } catch {
+            // Best-effort polish — log and move on. The trigger's
+            // fallback already wrote SOMETHING into display_name.
+            // We don't want a 4xx here to surface as a sign-in
+            // failure for a user who is, by every meaningful
+            // measure, signed in.
+            print("[AuthService] updateProfileDisplayName failed (non-fatal): \(error)")
+        }
+    }
+
     // MARK: - Session
 
     var currentSession: Session? {

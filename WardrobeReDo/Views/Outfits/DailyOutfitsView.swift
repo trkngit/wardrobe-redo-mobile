@@ -228,7 +228,7 @@ struct DailyOutfitsView: View {
         // says "Surprise me" / "Şaşırt beni" plain. Visual weight
         // comes from the new ink-primary palette and the press-
         // scale haptic, not from chrome.
-        GoldButton(
+        PrimaryButton(
             viewModel.isRegenerating ? "Rolling…" : "Surprise me",
             isLoading: viewModel.isRegenerating
         ) {
@@ -314,7 +314,7 @@ struct DailyOutfitsView: View {
             // user doesn't have to manually switch tabs and find
             // the + button.
             if viewModel.lastFailure?.suggestsAddingItems == true {
-                GoldButton("Add an Item") {
+                PrimaryButton("Add an Item") {
                     HapticManager.medium()
                     appState.pendingAddItem = true
                     appState.selectedTab = 0
@@ -322,7 +322,7 @@ struct DailyOutfitsView: View {
                 .padding(.horizontal, Theme.Spacing.xxl)
                 .accessibilityHint("Opens the Wardrobe tab and presents the Add Item sheet")
             } else {
-                GoldButton(
+                PrimaryButton(
                     viewModel.lastFailure == nil ? "Generate Today's Outfits" : "Try Again",
                     isLoading: viewModel.isGenerating
                 ) {

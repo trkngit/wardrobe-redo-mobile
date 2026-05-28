@@ -158,7 +158,7 @@ struct LoginView: View {
                 errorBanner(error)
             }
 
-            GoldButton("Sign In", isLoading: viewModel.isLoading) {
+            PrimaryButton("Sign In", isLoading: viewModel.isLoading) {
                 Task { await viewModel.signIn() }
             }
             .disabled(!viewModel.canSignIn)
@@ -221,7 +221,7 @@ struct LoginView: View {
                 errorBanner(error)
             }
 
-            GoldButton("Create Account", isLoading: viewModel.isLoading) {
+            PrimaryButton("Create Account", isLoading: viewModel.isLoading) {
                 Task { await viewModel.signUp() }
             }
             .disabled(!viewModel.canSignUp)

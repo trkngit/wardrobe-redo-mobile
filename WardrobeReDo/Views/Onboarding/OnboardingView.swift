@@ -346,11 +346,11 @@ struct OnboardingView: View {
             }
 
             if currentStep < totalSteps - 1 {
-                GoldButton("Next") {
+                PrimaryButton("Next") {
                     currentStep += 1
                 }
             } else {
-                GoldButton("Get Started", isLoading: isSaving) {
+                PrimaryButton("Get Started", isLoading: isSaving) {
                     Task { await completeOnboarding() }
                 }
             }

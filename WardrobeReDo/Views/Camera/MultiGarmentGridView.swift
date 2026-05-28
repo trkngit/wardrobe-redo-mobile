@@ -83,7 +83,7 @@ struct MultiGarmentGridView: View {
     /// Pluralized CTA text. "Save 1 item" vs "Save 3 items".
     ///
     /// Build 27 — return type changed to `LocalizedStringResource`
-    /// after the GoldButton signature update. Catalog provides the
+    /// after the PrimaryButton signature update. Catalog provides the
     /// translated singular + plural variants; the count slots into
     /// the format specifier.
     var confirmButtonTitle: LocalizedStringResource {
@@ -167,7 +167,7 @@ struct MultiGarmentGridView: View {
                 .foregroundStyle(Color(Theme.Colors.textSecondary))
                 .accessibilityIdentifier("MultiGarmentGrid.SelectionSummary")
             Spacer()
-            GoldButton(confirmButtonTitle) {
+            PrimaryButton(confirmButtonTitle) {
                 onConfirmed()
             }
             .frame(maxWidth: 220)

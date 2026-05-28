@@ -475,7 +475,7 @@ struct WardrobeGridView: View {
                     .multilineTextAlignment(.center)
             }
 
-            GoldButton("Add First Item") {
+            PrimaryButton("Add First Item") {
                 viewModel.showAddItem = true
             }
             .frame(maxWidth: 200)
