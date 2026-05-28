@@ -327,6 +327,15 @@ struct AddItemView: View {
                 sourceImage: source,
                 initialResult: initialResult,
                 extractor: viewModel.clothingExtractor,
+                // Build 43 — pass the session pre-loaded in
+                // `applyProcessedFrom{Library,Camera}` so per-tap
+                // inference skips the SAM2 image encoder (~100 MB)
+                // and only runs the cheap prompt-encoder + mask-
+                // decoder passes. Eliminates the WatchdogTermination
+                // that rapid Clothing/Background taps used to trigger
+                // on iPhone 15-class devices. See the `cachedSession`
+                // doc comment in `TapToSelectView.swift` for details.
+                cachedSession: viewModel.sam2Session,
                 onDone: { result in
                     Task { await viewModel.onTapToSelectDone(result) }
                 },

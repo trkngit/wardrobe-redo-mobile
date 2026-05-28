@@ -21,6 +21,22 @@ struct TapToSelectView: View {
     /// same instance the rest of the pipeline uses so prewarmed models
     /// aren't re-loaded here.
     let extractor: any ClothingExtracting
+    /// Build 43 (WatchdogTermination fix) — pre-warmed SAM2 session
+    /// passed in by `AddItemView` from
+    /// `AddItemViewModel.sam2Session`. The session caches the source
+    /// image's encoder embedding (~100 MB), so per-tap inference only
+    /// runs the cheap prompt-encoder + mask-decoder passes (~10-20 MB
+    /// transient) instead of re-running the full encoder every tap.
+    /// Three rapid taps used to stack three concurrent encoder runs
+    /// and exhaust the foreground memory budget on iPhone 15-class
+    /// devices — the OS watchdog killed the app within seconds. With
+    /// the cached session the per-tap allocation is small and bounded.
+    ///
+    /// Nil-safe: legacy entry points (e.g. the brush-detour back into
+    /// tap-to-select with no live session) still work via the
+    /// `extractor.extract(_:tapPoints:)` fallback, which builds a
+    /// fresh session per call.
+    var cachedSession: (any SAM2Session)?
     var onDone: (ExtractionResult) -> Void
     var onCancel: () -> Void
     /// "Refine with brush" detour — when non-nil, a toolbar button
@@ -290,7 +306,41 @@ struct TapToSelectView: View {
 
     private func segment(with taps: [SAM2TapPoint]) async {
         isProcessing = true
-        let result = await extractor.extract(sourceImage, tapPoints: taps)
+        let result: ExtractionResult
+        if let cachedSession {
+            // Build 43 — cached-session fast path. `cachedSession.segment`
+            // skips the SAM2 image encoder (which already ran when the
+            // session was created in `applyProcessedFromLibrary` /
+            // `applyProcessedFromCamera`); only the prompt encoder +
+            // mask decoder run here, which is cheap.
+            if let sam2 = await cachedSession.segment(points: taps) {
+                let confidence = ClothingExtractionService.synthesizeConfidence(
+                    instanceCount: 1,
+                    coverageRatio: sam2.coverageRatio
+                )
+                result = ExtractionResult(
+                    originalImage: sourceImage,
+                    maskedImage: sam2.maskedImage,
+                    mask: sam2.mask,
+                    confidence: confidence,
+                    method: .sam2Manual,
+                    silhouetteArea: sam2.coverageRatio
+                )
+            } else {
+                // Cached session declined — model unavailable or
+                // inference error. Fall through to the slow path so
+                // the user still gets a result rather than an empty
+                // canvas.
+                result = await extractor.extract(sourceImage, tapPoints: taps)
+            }
+        } else {
+            // Legacy path (no cached session) — `extractor.extract`
+            // builds a fresh session per call. This is the memory-
+            // heavy path that triggered the Watchdog termination on
+            // older builds; only reached now from non-AddItem entry
+            // points that don't pre-load a session.
+            result = await extractor.extract(sourceImage, tapPoints: taps)
+        }
         // If a fresh tap superseded this one mid-inference, the new
         // task already flipped `isProcessing` back to true, so we must
         // not commit `false` here (would clear the spinner during the
