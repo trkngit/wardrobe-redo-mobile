@@ -111,18 +111,65 @@ final class ImageService: ImageServiceProtocol {
     /// Color extraction runs on the MASKED image (or the original if
     /// extraction failed) so the wardrobe palette reflects the clothing
     /// itself, not the floor / wall / mirror behind it.
+    ///
+    /// **Build 45 — RF-DETR-first single-item path.** TestFlight user
+    /// reported that a mirror selfie wearing a jersey ended up with the
+    /// WHOLE PERSON cropped as the wardrobe item. Tracing: Vision's
+    /// foreground request returns the salient subject of the frame, and
+    /// the salient subject in a mirror selfie IS the person — not the
+    /// jersey. The RF-DETR multi-garment detector, running in parallel,
+    /// had detected the clothing correctly; we just weren't using its
+    /// output because the existing flow only surfaced it when the
+    /// per-photo proposal count was ≥ 2 (= "multi-pick grid"). The
+    /// single-proposal case fell through to Vision.
+    ///
+    /// TF45 inverts the priority for the single-item case:
+    ///   * ≥ 2 proposals → multi-pick grid (unchanged)
+    ///   * exactly 1 proposal → use THAT proposal as the cutout source,
+    ///                          marked `.multiGarmentRFDETR`. Vision
+    ///                          never crowns the person mask in this
+    ///                          path.
+    ///   * 0 proposals → fall through to Vision / SAM2-auto exactly as
+    ///                   before. Legacy path is preserved as the safety
+    ///                   net for flat-lay shots RF-DETR doesn't recognise.
     func processImage(_ image: UIImage) async -> ProcessedImage? {
         // Run the single-mask path and the multi-garment path in
-        // parallel. The single path is the hard requirement — its result
-        // always drives the "did extraction succeed" decisions below.
-        // Multi-garment is strictly additive; when it's disabled or the
-        // model is missing we still ship a perfectly good ProcessedImage
-        // with proposals=nil.
+        // parallel. The single path is the legacy fallback — its result
+        // still drives the "did extraction succeed" decisions when
+        // RF-DETR has nothing to say. Multi-garment is now the preferred
+        // single-item source whenever it produces a proposal.
         async let extractionTask = clothingExtractor.extract(image)
-        async let proposalsTask: [MaskProposal]? = detectProposalsIfEnabled(for: image)
+        async let proposalsTask: [MaskProposal]? = detectAllProposalsIfEnabled(for: image)
 
-        let extraction = await extractionTask
-        let proposals = await proposalsTask
+        let visionExtraction = await extractionTask
+        let allProposals = await proposalsTask
+
+        // Pick the source-of-truth `ExtractionResult`:
+        //   * proposals.count == 1 — promote the proposal to extraction
+        //     result. Vision's result is dropped.
+        //   * otherwise — use the Vision / SAM2-auto chain's result.
+        let extraction: ExtractionResult
+        if let single = allProposals, single.count == 1 {
+            extraction = ClothingExtractionService.extractionResult(
+                from: single[0],
+                originalImage: visionExtraction.originalImage
+            )
+        } else {
+            extraction = visionExtraction
+        }
+
+        // The `proposals` field on `ProcessedImage` still drives the
+        // multi-pick grid in `AddItemViewModel.routeAfterProcessing`.
+        // Only populate it when count ≥ 2 — single-proposal results
+        // are already consumed above via the extraction-result path,
+        // and zero-proposal results should pass nil downstream so
+        // routing falls through to the single-item flow.
+        let proposalsForRouting: [MaskProposal]?
+        if let all = allProposals, all.count >= 2 {
+            proposalsForRouting = all
+        } else {
+            proposalsForRouting = nil
+        }
 
         guard let originalResized = resize(extraction.originalImage, maxDimension: maxOriginalDimension),
               let thumbnailResized = resize(extraction.originalImage, maxDimension: thumbnailDimension),
@@ -143,6 +190,8 @@ final class ImageService: ImageServiceProtocol {
 
         let colors = await colorExtractor.extractColors(from: extraction.maskedImage)
 
+        logger.info("processImage.routing source=\(extraction.method.rawValue, privacy: .public) proposalsRaw=\(allProposals?.count ?? 0, privacy: .public) confidence=\(extraction.confidence.rawValue, privacy: .public)")
+
         return ProcessedImage(
             originalData: originalData,
             thumbnailData: thumbnailData,
@@ -150,23 +199,21 @@ final class ImageService: ImageServiceProtocol {
             extractionConfidence: extraction.confidence,
             extractionMethod: extraction.method,
             dominantColors: colors,
-            proposals: proposals,
+            proposals: proposalsForRouting,
             silhouetteArea: extraction.silhouetteArea
         )
     }
 
-    /// Feature-flagged multi-garment proposal detection. Returns nil
-    /// when the flag is off, when the model isn't bundled yet, or when
-    /// inference threw — callers always see a valid ProcessedImage and
-    /// simply fall through to the single-item flow.
-    private func detectProposalsIfEnabled(for image: UIImage) async -> [MaskProposal]? {
+    /// Build 45 — returns ALL proposals (or nil when the feature flag
+    /// is off / model missing / inference threw). The previous
+    /// `detectProposalsIfEnabled` collapsed counts < 2 to nil so the
+    /// caller couldn't distinguish "model found 1 jersey" from "model
+    /// found nothing"; `processImage` now wants both signals.
+    private func detectAllProposalsIfEnabled(for image: UIImage) async -> [MaskProposal]? {
         guard FeatureFlags.isMultiGarmentEnabled else { return nil }
         do {
             let proposals = try await multiGarmentExtractor.detectProposals(in: image)
-            // Require at least 2 proposals to trigger multi-pick UX —
-            // single-proposal outputs fall through to the existing
-            // single-item flow so users don't get a one-item "batch."
-            return proposals.count >= 2 ? proposals : nil
+            return proposals.isEmpty ? nil : proposals
         } catch {
             logger.error("multi-garment detection failed: \(error.localizedDescription, privacy: .public)")
             return nil

@@ -118,6 +118,9 @@ struct AddItemView: View {
             .fullScreenCover(isPresented: $viewModel.isShowingTouchup) {
                 touchupCover
             }
+            .fullScreenCover(isPresented: $viewModel.isShowingPreview) {
+                previewAndConfirmCover
+            }
             .fullScreenCover(isPresented: $viewModel.isShowingTapToSelect) {
                 tapToSelectCover
             }
@@ -296,6 +299,33 @@ struct AddItemView: View {
             // Fallback: no masked data yet; skip touchup.
             Color.clear
                 .onAppear { viewModel.onTouchupCancelled() }
+        }
+    }
+
+    // MARK: - Preview & Confirm fullscreen cover (Build 45)
+
+    @ViewBuilder
+    private var previewAndConfirmCover: some View {
+        if let processed = viewModel.processedImage,
+           let source = viewModel.selectedImage {
+            // Prefer the masked PNG (transparent background, clothing
+            // only) so the user sees exactly what they're committing.
+            // When extraction returned `.none`, fall back to the source
+            // image so the cover still renders sensibly.
+            let cutout = processed.maskedData.flatMap { UIImage(data: $0) } ?? source
+            PreviewAndConfirmView(
+                cutoutImage: cutout,
+                method: processed.extractionMethod ?? .none,
+                confidence: processed.extractionConfidence,
+                onUseThis: viewModel.onPreviewConfirmed,
+                onRefine: viewModel.onPreviewRefine,
+                onRetake: viewModel.onPreviewRetake
+            )
+        } else {
+            // Defensive: no processed image (shouldn't happen because
+            // routing only triggers post-success). Behave like Retake.
+            Color.clear
+                .onAppear { viewModel.onPreviewRetake() }
         }
     }
 

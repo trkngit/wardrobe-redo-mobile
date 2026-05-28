@@ -64,6 +64,16 @@ final class AddItemViewModel {
 
     // Phase 3: SAM2 manual override
     var isShowingTapToSelect = false
+
+    /// Build 45 — primary post-processing surface. Replaces
+    /// `isShowingTapToSelect` as the default landing after auto-
+    /// extraction. The preview screen shows the cutout with
+    /// `[Use this] / [Refine if needed] / [Retake]` actions; the
+    /// majority case (auto-detection got it right) is a one-tap
+    /// confirm. Users who hit "Refine if needed" route into the
+    /// existing tap-to-select view, so power-user / recovery cases
+    /// are preserved.
+    var isShowingPreview = false
     /// Set when Vision confidence was low and we fell back to the
     /// automatic SAM2 mask. Drives the "Auto-cropped" badge in
     /// `MaskTouchupView` so the user knows to sanity-check.
@@ -652,6 +662,7 @@ final class AddItemViewModel {
         currentStep = .details
         isShowingMultiPick = false
         isShowingTapToSelect = false
+        isShowingPreview = false
         didJustRestoreBatch = true
 
         logger.info("batch.restore.success: \(queue.count, privacy: .public) pending, \(snapshot.savedCount, privacy: .public) already saved")
@@ -696,10 +707,15 @@ final class AddItemViewModel {
             // most items from a multi-garment photo, so unchecking is
             // cheaper than checking each from scratch.
             selectedProposalIDs = Set(props.map(\.id))
-            logger.info("multiGarment.show: \(props.count) proposals, flag on")
+            logger.info("routing.decision dest=multiGarmentGrid proposals=\(props.count, privacy: .public)")
             isShowingMultiPick = true
         } else {
-            isShowingTapToSelect = true
+            // Build 45 — auto-extraction completed; land on the new
+            // Preview & Confirm screen instead of TapToSelectView. The
+            // user gets a single-tap "Use this" affordance on the happy
+            // path; tap-to-select is reachable via "Refine if needed".
+            logger.info("routing.decision dest=previewAndConfirm method=\(processed.extractionMethod?.rawValue ?? "nil", privacy: .public) confidence=\(processed.extractionConfidence?.rawValue ?? "nil", privacy: .public)")
+            isShowingPreview = true
         }
     }
 
@@ -885,6 +901,42 @@ final class AddItemViewModel {
     func onTapToSelectCancelled() {
         isShowingTapToSelect = false
         currentStep = .details
+    }
+
+    // MARK: - Build 45 — Preview & Confirm handlers
+
+    /// User tapped "Use this" on the Preview & Confirm screen. The
+    /// auto-extraction's mask was good enough; commit it and route
+    /// straight to the details step. No re-encoding needed (the mask
+    /// already lives in `processedImage.maskedData` from the auto
+    /// pipeline).
+    func onPreviewConfirmed() {
+        logger.info("preview.action action=confirmed method=\(self.processedImage?.extractionMethod?.rawValue ?? "nil", privacy: .public)")
+        isShowingPreview = false
+        currentStep = .details
+    }
+
+    /// User tapped "Refine if needed" on the Preview & Confirm screen.
+    /// Hand off to the existing tap-to-select flow with the auto mask
+    /// pre-populated — the cached SAM2 session (loaded in
+    /// `applyProcessedFrom{Library,Camera}`) is still alive so the
+    /// first tap is cheap.
+    func onPreviewRefine() {
+        logger.info("preview.action action=refined method=\(self.processedImage?.extractionMethod?.rawValue ?? "nil", privacy: .public)")
+        isShowingPreview = false
+        isShowingTapToSelect = true
+    }
+
+    /// User tapped "Retake" on the Preview & Confirm screen. Drop back
+    /// to the photo step so they can pick a different source.
+    func onPreviewRetake() {
+        logger.info("preview.action action=retook method=\(self.processedImage?.extractionMethod?.rawValue ?? "nil", privacy: .public)")
+        isShowingPreview = false
+        currentStep = .photo
+        // Drop the bad processed image so the next photo gets a fresh
+        // analyze cycle instead of inheriting this one's mask.
+        processedImage = nil
+        sam2Session = nil
     }
 
     // MARK: - Phase 5 multi-garment multi-pick
@@ -1608,6 +1660,7 @@ final class AddItemViewModel {
         isShowingTouchup = false
         isShowingTutorial = false
         isShowingTapToSelect = false
+        isShowingPreview = false
         isAutoCropped = false
         // Phase 4 multi-garment loop state — always wiped on full reset
         // (vs `resetKeepingSource()` which deliberately preserves these).

@@ -148,6 +148,7 @@
 		6C1F50AEBF7A3C4612F85528 /* CameraOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 408DF6F4637E0C85BF985D68 /* CameraOverlay.swift */; };
 		6C3E3E0ED0852C70D5A28AC5 /* FormalityCoherenceScorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FB218A3E5982759A27575EF /* FormalityCoherenceScorer.swift */; };
 		6C520C4CA1B51290EB94A7A7 /* clean_bg_10.png in Resources */ = {isa = PBXBuildFile; fileRef = 0A225554031C33A50FF9FBB5 /* clean_bg_10.png */; };
+		6C8A18B8C43D9F9EE1BA52A6 /* PreviewAndConfirmView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA3DB3ECD808D1FBD05E24F2 /* PreviewAndConfirmView.swift */; };
 		6CF811B1C9D80286997E7EED /* ColorSwatchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DFC3D5E99EB9FDB13D567FB /* ColorSwatchView.swift */; };
 		6E6D4845CCE627D16F3F579F /* WardrobeReDoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18165792F146D914FFB57C1E /* WardrobeReDoTests.swift */; };
 		6E8CB22AEFE6C93B3EBE7325 /* cluttered_03.png in Resources */ = {isa = PBXBuildFile; fileRef = 630CAC50468CCAE89A269AF1 /* cluttered_03.png */; };
@@ -620,6 +621,7 @@
 		B910E028A2261041E6CF9716 /* ImageServiceProposalsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageServiceProposalsTests.swift; sourceTree = "<group>"; };
 		B99F96027E9C62E61C3A9B8A /* WardrobeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WardrobeViewModel.swift; sourceTree = "<group>"; };
 		B9E8C0B962536160970249A7 /* ExtractionPerformanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtractionPerformanceTests.swift; sourceTree = "<group>"; };
+		BA3DB3ECD808D1FBD05E24F2 /* PreviewAndConfirmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewAndConfirmView.swift; sourceTree = "<group>"; };
 		BA55FBDF7E52F2F26303F71B /* SharpnessMetric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharpnessMetric.swift; sourceTree = "<group>"; };
 		BAF67A72DC02CE07EBE8C763 /* cluttered_03.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = cluttered_03.jpg; sourceTree = "<group>"; };
 		BB19069D775C6300C4C750C6 /* cluttered_02.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = cluttered_02.jpg; sourceTree = "<group>"; };
@@ -776,6 +778,7 @@
 				408DF6F4637E0C85BF985D68 /* CameraOverlay.swift */,
 				D95CBA1D9AD2AB55CEBEE6B3 /* MaskTouchupView.swift */,
 				CCC08E26935AFAC7B04EB268 /* MultiGarmentGridView.swift */,
+				BA3DB3ECD808D1FBD05E24F2 /* PreviewAndConfirmView.swift */,
 				774D7B1E402D46AAE82F76C5 /* TapToSelectView.swift */,
 			);
 			path = Camera;
@@ -1888,6 +1891,7 @@
 				65DE2677B456AFC8872B3D0F /* OutfitRepository.swift in Sources */,
 				4DAB88B82A0C075337918B5D /* OutfitScorer.swift in Sources */,
 				14FC5E3E883885716AFFA303 /* OutfitViewModel.swift in Sources */,
+				6C8A18B8C43D9F9EE1BA52A6 /* PreviewAndConfirmView.swift in Sources */,
 				A6EC4DE2F97096DBFA70A503 /* PrimaryButton.swift in Sources */,
 				C71D027971FCFA01E73C7CF2 /* Profile.swift in Sources */,
 				2D769A1055801BDB82682DCB /* ProfileView.swift in Sources */,
@@ -2251,7 +2255,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = WardrobeReDoWidget/WardrobeReDoWidget.entitlements;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 45;
 				INFOPLIST_FILE = WardrobeReDoWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2353,7 +2357,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = WardrobeReDoWidget/WardrobeReDoWidget.entitlements;
-				CURRENT_PROJECT_VERSION = 44;
+				CURRENT_PROJECT_VERSION = 45;
 				INFOPLIST_FILE = WardrobeReDoWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

@@ -297,6 +297,31 @@ final class ClothingExtractionService: ClothingExtracting, @unchecked Sendable {
         return .low
     }
 
+    /// Build 45 — promote a `MaskProposal` (RF-DETR multi-garment output)
+    /// into an `ExtractionResult` so `ImageService.processImage` can use
+    /// the proposal's per-garment mask as the source-of-truth cutout
+    /// instead of Vision's salient-subject mask. Reuses the existing
+    /// confidence enum (proposal already carries one) and uses the
+    /// normalized bbox area as the silhouetteArea proxy — same channel
+    /// `ColorHarmonyScorer` already reads.
+    ///
+    /// Method is stamped `.multiGarmentRFDETR` so downstream telemetry
+    /// (extraction_method column, Sentry tags) can distinguish RF-DETR-
+    /// sourced cutouts from Vision and SAM2 ones.
+    static func extractionResult(
+        from proposal: MaskProposal,
+        originalImage: UIImage
+    ) -> ExtractionResult {
+        ExtractionResult(
+            originalImage: originalImage,
+            maskedImage: proposal.maskedImage,
+            mask: proposal.mask,
+            confidence: proposal.confidence,
+            method: .multiGarmentRFDETR,
+            silhouetteArea: Double(proposal.boundingBox.area)
+        )
+    }
+
     /// `true` when Vision's mask is trustworthy enough to skip SAM2 auto.
     /// `.high` / `.medium` are kept; `.low` / `.failed` trigger fallback.
     static func isHighTrust(_ confidence: ExtractionConfidence) -> Bool {

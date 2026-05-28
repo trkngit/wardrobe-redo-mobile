@@ -1687,6 +1687,17 @@
         }
       }
     },
+    "Looks good?": {
+      "comment": "PreviewAndConfirmView navigation title",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu görsel uygun mu?"
+          }
+        }
+      }
+    },
     "Lounge": {
       "comment": "Occasion chip label",
       "localizations": {
@@ -2238,6 +2249,17 @@
         }
       }
     },
+    "Refine if needed": {
+      "comment": "PreviewAndConfirmView secondary action",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gerekirse iyileştir"
+          }
+        }
+      }
+    },
     "Regular": {
       "comment": "Fit attribute",
       "localizations": {
@@ -2288,6 +2310,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bekleyen ürünlerin geri yüklendi"
+          }
+        }
+      }
+    },
+    "Retake": {
+      "comment": "PreviewAndConfirmView toolbar cancellation action",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekrar çek"
           }
         }
       }
@@ -3200,6 +3233,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Günlük kullanımda bir şey bozulduğunda bunları kullan. Tanılama paketi, fotoğraf içeriğini sızdırmadan sorunu yeniden üretmeye yetecek sinyali taşır."
+          }
+        }
+      }
+    },
+    "Use this": {
+      "comment": "PreviewAndConfirmView primary action",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bunu kullan"
           }
         }
       }
