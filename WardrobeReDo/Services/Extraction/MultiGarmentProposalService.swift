@@ -1000,28 +1000,73 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
         // so a near-duplicate pair doesn't slip past as a "pair."
         shoes = pruneShoeRedundancies(shoes)
 
-        // Hard cap at 2 shoe items per source photo (left + right foot).
-        // Real-world wardrobe captures don't legitimately contain 3+
-        // distinct shoes — anything over 2 after redundancy pruning is
-        // model noise. Keep the 2 highest-confidence to preserve the
-        // best detections.
+        // Build 44 — pair detection BEFORE the hard cap. The earlier
+        // algorithm capped at 2 highest-confidence first, which broke
+        // a legitimate same-class pair (e.g. left+right boot) when a
+        // third shoe-family detection happened to score higher than
+        // one half of the pair. Concretely: 2 boots (scores 0.82 + 0.75)
+        // plus 1 sneaker (score 0.78) used to collapse to "boot 0.82 +
+        // sneaker 0.78" and the boot pair was destroyed.
+        //
+        // New algorithm — greedy per-class pair walk:
+        //   1. Sort all shoes descending by score.
+        //   2. For each unpaired shoe, look for the highest-scoring
+        //      unpaired same-rawClass partner that geometrically
+        //      satisfies `looksLikeShoePair`. If found, collapse
+        //      both into the higher-scored one.
+        //   3. After the walk, apply the hard cap.
+        //
+        // Same-rawClass requirement prevents a boot+sneaker false-pair
+        // collapse: the legitimate pair semantics only hold within a
+        // single Fashionpedia label.
+        shoes = collapseSameClassPairs(shoes)
+
+        // Hard cap at 2 shoe items per source photo (left + right foot,
+        // OR two distinct shoes from two different physical pairs after
+        // same-class pair-collapse). Real-world wardrobe captures don't
+        // legitimately contain 3+ distinct shoes — anything over 2
+        // after pair collapse is model noise. Keep the 2 highest-
+        // confidence survivors.
         if shoes.count > 2 {
             shoes = Array(shoes.sorted { $0.score > $1.score }.prefix(2))
         }
 
-        guard shoes.count == 2 else {
-            // 0 or 1 shoe(s) — no pair collapse possible.
-            return nonShoes + shoes
-        }
+        return nonShoes + shoes
+    }
 
-        if looksLikeShoePair(shoes[0].boundingBox, shoes[1].boundingBox) {
-            // Keep the higher-scored detection — the user can re-take
-            // the photo to see both feet if they want them split.
-            let winner = shoes[0].score >= shoes[1].score ? shoes[0] : shoes[1]
-            return nonShoes + [winner]
-        } else {
-            return nonShoes + shoes
+    /// Greedy walk over `shoes` looking for same-`rawClass` pairs that
+    /// satisfy `looksLikeShoePair`. The higher-scored member of each
+    /// confirmed pair wins; the partner is dropped. Used by
+    /// `collapseShoePairs` so the post-walk hard cap operates on a
+    /// list where each remaining detection is either a confirmed
+    /// single shoe or the representative of a confirmed pair.
+    private static func collapseSameClassPairs(_ shoes: [RawDetection]) -> [RawDetection] {
+        guard shoes.count >= 2 else { return shoes }
+        let sorted = shoes.sorted { $0.score > $1.score }
+        var consumed = Set<Int>()
+        var result: [RawDetection] = []
+        for i in sorted.indices {
+            if consumed.contains(i) { continue }
+            let anchor = sorted[i]
+            var partnerIndex: Int?
+            for j in (i + 1)..<sorted.count {
+                if consumed.contains(j) { continue }
+                let candidate = sorted[j]
+                guard candidate.rawClass == anchor.rawClass else { continue }
+                if looksLikeShoePair(anchor.boundingBox, candidate.boundingBox) {
+                    partnerIndex = j
+                    break
+                }
+            }
+            if let j = partnerIndex {
+                // Pair confirmed — anchor wins (higher score per the
+                // pre-sort), partner is consumed.
+                consumed.insert(j)
+            }
+            consumed.insert(i)
+            result.append(anchor)
         }
+        return result
     }
 
     /// Iteratively drops the lower-scored member of any shoe-class

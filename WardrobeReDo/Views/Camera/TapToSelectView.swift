@@ -293,15 +293,36 @@ struct TapToSelectView: View {
     // MARK: - Segmentation
 
     /// Cancel any in-flight SAM2 inference and schedule a fresh one.
-    /// The previous Task continues to run until its current `await`
-    /// suspension point, but its result is dropped via the
-    /// `Task.isCancelled` check inside `segment(with:)`. Net effect:
-    /// fast successive taps no longer stack 2-3 concurrent SAM2
-    /// predictions in working memory — only the most recent one ever
-    /// commits to the UI state.
+    ///
+    /// Build 43 attempted to bound peak memory by cancelling the
+    /// previous task before scheduling the next one. In practice,
+    /// `Task.cancel()` is fire-and-forget — the underlying Core ML
+    /// `model.prediction(from:)` call doesn't honour cooperative
+    /// cancellation cleanly, so the cancelled inference keeps its
+    /// intermediate tensors allocated until CoreML naturally
+    /// completes (~200-500 ms on SAM2 Tiny). Five rapid taps stacked
+    /// five concurrent SAM2 inferences in memory and the OS watchdog
+    /// killed the app on iPhone 15-class devices.
+    ///
+    /// Build 44 — serialize: every new tap WAITS for the previous
+    /// task's value before starting its own. The previous task is
+    /// still cancelled (so its result gets dropped via the
+    /// `Task.isCancelled` check in `segment(with:)`), but the await
+    /// ensures only one CoreML prediction is in flight at a time.
+    /// The user-visible cost is that very rapid taps queue rather
+    /// than stack — still feels responsive on the happy path
+    /// (1 tap per second leaves the model idle in between).
     private func scheduleSegment(with taps: [SAM2TapPoint]) {
-        segmentTask?.cancel()
-        segmentTask = Task { await segment(with: taps) }
+        let previous = segmentTask
+        segmentTask = Task {
+            previous?.cancel()
+            // Wait for the prior task to actually finish before
+            // launching ours. The prior task's `Task.isCancelled`
+            // guard drops its result; we only commit ours.
+            _ = await previous?.value
+            guard !Task.isCancelled else { return }
+            await segment(with: taps)
+        }
     }
 
     private func segment(with taps: [SAM2TapPoint]) async {
