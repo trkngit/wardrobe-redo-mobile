@@ -5,33 +5,46 @@ Minimalist, editorial, refined. Think luxury magazine meets clean digital produc
 
 ## Color Palette
 
+> **Build 38 — "Mono + Burgundy".** Paper-warm neutrals carry the stage,
+> burgundy is the single rich accent that carries every primary action
+> and editorial moment. Gold and sage are kept declared but de-featured
+> for seasonal use (year-in-review badges, "fits your vibe" ticks).
+> The shift from a gold/ink primary to a burgundy hero is the headline
+> change against Build 28's "Editorial Heritage" palette.
+
 ### Light Mode
 | Token | Hex | Usage |
 |-------|-----|-------|
-| Background | #FAFAFA | App background |
+| Background | #F7F5F0 | App background — paper-warm off-white |
 | Surface | #FFFFFF | Cards, sheets, modals |
-| Text Primary | #2C2C2C | Body text, headings |
+| Text Primary | #1A1A1A | Body text, headings |
 | Text Secondary | #6B6B6B | Captions, metadata |
-| Primary | #B8860B | Buttons, links, key highlights — used sparingly |
-| Primary Light | #D4A843 | Hover/pressed states, subtle accents |
-| Primary Muted | #F5ECD7 | Badge backgrounds, light fills |
-| Destructive | #C41E3A | Delete, error states |
-| Muted | #F0EFED | Disabled states, dividers |
-| Border | #E8E6E3 | Card borders, separators |
+| Charcoal | #3A3A3A | Mid-tone hierarchy (filter labels, secondary nav icons) |
+| **Brand Primary** | **#5C1A2A** | Buttons, links, selected states — the **burgundy hero** |
+| Primary Light | #7A2535 | Hover/pressed states, subtle accents |
+| Primary Muted | #F3E6E8 | Filter chip bg, badge fills, soft burgundy wash |
+| Destructive | #9B1C30 | Delete, error states (red-leaning burgundy so it harmonises) |
+| Muted | #EDEAE3 | Disabled states, dividers |
+| Border | #E0DCD2 | Card borders, separators |
+| Gold (rare) | #C99A3B | Seasonal accent — year-in-review, anniversaries only |
+| Accent Sage | #7B8B6F | Success / "matched well" / capture-good frame |
 
 ### Dark Mode
 | Token | Hex | Usage |
 |-------|-----|-------|
-| Background | #1A1A1A | App background |
-| Surface | #2C2C2C | Cards, sheets, modals |
-| Text Primary | #F5F5F5 | Body text, headings |
-| Text Secondary | #A0A0A0 | Captions, metadata |
-| Primary | #D4A843 | Buttons, links — slightly lighter gold for contrast |
-| Primary Light | #E8C878 | Hover/pressed states |
-| Primary Muted | #3D3425 | Badge backgrounds, light fills |
+| Background | #1A1714 | App background — warm near-black |
+| Surface | #2A2622 | Cards, sheets, modals |
+| Text Primary | #F5F0E7 | Body text, headings (warm paper) |
+| Text Secondary | #9A958C | Captions, metadata |
+| Charcoal | #B8B8B8 | Mid-tone hierarchy (filter labels, secondary nav icons) |
+| **Brand Primary** | **#A8475A** | Buttons, links — lifted burgundy for dark-bg contrast |
+| Primary Light | #C25A6D | Hover/pressed states |
+| Primary Muted | #3D1F26 | Filter chip bg, badge fills |
 | Destructive | #E85D75 | Delete, error states |
-| Muted | #333333 | Disabled states, dividers |
-| Border | #404040 | Card borders, separators |
+| Muted | #332E28 | Disabled states, dividers |
+| Border | #3D3833 | Card borders, separators |
+| Gold (rare) | #E0B65B | Seasonal accent only |
+| Accent Sage | #A8B69E | Success / "matched well" |
 
 ### Implementation
 - Use named color assets in `Assets.xcassets/Colors/` with light/dark variants

@@ -16,19 +16,25 @@ enum Theme {
         static let muted = "Muted"
         static let border = "Border"
 
-        // Build 28 — Editorial Heritage palette. The 100 sites that
-        // read `primary` now resolve to ink (`#1F2937`) instead of
-        // the old gold. These two tokens preserve the gold + sage
-        // accents for selective use:
+        // Build 38 — Mono + Burgundy hero palette. The 100 sites that
+        // read `primary` now resolve to burgundy (`#5C1A2A`). The
+        // previous ink primary moves into `charcoal` for hierarchy
+        // moments that aren't body text but also aren't brand-
+        // accented. Gold + sage stay declared but de-featured:
         //
-        //   • `gold` — premium-accent role on the score badge and
-        //     "Hero" label. The same warm gold we used to apply to
-        //     every CTA, now reserved for moments that earn the
-        //     editorial pop.
-        //   • `accentSage` — micro-accent for future success / OK
-        //     surfaces (capture-good frame, "matched well" ticks).
-        //     Defined now so the next UI surface that needs it can
-        //     pull it without an asset roundtrip.
+        //   • `charcoal` (#3A3A3A) — mid-tone for filter labels,
+        //     non-primary nav icons, secondary headings. Reaches
+        //     for it whenever ink-on-paper hierarchy is needed
+        //     without recruiting the burgundy hero or the muted
+        //     grey text-secondary.
+        //   • `gold` — premium-accent role, RARE. Only seasonal
+        //     editorial moments (year-in-review, anniversary). The
+        //     burgundy now carries the "pop" the gold used to do.
+        //   • `accentSage` — success / "fits your vibe" / capture-
+        //     good frame. Mirrors the gold pattern: declared so the
+        //     next UI surface that needs it can pull without an
+        //     asset roundtrip.
+        static let charcoal = "Charcoal"
         static let gold = "Gold"
         static let accentSage = "AccentSage"
     }
