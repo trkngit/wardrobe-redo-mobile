@@ -232,7 +232,18 @@ struct AddItemView: View {
                     cameraSessionState = newState
                 },
                 onCaptureFailed: { message in
-                    viewModel.errorMessage = "Couldn't capture: \(message)"
+                    viewModel.errorMessage = String(localized: "Couldn't capture: \(message)")
+                    // Build 40 — capture failures now flow to Sentry as
+                    // non-fatal events so we can correlate "no shutter"
+                    // user reports with the AVFoundation error code.
+                    SentryService.captureNonFatal(
+                        NSError(
+                            domain: "WardrobeReDo.Camera",
+                            code: -1,
+                            userInfo: [NSLocalizedDescriptionKey: message]
+                        ),
+                        category: "capture"
+                    )
                 }
             )
             .ignoresSafeArea()
@@ -573,7 +584,7 @@ struct AddItemView: View {
             }
             PrimaryButton("Save to Wardrobe", isLoading: viewModel.isSaving) {
                 guard let userId = appState.currentUser?.id else {
-                    viewModel.errorMessage = "Not signed in. Please restart the app and try again."
+                    viewModel.errorMessage = String(localized: "Not signed in. Please restart the app and try again.")
                     return
                 }
                 Task { await viewModel.save(userId: userId) }
@@ -583,7 +594,7 @@ struct AddItemView: View {
             if canShowAddAnother {
                 Button {
                     guard let userId = appState.currentUser?.id else {
-                        viewModel.errorMessage = "Not signed in. Please restart the app and try again."
+                        viewModel.errorMessage = String(localized: "Not signed in. Please restart the app and try again.")
                         return
                     }
                     Task { await viewModel.onSaveAndAddAnother(userId: userId) }

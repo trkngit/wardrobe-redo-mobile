@@ -175,6 +175,13 @@ final class ImageService: ImageServiceProtocol {
         let thumbnailPath = "\(basePath)/thumb.jpg"
         let maskedPath = "\(basePath)/masked.png"
 
+        // Build 40 — per-file breadcrumbs around each Supabase upload.
+        // Distinguishes a true crash (no `.end` log after `.start`) from
+        // a silent hang (long gap between `.start` and `.end`) from a
+        // user-cancelled flow (no logs at all). The `path` is hashed
+        // to avoid leaking the userFolder/itemId pair into Console;
+        // size is fine to log in the clear since it's bounded info.
+        logger.info("upload.original.start bytes=\(processed.originalData.count, privacy: .public)")
         try await supabase.storage
             .from("wardrobe-images")
             .upload(
@@ -182,7 +189,9 @@ final class ImageService: ImageServiceProtocol {
                 data: processed.originalData,
                 options: FileOptions(contentType: "image/jpeg")
             )
+        logger.info("upload.original.end ok=true")
 
+        logger.info("upload.thumbnail.start bytes=\(processed.thumbnailData.count, privacy: .public)")
         try await supabase.storage
             .from("wardrobe-images")
             .upload(
@@ -190,9 +199,11 @@ final class ImageService: ImageServiceProtocol {
                 data: processed.thumbnailData,
                 options: FileOptions(contentType: "image/jpeg")
             )
+        logger.info("upload.thumbnail.end ok=true")
 
         let uploadedMaskedPath: String?
         if let maskedData = processed.maskedData {
+            logger.info("upload.masked.start bytes=\(maskedData.count, privacy: .public)")
             try await supabase.storage
                 .from("wardrobe-images")
                 .upload(
@@ -200,6 +211,7 @@ final class ImageService: ImageServiceProtocol {
                     data: maskedData,
                     options: FileOptions(contentType: "image/png")
                 )
+            logger.info("upload.masked.end ok=true")
             uploadedMaskedPath = maskedPath
         } else {
             uploadedMaskedPath = nil
@@ -216,6 +228,7 @@ final class ImageService: ImageServiceProtocol {
                 resolvedSourcePath = existing
             } else {
                 let sourcePath = "\(userFolder)/source/\(sourcePhotoId.uuidString.lowercased())/original.jpg"
+                logger.info("upload.source.start bytes=\(processed.originalData.count, privacy: .public)")
                 try await supabase.storage
                     .from("wardrobe-images")
                     .upload(
@@ -223,6 +236,7 @@ final class ImageService: ImageServiceProtocol {
                         data: processed.originalData,
                         options: FileOptions(contentType: "image/jpeg")
                     )
+                logger.info("upload.source.end ok=true")
                 resolvedSourcePath = sourcePath
             }
         } else {

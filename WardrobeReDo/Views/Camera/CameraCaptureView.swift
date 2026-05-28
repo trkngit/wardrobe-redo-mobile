@@ -8,6 +8,7 @@
 @preconcurrency import AVFoundation
 import SwiftUI
 import UIKit
+import os.log
 
 /// Permission states we surface to the SwiftUI layer. Combined with
 /// `.notAvailable` for simulator / missing hardware, this gives the
@@ -315,6 +316,16 @@ private final class PhotoCaptureDelegate: NSObject,
 {
     private let completion: (Result<UIImage, Error>) -> Void
 
+    /// Build 40 — telemetry around the AVFoundation callback so we
+    /// can distinguish a rapid-shutter race (H4: two captures in
+    /// flight overlapping) from a single-capture memory issue. The
+    /// callback fires on AVFoundation's internal session queue, NOT
+    /// the main queue — we record which queue we're on in the
+    /// breadcrumb so the post-ship analysis can confirm whether
+    /// `photoOutput` ever shows up running on main (would indicate
+    /// the AV session is misconfigured).
+    private static let logger = Logger(subsystem: "com.wardroberedo", category: "Camera")
+
     init(completion: @escaping (Result<UIImage, Error>) -> Void) {
         self.completion = completion
         super.init()
@@ -325,7 +336,9 @@ private final class PhotoCaptureDelegate: NSObject,
         didFinishProcessingPhoto photo: AVCapturePhoto,
         error: Error?
     ) {
+        Self.logger.info("camera.photoOutput.start thread=\(Thread.isMainThread ? "main" : "background", privacy: .public) mem=\(MemoryMonitor.currentHeapUsageMB, privacy: .public)")
         if let error {
+            Self.logger.error("camera.photoOutput.end ok=false reason=avError mem=\(MemoryMonitor.currentHeapUsageMB, privacy: .public)")
             completion(.failure(error))
             return
         }
@@ -340,17 +353,21 @@ private final class PhotoCaptureDelegate: NSObject,
         // if the lazy thumbnail extraction fails (unlikely — same
         // ImageIO codec the system would use anyway).
         guard let data = photo.fileDataRepresentation() else {
+            Self.logger.error("camera.photoOutput.end ok=false reason=noFileData mem=\(MemoryMonitor.currentHeapUsageMB, privacy: .public)")
             completion(.failure(PhotoCaptureError.invalidPhotoData))
             return
         }
         if let image = ImageDownsampler.downsampled(from: data) {
+            Self.logger.info("camera.photoOutput.end ok=true path=downsampled mem=\(MemoryMonitor.currentHeapUsageMB, privacy: .public)")
             completion(.success(image))
             return
         }
         guard let image = UIImage(data: data) else {
+            Self.logger.error("camera.photoOutput.end ok=false reason=uiImageDecodeFailed mem=\(MemoryMonitor.currentHeapUsageMB, privacy: .public)")
             completion(.failure(PhotoCaptureError.invalidPhotoData))
             return
         }
+        Self.logger.info("camera.photoOutput.end ok=true path=legacyFullDecode mem=\(MemoryMonitor.currentHeapUsageMB, privacy: .public)")
         completion(.success(image))
     }
 }

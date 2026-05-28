@@ -54,17 +54,17 @@ final class AuthViewModel {
 
     var emailValidationMessage: String? {
         guard !email.isEmpty else { return nil }
-        return isEmailValid ? nil : "Enter a valid email address"
+        return isEmailValid ? nil : String(localized: "Enter a valid email address")
     }
 
     var passwordValidationMessage: String? {
         guard !password.isEmpty else { return nil }
-        return isPasswordValid ? nil : "8+ characters, uppercase, lowercase, and a number"
+        return isPasswordValid ? nil : String(localized: "8+ characters, uppercase, lowercase, and a number")
     }
 
     var confirmPasswordMessage: String? {
         guard !confirmPassword.isEmpty else { return nil }
-        return passwordsMatch ? nil : "Passwords don't match"
+        return passwordsMatch ? nil : String(localized: "Passwords don't match")
     }
 
     // MARK: - Dependencies
@@ -118,7 +118,11 @@ final class AuthViewModel {
             case .signedIn:
                 clearForm()
             case .confirmationRequired(let email):
-                infoMessage = "Account created. Check \(email) for a confirmation link, then sign in."
+                // Build 40 — localized via the catalog key
+                // "Account created. Check %@ for a confirmation link, then sign in."
+                // String(localized:) with interpolation resolves the
+                // key and substitutes %@ with the email.
+                infoMessage = String(localized: "Account created. Check \(email) for a confirmation link, then sign in.")
                 showSignUp = false
                 // Keep email pre-filled, clear password fields
                 password = ""
@@ -241,7 +245,7 @@ final class AuthViewModel {
         #if DEBUG
         return "Auth error: \(error.localizedDescription)"
         #else
-        return "Something went wrong. Please try again."
+        return String(localized: "Something went wrong. Please try again.")
         #endif
     }
 }

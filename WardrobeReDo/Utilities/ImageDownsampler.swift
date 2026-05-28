@@ -1,5 +1,15 @@
 import UIKit
 import ImageIO
+import os.log
+
+/// Build 40 — telemetry hook for the colorspace-redraw step. The
+/// `downsampled(from:)` path was already known to occasionally fall
+/// back to the raw thumbnail (bitmap context allocation failed),
+/// but we had no visibility into how often or under what memory
+/// pressure. These breadcrumbs surface that distribution so the
+/// next crash report can be matched against `mem=` at the moment of
+/// failure.
+private let logger = Logger(subsystem: "com.wardroberedo", category: "ImageDownsampler")
 
 /// Build 26 — pure helper for camera-capture memory pressure.
 ///
@@ -123,13 +133,16 @@ enum ImageDownsampler {
             // Bitmap context allocation failed (extreme memory
             // pressure). Use the raw thumbnail — Vision still
             // accepts it on most paths.
+            logger.warning("downsample.colorspaceRedraw: contextAllocFailed w=\(width, privacy: .public) h=\(height, privacy: .public) mem=\(MemoryMonitor.currentHeapUsageMB, privacy: .public)")
             return UIImage(cgImage: thumb)
         }
         context.interpolationQuality = .high
         context.draw(thumb, in: CGRect(x: 0, y: 0, width: width, height: height))
         guard let normalized = context.makeImage() else {
+            logger.warning("downsample.colorspaceRedraw: makeImageFailed mem=\(MemoryMonitor.currentHeapUsageMB, privacy: .public)")
             return UIImage(cgImage: thumb)
         }
+        logger.info("downsample.colorspaceRedraw: ok w=\(width, privacy: .public) h=\(height, privacy: .public) mem=\(MemoryMonitor.currentHeapUsageMB, privacy: .public)")
         return UIImage(cgImage: normalized)
     }
 }

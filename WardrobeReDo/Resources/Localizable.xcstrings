@@ -1,1799 +1,3316 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Archive Item" : {
-      "comment" : "ItemDetail destructive section header",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ürünü Arşivle"
+  "sourceLanguage": "en",
+  "strings": {
+    "%lld found": {
+      "comment": "Match results count (e.g. \"3 found\")",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld bulundu"
           }
         }
       }
     },
-    "Archived items hide from your wardrobe and outfit suggestions. You can restore them later from the archive view." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Arşivlenen ürünler gardırobundan ve kombin önerilerinden gizlenir. Daha sonra arşiv görünümünden geri yükleyebilirsin."
+    "%lld items": {
+      "comment": "Wardrobe count line (plural)",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld ürün"
           }
         }
       }
     },
-    "Auto-detected" : {
-      "comment" : "ItemForm a11y badge for auto-detected fields",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Otomatik algılandı"
+    "%lld outfits": {
+      "comment": "Outfit count in the Outfits header",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld kombin"
           }
         }
       }
     },
-    "Category" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kategori"
+    "1 item": {
+      "comment": "Wardrobe count line (singular)",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 ürün"
           }
         }
       }
     },
-    "Details" : {
-      "comment" : "ItemDetailView section header",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Detaylar" } } }
+    "8+ characters, uppercase, lowercase, and a number": {
+      "comment": "AuthViewModel.passwordValidationMessage",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "8+ karakter, büyük harf, küçük harf ve bir rakam"
+          }
+        }
+      }
+    },
+    "A balanced look": {
+      "comment": "Vibe tagline",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dengeli bir görünüm"
+          }
+        }
+      }
+    },
+    "About": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hakkında"
+          }
+        }
+      }
+    },
+    "Accessories": {
+      "comment": "Category — plural form",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aksesuarlar"
+          }
+        }
+      }
+    },
+    "Account created. Check %@ for a confirmation link, then sign in.": {
+      "comment": "AuthViewModel.signUp infoMessage after email confirmation needed",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hesap oluşturuldu. %@ adresine gelen doğrulama bağlantısını aç, sonra giriş yap."
+          }
+        }
+      }
+    },
+    "Account creation is currently unavailable. The team has been notified.": {
+      "comment": "AuthError.databaseSignupFailure",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hesap oluşturma şu anda kullanılamıyor. Ekip bilgilendirildi."
+          }
+        }
+      }
+    },
+    "Add First Item": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlk Ürünü Ekle"
+          }
+        }
+      }
+    },
+    "Add Item": {
+      "comment": "AddItemView navigation title",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ürün Ekle"
+          }
+        }
+      }
+    },
+    "Add a few items to start generating outfits.": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kombin oluşturmaya başlamak için birkaç ürün ekle."
+          }
+        }
+      }
+    },
+    "Add a photo": {
+      "comment": "AddItemView empty state",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf ekle"
+          }
+        }
+      }
+    },
+    "Add an Item": {
+      "comment": "Failure-state deep-link CTA to the Wardrobe Add sheet",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ürün Ekle"
+          }
+        }
+      }
+    },
+    "Add at least one more item — outfits need at least two pieces.": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir ürün daha ekle — kombinler en az iki parçaya ihtiyaç duyar."
+          }
+        }
+      }
+    },
+    "Add items to your wardrobe first": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önce gardırobuna ürün ekle"
+          }
+        }
+      }
+    },
+    "Add more variety to your wardrobe to generate outfits.": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kombin oluşturmak için gardırobuna çeşit ekle."
+          }
+        }
+      }
+    },
+    "Add your first item to get started with personalized outfit suggestions.": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kişiselleştirilmiş kombin önerileri için ilk ürününü ekle."
+          }
+        }
+      }
+    },
+    "Adventurous": {
+      "comment": "Vibe stop label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cesur"
+          }
+        }
+      }
+    },
+    "Adventurous mix": {
+      "comment": "Vibe tagline",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cesur karışım"
+          }
+        }
+      }
+    },
+    "All": {
+      "comment": "Category filter pill — show every category",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hepsi"
+          }
+        }
+      }
+    },
+    "Already have an account? Sign In": {
+      "comment": "LoginView GhostButton label on sign-up form",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaten bir hesabın var mı? Giriş yap"
+          }
+        }
+      }
+    },
+    "An account with this email already exists.": {
+      "comment": "AuthError.emailTaken",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu e-postaya ait bir hesap zaten var."
+          }
+        }
+      }
+    },
+    "Analysis took too long. Try a clearer photo or smaller capture.": {
+      "comment": "AddItemViewModel.handleProcessingTimeout",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz çok uzun sürdü. Daha net bir fotoğraf veya daha küçük bir kare dene."
+          }
+        }
+      }
+    },
+    "Analyzing photo…": {
+      "comment": "AnalyzingPopup title",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf analiz ediliyor…"
+          }
+        }
+      }
+    },
+    "Archive": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivle"
+          }
+        }
+      }
+    },
+    "Archive Item": {
+      "comment": "ItemDetail destructive section header",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ürünü Arşivle"
+          }
+        }
+      }
+    },
+    "Archived items hide from your wardrobe and outfit suggestions. You can restore them later from the archive view.": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivlenen ürünler gardırobundan ve kombin önerilerinden gizlenir. Daha sonra arşiv görünümünden geri yükleyebilirsin."
+          }
+        }
+      }
+    },
+    "Athletic": {
+      "comment": "Occasion chip label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spor"
+          }
+        }
+      }
+    },
+    "Auto-cropped — double-check the outline": {
+      "comment": "MaskTouchupView auto-cropped badge",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otomatik kırpıldı — sınırı bir kez daha kontrol et"
+          }
+        }
+      }
+    },
+    "Auto-detected": {
+      "comment": "ItemForm a11y badge for auto-detected fields",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otomatik algılandı"
+          }
+        }
+      }
+    },
+    "Auto-detected — tap to refine if needed": {
+      "comment": "TapToSelectView auto-detected hint",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otomatik algılandı — gerekirse dokunarak iyileştir"
+          }
+        }
+      }
+    },
+    "Backpack": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sırt çantası"
+          }
+        }
+      }
+    },
+    "Bag": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çanta"
+          }
+        }
+      }
+    },
+    "Balanced": {
+      "comment": "Vibe stop label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dengeli"
+          }
+        }
+      }
+    },
+    "Ballet Flat": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Babet"
+          }
+        }
+      }
+    },
+    "Baseball Cap": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beyzbol Şapkası"
+          }
+        }
+      }
+    },
+    "Beanie": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bere"
+          }
+        }
+      }
+    },
+    "Belt": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kemer"
+          }
+        }
+      }
+    },
+    "Blazer": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blazer"
+          }
+        }
+      }
+    },
+    "Blouse": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bluz"
+          }
+        }
+      }
+    },
+    "Bold": {
+      "comment": "Vibe stop label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İddialı"
+          }
+        }
+      }
+    },
+    "Bomber": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bomber Mont"
+          }
+        }
+      }
+    },
+    "Boots": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bot"
+          }
+        }
+      }
+    },
+    "Bottoms": {
+      "comment": "Category — plural form",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alt Giyim"
+          }
+        }
+      }
+    },
+    "Bracelet": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bileklik"
+          }
+        }
+      }
+    },
+    "Break the rules": {
+      "comment": "Vibe tagline",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kuralları çiğne"
+          }
+        }
+      }
+    },
+    "Build Your Wardrobe": {
+      "comment": "OnboardingView add-items step header",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gardırobunu Oluştur"
+          }
+        }
+      }
+    },
+    "Button-Down": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düğmeli Gömlek"
+          }
+        }
+      }
     },
-    "Fit" : {
-      "comment" : "ItemForm + ItemDetail label",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kalıp" } } }
+    "Camera access needed": {
+      "comment": "CameraOverlay permission-denied header",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kamera izni gerekli"
+          }
+        }
+      }
     },
-    "Last worn" : {
-      "comment" : "ItemDetail row label",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Son giyildiği zaman" } } }
+    "Camera not available": {
+      "comment": "CameraOverlay hardware-unavailable header",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kamera kullanılamıyor"
+          }
+        }
+      }
     },
-    "Seasons" : {
-      "comment" : "ItemForm + ItemDetail label",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mevsimler" } } }
+    "Camisole": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İçlik"
+          }
+        }
+      }
     },
-    "Texture" : {
-      "comment" : "ItemForm + ItemDetail label",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Doku" } } }
+    "Cancel": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İptal"
+          }
+        }
+      }
     },
-    "Delete" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sil"
+    "Cancelled": {
+      "comment": "AddItemView cancellation toast",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İptal edildi"
           }
         }
       }
     },
-    "Delete Item" : {
-      "comment" : "ItemDetail destructive section header",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ürünü Sil"
+    "Cardigan": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hırka"
           }
         }
       }
     },
-    "Edit" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Düzenle"
+    "Cargo": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kargo"
           }
         }
       }
     },
-    "Item" : {
-      "comment" : "MultiGarmentGridView fallback label for unknown category",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ürün" } } }
+    "Casual": {
+      "comment": "Occasion chip label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Günlük"
+          }
+        }
+      }
     },
-    "Loading image..." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Görsel yükleniyor..."
+    "Casual Dress": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Günlük Elbise"
           }
         }
       }
     },
-    "Subcategory" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alt kategori"
+    "Category": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kategori"
           }
         }
       }
     },
-    "This will permanently remove the item and its photos." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bu, ürünü ve fotoğraflarını kalıcı olarak siler."
+    "Chelsea Boots": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chelsea Bot"
           }
         }
       }
     },
-    "Accessories" : {
-      "comment" : "Category — plural form",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Aksesuarlar" } } }
+    "Chiffon": {
+      "comment": "Texture",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şifon"
+          }
+        }
+      }
     },
-    "Backpack" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sırt çantası" } } }
+    "Chinos": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chino Pantolon"
+          }
+        }
+      }
     },
-    "Bag" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Çanta" } } }
+    "Choose from Library": {
+      "comment": "AddItemView source-picker — photo library option title",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kütüphaneden Seç"
+          }
+        }
+      }
     },
-    "Ballet Flat" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Babet" } } }
+    "Clear Image Cache": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görsel Önbelleğini Temizle"
+          }
+        }
+      }
     },
-    "Baseball Cap" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Beyzbol Şapkası" } } }
+    "Clear search": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aramayı temizle"
+          }
+        }
+      }
     },
-    "Beanie" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bere" } } }
+    "Clearing...": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temizleniyor..."
+          }
+        }
+      }
     },
-    "Belt" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kemer" } } }
+    "Close image viewer": {
+      "comment": "FullScreenImageViewer close button a11y label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görsel görüntüleyiciyi kapat"
+          }
+        }
+      }
     },
-    "Blazer" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Blazer" } } }
+    "Cocktail Dress": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kokteyl Elbisesi"
+          }
+        }
+      }
     },
-    "Blouse" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bluz" } } }
+    "Color": {
+      "comment": "OutfitDetailView dimension bar label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renk"
+          }
+        }
+      }
     },
-    "Bomber" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bomber Mont" } } }
+    "Confirm Password": {
+      "comment": "LoginView signUpForm EditorialTextField placeholder",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parolayı Doğrula"
+          }
+        }
+      }
     },
-    "Boots" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bot" } } }
+    "Context": {
+      "comment": "OutfitDetailView dimension bar label (occasion fit)",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bağlam"
+          }
+        }
+      }
     },
-    "Bottoms" : {
-      "comment" : "Category — plural form",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Alt Giyim" } } }
+    "Corduroy": {
+      "comment": "Texture",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fitilli Kadife"
+          }
+        }
+      }
     },
-    "Bracelet" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bileklik" } } }
+    "Cotton": {
+      "comment": "Texture",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pamuk"
+          }
+        }
+      }
     },
-    "Button-Down" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Düğmeli Gömlek" } } }
+    "Couldn't capture: %@": {
+      "comment": "AddItemView CameraCaptureView.onCaptureFailed",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çekim başarısız: %@"
+          }
+        }
+      }
     },
-    "Camisole" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "İçlik" } } }
+    "Couldn't load that image. Try another one.": {
+      "comment": "AddItemViewModel.onPhotoSelected when loadImage returns nil",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu görsel yüklenemedi. Başka bir tane dene."
+          }
+        }
+      }
     },
-    "Cardigan" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Hırka" } } }
+    "Couldn't process that image. Try another one.": {
+      "comment": "AddItemViewModel.applyProcessedFromLibrary when processed=nil",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu görsel işlenemedi. Başka bir tane dene."
+          }
+        }
+      }
     },
-    "Cargo" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kargo" } } }
+    "Couldn't process that photo. Try again.": {
+      "comment": "AddItemViewModel.applyProcessedFromCamera when processed=nil",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu fotoğraf işlenemedi. Tekrar dene."
+          }
+        }
+      }
     },
-    "Casual Dress" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Günlük Elbise" } } }
+    "Create Account": {
+      "comment": "LoginView signUpForm section header + sign-up CTA",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hesap Oluştur"
+          }
+        }
+      }
     },
-    "Chelsea Boots" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Chelsea Bot" } } }
+    "Crop Top": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kısa Üst"
+          }
+        }
+      }
     },
-    "Chiffon" : {
-      "comment" : "Texture",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Şifon" } } }
+    "Cropped": {
+      "comment": "Fit attribute",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kısaltılmış"
+          }
+        }
+      }
     },
-    "Chinos" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Chino Pantolon" } } }
+    "Curating your outfits...": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kombinlerin hazırlanıyor..."
+          }
+        }
+      }
     },
-    "Cocktail Dress" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kokteyl Elbisesi" } } }
+    "Daily Reminder": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Günlük Hatırlatıcı"
+          }
+        }
+      }
     },
-    "Corduroy" : {
-      "comment" : "Texture",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Fitilli Kadife" } } }
+    "Date": {
+      "comment": "Occasion chip label (a date/evening out)",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buluşma"
+          }
+        }
+      }
     },
-    "Cotton" : {
-      "comment" : "Texture",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Pamuk" } } }
+    "Default vibe": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Varsayılan vibe"
+          }
+        }
+      }
     },
-    "Crop Top" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kısa Üst" } } }
+    "Delete": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sil"
+          }
+        }
+      }
     },
-    "Cropped" : {
-      "comment" : "Fit attribute",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kısaltılmış" } } }
+    "Delete Item": {
+      "comment": "ItemDetail destructive section header",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ürünü Sil"
+          }
+        }
+      }
     },
-    "Denim" : {
-      "comment" : "Texture",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Denim" } } }
+    "Denim": {
+      "comment": "Texture",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Denim"
+          }
+        }
+      }
     },
-    "Denim Jacket" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kot Ceket" } } }
+    "Denim Jacket": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kot Ceket"
+          }
+        }
+      }
     },
-    "Derby" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Derby Ayakkabı" } } }
+    "Derby": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Derby Ayakkabı"
+          }
+        }
+      }
     },
-    "Designer Sneakers" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Tasarımcı Sneaker" } } }
+    "Designer Sneakers": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tasarımcı Sneaker"
+          }
+        }
+      }
     },
-    "Dress Pants" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Klasik Pantolon" } } }
+    "Details": {
+      "comment": "ItemDetailView section header",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detaylar"
+          }
+        }
+      }
     },
-    "Dress Shirt" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Klasik Gömlek" } } }
+    "Detecting clothing and preparing tap-to-select": {
+      "comment": "AnalyzingPopup body",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kıyafet algılanıyor ve dokun-seç hazırlanıyor"
+          }
+        }
+      }
     },
-    "Dress Shoes" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Klasik Ayakkabı" } } }
+    "Developer Menu": {
+      "comment": "ProfileView dev-menu link label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geliştirici Menüsü"
+          }
+        }
+      }
     },
-    "Dresses" : {
-      "comment" : "Category — plural form",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Elbiseler" } } }
+    "Disk Usage": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk Kullanımı"
+          }
+        }
+      }
     },
-    "Earrings" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Küpe" } } }
+    "Display Name": {
+      "comment": "LoginView signUpForm EditorialTextField placeholder",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görünen Ad"
+          }
+        }
+      }
     },
-    "Fall" : {
-      "comment" : "Season",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sonbahar" } } }
+    "Double-tap to enlarge": {
+      "comment": "ItemDetail image a11y hint",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Büyütmek için çift dokun"
+          }
+        }
+      }
     },
-    "Fedora Hat" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Fötr Şapka" } } }
+    "Dress Pants": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klasik Pantolon"
+          }
+        }
+      }
     },
-    "Flats" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Düz Ayakkabı" } } }
+    "Dress Shirt": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klasik Gömlek"
+          }
+        }
+      }
     },
-    "Graphic Tee" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Baskılı Tişört" } } }
+    "Dress Shoes": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klasik Ayakkabı"
+          }
+        }
+      }
     },
-    "Hat" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Şapka" } } }
+    "Dresses": {
+      "comment": "Category — plural form",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elbiseler"
+          }
+        }
+      }
     },
-    "Heels" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Topuklu Ayakkabı" } } }
+    "Earrings": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Küpe"
+          }
+        }
+      }
     },
-    "Henley" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Henley" } } }
+    "Edit": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düzenle"
+          }
+        }
+      }
     },
-    "High Sneaker" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bilekli Sneaker" } } }
+    "Edit Preferences": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tercihleri Düzenle"
+          }
+        }
+      }
     },
-    "High Tops" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bilekli Spor Ayakkabı" } } }
+    "Email": {
+      "comment": "LoginView EditorialTextField placeholder (sign in + sign up)",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "E-posta"
+          }
+        }
+      }
     },
-    "Hoodie" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kapüşonlu Sweatshirt" } } }
+    "Enable camera access in Settings to take photos in-app. You can still choose photos from your library.": {
+      "comment": "CameraOverlay permission-denied detail",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygulama içinden fotoğraf çekebilmek için Ayarlar'dan kamera erişimini aç. Galerinden fotoğraf seçmeye yine de devam edebilirsin."
+          }
+        }
+      }
     },
-    "Jeans" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kot Pantolon" } } }
+    "English": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İngilizce"
+          }
+        }
+      }
     },
-    "Joggers" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Eşofman Altı" } } }
+    "Enter a valid email address": {
+      "comment": "AuthViewModel.emailValidationMessage",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçerli bir e-posta adresi gir"
+          }
+        }
+      }
     },
-    "Knit" : {
-      "comment" : "Texture",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Örgü" } } }
+    "Extracted Colors": {
+      "comment": "AddItemView color section header",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çıkarılan Renkler"
+          }
+        }
+      }
     },
-    "Knit Sweater" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Örgü Kazak" } } }
+    "Failed to save item. Check your connection and try again.": {
+      "comment": "AddItemViewModel.save failure branch",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parça kaydedilemedi. Bağlantını kontrol edip tekrar dene."
+          }
+        }
+      }
     },
-    "Leather" : {
-      "comment" : "Texture",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Deri" } } }
+    "Fall": {
+      "comment": "Season",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sonbahar"
+          }
+        }
+      }
     },
-    "Leather Jacket" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Deri Ceket" } } }
+    "Families": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aileler"
+          }
+        }
+      }
     },
-    "Leggings" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Tayt" } } }
+    "Fedora Hat": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fötr Şapka"
+          }
+        }
+      }
     },
-    "Linen" : {
-      "comment" : "Texture",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Keten" } } }
+    "Finding matches...": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşleşmeler aranıyor..."
+          }
+        }
+      }
     },
-    "Loafers" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Loafer" } } }
+    "Fit": {
+      "comment": "ItemForm + ItemDetail label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalıp"
+          }
+        }
+      }
     },
-    "Low Sneaker" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Alçak Sneaker" } } }
+    "Flats": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düz Ayakkabı"
+          }
+        }
+      }
     },
-    "Maxi Dress" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Maksi Elbise" } } }
+    "Formal": {
+      "comment": "Occasion chip label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resmi"
+          }
+        }
+      }
     },
-    "Midi Dress" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Midi Elbise" } } }
+    "Formality": {
+      "comment": "OutfitDetailView dimension bar label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resmiyet"
+          }
+        }
+      }
     },
-    "Midi Skirt" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Midi Etek" } } }
+    "Formula": {
+      "comment": "OutfitDetailView dimension bar label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Formül"
+          }
+        }
+      }
     },
-    "Mini Dress" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mini Elbise" } } }
+    "Generate Today's Outfits": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugünün Kombinlerini Oluştur"
+          }
+        }
+      }
     },
-    "Mini Skirt" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Mini Etek" } } }
+    "Generate styled outfit suggestions\nfrom your wardrobe.": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gardırobundan stilize\nkombin önerileri oluştur."
+          }
+        }
+      }
     },
-    "Necklace" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kolye" } } }
+    "Get notified when outfits are ready": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kombinler hazır olduğunda bildirim al"
+          }
+        }
+      }
     },
-    "Nylon" : {
-      "comment" : "Texture",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Naylon" } } }
+    "Graphic Tee": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Baskılı Tişört"
+          }
+        }
+      }
     },
-    "Outerwear" : {
-      "comment" : "Category",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Dış Giyim" } } }
+    "Hat": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şapka"
+          }
+        }
+      }
     },
-    "Overcoat" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Palto" } } }
+    "Heels": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Topuklu Ayakkabı"
+          }
+        }
+      }
     },
-    "Oversized" : {
-      "comment" : "Fit attribute",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bol" } } }
+    "Henley": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henley"
+          }
+        }
+      }
     },
-    "Oxford" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Oxford Ayakkabı" } } }
+    "High Sneaker": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bilekli Sneaker"
+          }
+        }
+      }
     },
-    "Parka" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Parka" } } }
+    "High Tops": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bilekli Spor Ayakkabı"
+          }
+        }
+      }
     },
-    "Pencil Skirt" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kalem Etek" } } }
+    "Hoodie": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapüşonlu Sweatshirt"
+          }
+        }
+      }
     },
-    "Polo" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Polo Yaka" } } }
+    "How do you feel about this outfit?": {
+      "comment": "OutfitDetailView reaction bar prompt",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kombin hakkında ne düşünüyorsun?"
+          }
+        }
+      }
     },
-    "Puffer" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Şişme Mont" } } }
+    "Image Cache": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görsel Önbelleği"
+          }
+        }
+      }
     },
-    "Regular" : {
-      "comment" : "Fit attribute",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Normal" } } }
+    "Invalid email or password.": {
+      "comment": "AuthError.invalidCredentials",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçersiz e-posta veya parola."
+          }
+        }
+      }
     },
-    "Relaxed" : {
-      "comment" : "Fit attribute",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Rahat" } } }
+    "Item": {
+      "comment": "MultiGarmentGridView fallback label for unknown category",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ürün"
+          }
+        }
+      }
     },
-    "Running Shoe" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Koşu Ayakkabısı" } } }
+    "Item %lld of %lld": {
+      "comment": "AddItemView multi-garment progress header",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld / %lld ürün"
+          }
+        }
+      }
     },
-    "Sandals" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sandalet" } } }
+    "Items": {
+      "comment": "OutfitDetailView section header above the item gallery",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ürünler"
+          }
+        }
+      }
     },
-    "Satin" : {
-      "comment" : "Texture",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Saten" } } }
+    "Items Worn": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giyilen Ürünler"
+          }
+        }
+      }
     },
-    "Scarf" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Eşarp" } } }
+    "Jeans": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kot Pantolon"
+          }
+        }
+      }
     },
-    "Sheath Dress" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kalem Elbise" } } }
+    "Joggers": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşofman Altı"
+          }
+        }
+      }
     },
-    "Shirt Dress" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Gömlek Elbise" } } }
+    "Knit": {
+      "comment": "Texture",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Örgü"
+          }
+        }
+      }
     },
-    "Shirt Jacket" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Gömlek Ceket" } } }
+    "Knit Sweater": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Örgü Kazak"
+          }
+        }
+      }
     },
-    "Shoes" : {
-      "comment" : "Category — plural form",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ayakkabılar" } } }
+    "Language": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dil"
+          }
+        }
+      }
     },
-    "Shorts" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Şort" } } }
+    "Last worn": {
+      "comment": "ItemDetail row label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Son giyildiği zaman"
+          }
+        }
+      }
     },
-    "Silk" : {
-      "comment" : "Texture",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "İpek" } } }
+    "Least worn": {
+      "comment": "Wardrobe sort option",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En Az Giyilen"
+          }
+        }
+      }
     },
-    "Skirt" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Etek" } } }
+    "Leather": {
+      "comment": "Texture",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deri"
+          }
+        }
+      }
     },
-    "Slim" : {
-      "comment" : "Fit attribute",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Dar" } } }
+    "Leather Jacket": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deri Ceket"
+          }
+        }
+      }
     },
-    "Slim Fit" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Dar Kesim" } } }
+    "Leggings": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tayt"
+          }
+        }
+      }
     },
-    "Slip Dress" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Askılı Elbise" } } }
+    "Like": {
+      "comment": "OutfitDetailView reaction button — thumbs up",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoşlandım"
+          }
+        }
+      }
     },
-    "Sneakers" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sneaker" } } }
+    "Linen": {
+      "comment": "Texture",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keten"
+          }
+        }
+      }
     },
-    "Spring" : {
-      "comment" : "Season",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "İlkbahar" } } }
+    "Live background check + smart crop": {
+      "comment": "AddItemView source-picker — camera option subtitle",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anlık arka plan kontrolü + akıllı kırpma"
+          }
+        }
+      }
     },
-    "Straight Leg" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Düz Kesim" } } }
+    "Loading image...": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görsel yükleniyor..."
+          }
+        }
+      }
     },
-    "Structured" : {
-      "comment" : "Fit attribute",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Yapılandırılmış" } } }
+    "Loading wardrobe...": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gardırop yükleniyor..."
+          }
+        }
+      }
     },
-    "Suede" : {
-      "comment" : "Texture",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Süet" } } }
+    "Loafers": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loafer"
+          }
+        }
+      }
     },
-    "Suit Jacket" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Takım Ceketi" } } }
+    "Lounge": {
+      "comment": "Occasion chip label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rahat"
+          }
+        }
+      }
     },
-    "Summer" : {
-      "comment" : "Season",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Yaz" } } }
+    "Love": {
+      "comment": "OutfitDetailView reaction button — love / heart",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beğen"
+          }
+        }
+      }
     },
-    "Sundress" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Yazlık Elbise" } } }
+    "Low Sneaker": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alçak Sneaker"
+          }
+        }
+      }
     },
-    "Sunglasses" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Güneş Gözlüğü" } } }
+    "Mark as worn": {
+      "comment": "OutfitDetailView mark-as-worn toggle (inactive state)",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giyildi olarak işaretle"
+          }
+        }
+      }
     },
-    "Sweater" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kazak" } } }
+    "Match": {
+      "comment": "Tab name",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşleştir"
+          }
+        }
+      }
     },
-    "Sweatshirt" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sweatshirt" } } }
+    "Maxi Dress": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maksi Elbise"
+          }
+        }
+      }
     },
-    "Synthetic" : {
-      "comment" : "Texture",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Sentetik" } } }
+    "Midi Dress": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Midi Elbise"
+          }
+        }
+      }
     },
-    "T-Shirt" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Tişört" } } }
+    "Midi Skirt": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Midi Etek"
+          }
+        }
+      }
     },
-    "Tank" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Atlet" } } }
+    "Mini Dress": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mini Elbise"
+          }
+        }
+      }
     },
-    "Tank Top" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Askılı Üst" } } }
+    "Mini Skirt": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mini Etek"
+          }
+        }
+      }
     },
-    "Tops" : {
-      "comment" : "Category — plural form",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Üst Giyim" } } }
+    "Most Worn": {
+      "comment": "Profile stat row (most-worn category)",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En Çok Giyilen"
+          }
+        }
+      }
     },
-    "Trench" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Trençkot" } } }
+    "Most worn": {
+      "comment": "Wardrobe sort option",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En Çok Giyilen"
+          }
+        }
+      }
     },
-    "Turtleneck" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Boğazlı" } } }
+    "Necklace": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kolye"
+          }
+        }
+      }
     },
-    "Tweed" : {
-      "comment" : "Texture",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Tüvit" } } }
+    "Newest": {
+      "comment": "Wardrobe sort option (most recent first)",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En Yeni"
+          }
+        }
+      }
     },
-    "V-Neck" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "V Yaka" } } }
+    "No items match your search": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aramayla eşleşen ürün yok"
+          }
+        }
+      }
     },
-    "Varsity Jacket" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Üniversite Ceketi" } } }
+    "No matching outfits found.": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşleşen kombin bulunamadı."
+          }
+        }
+      }
     },
-    "Velvet" : {
-      "comment" : "Texture",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kadife" } } }
+    "No preferences set": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tercih ayarlanmadı"
+          }
+        }
+      }
     },
-    "Watch" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Saat" } } }
+    "Not signed in. Please restart the app and try again.": {
+      "comment": "AddItemView Save / Save-and-add-another guards when appState.currentUser is nil",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oturum açık değil. Uygulamayı yeniden başlatıp tekrar dene."
+          }
+        }
+      }
     },
-    "Wide Leg" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bol Paça" } } }
+    "Notifications": {
+      "comment": "Profile section header",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirimler"
+          }
+        }
+      }
     },
-    "Windbreaker" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Rüzgarlık" } } }
+    "Nylon": {
+      "comment": "Texture",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naylon"
+          }
+        }
+      }
     },
-    "Winter" : {
-      "comment" : "Season",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kış" } } }
+    "Occasions": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durumlar"
+          }
+        }
+      }
     },
-    "Winter Coat" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Kışlık Palto" } } }
+    "Offline. Network connectivity unavailable.": {
+      "comment": "Offline banner a11y label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çevrimdışı. Ağ bağlantısı yok."
+          }
+        }
+      }
     },
-    "Wool" : {
-      "comment" : "Texture",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Yün" } } }
+    "Open the Wardrobe tab to add a piece.": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parça eklemek için Gardırop sekmesini aç."
+          }
+        }
+      }
     },
-    "Wrap Dress" : {
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Anvelop Elbise" } } }
+    "Outerwear": {
+      "comment": "Category",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dış Giyim"
+          }
+        }
+      }
     },
-    "Add a photo" : {
-      "comment" : "AddItemView empty state",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fotoğraf ekle"
+    "Outfit suggestions": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kombin önerileri"
           }
         }
       }
     },
-    "Add Item" : {
-      "comment" : "AddItemView navigation title",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ürün Ekle"
+    "Outfits": {
+      "comment": "Tab name",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kombinler"
           }
         }
       }
     },
-    "Cancelled" : {
-      "comment" : "AddItemView cancellation toast",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İptal edildi"
+    "Outfits Generated": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oluşturulan Kombinler"
           }
         }
       }
     },
-    "Extracted Colors" : {
-      "comment" : "AddItemView color section header",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Çıkarılan Renkler"
+    "Overcoat": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Palto"
           }
         }
       }
     },
-    "Item %lld of %lld" : {
-      "comment" : "AddItemView multi-garment progress header",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld / %lld ürün"
+    "Oversized": {
+      "comment": "Fit attribute",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bol"
           }
         }
       }
     },
-    "Photograph your item against a clean background, or choose from your library." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ürünü temiz bir arka planda fotoğrafla veya kütüphaneden seç."
+    "Oxford": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oxford Ayakkabı"
           }
         }
       }
     },
-    "Resumed your batch" : {
-      "comment" : "AddItemView toast after recovering a draft",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bekleyen ürünlerin geri yüklendi"
+    "Parka": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parka"
           }
         }
       }
     },
-    "Save & add another garment" : {
-      "comment" : "Multi-garment save+continue label",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kaydet ve başka bir parça ekle"
+    "Password": {
+      "comment": "LoginView EditorialTextField placeholder",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parola"
           }
         }
       }
     },
-    "Save to Wardrobe" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gardıroba Kaydet"
+    "Password must be at least 8 characters with uppercase, lowercase, and a number.": {
+      "comment": "AuthError.weakPassword",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parola en az 8 karakter olmalı; büyük harf, küçük harf ve bir rakam içermeli."
           }
         }
       }
     },
-    "Saving to your wardrobe..." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gardırobuna kaydediliyor..."
+    "Passwords don't match": {
+      "comment": "AuthViewModel.confirmPasswordMessage",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parolalar eşleşmiyor"
           }
         }
       }
     },
-    "Skip this item" : {
-      "comment" : "AddItemView multi-garment skip-current button",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bu ürünü atla"
+    "Pencil Skirt": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalem Etek"
           }
         }
       }
     },
-    "Take Photo" : {
-      "comment" : "AddItemView source-picker — camera option title",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fotoğraf Çek"
+    "Photograph your item against a clean background, or choose from your library.": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ürünü temiz bir arka planda fotoğrafla veya kütüphaneden seç."
           }
         }
       }
     },
-    "Live background check + smart crop" : {
-      "comment" : "AddItemView source-picker — camera option subtitle",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Anlık arka plan kontrolü + akıllı kırpma"
+    "Pick an existing photo": {
+      "comment": "AddItemView source-picker — photo library option subtitle",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mevcut bir fotoğraf seç"
           }
         }
       }
     },
-    "Choose from Library" : {
-      "comment" : "AddItemView source-picker — photo library option title",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kütüphaneden Seç"
+    "Pick your default vibe": {
+      "comment": "OnboardingView default-vibe step header",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Varsayılan havayı seç"
           }
         }
       }
     },
-    "Pick an existing photo" : {
-      "comment" : "AddItemView source-picker — photo library option subtitle",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mevcut bir fotoğraf seç"
+    "Place clothing on a clean, flat surface": {
+      "comment": "CameraOverlay framing tip",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kıyafeti temiz, düz bir yüzeye yerleştir"
           }
         }
       }
     },
-    "Take a new photo" : {
-      "comment" : "AddItemView VoiceOver label for the camera button",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yeni fotoğraf çek"
+    "Play it safe": {
+      "comment": "Vibe tagline",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güvenli oyna"
           }
         }
       }
     },
-    "Wardrobe Stats" : {
-      "comment" : "Profile section header",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gardırop İstatistikleri"
+    "Please confirm your email before signing in. Check your inbox.": {
+      "comment": "AuthError.emailNotConfirmed",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giriş yapmadan önce e-postanı doğrula. Gelen kutunu kontrol et."
           }
         }
       }
     },
-    "Total Items" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toplam Ürün"
+    "Polished": {
+      "comment": "Vibe stop label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şık"
           }
         }
       }
     },
-    "Outfits Generated" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Oluşturulan Kombinler"
+    "Polished classics": {
+      "comment": "Vibe tagline",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şık klasikler"
           }
         }
       }
     },
-    "Items Worn" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Giyilen Ürünler"
+    "Polo": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Polo Yaka"
           }
         }
       }
     },
-    "Items" : {
-      "comment" : "OutfitDetailView section header above the item gallery",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ürünler" } } }
+    "Profile": {
+      "comment": "Tab name",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profil"
+          }
+        }
+      }
     },
-    "Score" : {
-      "comment" : "OutfitDetailView total-score badge label",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Puan" } } }
+    "Proportion": {
+      "comment": "OutfitDetailView dimension bar label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oran"
+          }
+        }
+      }
     },
-    "Style Analysis" : {
-      "comment" : "OutfitDetailView section header above the dimension bars",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Stil Analizi" } } }
+    "Puffer": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şişme Mont"
+          }
+        }
+      }
     },
-    "Proportion" : {
-      "comment" : "OutfitDetailView dimension bar label",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Oran" } } }
+    "Regular": {
+      "comment": "Fit attribute",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Normal"
+          }
+        }
+      }
     },
-    "Color" : {
-      "comment" : "OutfitDetailView dimension bar label",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Renk" } } }
+    "Relaxed": {
+      "comment": "Fit attribute",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rahat"
+          }
+        }
+      }
     },
-    "Formality" : {
-      "comment" : "OutfitDetailView dimension bar label",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Resmiyet" } } }
+    "Restart the app to apply the new language.": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni dilin uygulanması için uygulamayı yeniden başlat."
+          }
+        }
+      }
     },
-    "Formula" : {
-      "comment" : "OutfitDetailView dimension bar label",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Formül" } } }
+    "Resumed your batch": {
+      "comment": "AddItemView toast after recovering a draft",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekleyen ürünlerin geri yüklendi"
+          }
+        }
+      }
     },
-    "Versatility" : {
-      "comment" : "OutfitDetailView dimension bar label",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Çok yönlülük" } } }
+    "Rolling…": {
+      "comment": "Surprise-me button loading state",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Karıştırılıyor…"
+          }
+        }
+      }
     },
-    "Context" : {
-      "comment" : "OutfitDetailView dimension bar label (occasion fit)",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bağlam" } } }
+    "Running Shoe": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koşu Ayakkabısı"
+          }
+        }
+      }
     },
-    "Score breakdown not available" : {
-      "comment" : "OutfitDetailView fallback when score breakdown missing",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Puan dökümü mevcut değil" } } }
+    "Safe": {
+      "comment": "Vibe stop label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güvenli"
+          }
+        }
+      }
     },
-    "How do you feel about this outfit?" : {
-      "comment" : "OutfitDetailView reaction bar prompt",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bu kombin hakkında ne düşünüyorsun?" } } }
+    "Sandals": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sandalet"
+          }
+        }
+      }
     },
-    "Love" : {
-      "comment" : "OutfitDetailView reaction button — love / heart",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Beğen" } } }
+    "Satin": {
+      "comment": "Texture",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saten"
+          }
+        }
+      }
     },
-    "Like" : {
-      "comment" : "OutfitDetailView reaction button — thumbs up",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Hoşlandım" } } }
+    "Save": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydet"
+          }
+        }
+      }
     },
-    "Skip" : {
-      "comment" : "OutfitDetailView reaction button — skip / not for me",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Atla" } } }
+    "Save & add another garment": {
+      "comment": "Multi-garment save+continue label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydet ve başka bir parça ekle"
+          }
+        }
+      }
     },
-    "Worn today" : {
-      "comment" : "OutfitDetailView mark-as-worn toggle (active state)",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Bugün giyildi" } } }
+    "Save all": {
+      "comment": "Bulk save action on Match tab",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tümünü kaydet"
+          }
+        }
+      }
     },
-    "Mark as worn" : {
-      "comment" : "OutfitDetailView mark-as-worn toggle (inactive state)",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Giyildi olarak işaretle" } } }
+    "Save to Wardrobe": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gardıroba Kaydet"
+          }
+        }
+      }
     },
-    "Most Worn" : {
-      "comment" : "Profile stat row (most-worn category)",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En Çok Giyilen"
+    "Saved": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydedildi"
           }
         }
       }
     },
-    "Default vibe" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Varsayılan vibe"
+    "Saving to your wardrobe...": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gardırobuna kaydediliyor..."
           }
         }
       }
     },
-    "Where every outfit-generation session starts. You can still slide between Safe and Bold on the Outfits screen." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Her kombin oluşturma oturumunun başlangıcı. Kombin ekranında yine Güvenli ile İddialı arasında kaydırabilirsin."
+    "Saving…": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydediliyor…"
           }
         }
       }
     },
-    "Style Preferences" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stil Tercihleri"
+    "Scarf": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşarp"
           }
         }
       }
     },
-    "Families" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aileler"
+    "Score": {
+      "comment": "OutfitDetailView total-score badge label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puan"
           }
         }
       }
     },
-    "Occasions" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Durumlar"
+    "Score breakdown not available": {
+      "comment": "OutfitDetailView fallback when score breakdown missing",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puan dökümü mevcut değil"
           }
         }
       }
     },
-    "No preferences set" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tercih ayarlanmadı"
+    "Scoring combinations across 7 style dimensions": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 stil boyutunda kombinasyonlar puanlanıyor"
           }
         }
       }
     },
-    "Edit Preferences" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tercihleri Düzenle"
+    "Search wardrobe": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gardıropta ara"
           }
         }
       }
     },
-    "Style Families" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stil Aileleri"
+    "Seasons": {
+      "comment": "ItemForm + ItemDetail label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mevsimler"
           }
         }
       }
     },
-    "Select the styles you gravitate toward." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İlgini çeken stilleri seç."
+    "Select a piece": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir parça seç"
           }
         }
       }
     },
-    "Usual Occasions" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sıkça Gittiğin Durumlar"
+    "Select the style families that resonate with you. This helps us curate better outfits.": {
+      "comment": "OnboardingView style-quiz body",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sana en yakın stil ailelerini seç. Bu, sana daha iyi kombinler önermemizi sağlar."
           }
         }
       }
     },
-    "Notifications" : {
-      "comment" : "Profile section header",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bildirimler"
+    "Select the styles you gravitate toward.": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlgini çeken stilleri seç."
           }
         }
       }
     },
-    "Daily Reminder" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Günlük Hatırlatıcı"
+    "Share outfit": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kombini paylaş"
           }
         }
       }
     },
-    "Get notified when outfits are ready" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kombinler hazır olduğunda bildirim al"
+    "Sheath Dress": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalem Elbise"
           }
         }
       }
     },
-    "Language" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dil"
+    "Shirt Dress": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gömlek Elbise"
           }
         }
       }
     },
-    "System default" : {
-      "comment" : "Language picker option — fall back to device language",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sistem varsayılanı"
+    "Shirt Jacket": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gömlek Ceket"
           }
         }
       }
     },
-    "English" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İngilizce"
+    "Shoes": {
+      "comment": "Category — plural form",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayakkabılar"
           }
         }
       }
     },
-    "Türkçe" : {
-      "comment" : "Turkish (own language label — same in both)",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Türkçe"
+    "Shorts": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şort"
           }
         }
       }
     },
-    "Restart the app to apply the new language." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yeni dilin uygulanması için uygulamayı yeniden başlat."
+    "Sign In": {
+      "comment": "LoginView signInForm section header + AuthError.sceneTitle",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giriş Yap"
           }
         }
       }
     },
-    "Image Cache" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Görsel Önbelleği"
+    "Sign Out": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çıkış Yap"
           }
         }
       }
     },
-    "Disk Usage" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Disk Kullanımı"
+    "Sign in with Apple": {
+      "comment": "Apple Sign In button a11y label on the login screen",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple ile giriş yap"
           }
         }
       }
     },
-    "Clear Image Cache" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Görsel Önbelleğini Temizle"
+    "Silk": {
+      "comment": "Texture",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İpek"
           }
         }
       }
     },
-    "Clearing..." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Temizleniyor..."
+    "Skip": {
+      "comment": "OutfitDetailView reaction button — skip / not for me",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atla"
           }
         }
       }
     },
-    "About" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hakkında"
+    "Skip this item": {
+      "comment": "AddItemView multi-garment skip-current button",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu ürünü atla"
           }
         }
       }
     },
-    "Version" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sürüm"
+    "Skirt": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Etek"
           }
         }
       }
     },
-    "Sign Out" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Çıkış Yap"
+    "Slim": {
+      "comment": "Fit attribute",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dar"
           }
         }
       }
     },
-    "%lld found" : {
-      "comment" : "Match results count (e.g. \"3 found\")",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld bulundu"
+    "Slim Fit": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dar Kesim"
           }
         }
       }
     },
-    "%lld items" : {
-      "comment" : "Wardrobe count line (plural)",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "%lld ürün" } } }
+    "Slip Dress": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Askılı Elbise"
+          }
+        }
+      }
     },
-    "1 item" : {
-      "comment" : "Wardrobe count line (singular)",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "1 ürün" } } }
+    "Sneakers": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sneaker"
+          }
+        }
+      }
     },
-    "%lld outfits" : {
-      "comment" : "Outfit count in the Outfits header",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld kombin"
+    "Something went wrong. Please try again.": {
+      "comment": "AuthViewModel.mapError release fallback",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir şeyler ters gitti. Lütfen tekrar dene."
           }
         }
       }
     },
-    "Surprise me" : {
-      "comment" : "Re-roll button label on Outfits and Match tabs. Build 28 dropped the leading 🎲 emoji.",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Şaşırt beni"
+    "Something went wrong: %@. Tap Try Again.": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir şeyler ters gitti: %@. Tekrar Dene'ye dokun."
           }
         }
       }
     },
-    "Add a few items to start generating outfits." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kombin oluşturmaya başlamak için birkaç ürün ekle."
+    "Sort by": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sıralama"
           }
         }
       }
     },
-    "Add an Item" : {
-      "comment" : "Failure-state deep-link CTA to the Wardrobe Add sheet",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ürün Ekle"
+    "Spring": {
+      "comment": "Season",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlkbahar"
           }
         }
       }
     },
-    "Add at least one more item — outfits need at least two pieces." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bir ürün daha ekle — kombinler en az iki parçaya ihtiyaç duyar."
+    "Starting camera…": {
+      "comment": "CameraOverlay session-starting label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kamera başlatılıyor…"
           }
         }
       }
     },
-    "Add First Item" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İlk Ürünü Ekle"
+    "Straight Leg": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düz Kesim"
           }
         }
       }
     },
-    "Add items to your wardrobe first" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Önce gardırobuna ürün ekle"
+    "Structured": {
+      "comment": "Fit attribute",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yapılandırılmış"
           }
         }
       }
     },
-    "Add more variety to your wardrobe to generate outfits." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kombin oluşturmak için gardırobuna çeşit ekle."
+    "Style Analysis": {
+      "comment": "OutfitDetailView section header above the dimension bars",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stil Analizi"
           }
         }
       }
     },
-    "Add your first item to get started with personalized outfit suggestions." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kişiselleştirilmiş kombin önerileri için ilk ürününü ekle."
+    "Style Families": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stil Aileleri"
           }
         }
       }
     },
-    "All" : {
-      "comment" : "Category filter pill — show every category",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hepsi"
+    "Style Preferences": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stil Tercihleri"
           }
         }
       }
     },
-    "A balanced look" : {
-      "comment" : "Vibe tagline",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dengeli bir görünüm"
+    "Subcategory": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alt kategori"
           }
         }
       }
     },
-    "Adventurous" : {
-      "comment" : "Vibe stop label",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cesur"
+    "Suede": {
+      "comment": "Texture",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süet"
           }
         }
       }
     },
-    "Adventurous mix" : {
-      "comment" : "Vibe tagline",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cesur karışım"
+    "Suit Jacket": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takım Ceketi"
           }
         }
       }
     },
-    "Archive" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Arşivle"
+    "Summer": {
+      "comment": "Season",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yaz"
           }
         }
       }
     },
-    "Athletic" : {
-      "comment" : "Occasion chip label",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Spor"
+    "Sundress": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yazlık Elbise"
           }
         }
       }
     },
-    "Balanced" : {
-      "comment" : "Vibe stop label",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dengeli"
+    "Sunglasses": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güneş Gözlüğü"
           }
         }
       }
     },
-    "Bold" : {
-      "comment" : "Vibe stop label",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İddialı"
+    "Surprise me": {
+      "comment": "Re-roll button label on Outfits and Match tabs. Build 28 dropped the leading 🎲 emoji.",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şaşırt beni"
           }
         }
       }
     },
-    "Break the rules" : {
-      "comment" : "Vibe tagline",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kuralları çiğne"
+    "Sweater": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kazak"
           }
         }
       }
     },
-    "Cancel" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İptal"
+    "Sweatshirt": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sweatshirt"
           }
         }
       }
     },
-    "Casual" : {
-      "comment" : "Occasion chip label",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Günlük"
+    "Synthetic": {
+      "comment": "Texture",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sentetik"
           }
         }
       }
     },
-    "Offline. Network connectivity unavailable." : {
-      "comment" : "Offline banner a11y label",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Çevrimdışı. Ağ bağlantısı yok." } } }
+    "System default": {
+      "comment": "Language picker option — fall back to device language",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sistem varsayılanı"
+          }
+        }
+      }
     },
-    "Sign in with Apple" : {
-      "comment" : "Apple Sign In button a11y label on the login screen",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Apple ile giriş yap" } } }
+    "T-Shirt": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tişört"
+          }
+        }
+      }
     },
-    "or" : {
-      "comment" : "Divider between Apple Sign In and the email form",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "ya da" } } }
+    "Take Photo": {
+      "comment": "AddItemView source-picker — camera option title",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fotoğraf Çek"
+          }
+        }
+      }
     },
-    "You're offline" : {
-      "comment" : "Offline banner visible label",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Çevrimdışısın" } } }
+    "Take a new photo": {
+      "comment": "AddItemView VoiceOver label for the camera button",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni fotoğraf çek"
+          }
+        }
+      }
     },
-    "Close image viewer" : {
-      "comment" : "FullScreenImageViewer close button a11y label",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Görsel görüntüleyiciyi kapat" } } }
+    "Tank": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atlet"
+          }
+        }
+      }
     },
-    "Double-tap to enlarge" : {
-      "comment" : "ItemDetail image a11y hint",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Büyütmek için çift dokun" } } }
+    "Tank Top": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Askılı Üst"
+          }
+        }
+      }
     },
-    "View item photo full screen" : {
-      "comment" : "ItemDetail image a11y label",
-      "localizations" : { "tr" : { "stringUnit" : { "state" : "translated", "value" : "Ürün fotoğrafını tam ekran gör" } } }
+    "Tap an item above to find\noutfits built around it": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yukarıdan bir parça seçince\nona göre kombin oluşturulur"
+          }
+        }
+      }
     },
-    "Clear search" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aramayı temizle"
+    "Texture": {
+      "comment": "ItemForm + ItemDetail label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doku"
           }
         }
       }
     },
-    "Curating your outfits..." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kombinlerin hazırlanıyor..."
+    "The connection is slow. Tap Try Again.": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bağlantı yavaş. Tekrar Dene'ye dokun."
           }
         }
       }
     },
-    "Date" : {
-      "comment" : "Occasion chip label (a date/evening out)",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Buluşma"
+    "This device or environment doesn't have a usable camera. Try choosing a photo from your library instead.": {
+      "comment": "CameraOverlay hardware-unavailable detail",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu cihaz veya ortamda kullanılabilir bir kamera yok. Onun yerine galerinden bir fotoğraf seçmeyi dene."
           }
         }
       }
     },
-    "Finding matches..." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eşleşmeler aranıyor..."
+    "This will permanently remove the item and its photos.": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu, ürünü ve fotoğraflarını kalıcı olarak siler."
           }
         }
       }
     },
-    "Formal" : {
-      "comment" : "Occasion chip label",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Resmi"
+    "Today's Outfits": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugünün Kombinleri"
           }
         }
       }
     },
-    "Generate Today's Outfits" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bugünün Kombinlerini Oluştur"
+    "Too many attempts. Please wait a minute and try again.": {
+      "comment": "AuthError.rateLimited",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çok fazla deneme. Lütfen bir dakika bekleyip tekrar dene."
           }
         }
       }
     },
-    "Generate styled outfit suggestions\nfrom your wardrobe." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gardırobundan stilize\nkombin önerileri oluştur."
+    "Tops": {
+      "comment": "Category — plural form",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Üst Giyim"
           }
         }
       }
     },
-    "Lounge" : {
-      "comment" : "Occasion chip label",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rahat"
+    "Total Items": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toplam Ürün"
           }
         }
       }
     },
-    "Least worn" : {
-      "comment" : "Wardrobe sort option",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En Az Giyilen"
+    "Trench": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trençkot"
           }
         }
       }
     },
-    "Loading wardrobe..." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gardırop yükleniyor..."
+    "Try Again": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekrar Dene"
           }
         }
       }
     },
-    "Match" : {
-      "comment" : "Tab name",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eşleştir"
+    "Try a different item": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Farklı bir parça dene"
           }
         }
       }
     },
-    "Most worn" : {
-      "comment" : "Wardrobe sort option",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En Çok Giyilen"
+    "Turtleneck": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boğazlı"
           }
         }
       }
     },
-    "Newest" : {
-      "comment" : "Wardrobe sort option (most recent first)",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En Yeni"
+    "Tweed": {
+      "comment": "Texture",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüvit"
           }
         }
       }
     },
-    "No items match your search" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aramayla eşleşen ürün yok"
+    "Türkçe": {
+      "comment": "Turkish (own language label — same in both)",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Türkçe"
           }
         }
       }
     },
-    "No matching outfits found." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eşleşen kombin bulunamadı."
+    "Unable to create session. Please try again.": {
+      "comment": "AuthError.noSession",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oturum oluşturulamadı. Lütfen tekrar dene."
           }
         }
       }
     },
-    "Open the Wardrobe tab to add a piece." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Parça eklemek için Gardırop sekmesini aç."
+    "Updated for %@ · %@": {
+      "comment": "Status toast after a debounced regen. First %@ is occasion display name, second is vibe display name.",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@ için güncellendi"
           }
         }
       }
     },
-    "Play it safe" : {
-      "comment" : "Vibe tagline",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Güvenli oyna"
+    "Usual Occasions": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sıkça Gittiğin Durumlar"
           }
         }
       }
     },
-    "Polished" : {
-      "comment" : "Vibe stop label",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Şık"
+    "V-Neck": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "V Yaka"
           }
         }
       }
     },
-    "Polished classics" : {
-      "comment" : "Vibe tagline",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Şık klasikler"
+    "Varsity Jacket": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Üniversite Ceketi"
           }
         }
       }
     },
-    "Safe" : {
-      "comment" : "Vibe stop label",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Güvenli"
+    "Velvet": {
+      "comment": "Texture",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kadife"
           }
         }
       }
     },
-    "Outfit suggestions" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kombin önerileri"
+    "Versatility": {
+      "comment": "OutfitDetailView dimension bar label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çok yönlülük"
           }
         }
       }
     },
-    "Outfits" : {
-      "comment" : "Tab name",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kombinler"
+    "Version": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sürüm"
           }
         }
       }
     },
-    "Profile" : {
-      "comment" : "Tab name",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Profil"
+    "View item photo full screen": {
+      "comment": "ItemDetail image a11y label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ürün fotoğrafını tam ekran gör"
           }
         }
       }
     },
-    "Rolling…" : {
-      "comment" : "Surprise-me button loading state",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Karıştırılıyor…"
+    "Wardrobe": {
+      "comment": "Tab name",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gardırop"
           }
         }
       }
     },
-    "Save" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kaydet"
+    "Wardrobe Stats": {
+      "comment": "Profile section header",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gardırop İstatistikleri"
           }
         }
       }
     },
-    "Save all" : {
-      "comment" : "Bulk save action on Match tab",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tümünü kaydet"
+    "Watch": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saat"
           }
         }
       }
     },
-    "Saved" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kaydedildi"
+    "We couldn't build any outfits with your current wardrobe. Try a different occasion, or add more variety.": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mevcut gardırobunla kombin oluşturamadık. Farklı bir durum dene veya çeşit ekle."
           }
         }
       }
     },
-    "Saving…" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kaydediliyor…"
+    "Wearing layers? Take a separate photo of each piece for the cleanest results.": {
+      "comment": "MultiGarmentGridView layering tip",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Birden fazla parça mı giyiyorsun? En temiz sonuç için her parçanın ayrı bir fotoğrafını çek."
           }
         }
       }
     },
-    "Scoring combinations across 7 style dimensions" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "7 stil boyutunda kombinasyonlar puanlanıyor"
+    "Where every outfit-generation session starts. You can still slide between Safe and Bold on the Outfits screen.": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Her kombin oluşturma oturumunun başlangıcı. Kombin ekranında yine Güvenli ile İddialı arasında kaydırabilirsin."
           }
         }
       }
     },
-    "Search wardrobe" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gardıropta ara"
+    "Where should the engine start when you tap Generate? You can always slide between Safe and Bold on the Outfits screen.": {
+      "comment": "OnboardingView default-vibe step detail",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Üret'e dokunduğunda motor nereden başlasın? Kombinler ekranında Güvenli ve Cesur arasında istediğin zaman geçiş yapabilirsin."
           }
         }
       }
     },
-    "Select a piece" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bir parça seç"
+    "Wide Leg": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bol Paça"
           }
         }
       }
     },
-    "Share outfit" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kombini paylaş"
+    "Windbreaker": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rüzgarlık"
           }
         }
       }
     },
-    "Something went wrong: %@. Tap Try Again." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bir şeyler ters gitti: %@. Tekrar Dene'ye dokun."
+    "Winter": {
+      "comment": "Season",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kış"
           }
         }
       }
     },
-    "Sort by" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sıralama"
+    "Winter Coat": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kışlık Palto"
           }
         }
       }
     },
-    "Tap an item above to find\noutfits built around it" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yukarıdan bir parça seçince\nona göre kombin oluşturulur"
+    "Wool": {
+      "comment": "Texture",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yün"
           }
         }
       }
     },
-    "The connection is slow. Tap Try Again." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bağlantı yavaş. Tekrar Dene'ye dokun."
+    "Work": {
+      "comment": "Occasion chip label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İş"
           }
         }
       }
     },
-    "Today's Outfits" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bugünün Kombinleri"
+    "Worn": {
+      "comment": "Footer badge on a worn outfit card",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giyildi"
           }
         }
       }
     },
-    "Try a different item" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Farklı bir parça dene"
+    "Worn today": {
+      "comment": "OutfitDetailView mark-as-worn toggle (active state)",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bugün giyildi"
           }
         }
       }
     },
-    "Try Again" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tekrar Dene"
+    "Wrap Dress": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anvelop Elbise"
           }
         }
       }
     },
-    "Updated for %@ · %@" : {
-      "comment" : "Status toast after a debounced regen. First %@ is occasion display name, second is vibe display name.",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ · %@ için güncellendi"
+    "You'll need at least a few items\nbefore we can find matches.": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşleşme bulabilmemiz için\nbirkaç parçaya ihtiyacın var."
           }
         }
       }
     },
-    "Wardrobe" : {
-      "comment" : "Tab name",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gardırop"
+    "You're All Set": {
+      "comment": "OnboardingView final step header",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hazırsın"
           }
         }
       }
     },
-    "We couldn't build any outfits with your current wardrobe. Try a different occasion, or add more variety." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mevcut gardırobunla kombin oluşturamadık. Farklı bir durum dene veya çeşit ekle."
+    "You're offline": {
+      "comment": "Offline banner visible label",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çevrimdışısın"
           }
         }
       }
     },
-    "Work" : {
-      "comment" : "Occasion chip label",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İş"
+    "Your Daily Outfits": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Günlük Kombinlerin"
           }
         }
       }
     },
-    "Worn" : {
-      "comment" : "Footer badge on a worn outfit card",
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Giyildi"
+    "Your Style": {
+      "comment": "OnboardingView style-quiz section header",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stilin"
           }
         }
       }
     },
-    "Your Daily Outfits" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Günlük Kombinlerin"
+    "Your daily style, curated.": {
+      "comment": "LoginView byline beneath the Wardrobe brand mark",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Günlük stilin, özenle seçildi."
           }
         }
       }
     },
-    "Your wardrobe is empty" : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gardırobun boş"
+    "Your wardrobe is empty": {
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gardırobun boş"
           }
         }
       }
     },
-    "You'll need at least a few items\nbefore we can find matches." : {
-      "localizations" : {
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eşleşme bulabilmemiz için\nbirkaç parçaya ihtiyacın var."
+    "or": {
+      "comment": "Divider between Apple Sign In and the email form",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ya da"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

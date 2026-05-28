@@ -91,6 +91,31 @@ enum SentryService {
         #endif
     }
 
+    /// Build 40 — non-fatal error capture surface used by the photo
+    /// pipeline's failure branches (save, capture). The image-upload
+    /// crash investigation flagged that until now, ONLY hard crashes
+    /// reached the Sentry dashboard — recoverable failures that
+    /// surface as a banner in the app were invisible. Wiring this
+    /// in makes the "user saw a save-failed banner" event a real
+    /// signal we can correlate against breadcrumbs.
+    ///
+    /// Tags `category` so the dashboard can filter by surface
+    /// (`save`, `capture`, …). Returns `false` when the SDK is
+    /// disabled so the caller can fall back to a `Logger` line
+    /// without double-bookkeeping.
+    @discardableResult
+    static func captureNonFatal(_ error: Error, category: StaticString) -> Bool {
+        #if canImport(Sentry)
+        guard SentrySDK.isEnabled else { return false }
+        SentrySDK.capture(error: error) { scope in
+            scope.setTag(value: String(describing: category), key: "category")
+        }
+        return true
+        #else
+        return false
+        #endif
+    }
+
     // MARK: - Private
 
     /// Read `SENTRY_DSN` from the same `Secrets.plist` Supabase uses.

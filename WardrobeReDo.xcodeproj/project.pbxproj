@@ -214,6 +214,7 @@
 		9A6559BAC55291A82A3A6AF9 /* AddItemView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2869F1610C0A845EE9693D4B /* AddItemView.swift */; };
 		9BBDABE548490B11A1DAF9BC /* on_person_08.jpg in Resources */ = {isa = PBXBuildFile; fileRef = F798A065F76E9F7634F316B8 /* on_person_08.jpg */; };
 		9C0DB89E9733341ADD9104C5 /* BackgroundQualityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2852392E1C43C8F0995299C7 /* BackgroundQualityMonitor.swift */; };
+		9CE6D14FE8522793C253DB41 /* MemoryMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 027E47C7B6D15D396A6C830F /* MemoryMonitor.swift */; };
 		9EE1D83CC232F076E4D8F87B /* on_person_01.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 61022F84DE673666464888C5 /* on_person_01.jpg */; };
 		9F858C833F6A1FB55E723AD3 /* UserRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = B758DE2E6A51366CEE73B921 /* UserRepository.swift */; };
 		A1D6F964BC3C338DF5E221A3 /* clean_bg_03.png in Resources */ = {isa = PBXBuildFile; fileRef = CF92027580C7F5D403AF8B59 /* clean_bg_03.png */; };
@@ -374,6 +375,7 @@
 
 /* Begin PBXFileReference section */
 		026A04AF2E342BF909E1B5AC /* VersatilityNoveltyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersatilityNoveltyTests.swift; sourceTree = "<group>"; };
+		027E47C7B6D15D396A6C830F /* MemoryMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryMonitor.swift; sourceTree = "<group>"; };
 		03480C1256AC46E910409170 /* clean_bg_08.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = clean_bg_08.png; sourceTree = "<group>"; };
 		03C221530AA11F1E08890105 /* FullScreenImageViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullScreenImageViewer.swift; sourceTree = "<group>"; };
 		0462CAEDBFC70A40F03F85A0 /* OutfitScoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutfitScoreTests.swift; sourceTree = "<group>"; };
@@ -1093,6 +1095,7 @@
 				DE192291275B51C5BEBD79B6 /* AlphaTrimCache.swift */,
 				0EF6A5194E35C3368CC1F928 /* AlphaTrimmer.swift */,
 				109E90304F009A1CBD2AF812 /* ImageDownsampler.swift */,
+				027E47C7B6D15D396A6C830F /* MemoryMonitor.swift */,
 				6B6D377567EAE2466BD3D20C /* OrientationUtil.swift */,
 				408D0A28DAE35AACF77A13F0 /* TimeoutRace.swift */,
 			);
@@ -1866,6 +1869,7 @@
 				F528ECD1B99386F0578581BF /* MatchResultCard.swift in Sources */,
 				3341D2AD19E44C39106DEAC6 /* MatchingView.swift in Sources */,
 				669EEB54431DB7BCA36ED44E /* MatchingViewModel.swift in Sources */,
+				9CE6D14FE8522793C253DB41 /* MemoryMonitor.swift in Sources */,
 				7E016B9C20178B9681033845 /* MultiGarmentGridView.swift in Sources */,
 				7D77520EE8F296141536D818 /* MultiGarmentProposalService.swift in Sources */,
 				8F4CF9D6DD09F8A9AE9BB47C /* MultiGarmentSmokeTest.swift in Sources */,
@@ -2247,7 +2251,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = WardrobeReDoWidget/WardrobeReDoWidget.entitlements;
-				CURRENT_PROJECT_VERSION = 39;
+				CURRENT_PROJECT_VERSION = 40;
 				INFOPLIST_FILE = WardrobeReDoWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -2349,7 +2353,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = WardrobeReDoWidget/WardrobeReDoWidget.entitlements;
-				CURRENT_PROJECT_VERSION = 39;
+				CURRENT_PROJECT_VERSION = 40;
 				INFOPLIST_FILE = WardrobeReDoWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

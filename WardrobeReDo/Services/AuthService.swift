@@ -108,14 +108,20 @@ enum AuthError: LocalizedError {
     case rateLimited
 
     var errorDescription: String? {
+        // Build 40 — `String(localized:)` resolves each case against
+        // the catalog so Turkish locale users see Turkish messages
+        // instead of the English fallback. Catalog keys are the
+        // English source strings themselves (development language is
+        // `en`), so adding a `tr` translation per key is all the
+        // localizer / next migration has to ship.
         switch self {
-        case .noSession: "Unable to create session. Please try again."
-        case .invalidCredentials: "Invalid email or password."
-        case .weakPassword: "Password must be at least 8 characters with uppercase, lowercase, and a number."
-        case .emailTaken: "An account with this email already exists."
-        case .emailNotConfirmed: "Please confirm your email before signing in. Check your inbox."
-        case .databaseSignupFailure: "Account creation is currently unavailable. The team has been notified."
-        case .rateLimited: "Too many attempts. Please wait a minute and try again."
+        case .noSession: String(localized: "Unable to create session. Please try again.")
+        case .invalidCredentials: String(localized: "Invalid email or password.")
+        case .weakPassword: String(localized: "Password must be at least 8 characters with uppercase, lowercase, and a number.")
+        case .emailTaken: String(localized: "An account with this email already exists.")
+        case .emailNotConfirmed: String(localized: "Please confirm your email before signing in. Check your inbox.")
+        case .databaseSignupFailure: String(localized: "Account creation is currently unavailable. The team has been notified.")
+        case .rateLimited: String(localized: "Too many attempts. Please wait a minute and try again.")
         }
     }
 }

@@ -256,7 +256,7 @@ final class AddItemViewModel {
 
         guard let image = await imageService.loadImage(from: item) else {
             logger.error("library.loadImage: returned nil")
-            errorMessage = "Couldn't load that image. Try another one."
+            errorMessage = String(localized: "Couldn't load that image. Try another one.")
             currentStep = .photo
             isProcessing = false
             return
@@ -266,21 +266,23 @@ final class AddItemViewModel {
         selectedImage = image
         stampFreshCapture()
 
-        // Kick off SAM2 session load concurrently with Vision processing.
-        // The session isn't consumed until the user reaches tap-to-select
-        // (either "Trouble cropping?" or "Save & add another"), so its
-        // ~60 ms pixel-buffer resize completes behind the processing
-        // wait and the first tap in the user flow fires without a cold
-        // start. Cheap (session is non-optional Sendable) but net-win.
+        // Build 40 — SAM2 session load deferred to `applyProcessedFromLibrary`.
+        // Previously kicked off here in parallel with Vision processing
+        // ("session isn't consumed until tap-to-select, so hide the cost"
+        // — was the prior rationale). In practice the ~100 MB MLModel
+        // load stacked on top of the picker's bitmap + Vision buffers,
+        // pushing `phys_footprint` past the foreground jetsam limit on
+        // iPhone 12-class devices DURING the "Analyzing…" window. By
+        // moving the load AFTER processing completes successfully, the
+        // peak memory footprint drops by the size of the model. Cost:
+        // ~1 s longer on the analyzing spinner — same screen, same UX
+        // state, just a slightly longer wait.
         //
-        // Cancel any in-flight session load from a prior capture before
-        // starting a new one — rapid back-to-back photo selections
-        // would otherwise stack two MLModel loads in memory.
+        // Cancel any in-flight session load from a PRIOR capture
+        // (rapid back-to-back photo selections) so we don't leave a
+        // dangling MLModel load running.
         sessionLoadTask?.cancel()
-        let sessionTask = Task { [clothingExtractor] in
-            await clothingExtractor.makeSession(for: image)
-        }
-        sessionLoadTask = sessionTask
+        sessionLoadTask = nil
 
         // Wrap the heavy work in a `Task` so the loading-popup Cancel
         // button can preempt it via `cancelProcessing()`. The public
@@ -297,17 +299,15 @@ final class AddItemViewModel {
             let outcome = await self.processWithTimeout(image)
             self.logger.info("library.processWithTimeout: done outcome=\(String(describing: outcome), privacy: .public)")
             guard !Task.isCancelled else {
-                sessionTask.cancel()
-                self.sessionLoadTask = nil
                 return
             }
             switch outcome {
             case .completed(let processed):
                 self.logger.info("library.apply: processed=\(processed != nil ? "ok" : "nil", privacy: .public)")
-                await self.applyProcessedFromLibrary(processed, sessionTask: sessionTask)
+                await self.applyProcessedFromLibrary(processed, sourceImage: image)
             case .timedOut:
                 self.logger.error("library.timeout: 30s elapsed")
-                self.handleProcessingTimeout(sessionTask: sessionTask)
+                self.handleProcessingTimeout()
             }
         }
         processingTask = task
@@ -325,19 +325,27 @@ final class AddItemViewModel {
     /// proceeding.
     private func applyProcessedFromLibrary(
         _ processed: ProcessedImage?,
-        sessionTask: Task<(any SAM2Session)?, Never>
+        sourceImage: UIImage
     ) async {
         guard let processed else {
-            sessionTask.cancel()
-            sessionLoadTask = nil
-            errorMessage = "Couldn't process that image. Try another one."
+            errorMessage = String(localized: "Couldn't process that image. Try another one.")
             currentStep = .photo
             isProcessing = false
             return
         }
 
         processedImage = processed
-        sam2Session = await sessionTask.value
+        // Build 40 — load SAM2 session here, AFTER processing succeeded,
+        // instead of in parallel with `processWithTimeout` (see the
+        // `onPhotoSelected` comment above for the memory rationale).
+        // The ~100 MB model load now happens against a heap that's
+        // already shed the Vision/Core Image temp buffers. Telemetry
+        // brackets record the heap delta so the next crash report can
+        // be matched against the actual jetsam ceiling on this device.
+        logger.info("sam2.sessionLoad.start mem=\(MemoryMonitor.currentHeapUsageMB, privacy: .public) caller=library")
+        let session = await clothingExtractor.makeSession(for: sourceImage)
+        logger.info("sam2.sessionLoad.end mem=\(MemoryMonitor.currentHeapUsageMB, privacy: .public) caller=library success=\(session != nil, privacy: .public)")
+        sam2Session = session
         sessionLoadTask = nil
         // Drop the full-resolution UIImage now that processing is done.
         // The 1200×1200 JPEG inside `processed.originalData` is what
@@ -415,14 +423,12 @@ final class AddItemViewModel {
         errorMessage = nil
         currentStep = .analysis
 
-        // Run the SAM2 session prep alongside extraction — see
-        // `onPhotoSelected()` for the rationale, including why we
-        // cancel any prior in-flight session load before starting.
+        // Build 40 — SAM2 session load deferred to `applyProcessedFromCamera`.
+        // See `onPhotoSelected` for the full memory rationale; same
+        // reasoning applies on the camera path. Just cancel any in-
+        // flight session from a prior capture before continuing.
         sessionLoadTask?.cancel()
-        let sessionTask = Task { [clothingExtractor] in
-            await clothingExtractor.makeSession(for: downsampled)
-        }
-        sessionLoadTask = sessionTask
+        sessionLoadTask = nil
 
         // See `onPhotoSelected()` for the rationale of the wrapping
         // `processingTask` — same cancel-via-popup mechanism applies.
@@ -438,17 +444,15 @@ final class AddItemViewModel {
             let outcome = await self.processWithTimeout(downsampled)
             self.logger.info("camera.processWithTimeout: done outcome=\(String(describing: outcome), privacy: .public)")
             guard !Task.isCancelled else {
-                sessionTask.cancel()
-                self.sessionLoadTask = nil
                 return
             }
             switch outcome {
             case .completed(let processed):
                 self.logger.info("camera.apply: processed=\(processed != nil ? "ok" : "nil", privacy: .public)")
-                await self.applyProcessedFromCamera(processed, sessionTask: sessionTask)
+                await self.applyProcessedFromCamera(processed, sourceImage: downsampled)
             case .timedOut:
                 self.logger.error("camera.timeout: 30s elapsed")
-                self.handleProcessingTimeout(sessionTask: sessionTask)
+                self.handleProcessingTimeout()
             }
         }
         processingTask = task
@@ -463,12 +467,10 @@ final class AddItemViewModel {
     /// `applyProcessedFromLibrary` for the rationale.
     private func applyProcessedFromCamera(
         _ processed: ProcessedImage?,
-        sessionTask: Task<(any SAM2Session)?, Never>
+        sourceImage: UIImage
     ) async {
         guard let processed else {
-            sessionTask.cancel()
-            sessionLoadTask = nil
-            errorMessage = "Couldn't process that photo. Try again."
+            errorMessage = String(localized: "Couldn't process that photo. Try again.")
             currentStep = .photo
             isProcessing = false
             return
@@ -476,7 +478,13 @@ final class AddItemViewModel {
 
         processedImage = processed
         isAutoCropped = (processed.extractionMethod == .sam2Auto)
-        sam2Session = await sessionTask.value
+        // Build 40 — SAM2 session load happens here instead of in
+        // parallel with the Vision pipeline. See
+        // `applyProcessedFromLibrary` for the rationale.
+        logger.info("sam2.sessionLoad.start mem=\(MemoryMonitor.currentHeapUsageMB, privacy: .public) caller=camera")
+        let session = await clothingExtractor.makeSession(for: sourceImage)
+        logger.info("sam2.sessionLoad.end mem=\(MemoryMonitor.currentHeapUsageMB, privacy: .public) caller=camera success=\(session != nil, privacy: .public)")
+        sam2Session = session
         sessionLoadTask = nil
         // Downsample the retained UIImage — see `onPhotoSelected()`
         // for the rationale.
@@ -534,14 +542,19 @@ final class AddItemViewModel {
     }
 
     /// Shared timeout-handler for both library + camera paths: cancels
-    /// the SAM2 session load (so memory isn't held), surfaces an
-    /// actionable error message that names the underlying cause, and
-    /// drops the user back to the photo step where a retry is one tap
-    /// away.
-    private func handleProcessingTimeout(sessionTask: Task<(any SAM2Session)?, Never>) {
-        sessionTask.cancel()
+    /// any prior SAM2 session load (defense-in-depth for rapid back-
+    /// to-back captures), surfaces an actionable error message that
+    /// names the underlying cause, and drops the user back to the
+    /// photo step where a retry is one tap away.
+    ///
+    /// Build 40 — the in-flight `sessionTask` parameter went away when
+    /// SAM2 load moved to `applyProcessedFrom{Library,Camera}`. The
+    /// only session task that could still be live here is a leftover
+    /// from a prior capture; cancel it as a precaution.
+    private func handleProcessingTimeout() {
+        sessionLoadTask?.cancel()
         sessionLoadTask = nil
-        errorMessage = "Analysis took too long. Try a clearer photo or smaller capture."
+        errorMessage = String(localized: "Analysis took too long. Try a clearer photo or smaller capture.")
         currentStep = .photo
         isProcessing = false
         logger.warning("photo.processing.timedOut after \(Self.photoProcessingTimeoutSeconds, privacy: .public)s")
@@ -1339,6 +1352,12 @@ final class AddItemViewModel {
 
         logger.info("save: starting upload for itemId=\(itemId) sourcePhotoId=\(capturedSourcePhotoId?.uuidString ?? "nil") savedSoFar=\(self.savedItemsFromSource)")
 
+        // Build 40 — payload-size + heap baseline before kicking off
+        // the 4-file Supabase upload. Pairs with `upload.{file}.start`
+        // breadcrumbs in ImageService so post-ship analysis can
+        // correlate huge originals with timeouts or memory pressure.
+        logger.info("save.payload.sizes original=\(processed.originalData.count, privacy: .public) thumb=\(processed.thumbnailData.count, privacy: .public) masked=\(processed.maskedData?.count ?? 0, privacy: .public) mem=\(MemoryMonitor.currentHeapUsageMB, privacy: .public)")
+
         let extractionConfidenceRaw = processed.extractionConfidence?.rawValue
 
         // Race the entire save operation against a 45-second timeout.
@@ -1431,6 +1450,12 @@ final class AddItemViewModel {
                     // existing orphan-cleanup + user-visible error path.
                 } catch {
                     logger.error("save: failed — \(error.localizedDescription)")
+                    // Build 40 — surface the failure to Sentry so a
+                    // user-visible "save failed" banner produces a
+                    // dashboard event. Previously only true crashes
+                    // were captured; recoverable failures hid from
+                    // the dashboard, making remote diagnosis hard.
+                    SentryService.captureNonFatal(error, category: "save")
 
                     // Cleanup: if upload succeeded but DB insert failed,
                     // delete orphaned per-item images to prevent storage
@@ -1488,7 +1513,7 @@ final class AddItemViewModel {
                 didSave = true
             }
         } else {
-            errorMessage = "Failed to save item. Check your connection and try again."
+            errorMessage = String(localized: "Failed to save item. Check your connection and try again.")
             currentStep = .details
             // Always clear the "add another" flag on failure — the next
             // tap of the regular Save button should behave as a normal
