@@ -36,6 +36,10 @@ protocol OutfitRepositoryProtocol: Sendable {
     /// together across their most-recent `limit` outfits. Powers
     /// the VersatilityScorer novelty bonus.
     func fetchRecentItemPairs(userId: UUID, limit: Int) async throws -> Set<UnorderedItemPair>
+    /// Build 49: full item-sets of outfits suggested or worn in the last
+    /// `days` days. Powers the VersatilityScorer exact-combination
+    /// cooldown (TF49 #6) so the same outfit won't resurface for 2 weeks.
+    func fetchRecentItemSets(userId: UUID, days: Int) async throws -> Set<Set<UUID>>
     func updateReaction(outfitId: UUID, reaction: String?) async throws
     func markAsWorn(outfitId: UUID, isWorn: Bool) async throws
     /// Build 6: bump `wear_count` + `last_worn_at` for the supplied
@@ -59,6 +63,11 @@ extension OutfitRepositoryProtocol {
     /// Convenience: 30-outfit history matches the Phase 5.1 plan.
     func fetchRecentItemPairs(userId: UUID) async throws -> Set<UnorderedItemPair> {
         try await fetchRecentItemPairs(userId: userId, limit: 30)
+    }
+
+    /// Convenience: 14-day window matches the TF49 #6 cooldown plan.
+    func fetchRecentItemSets(userId: UUID) async throws -> Set<Set<UUID>> {
+        try await fetchRecentItemSets(userId: userId, days: 14)
     }
 }
 

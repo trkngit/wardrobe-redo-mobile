@@ -74,6 +74,7 @@ final class MockOutfitRepository: OutfitRepositoryProtocol {
     var fetchSlotsResult: Result<[UUID: [OutfitSlot]], Error> = .success([:])
     var fetchRecentItemIdsResult: Result<Set<UUID>, Error> = .success([])
     var fetchRecentItemPairsResult: Result<Set<UnorderedItemPair>, Error> = .success([])
+    var fetchRecentItemSetsResult: Result<Set<Set<UUID>>, Error> = .success([])
     var updateReactionError: Error?
     var markAsWornError: Error?
     var incrementWearCountsError: Error?
@@ -93,6 +94,7 @@ final class MockOutfitRepository: OutfitRepositoryProtocol {
     /// invalidates (after `toggleWorn` or `saveAsOutfit`).
     var fetchRecentItemIdsCallCount = 0
     var fetchRecentItemPairsCallCount = 0
+    var fetchRecentItemSetsCallCount = 0
     var lastReaction: String??
     var lastIsWorn: Bool?
     var lastOutfitId: UUID?
@@ -119,6 +121,11 @@ final class MockOutfitRepository: OutfitRepositoryProtocol {
     func fetchRecentItemPairs(userId: UUID, limit: Int) async throws -> Set<UnorderedItemPair> {
         fetchRecentItemPairsCallCount += 1
         return try fetchRecentItemPairsResult.get()
+    }
+
+    func fetchRecentItemSets(userId: UUID, days: Int) async throws -> Set<Set<UUID>> {
+        fetchRecentItemSetsCallCount += 1
+        return try fetchRecentItemSetsResult.get()
     }
 
     func incrementWearCounts(itemIds: [UUID]) async throws {

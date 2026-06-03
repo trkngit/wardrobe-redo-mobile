@@ -104,6 +104,12 @@ struct ScoringContext: Sendable {
     let wardrobeItemCount: Int
     let recentOutfitItemIds: Set<UUID> // items used in last 7 days
     let recentOutfitItemPairs: Set<UnorderedItemPair> // pairs seen in last 30 outfits
+    /// Full item-sets of outfits suggested or worn in the last 14 days
+    /// (Build 49, TF49 #6). `VersatilityScorer` hard-penalizes any
+    /// candidate whose exact item-set appears here, so the same
+    /// combination won't resurface within two weeks. Empty for fresh
+    /// users → no cooldown signal, scorer is unaffected.
+    let recentOutfitItemSets: Set<Set<UUID>>
     /// Per-generation vibe preset (build 6). Each scorer that's
     /// vibe-aware reads from this — color harmony reads
     /// `colorMaxFamilies`, formula reads `formulaStrictness`,
@@ -120,6 +126,7 @@ struct ScoringContext: Sendable {
         wardrobeItemCount: Int,
         recentOutfitItemIds: Set<UUID>,
         recentOutfitItemPairs: Set<UnorderedItemPair> = [],
+        recentOutfitItemSets: Set<Set<UUID>> = [],
         vibePreset: VibePreset = .balanced
     ) {
         self.season = season
@@ -128,6 +135,7 @@ struct ScoringContext: Sendable {
         self.wardrobeItemCount = wardrobeItemCount
         self.recentOutfitItemIds = recentOutfitItemIds
         self.recentOutfitItemPairs = recentOutfitItemPairs
+        self.recentOutfitItemSets = recentOutfitItemSets
         self.vibePreset = vibePreset
     }
 }

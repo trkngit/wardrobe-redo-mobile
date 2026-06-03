@@ -96,6 +96,7 @@ final class StyleEngineService {
         wardrobeSize: Int = 0,
         recentItemIds: Set<UUID> = [],
         recentItemPairs: Set<UnorderedItemPair> = [],
+        recentItemSets: Set<Set<UUID>> = [],
         vibe: VibeStop = .balanced
     ) -> ScoringContext {
         let calendar = Calendar.current
@@ -112,6 +113,7 @@ final class StyleEngineService {
             wardrobeItemCount: wardrobeSize,
             recentOutfitItemIds: recentItemIds,
             recentOutfitItemPairs: recentItemPairs,
+            recentOutfitItemSets: recentItemSets,
             vibePreset: VibePreset.preset(for: vibe)
         )
     }

@@ -354,6 +354,46 @@ final class OutfitRepository: OutfitRepositoryProtocol {
         return pairs
     }
 
+    /// Fetch the full item-set of every outfit suggested OR worn in the
+    /// last `days` days, as a set of item-ID sets. Powers
+    /// `VersatilityScorer`'s exact-combination cooldown (Build 49,
+    /// TF49 #6): a candidate whose item-set is already in here was
+    /// proposed within the window and gets a hard penalty so the same
+    /// combination won't resurface for two weeks.
+    ///
+    /// Unlike `fetchRecentItemIds` (which filters `is_worn == true`),
+    /// this intentionally has NO worn filter — a combination the user
+    /// merely *saw suggested* yesterday shouldn't reappear today either.
+    /// Suggested outfits persist as dated `outfits` rows (see
+    /// `saveDailyOutfits`), so a `date >=` window captures both
+    /// suggested and worn outfits.
+    func fetchRecentItemSets(userId: UUID, days: Int = 14) async throws -> Set<Set<UUID>> {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date())!
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let cutoffString = formatter.string(from: cutoff)
+
+        let recentOutfits: [Outfit] = try await supabase
+            .from("outfits")
+            .select()
+            .eq("user_id", value: userId)
+            .gte("date", value: cutoffString)
+            .execute()
+            .value
+
+        guard !recentOutfits.isEmpty else { return [] }
+
+        let slotsByOutfit = try await fetchSlotsForOutfits(outfitIds: recentOutfits.map(\.id))
+
+        var sets: Set<Set<UUID>> = []
+        for slots in slotsByOutfit.values {
+            let ids = Set(slots.map(\.wardrobeItemId))
+            guard !ids.isEmpty else { continue }
+            sets.insert(ids)
+        }
+        return sets
+    }
+
     // MARK: - Existence Check
 
     /// Check whether outfits have already been generated for a given date.

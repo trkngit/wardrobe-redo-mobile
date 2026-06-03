@@ -88,6 +88,10 @@ final class OutfitViewModel {
     /// real action.
     private var cachedRecentIds: Set<UUID>?
     private var cachedRecentPairs: Set<UnorderedItemPair>?
+    /// Build 49 — full item-sets of outfits suggested or worn in the
+    /// last 14 days, for the exact-combination cooldown (TF49 #6).
+    /// Cached and invalidated alongside the ids/pairs caches.
+    private var cachedRecentSets: Set<Set<UUID>>?
 
     /// Why the regeneration fired — drives seed selection and
     /// whether a status toast appears on completion.
@@ -350,18 +354,21 @@ final class OutfitViewModel {
             if cachedRecentIds == nil {
                 async let idsTask = outfitRepository.fetchRecentItemIds(userId: userId)
                 async let pairsTask = outfitRepository.fetchRecentItemPairs(userId: userId)
+                async let setsTask = outfitRepository.fetchRecentItemSets(userId: userId)
                 cachedRecentIds = (try? await idsTask) ?? []
                 cachedRecentPairs = (try? await pairsTask) ?? []
+                cachedRecentSets = (try? await setsTask) ?? []
             }
             let recentIds = cachedRecentIds ?? []
             let recentPairs = cachedRecentPairs ?? []
+            let recentSets = cachedRecentSets ?? []
 
             // Race generation against a 60-second timeout. The outcome
             // enum lets us distinguish empty results from real timeouts.
             VibeTelemetry.logGenerationVibe(selectedVibe, source: "outfits")
             OccasionTelemetry.logGenerationOccasion(selectedOccasion, source: "outfits")
             let outcome: GenerationOutcome = await withTaskGroup(of: GenerationOutcome.self) {
-                [generationService, selectedOccasion, selectedVibe, wardrobeItems, seed, recentIds, recentPairs] group in
+                [generationService, selectedOccasion, selectedVibe, wardrobeItems, seed, recentIds, recentPairs, recentSets] group in
                 group.addTask {
                     do {
                         let candidates = await generationService.generateDailyOutfits(
@@ -369,6 +376,7 @@ final class OutfitViewModel {
                             occasion: selectedOccasion,
                             recentItemIds: recentIds,
                             recentItemPairs: recentPairs,
+                            recentItemSets: recentSets,
                             seed: seed,
                             vibe: selectedVibe
                         )
@@ -492,6 +500,7 @@ final class OutfitViewModel {
                 // window). Drop them; the next regen will refetch.
                 cachedRecentIds = nil
                 cachedRecentPairs = nil
+                cachedRecentSets = nil
             }
 
             let updatedOutfit = Outfit(

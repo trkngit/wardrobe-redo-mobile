@@ -151,7 +151,8 @@ enum TestFixtures {
         dayOfWeek: String = "wednesday",
         wardrobeItemCount: Int = 20,
         recentOutfitItemIds: Set<UUID> = [],
-        recentOutfitItemPairs: Set<UnorderedItemPair> = []
+        recentOutfitItemPairs: Set<UnorderedItemPair> = [],
+        recentOutfitItemSets: Set<Set<UUID>> = []
     ) -> ScoringContext {
         ScoringContext(
             season: season,
@@ -159,7 +160,8 @@ enum TestFixtures {
             dayOfWeek: dayOfWeek,
             wardrobeItemCount: wardrobeItemCount,
             recentOutfitItemIds: recentOutfitItemIds,
-            recentOutfitItemPairs: recentOutfitItemPairs
+            recentOutfitItemPairs: recentOutfitItemPairs,
+            recentOutfitItemSets: recentOutfitItemSets
         )
     }
 

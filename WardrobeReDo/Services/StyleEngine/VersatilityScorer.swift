@@ -49,23 +49,38 @@ struct VersatilityScorer: OutfitScorer {
             reasons.append("Heavily-worn items — wardrobe staples but lacks variety")
         }
 
-        // 2. Recent usage penalty (don't repeat items from last 7 days)
+        // 2. Uniqueness-weighted recent-usage penalty (Build 49).
+        //
+        // The old rule penalized ANY recently-worn item uniformly, so a
+        // plain white tee dragged a candidate's score down exactly as
+        // hard as a sequined jacket. The TF49 ask (#7): "a t-shirt worn
+        // several days in a row isn't a problem, but more 'unique' pieces
+        // shouldn't be worn back-to-back." So the penalty now scales with
+        // each recently-worn item's `uniqueness` — basics barely dent the
+        // score; statement pieces tank it. The 0.30 budget is unchanged,
+        // so the dimension's overall [0,1] range is preserved.
         let recentIds = context.recentOutfitItemIds
         let recentlyUsed = items.filter { recentIds.contains($0.id) }
-        let recentRatio = Double(recentlyUsed.count) / Double(items.count)
 
         if recentlyUsed.isEmpty {
             totalScore += 0.3
             reasons.append("All fresh — no recent repeats")
-        } else if recentRatio <= 0.33 {
-            totalScore += 0.2
-            reasons.append("Mostly fresh with one recent repeat")
-        } else if recentRatio <= 0.5 {
-            totalScore += 0.1
-            reasons.append("Half the items were worn recently")
         } else {
-            totalScore += 0.02
-            reasons.append("Most items worn in the last week")
+            // Sum the uniqueness of every recently-worn item. One
+            // fully-unique repeat (≈1.0) eats almost the whole 0.30
+            // budget (penalty 0.28 → contribution 0.02); a fully-basic
+            // repeat (≈0.0) costs nothing. Multiple unique repeats
+            // saturate at the 0.02 floor.
+            let uniquenessSum = recentlyUsed.reduce(0.0) { $0 + Self.uniqueness($1) }
+            let penalty = min(0.28, uniquenessSum * 0.28)
+            totalScore += max(0.02, 0.30 - penalty)
+            if uniquenessSum >= 0.6 {
+                reasons.append("Repeats a statement piece worn recently — penalized")
+            } else if uniquenessSum > 0 {
+                reasons.append("Repeats mostly basics — light recency penalty")
+            } else {
+                reasons.append("Recent repeats are wardrobe staples — no penalty")
+            }
         }
 
         // 3. Least-worn item bonus (include at least one underused piece)
@@ -110,12 +125,71 @@ struct VersatilityScorer: OutfitScorer {
             reasons.append(novelty.reason)
         }
 
+        // 6. Exact-combination cooldown (Build 49, TF49 #6). The
+        // pair-novelty bonus above rewards *fresh pairings*, but it can't
+        // stop a whole previously-suggested outfit from resurfacing a few
+        // days later (every pair in it is "familiar", not novel — a soft
+        // signal). The user wants a hard floor: don't re-propose the exact
+        // same combination within two weeks. `recentOutfitItemSets` holds
+        // the full item-sets of outfits suggested or worn in the last 14
+        // days; if this candidate's set is already in there, subtract a
+        // large fixed amount so it sinks below any genuinely new option.
+        // It's a penalty, not a ban — if the wardrobe is so small that no
+        // fresh combination exists, the penalized outfit can still surface
+        // (clamped at 0), just ranked last.
+        if !context.recentOutfitItemSets.isEmpty {
+            let candidateSet = Set(items.map(\.id))
+            if context.recentOutfitItemSets.contains(candidateSet) {
+                totalScore -= 0.5
+                reasons.append("Exact combination suggested in the last 2 weeks — strongly penalized")
+            }
+        }
+
         return DimensionScore(
             dimension: dimension,
             value: min(1.0, max(0.0, totalScore)),
             coverage: novelty.coverage,
             reasoning: reasons.joined(separator: ". ")
         )
+    }
+
+    /// A garment's "statement-ness" in `[0, 1]` (Build 49, TF49 #7).
+    /// Low ≈ a basic/staple that can repeat day-to-day without anyone
+    /// noticing (a plain neutral tee worn often, fits many occasions);
+    /// high ≈ a distinctive piece that reads as "the same outfit again"
+    /// if worn back-to-back (rarely worn, bold colour, niche use).
+    ///
+    /// Deliberately a **pure function of fields already on the item** —
+    /// no dates, no `Date()`, no I/O — so the scorer stays deterministic
+    /// and trivially unit-testable. The three signals are averaged with
+    /// equal weight; each maps to `[0, 1]` where 1 = more unique:
+    ///   • **Wear frequency** — heavily-worn items are proven staples.
+    ///   • **Colour neutrality** — a wardrobe of mostly-neutral colours
+    ///     reads as basics; bold/non-neutral pieces stand out.
+    ///   • **Occasion breadth** — something valid for many occasions is
+    ///     a workhorse; a 1–2-occasion piece is a special-purpose item.
+    static func uniqueness(_ item: WardrobeItem) -> Double {
+        // Wear frequency: 15+ wears → staple (0); 6–14 → mid; <6 → fresh (1).
+        let wearFactor: Double = item.wearCount >= 15 ? 0.0
+            : item.wearCount >= 6 ? 0.35 : 1.0
+
+        // Colour neutrality: majority-neutral → basic (0); otherwise bold (1).
+        // No colours on record → neutral midpoint so a missing palette
+        // neither rewards nor punishes.
+        let neutralFactor: Double
+        if item.dominantColors.isEmpty {
+            neutralFactor = 0.5
+        } else {
+            let neutralCount = item.dominantColors.filter(\.isNeutral).count
+            let neutralShare = Double(neutralCount) / Double(item.dominantColors.count)
+            neutralFactor = neutralShare >= 0.5 ? 0.0 : 1.0
+        }
+
+        // Occasion breadth: 4+ → versatile (0); 3 → mid; ≤2 → niche (1).
+        let occasionFactor: Double = item.occasions.count >= 4 ? 0.0
+            : item.occasions.count >= 3 ? 0.4 : 1.0
+
+        return (wearFactor + neutralFactor + occasionFactor) / 3.0
     }
 
     /// Computes the novelty sub-score for a candidate outfit.
