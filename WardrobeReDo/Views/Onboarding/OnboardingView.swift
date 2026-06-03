@@ -112,9 +112,18 @@ struct OnboardingView: View {
                         .font(Theme.Fonts.h3)
                         .foregroundStyle(Color(Theme.Colors.textPrimary))
 
-                    FlowLayoutOnboarding(spacing: Theme.Spacing.sm) {
+                    FlowLayout(spacing: Theme.Spacing.sm) {
                         ForEach(styleFamilies, id: \.self) { family in
-                            familyChip(family)
+                            Chip(
+                                LocalizedStringResource("\(family.capitalized)"),
+                                isSelected: selectedFamilies.contains(family)
+                            ) {
+                                if selectedFamilies.contains(family) {
+                                    selectedFamilies.remove(family)
+                                } else {
+                                    selectedFamilies.insert(family)
+                                }
+                            }
                         }
                     }
                 }
@@ -125,9 +134,18 @@ struct OnboardingView: View {
                         .font(Theme.Fonts.h3)
                         .foregroundStyle(Color(Theme.Colors.textPrimary))
 
-                    FlowLayoutOnboarding(spacing: Theme.Spacing.sm) {
+                    FlowLayout(spacing: Theme.Spacing.sm) {
                         ForEach(Occasion.allCases, id: \.self) { occasion in
-                            occasionChip(occasion)
+                            Chip(
+                                occasion.localizedName,
+                                isSelected: selectedOccasions.contains(occasion)
+                            ) {
+                                if selectedOccasions.contains(occasion) {
+                                    selectedOccasions.remove(occasion)
+                                } else {
+                                    selectedOccasions.insert(occasion)
+                                }
+                            }
                         }
                     }
                 }
@@ -136,54 +154,6 @@ struct OnboardingView: View {
             .padding(.top, Theme.Spacing.md)
             .padding(.bottom, Theme.Spacing.xxl)
         }
-    }
-
-    private func familyChip(_ family: String) -> some View {
-        let isSelected = selectedFamilies.contains(family)
-        return Button {
-            if isSelected {
-                selectedFamilies.remove(family)
-            } else {
-                selectedFamilies.insert(family)
-            }
-        } label: {
-            Text(family.capitalized)
-                .font(Theme.Fonts.bodySmall)
-                .foregroundStyle(isSelected ? .white : Color(Theme.Colors.textPrimary))
-                .padding(.horizontal, Theme.Spacing.md)
-                .padding(.vertical, Theme.Spacing.sm)
-                .background(isSelected ? Color(Theme.Colors.primary) : Color(Theme.Colors.surface))
-                .clipShape(Capsule())
-                .overlay(
-                    Capsule()
-                        .stroke(isSelected ? Color.clear : Color(Theme.Colors.border), lineWidth: 1)
-                )
-        }
-        .animation(Theme.Animation.standard, value: isSelected)
-    }
-
-    private func occasionChip(_ occasion: Occasion) -> some View {
-        let isSelected = selectedOccasions.contains(occasion)
-        return Button {
-            if isSelected {
-                selectedOccasions.remove(occasion)
-            } else {
-                selectedOccasions.insert(occasion)
-            }
-        } label: {
-            Text(occasion.displayName)
-                .font(Theme.Fonts.bodySmall)
-                .foregroundStyle(isSelected ? .white : Color(Theme.Colors.textPrimary))
-                .padding(.horizontal, Theme.Spacing.md)
-                .padding(.vertical, Theme.Spacing.sm)
-                .background(isSelected ? Color(Theme.Colors.primary) : Color(Theme.Colors.surface))
-                .clipShape(Capsule())
-                .overlay(
-                    Capsule()
-                        .stroke(isSelected ? Color.clear : Color(Theme.Colors.border), lineWidth: 1)
-                )
-        }
-        .animation(Theme.Animation.standard, value: isSelected)
     }
 
     // MARK: - Step 3: Upload
@@ -397,49 +367,6 @@ struct OnboardingView: View {
         "classic", "minimalist", "romantic", "bohemian",
         "streetwear", "preppy", "edgy", "athleisure", "transitional",
     ]
-}
-
-// MARK: - Simple Flow Layout for Onboarding
-
-/// Lightweight wrapping layout for onboarding chips.
-struct FlowLayoutOnboarding: Layout {
-    var spacing: CGFloat = 8
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let result = arrange(proposal: proposal, subviews: subviews)
-        return result.size
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let result = arrange(proposal: proposal, subviews: subviews)
-        for (index, position) in result.positions.enumerated() {
-            subviews[index].place(at: CGPoint(x: bounds.minX + position.x, y: bounds.minY + position.y), proposal: .unspecified)
-        }
-    }
-
-    private func arrange(proposal: ProposedViewSize, subviews: Subviews) -> (size: CGSize, positions: [CGPoint]) {
-        let maxWidth = proposal.width ?? .infinity
-        var positions: [CGPoint] = []
-        var x: CGFloat = 0
-        var y: CGFloat = 0
-        var rowHeight: CGFloat = 0
-        var maxX: CGFloat = 0
-
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-            if x + size.width > maxWidth && x > 0 {
-                x = 0
-                y += rowHeight + spacing
-                rowHeight = 0
-            }
-            positions.append(CGPoint(x: x, y: y))
-            rowHeight = max(rowHeight, size.height)
-            x += size.width + spacing
-            maxX = max(maxX, x - spacing)
-        }
-
-        return (CGSize(width: maxX, height: y + rowHeight), positions)
-    }
 }
 
 #Preview {

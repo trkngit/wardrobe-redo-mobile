@@ -5,7 +5,9 @@ import SwiftUI
 /// same number iOS system buttons use (~4 % shrink); the spring
 /// snap-back feels like a physical button release. Applied via
 /// `.buttonStyle(.pressScale)` on the underlying SwiftUI Button.
-private struct PressScaleButtonStyle: ButtonStyle {
+/// Build 51 — promoted from `private` to internal so the shared `Chip`
+/// component can reuse the same tactile feedback app-wide.
+struct PressScaleButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.96 : 1.0)

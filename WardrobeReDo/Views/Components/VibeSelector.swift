@@ -52,7 +52,10 @@ struct VibeSelector: View {
                     Capsule()
                         .fill(isSelected
                               ? Color(Theme.Colors.primary)
-                              : Color(Theme.Colors.surface))
+                              // Build 51 — match the unified Chip's
+                              // burgundy-tinted unselected fill so the
+                              // vibe pills read as the same button family.
+                              : Color(Theme.Colors.primaryMuted))
                 )
                 .overlay(
                     Capsule()

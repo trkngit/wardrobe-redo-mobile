@@ -109,9 +109,9 @@ struct ItemFormView: View {
                 // Dress and every category are always fully legible. The
                 // selected category is highlighted; tapping another sets
                 // it (and reconfirms via onCategoryChanged).
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 90))], spacing: Theme.Spacing.sm) {
+                FlowLayout(spacing: Theme.Spacing.sm) {
                     ForEach(ClothingCategory.allCases, id: \.self) { cat in
-                        chipButton(cat.localizedName, isSelected: category == cat) {
+                        Chip(cat.localizedName, isSelected: category == cat) {
                             category = cat
                             onCategoryChanged()
                         }
@@ -137,9 +137,9 @@ struct ItemFormView: View {
                 Text("Choose a category")
                     .font(Theme.Fonts.bodySmall)
                     .foregroundStyle(Color(Theme.Colors.textSecondary))
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 90))], spacing: Theme.Spacing.sm) {
+                FlowLayout(spacing: Theme.Spacing.sm) {
                     ForEach(ClothingCategory.allCases, id: \.self) { cat in
-                        chipButton(cat.localizedName, isSelected: false) {
+                        Chip(cat.localizedName, isSelected: false) {
                             category = cat
                             categoryConfirmed = true
                             onCategoryChanged()
@@ -154,9 +154,9 @@ struct ItemFormView: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             sectionHeader("Texture", auto: isSectionAutoDetected(.texture))
 
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: Theme.Spacing.sm) {
+            FlowLayout(spacing: Theme.Spacing.sm) {
                 ForEach(TextureType.allCases, id: \.self) { tex in
-                    chipButton(
+                    Chip(
                         tex.localizedName,
                         isSelected: texture == tex
                     ) {
@@ -174,9 +174,9 @@ struct ItemFormView: View {
             // Build 18 — same adaptive grid swap as seasons: 6 fits
             // × Turkish ("Yapılandırılmış" is 16 characters) blow
             // past the iPhone SE width otherwise.
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: Theme.Spacing.sm) {
+            FlowLayout(spacing: Theme.Spacing.sm) {
                 ForEach(FitAttribute.allCases, id: \.self) { fit in
-                    chipButton(
+                    Chip(
                         fit.localizedName,
                         isSelected: fitAttribute == fit
                     ) {
@@ -196,9 +196,9 @@ struct ItemFormView: View {
             // "Sonbahar") are wider than English equivalents and
             // overflow the row on iPhone SE. The grid wraps to two
             // rows when needed and packs back to one on a wider phone.
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: Theme.Spacing.sm) {
+            FlowLayout(spacing: Theme.Spacing.sm) {
                 ForEach(Season.allCases, id: \.self) { season in
-                    chipButton(
+                    Chip(
                         season.localizedName,
                         isSelected: selectedSeasons.contains(season)
                     ) {
@@ -217,9 +217,9 @@ struct ItemFormView: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             sectionHeader("Occasions", auto: isSectionAutoDetected(.occasions))
 
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: Theme.Spacing.sm) {
+            FlowLayout(spacing: Theme.Spacing.sm) {
                 ForEach(Occasion.allCases, id: \.self) { occasion in
-                    chipButton(
+                    Chip(
                         occasion.localizedName,
                         isSelected: selectedOccasions.contains(occasion)
                     ) {
@@ -256,21 +256,4 @@ struct ItemFormView: View {
         }
     }
 
-    /// Build 17 — same LocalizedStringResource pattern as the
-    /// match-tab chip helper.
-    private func chipButton(_ title: LocalizedStringResource, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(Theme.Fonts.caption)
-                .foregroundStyle(isSelected ? .white : Color(Theme.Colors.textPrimary))
-                .padding(.horizontal, Theme.Spacing.md)
-                .padding(.vertical, Theme.Spacing.sm)
-                .background(isSelected ? Color(Theme.Colors.primary) : Color(Theme.Colors.surface))
-                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.chip))
-                .overlay(
-                    RoundedRectangle(cornerRadius: Theme.Radius.chip)
-                        .stroke(isSelected ? Color.clear : Color(Theme.Colors.border), lineWidth: 1)
-                )
-        }
-    }
 }

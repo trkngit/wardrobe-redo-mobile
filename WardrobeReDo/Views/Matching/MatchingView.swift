@@ -184,25 +184,15 @@ struct MatchingView: View {
     // MARK: - Category Filter
 
     private var categoryFilter: some View {
-        // Build 50 — wrapping grid (was a horizontal scroll that clipped
-        // the last categories off-screen). See WardrobeGridView for the
-        // same TF #3343/#3344 fix.
-        LazyVGrid(
-            // 110pt min — these chips are text-only (no icon), so they're
-            // narrower than the wardrobe filter's; 3 columns on a
-            // standard phone without the longest label wrapping.
-            columns: [GridItem(.adaptive(minimum: 110), spacing: Theme.Spacing.sm, alignment: .leading)],
-            alignment: .leading,
-            spacing: Theme.Spacing.sm
-        ) {
-            // Build 17 — chips take a `LocalizedStringResource`
-            // so the "All" pill + each category pill localize.
-            chipButton(LocalizedStringResource("All"), isSelected: viewModel.selectedCategory == nil) {
+        // Build 51 — wrapping FlowLayout of shared Chips (was an
+        // equal-width LazyVGrid that left ragged gaps between columns;
+        // see WardrobeGridView for the same fix).
+        FlowLayout(spacing: Theme.Spacing.sm) {
+            Chip(LocalizedStringResource("All"), isSelected: viewModel.selectedCategory == nil) {
                 viewModel.selectedCategory = nil
             }
-
             ForEach(ClothingCategory.allCases, id: \.self) { category in
-                chipButton(
+                Chip(
                     category.localizedName,
                     isSelected: viewModel.selectedCategory == category
                 ) {
@@ -211,23 +201,6 @@ struct MatchingView: View {
             }
         }
         .padding(.horizontal, Theme.Spacing.md)
-    }
-
-    private func chipButton(_ title: LocalizedStringResource, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(Theme.Fonts.caption)
-                .foregroundStyle(isSelected ? .white : Color(Theme.Colors.textPrimary))
-                .padding(.horizontal, Theme.Spacing.md)
-                .padding(.vertical, 6)
-                .background(isSelected ? Color(Theme.Colors.primary) : Color(Theme.Colors.surface))
-                .clipShape(Capsule())
-                .overlay(
-                    Capsule()
-                        .stroke(isSelected ? Color.clear : Color(Theme.Colors.border), lineWidth: 1)
-                )
-        }
-        .animation(Theme.Animation.standard, value: isSelected)
     }
 
     // MARK: - Vibe Picker (build 6 + 7)
@@ -289,62 +262,27 @@ struct MatchingView: View {
     // MARK: - Occasion Picker
 
     private var occasionPicker: some View {
-        // Build 50 — wrapping grid (was a horizontal scroll that clipped
-        // the rightmost occasions). All occasions show at once; the grid
-        // also can't intercept the pull-to-refresh gesture, so the
-        // Build-26 `.scrollBounceBehavior` workaround is dropped.
-        LazyVGrid(
-            columns: [GridItem(.adaptive(minimum: 90), spacing: Theme.Spacing.sm, alignment: .leading)],
-            alignment: .leading,
-            spacing: Theme.Spacing.sm
-        ) {
+        // Build 51 — wrapping FlowLayout of shared Chips (was an
+        // equal-width LazyVGrid). Every occasion shows at once and the
+        // flow layout can't intercept the pull-to-refresh gesture, so the
+        // Build-26 `.scrollBounceBehavior` workaround stays unneeded.
+        FlowLayout(spacing: Theme.Spacing.sm) {
             ForEach(Occasion.allCases, id: \.self) { occasion in
-                Button {
-                    // Build 7 — symmetric with the vibe slider:
-                    // an occasion tap mutates state and routes
-                    // through the same `requestRegeneration`
-                    // funnel. Pre-build-7 this called
-                    // `changeOccasion` which only re-ran the
-                    // matcher if a hero was already selected;
-                    // the new path inherits that no-op guard
-                    // inside the VM.
-                    // Build 8 — selection tick on real change only.
+                Chip(occasion.localizedName, isSelected: viewModel.selectedOccasion == occasion) {
+                    // Build 7 — an occasion tap mutates state and routes
+                    // through the same `requestRegeneration` funnel as the
+                    // vibe slider (the no-op guard lives in the VM).
+                    // Build 8 — selection tick on a real change only.
                     if occasion != viewModel.selectedOccasion {
                         HapticManager.selection()
                     }
                     viewModel.selectedOccasion = occasion
-                    // Build 8 — per-tab on-device memory of
-                    // the user's last pick. See OccasionMemory.
+                    // Build 8 — per-tab on-device memory of the last pick.
                     OccasionMemory.setMatchLastOccasion(occasion)
                     if let userId = appState.currentUser?.id {
                         viewModel.requestRegeneration(userId: userId, reason: .pickerChange)
                     }
-                } label: {
-                    // Build 14 — see DailyOutfitsView for the
-                    // same pattern. Pull from the catalog so the
-                    // chip reads Turkish under a Turkish locale.
-                    Text(occasion.localizedName)
-                        .font(Theme.Fonts.bodySmall)
-                        .foregroundStyle(
-                            viewModel.selectedOccasion == occasion
-                                ? .white
-                                : Color(Theme.Colors.textPrimary)
-                        )
-                        .padding(.horizontal, Theme.Spacing.md)
-                        .padding(.vertical, Theme.Spacing.sm)
-                        .background(
-                            viewModel.selectedOccasion == occasion
-                                ? Color(Theme.Colors.primary)
-                                : Color(Theme.Colors.muted).opacity(0.15)
-                        )
-                        .clipShape(Capsule())
                 }
-                .animation(Theme.Animation.standard, value: viewModel.selectedOccasion == occasion)
-                // Build 8 — VoiceOver parity with Outfits tab.
-                // Build 27 — see DailyOutfitsView for the same
-                // localizedName routing rationale.
-                .accessibilityLabel("\(String(localized: occasion.localizedName))")
-                .accessibilityAddTraits(viewModel.selectedOccasion == occasion ? [.isSelected, .isButton] : .isButton)
             }
         }
         .padding(.horizontal, Theme.Spacing.md)

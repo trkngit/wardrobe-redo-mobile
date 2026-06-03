@@ -455,19 +455,16 @@ struct StylePreferencesEditor: View {
                         .font(Theme.Fonts.bodySmall)
                         .foregroundStyle(Color(Theme.Colors.textSecondary))
 
-                    FlowLayoutOnboarding(spacing: Theme.Spacing.sm) {
+                    FlowLayout(spacing: Theme.Spacing.sm) {
                         ForEach(allFamilies, id: \.self) { family in
                             // Build 27 — `family` is a raw DB string
-                            // ("streetwear", "edgy", ...) — not a
-                            // catalog key yet. Wrap in
-                            // `LocalizedStringResource(...)` via
-                            // interpolation so the API matches
-                            // `toggleChip`'s `LocalizedStringResource`
-                            // signature. Family names will fall back
-                            // to their capitalized raw value until a
-                            // future build adds per-family catalog
-                            // entries.
-                            toggleChip(LocalizedStringResource("\(family.capitalized)"), isSelected: selectedFamilies.contains(family)) {
+                            // ("streetwear", "edgy", ...) — not a catalog
+                            // key yet. Wrap in `LocalizedStringResource(...)`
+                            // via interpolation so it matches `Chip`'s
+                            // label type. Family names fall back to their
+                            // capitalized raw value until a future build
+                            // adds per-family catalog entries.
+                            Chip(LocalizedStringResource("\(family.capitalized)"), isSelected: selectedFamilies.contains(family)) {
                                 if selectedFamilies.contains(family) {
                                     selectedFamilies.remove(family)
                                 } else {
@@ -484,12 +481,12 @@ struct StylePreferencesEditor: View {
                         .font(Theme.Fonts.h3)
                         .foregroundStyle(Color(Theme.Colors.textPrimary))
 
-                    FlowLayoutOnboarding(spacing: Theme.Spacing.sm) {
+                    FlowLayout(spacing: Theme.Spacing.sm) {
                         ForEach(Occasion.allCases, id: \.self) { occasion in
                             // Build 27 — was `occasion.displayName`
                             // (raw English); now `localizedName`
                             // routes through the catalog.
-                            toggleChip(occasion.localizedName, isSelected: selectedOccasions.contains(occasion.rawValue)) {
+                            Chip(occasion.localizedName, isSelected: selectedOccasions.contains(occasion.rawValue)) {
                                 if selectedOccasions.contains(occasion.rawValue) {
                                     selectedOccasions.remove(occasion.rawValue)
                                 } else {
@@ -517,27 +514,6 @@ struct StylePreferencesEditor: View {
             }
         }
         .onAppear { loadExisting() }
-    }
-
-    // Build 27 — `title: String` → `LocalizedStringResource`.
-    // Call sites pass either string literals ("Family X" — auto-
-    // coerced) or `occasion.localizedName` for the Occasions row,
-    // both of which route through the catalog.
-    private func toggleChip(_ title: LocalizedStringResource, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(Theme.Fonts.bodySmall)
-                .foregroundStyle(isSelected ? .white : Color(Theme.Colors.textPrimary))
-                .padding(.horizontal, Theme.Spacing.md)
-                .padding(.vertical, Theme.Spacing.sm)
-                .background(isSelected ? Color(Theme.Colors.primary) : Color(Theme.Colors.surface))
-                .clipShape(Capsule())
-                .overlay(
-                    Capsule()
-                        .stroke(isSelected ? Color.clear : Color(Theme.Colors.border), lineWidth: 1)
-                )
-        }
-        .animation(Theme.Animation.standard, value: isSelected)
     }
 
     private func loadExisting() {

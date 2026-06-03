@@ -199,25 +199,18 @@ struct WardrobeGridView: View {
     // MARK: - Category Filters
 
     private var categoryFilters: some View {
-        // Build 50 — wrapping grid instead of a horizontal scroll so
-        // every category is visible at once. The scroll clipped the last
-        // chips ("Ayakkabılar"/"Aksesuar") off the right edge, so users
-        // couldn't tell those filters existed (TF feedback #3343/#3344).
-        LazyVGrid(
-            // 130pt min so an icon + the longest Turkish label
-            // ("Ayakkabılar") never wraps; wraps to 2 columns on a
-            // standard phone, 3 on a large one.
-            columns: [GridItem(.adaptive(minimum: 130), spacing: Theme.Spacing.sm, alignment: .leading)],
-            alignment: .leading,
-            spacing: Theme.Spacing.sm
-        ) {
-            // Build 17 — localized "All" pill + each category.
-            filterChip(LocalizedStringResource("All"), isSelected: viewModel.selectedCategory == nil) {
+        // Build 51 — wrapping FlowLayout of shared Chips. Each chip keeps
+        // its intrinsic width and packs left-to-right, wrapping naturally,
+        // so short ("Hepsi") and long ("Ayakkabılar") chips sit with even
+        // spacing — the build-50 equal-width LazyVGrid left big ragged
+        // gaps between columns (TF feedback: "spacing feels off").
+        FlowLayout(spacing: Theme.Spacing.sm) {
+            // Localized "All" pill + each category (with its icon).
+            Chip(LocalizedStringResource("All"), isSelected: viewModel.selectedCategory == nil) {
                 viewModel.selectCategory(nil)
             }
-
             ForEach(ClothingCategory.allCases, id: \.self) { category in
-                filterChip(
+                Chip(
                     category.localizedName,
                     icon: category.iconName,
                     isSelected: viewModel.selectedCategory == category
@@ -226,35 +219,6 @@ struct WardrobeGridView: View {
                 }
             }
         }
-    }
-
-    private func filterChip(
-        _ title: LocalizedStringResource,
-        icon: String? = nil,
-        isSelected: Bool,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: Theme.Spacing.xs) {
-                if let icon {
-                    Image(systemName: icon)
-                        .font(.system(size: 12))
-                }
-                Text(title)
-                    .font(Theme.Fonts.caption)
-            }
-            .foregroundStyle(isSelected ? .white : Color(Theme.Colors.textPrimary))
-            .padding(.horizontal, Theme.Spacing.md)
-            .padding(.vertical, Theme.Spacing.sm)
-            .background(isSelected ? Color(Theme.Colors.primary) : Color(Theme.Colors.surface))
-            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.chip))
-            .overlay(
-                RoundedRectangle(cornerRadius: Theme.Radius.chip)
-                    .stroke(isSelected ? Color.clear : Color(Theme.Colors.border), lineWidth: 1)
-            )
-            .scaleEffect(isSelected ? 1.05 : 1.0)
-        }
-        .animation(Theme.Animation.spring, value: isSelected)
     }
 
     // MARK: - Item Count + sort menu (build 11)
