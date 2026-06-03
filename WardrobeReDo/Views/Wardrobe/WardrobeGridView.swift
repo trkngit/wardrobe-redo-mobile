@@ -199,21 +199,30 @@ struct WardrobeGridView: View {
     // MARK: - Category Filters
 
     private var categoryFilters: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Theme.Spacing.sm) {
-                // Build 17 — localized "All" pill + each category.
-                filterChip(LocalizedStringResource("All"), isSelected: viewModel.selectedCategory == nil) {
-                    viewModel.selectCategory(nil)
-                }
+        // Build 50 — wrapping grid instead of a horizontal scroll so
+        // every category is visible at once. The scroll clipped the last
+        // chips ("Ayakkabılar"/"Aksesuar") off the right edge, so users
+        // couldn't tell those filters existed (TF feedback #3343/#3344).
+        LazyVGrid(
+            // 130pt min so an icon + the longest Turkish label
+            // ("Ayakkabılar") never wraps; wraps to 2 columns on a
+            // standard phone, 3 on a large one.
+            columns: [GridItem(.adaptive(minimum: 130), spacing: Theme.Spacing.sm, alignment: .leading)],
+            alignment: .leading,
+            spacing: Theme.Spacing.sm
+        ) {
+            // Build 17 — localized "All" pill + each category.
+            filterChip(LocalizedStringResource("All"), isSelected: viewModel.selectedCategory == nil) {
+                viewModel.selectCategory(nil)
+            }
 
-                ForEach(ClothingCategory.allCases, id: \.self) { category in
-                    filterChip(
-                        category.localizedName,
-                        icon: category.iconName,
-                        isSelected: viewModel.selectedCategory == category
-                    ) {
-                        viewModel.selectCategory(category)
-                    }
+            ForEach(ClothingCategory.allCases, id: \.self) { category in
+                filterChip(
+                    category.localizedName,
+                    icon: category.iconName,
+                    isSelected: viewModel.selectedCategory == category
+                ) {
+                    viewModel.selectCategory(category)
                 }
             }
         }

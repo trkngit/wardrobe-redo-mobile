@@ -257,12 +257,12 @@ private func makeNewWardrobeItem(
     }
 }
 
-// MARK: - aspectFitRect Helper (ItemDetailView Letterbox Math)
+// MARK: - aspectFitRect Helper (scaledToFit Letterbox Math)
 
-/// Runs through the four shape-vs-frame pairings the bbox overlay can
-/// hit. A regression here would silently land the highlight in the
-/// `.scaledToFit()` letterbox bands again — the original bug PR #21
-/// fixes.
+/// Runs through the four shape-vs-frame pairings the `.scaledToFit()`
+/// projection helper can hit (square / portrait / landscape image vs
+/// container). Pins the pure letterbox math that maps normalized
+/// coordinates onto a rendered image rect.
 @Test func aspectFitRectSquareImageInLandscapeContainer() {
     // Square (1:1) inside landscape (2:1) → image is taller-aspect
     // than the container, so bands sit on the left and right.

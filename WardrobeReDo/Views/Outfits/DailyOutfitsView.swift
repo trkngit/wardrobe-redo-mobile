@@ -388,82 +388,80 @@ struct DailyOutfitsView: View {
     // MARK: - Occasion Picker
 
     private var occasionPicker: some View {
-        // Build 26 / Bug C — `.scrollBounceBehavior(.basedOnSize)`
-        // disables the rubber-band bounce when content is shorter
-        // than the scroll area. Without it, iOS 17's
-        // `ScrollView(.horizontal)` lets the user drag the row
-        // VERTICALLY in a tiny window (the bounce direction is
-        // perpendicular to the axis), which on this surface
-        // bubbled up to the outer `.refreshable` and triggered an
-        // unintended pull-to-refresh.
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Theme.Spacing.sm) {
-                ForEach(Occasion.allCases, id: \.self) { occasion in
-                    Button {
-                        // Build 7 — tapping an occasion now both
-                        // updates state AND triggers a debounced
-                        // regeneration. The VM cancels in-flight
-                        // tasks so rapid tapping collapses cleanly
-                        // into a single run.
-                        // Build 8 — selection tick on a real
-                        // state change (skip on re-tap-same).
-                        if occasion != viewModel.selectedOccasion {
-                            HapticManager.selection()
-                        }
-                        viewModel.selectedOccasion = occasion
-                        // Build 8 — remember for the next launch.
-                        // Cheap synchronous UserDefaults write;
-                        // OK to do on the main thread.
-                        OccasionMemory.setOutfitsLastOccasion(occasion)
-                        if let userId = appState.currentUser?.id {
-                            viewModel.requestRegeneration(userId: userId, reason: .pickerChange)
-                        }
-                    } label: {
-                        // Build 14 — `Text(_ resource:)` pulls from
-                        // the String Catalog so the chip reads
-                        // "Casual" or "Günlük" depending on system
-                        // language. Was `Text(occasion.displayName)`,
-                        // which passed a plain String and bypassed
-                        // localization entirely.
-                        Text(occasion.localizedName)
-                            .font(Theme.Fonts.bodySmall)
-                            .foregroundStyle(
-                                viewModel.selectedOccasion == occasion
-                                    ? .white
-                                    : Color(Theme.Colors.textPrimary)
-                            )
-                            .padding(.horizontal, Theme.Spacing.md)
-                            .padding(.vertical, Theme.Spacing.sm)
-                            .background(
-                                viewModel.selectedOccasion == occasion
-                                    ? Color(Theme.Colors.primary)
-                                    : Color(Theme.Colors.muted).opacity(0.15)
-                            )
-                            .clipShape(Capsule())
+        // Build 50 — wrapping grid instead of a horizontal scroll, so
+        // every occasion is visible at once (the scroll clipped "Spor"
+        // and beyond off the right edge — TF feedback #3343/#3344). The
+        // grid also can't intercept the outer `.refreshable` gesture, so
+        // the Build-26 `.scrollBounceBehavior` workaround is no longer
+        // needed.
+        LazyVGrid(
+            columns: [GridItem(.adaptive(minimum: 90), spacing: Theme.Spacing.sm, alignment: .leading)],
+            alignment: .leading,
+            spacing: Theme.Spacing.sm
+        ) {
+            ForEach(Occasion.allCases, id: \.self) { occasion in
+                Button {
+                    // Build 7 — tapping an occasion now both
+                    // updates state AND triggers a debounced
+                    // regeneration. The VM cancels in-flight
+                    // tasks so rapid tapping collapses cleanly
+                    // into a single run.
+                    // Build 8 — selection tick on a real
+                    // state change (skip on re-tap-same).
+                    if occasion != viewModel.selectedOccasion {
+                        HapticManager.selection()
                     }
-                    // Build 8 — VoiceOver: announce the chip as a
-                    // single button per row instead of "Casual,
-                    // button" with no context. The `.isSelected`
-                    // trait tells VoiceOver to read "selected"
-                    // when it's the active occasion, which is the
-                    // visual signal a sighted user gets from the
-                    // gold capsule background.
-                    // Build 27 — was `occasion.displayName` (raw
-                    // English from the enum), which made Turkish
-                    // VoiceOver users hear "Casual occasion" even
-                    // under a Turkish locale. Routing through
-                    // `String(localized: occasion.localizedName)`
-                    // pulls the same catalog value the visible
-                    // chip uses.
-                    .accessibilityLabel("\(String(localized: occasion.localizedName))")
-                    .accessibilityAddTraits(viewModel.selectedOccasion == occasion ? [.isSelected, .isButton] : .isButton)
+                    viewModel.selectedOccasion = occasion
+                    // Build 8 — remember for the next launch.
+                    // Cheap synchronous UserDefaults write;
+                    // OK to do on the main thread.
+                    OccasionMemory.setOutfitsLastOccasion(occasion)
+                    if let userId = appState.currentUser?.id {
+                        viewModel.requestRegeneration(userId: userId, reason: .pickerChange)
+                    }
+                } label: {
+                    // Build 14 — `Text(_ resource:)` pulls from
+                    // the String Catalog so the chip reads
+                    // "Casual" or "Günlük" depending on system
+                    // language. Was `Text(occasion.displayName)`,
+                    // which passed a plain String and bypassed
+                    // localization entirely.
+                    Text(occasion.localizedName)
+                        .font(Theme.Fonts.bodySmall)
+                        .foregroundStyle(
+                            viewModel.selectedOccasion == occasion
+                                ? .white
+                                : Color(Theme.Colors.textPrimary)
+                        )
+                        .padding(.horizontal, Theme.Spacing.md)
+                        .padding(.vertical, Theme.Spacing.sm)
+                        .background(
+                            viewModel.selectedOccasion == occasion
+                                ? Color(Theme.Colors.primary)
+                                : Color(Theme.Colors.muted).opacity(0.15)
+                        )
+                        .clipShape(Capsule())
                 }
+                // Build 8 — VoiceOver: announce the chip as a
+                // single button per row instead of "Casual,
+                // button" with no context. The `.isSelected`
+                // trait tells VoiceOver to read "selected"
+                // when it's the active occasion, which is the
+                // visual signal a sighted user gets from the
+                // gold capsule background.
+                // Build 27 — was `occasion.displayName` (raw
+                // English from the enum), which made Turkish
+                // VoiceOver users hear "Casual occasion" even
+                // under a Turkish locale. Routing through
+                // `String(localized: occasion.localizedName)`
+                // pulls the same catalog value the visible
+                // chip uses.
+                .accessibilityLabel("\(String(localized: occasion.localizedName))")
+                .accessibilityAddTraits(viewModel.selectedOccasion == occasion ? [.isSelected, .isButton] : .isButton)
             }
-            .padding(.horizontal, Theme.Spacing.lg)
-            .padding(.vertical, Theme.Spacing.sm)
         }
-        // Build 26 / Bug C — see comment above the ScrollView.
-        .scrollBounceBehavior(.basedOnSize)
+        .padding(.horizontal, Theme.Spacing.lg)
+        .padding(.vertical, Theme.Spacing.sm)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Occasion picker")
     }

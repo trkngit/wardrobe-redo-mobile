@@ -11,14 +11,14 @@ struct ItemDetailView: View {
 
     let item: WardrobeItem
 
+    /// Signed URL for the detail hero — the per-item cutout (see
+    /// `heroImagePath`).
     @State private var imageURL: URL?
-    /// Intrinsic size of the source photo, captured from
-    /// `KFImage.onSuccess`. Stays nil while the image is loading or if
-    /// the load failed; the bbox overlay is suppressed until it's
-    /// populated so we never render the highlight in the wrong place
-    /// (the `.scaledToFit` letterbox bands shift with the source
-    /// aspect ratio).
-    @State private var loadedImageSize: CGSize?
+    /// Signed URL for the ORIGINAL source photo. Shown only in the
+    /// fullscreen viewer so the user can still see where the item was
+    /// photographed. Build 50 — split out from `imageURL` when the hero
+    /// switched from the source photo to the cutout.
+    @State private var sourcePhotoURL: URL?
     @State private var showDeleteConfirm = false
     @State private var showArchiveConfirm = false
     @State private var isArchiving = false
@@ -31,11 +31,18 @@ struct ItemDetailView: View {
 
     private let imageService = ImageService()
 
-    /// True when the item has a non-nil bounding box, so the source photo
-    /// renders with a dim-everything-but-the-bbox overlay. Exposed for
-    /// tests; the view body is not directly inspected.
-    var shouldShowBoundingBoxOverlay: Bool {
-        item.boundingBox != nil
+    /// Storage path the detail hero renders. Build 50 — the per-item
+    /// cutout when available (so the hero matches the grid card's
+    /// eggshell showcase), falling back to the framed thumbnail.
+    /// Previously the hero showed the full source photo with a
+    /// dim-everything-but-the-bbox highlight overlay, but the overlay's
+    /// projection math mislanded the white outline (it rendered clipped
+    /// in the bottom-right corner — TF feedback #3342), and a clean
+    /// cutout reads far better. The original source photo stays one tap
+    /// away via the fullscreen viewer. Exposed for tests; the view body
+    /// is not directly inspected.
+    var heroImagePath: String {
+        ItemCardView.displayPath(for: item)
     }
 
     var body: some View {
@@ -75,7 +82,11 @@ struct ItemDetailView: View {
         // the full screen rather than being clipped inside the
         // ScrollView.
         .fullScreenCover(isPresented: $showFullScreenImage) {
-            FullScreenImageViewer(url: imageURL, isPresented: $showFullScreenImage)
+            // Build 50 — the hero is now the cutout; the fullscreen
+            // viewer shows the ORIGINAL source photo so the "where did
+            // this come from" context is preserved. Falls back to the
+            // hero URL if the source photo URL hasn't resolved yet.
+            FullScreenImageViewer(url: sourcePhotoURL ?? imageURL, isPresented: $showFullScreenImage)
         }
         .toolbar {
             // Edit button lives in the trailing slot so the iOS-standard
@@ -91,7 +102,10 @@ struct ItemDetailView: View {
             }
         }
         .task {
-            imageURL = try? await imageService.signedURL(for: item.imagePath)
+            // Hero shows the cutout (matches the grid card); the
+            // fullscreen viewer shows the original source photo.
+            imageURL = try? await imageService.signedURL(for: heroImagePath)
+            sourcePhotoURL = try? await imageService.signedURL(for: item.imagePath)
         }
         .confirmationDialog(
             "Delete this item?",
@@ -146,29 +160,17 @@ struct ItemDetailView: View {
     // MARK: - Image
 
     private var imageSection: some View {
-        // For multi-pick items the source photo holds multiple garments
-        // (e.g. shirt + pants from one mirror selfie). Without a per-item
-        // overlay the user can't tell which garment this row represents.
-        // When `boundingBox` is present we dim everything outside the
-        // bbox and outline it; otherwise the photo renders plainly so
-        // legacy / single-item rows look unchanged.
+        // Build 50 — the hero shows the per-item cutout on the eggshell
+        // showcase backdrop, identical to the grid card. (It previously
+        // showed the full source photo with a dim+outline bbox highlight,
+        // but the overlay mislanded its outline — TF feedback #3342 — and
+        // a clean cutout reads better and is consistent with the rest of
+        // the app.)
         //
-        // `.scaledToFit()` letterboxes the image inside the 400pt-tall
-        // frame whenever the source-photo aspect ratio differs from the
-        // frame's. Anchoring the overlay to the GeometryReader frame
-        // would land the highlight in the letterbox bands; instead we
-        // capture the loaded image's intrinsic size via
-        // `KFImage.onSuccess` and project the bbox onto the actual
-        // rendered image rect inside the frame.
-        //
-        // Build 18 — wrapped in a Button so the whole image is a
-        // single hit target that flips into the fullscreen viewer.
-        // `.buttonStyle(.plain)` keeps the rendering exactly as
-        // before (no system tint, no press-state recoloring) so
-        // visually nothing changes; only the tap behavior does.
-        // The bbox overlay above sets `.allowsHitTesting(false)`,
-        // so the Button still receives the tap on the underlying
-        // image even where the overlay is rendered.
+        // Build 18 — wrapped in a Button so the whole image is a single
+        // hit target that opens the fullscreen viewer (which shows the
+        // ORIGINAL source photo). `.buttonStyle(.plain)` keeps the
+        // rendering untinted so only the tap behavior is added.
         Button {
             HapticManager.light()
             showFullScreenImage = true
@@ -181,87 +183,39 @@ struct ItemDetailView: View {
     }
 
     private var imageContent: some View {
-        GeometryReader { geo in
-            ZStack {
-                // Build 48 — fixed eggshell behind the hero cutout so the
-                // showcase backdrop stays the same stable off-white in
-                // both light and dark mode (matches the grid cards + the
-                // capture preview). Without this the cutout's transparent
-                // area showed the adaptive screen background and flipped
-                // with the system theme.
-                Theme.Colors.showcase
+        ZStack {
+            // Build 48/50 — fixed eggshell behind the hero cutout so the
+            // showcase backdrop stays the same stable off-white in both
+            // light and dark mode (matches the grid cards + the capture
+            // preview). Without this the cutout's transparent area showed
+            // the adaptive screen background and flipped with the theme.
+            Theme.Colors.showcase
 
-                KFImage(imageURL)
-                    .placeholder {
-                        Rectangle()
-                            .fill(Color(Theme.Colors.muted).opacity(0.3))
-                            .overlay {
-                                VStack(spacing: Theme.Spacing.sm) {
-                                    ProgressView()
-                                        .tint(Color(Theme.Colors.primary))
-                                    Text("Loading image...")
-                                        .font(Theme.Fonts.caption)
-                                        .foregroundStyle(Color(Theme.Colors.textSecondary))
-                                }
+            KFImage(imageURL)
+                .placeholder {
+                    Rectangle()
+                        .fill(Color(Theme.Colors.muted).opacity(0.3))
+                        .overlay {
+                            VStack(spacing: Theme.Spacing.sm) {
+                                ProgressView()
+                                    .tint(Color(Theme.Colors.primary))
+                                Text("Loading image...")
+                                    .font(Theme.Fonts.caption)
+                                    .foregroundStyle(Color(Theme.Colors.textSecondary))
                             }
-                    }
-                    .onSuccess { result in
-                        // `result.image.size` already accounts for
-                        // EXIF orientation — Kingfisher applies it
-                        // before handing the UIImage off — so this
-                        // matches how `.scaledToFit()` lays the photo
-                        // out inside the frame.
-                        loadedImageSize = result.image.size
-                    }
-                    .resizable()
-                    .scaledToFit()
-                    // Build 27 — was hugging the leading edge of
-                    // the GeometryReader because ZStack's default
-                    // alignment is .topLeading and `.scaledToFit`
-                    // produces a smaller rectangle. Explicit
-                    // `maxWidth/.infinity` + `.center` alignment
-                    // centers the scaled image inside the 360 pt
-                    // hero frame. The bbox overlay below still
-                    // uses `loadedImageSize` + `aspectFitRect`
-                    // math so its rect stays accurate.
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-
-                if let bbox = item.boundingBox?.cgRect,
-                   let imageSize = loadedImageSize {
-                    let imageRect = aspectFitRect(for: imageSize, in: geo.size)
-                    let pixelRect = bbox
-                        .scaled(to: imageRect.size)
-                        .offsetBy(dx: imageRect.minX, dy: imageRect.minY)
-
-                    // Dim the area outside the bbox using an even-odd
-                    // fill (outer rect minus inner hole).
-                    Rectangle()
-                        .fill(Color.black.opacity(0.45))
-                        .mask(
-                            BoundingBoxHoleShape(rect: pixelRect)
-                                .fill(style: FillStyle(eoFill: true))
-                        )
-                        .allowsHitTesting(false)
-
-                    // Outline the bbox so the highlighted region reads
-                    // as deliberate framing rather than a punched-out
-                    // hole.
-                    Rectangle()
-                        .stroke(Color.white, lineWidth: 2)
-                        .frame(width: pixelRect.width, height: pixelRect.height)
-                        .offset(x: pixelRect.minX, y: pixelRect.minY)
-                        .allowsHitTesting(false)
+                        }
                 }
-            }
+                .resizable()
+                .scaledToFit()
+                // Center the scaled cutout inside the hero frame; without
+                // this the ZStack's default .topLeading would hug the
+                // leading edge since scaledToFit produces a smaller rect.
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
-        // Build 26 / Bug B — was `.frame(maxHeight: 400)`. The
-        // `GeometryReader` doesn't propose a size to its parent; in a
-        // `Button` inside a `ScrollView` that meant the available
-        // height collapsed to ~0 and the hero image rendered as a
-        // sliver. A fixed `height: 360` gives the GeometryReader a
-        // real proposal to work with. 360 fits iPhone SE / 13 mini
-        // above the fold (~568 pt content area) without overflowing
-        // the scroll view on bigger phones.
+        // Build 26 — a fixed hero height keeps the image from collapsing
+        // inside the Button-in-ScrollView. 360 fits iPhone SE / 13 mini
+        // above the fold (~568 pt content area) without overflowing the
+        // scroll view on bigger phones.
         .frame(height: 360)
         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
         .cardShadow()
@@ -494,51 +448,19 @@ struct FlowLayout: Layout {
     }
 }
 
-// MARK: - Bounding Box Overlay
+// MARK: - Geometry
 
-/// Shape composed of an outer rectangle (the full image bounds) and an
-/// inner rectangle (the bbox). Filled with an even-odd rule, the inner
-/// rect punches a hole — so masking a black-tinted Rectangle with this
-/// shape dims everything *outside* the bbox while leaving the garment
-/// itself untouched.
-private struct BoundingBoxHoleShape: Shape {
-    let rect: CGRect
-
-    func path(in pathRect: CGRect) -> Path {
-        var path = Path(pathRect)
-        path.addRect(rect)
-        return path
-    }
-}
-
-private extension CGRect {
-    /// Scales a normalized [0, 1] rect into a pixel rect for the given
-    /// size. `BoundingBoxCodable.cgRect` returns normalized coords; the
-    /// detail-view overlay multiplies by the rendered image size at the
-    /// call site.
-    func scaled(to size: CGSize) -> CGRect {
-        CGRect(
-            x: minX * size.width,
-            y: minY * size.height,
-            width: width * size.width,
-            height: height * size.height
-        )
-    }
-}
-
-/// Computes the rendered rect when an image of `imageSize` is fit
-/// inside `containerSize` with `.scaledToFit()` (letterbox bands either
+/// Computes the rendered rect when an image of `imageSize` is fit inside
+/// `containerSize` with `.scaledToFit()` (letterbox bands either
 /// above/below or left/right). Returns the rect of the actual image
-/// content within the container — origin is the top-left of the
-/// rendered photo, size matches its on-screen pixel dimensions.
+/// content within the container — origin is the top-left of the rendered
+/// photo, size matches its on-screen pixel dimensions.
 ///
-/// `internal` (file-package) so the unit tests can pin its math:
-/// `.scaledToFit()` makes the bbox alignment depend on it, and a
-/// regression here would silently land the overlay in the letterbox
-/// bands again — exactly the bug PR #21 fixes.
+/// A pure geometry helper kept at file scope (`internal`, not `private`)
+/// so the unit tests can pin its math (see `WardrobeItemBoundingBoxTests`).
 ///
-/// Edge cases: returns `.zero` if either dimension is zero or
-/// non-finite (avoids NaN propagation into the overlay rect).
+/// Edge cases: returns `.zero` if either dimension is zero or non-finite
+/// (avoids NaN propagation).
 func aspectFitRect(for imageSize: CGSize, in containerSize: CGSize) -> CGRect {
     guard imageSize.width > 0, imageSize.height > 0,
           containerSize.width > 0, containerSize.height > 0,
