@@ -54,6 +54,15 @@ struct ItemFormView: View {
     @Binding var selectedSeasons: Set<Season>
     @Binding var selectedOccasions: Set<Occasion>
 
+    /// Build 47 — whether the category reflects a confirmed choice (a
+    /// high-confidence ML prefill or an explicit user tap). When false,
+    /// the category section shows a "Choose a category" prompt with
+    /// tappable chips instead of a pre-highlighted segmented control, so
+    /// the app never implies a category it didn't actually detect.
+    /// The Edit screen always has a known category, so it passes
+    /// `.constant(true)` and is unaffected.
+    @Binding var categoryConfirmed: Bool
+
     // MARK: - Caller-supplied data + hooks
 
     /// Valid subcategories for the current `category`. The Add/Edit call
@@ -89,25 +98,49 @@ struct ItemFormView: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
             sectionHeader("Category", auto: isSectionAutoDetected(.category))
 
-            // Build 17 — Picker label is a catalog key; per-row
-            // Text uses the enum's localizedName.
-            Picker("Category", selection: $category) {
-                ForEach(ClothingCategory.allCases, id: \.self) { cat in
-                    Text(cat.localizedName).tag(cat)
+            if categoryConfirmed {
+                // Confirmed: standard segmented control + subcategory.
+                // Build 17 — Picker label is a catalog key; per-row
+                // Text uses the enum's localizedName.
+                Picker("Category", selection: $category) {
+                    ForEach(ClothingCategory.allCases, id: \.self) { cat in
+                        Text(cat.localizedName).tag(cat)
+                    }
                 }
-            }
-            .pickerStyle(.segmented)
-            .onChange(of: category) {
-                onCategoryChanged()
-            }
+                .pickerStyle(.segmented)
+                .onChange(of: category) {
+                    onCategoryChanged()
+                }
 
-            Picker("Subcategory", selection: $subcategory) {
-                ForEach(availableSubcategories, id: \.self) { sub in
-                    Text(sub.localizedName).tag(sub)
+                Picker("Subcategory", selection: $subcategory) {
+                    ForEach(availableSubcategories, id: \.self) { sub in
+                        Text(sub.localizedName).tag(sub)
+                    }
+                }
+                .pickerStyle(.menu)
+                .tint(Color(Theme.Colors.primary))
+            } else {
+                // Build 47 — unconfirmed: the ML wasn't confident enough
+                // to claim a category, so we don't pre-highlight one.
+                // The user taps a chip to choose; that flips
+                // `categoryConfirmed` true (via onCategoryChanged on the
+                // VM) and the view swaps to the segmented control above.
+                // A non-segmented chip row is used precisely BECAUSE a
+                // segmented control always shows one selection — which
+                // would imply a guess we don't want to make.
+                Text("Choose a category")
+                    .font(Theme.Fonts.bodySmall)
+                    .foregroundStyle(Color(Theme.Colors.textSecondary))
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 90))], spacing: Theme.Spacing.sm) {
+                    ForEach(ClothingCategory.allCases, id: \.self) { cat in
+                        chipButton(cat.localizedName, isSelected: false) {
+                            category = cat
+                            categoryConfirmed = true
+                            onCategoryChanged()
+                        }
+                    }
                 }
             }
-            .pickerStyle(.menu)
-            .tint(Color(Theme.Colors.primary))
         }
     }
 

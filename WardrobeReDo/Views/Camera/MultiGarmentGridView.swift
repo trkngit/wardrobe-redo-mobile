@@ -221,7 +221,10 @@ private struct GridCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(
-            "\(proposal.predictedCategory?.displayName ?? "Item"), " +
+            // Build 47 — use the confidence-gated category so the grid's
+            // spoken label matches what details will commit; "Item" when
+            // the model isn't confident enough to claim a category.
+            "\(proposal.confidentCategory?.displayName ?? "Item"), " +
             (isSelected ? "selected" : "not selected")
         )
         .accessibilityAddTraits(.isButton)
@@ -274,7 +277,10 @@ private struct GridCard: View {
         HStack(spacing: 4) {
             // Build 17 — pull localized category name when known,
             // fall back to a translated "Item" otherwise.
-            Text(proposal.predictedCategory?.localizedName ?? LocalizedStringResource("Item"))
+            // Build 47 — gate on `confidentCategory` so the grid never
+            // shows a category the details screen won't commit (the
+            // "shoe became a t-shirt between screens" report).
+            Text(proposal.confidentCategory?.localizedName ?? LocalizedStringResource("Item"))
                 .font(Theme.Fonts.bodySmall.weight(.medium))
                 .foregroundStyle(Color(Theme.Colors.textPrimary))
                 .lineLimit(1)

@@ -81,6 +81,34 @@ import Testing
         #expect(result.first?.score == 0.92)
     }
 
+    // Build 47 — a confirmed pair fuses into ONE detection whose bbox is
+    // the UNION of both shoes, and which carries the partner's mask in
+    // `secondaryMask` so `compositeMaskedItem` can render both shoes
+    // ("shoe pair should show both shoes"). Earlier the loser was
+    // discarded and the saved item was a lone shoe.
+    @Test func pairMergeProducesUnionBboxCoveringBothShoes() {
+        // Genuine left+right pair: centroid dx = 0.22 (≥ 0.18, so NOT
+        // treated as a same-foot near-duplicate by pruneShoeRedundancies)
+        // yet gap (0.08) < avgWidth (0.14), so `looksLikeShoePair` fires
+        // and the pair is fused rather than deduped.
+        let left = MultiGarmentProposalService.RawDetection(
+            boundingBox: CGRect(x: 0.20, y: 0.85, width: 0.14, height: 0.10),
+            score: 0.91, rawClass: "shoe", mask: nil
+        )
+        let right = MultiGarmentProposalService.RawDetection(
+            boundingBox: CGRect(x: 0.42, y: 0.85, width: 0.14, height: 0.10),
+            score: 0.92, rawClass: "shoe", mask: nil
+        )
+        let result = MultiGarmentProposalService.collapseShoePairs([left, right])
+        #expect(result.count == 1)
+        let merged = result.first
+        // Union spans x:[0.20, 0.56], y:[0.85, 0.95].
+        #expect(abs((merged?.boundingBox.minX ?? 0) - 0.20) < 0.0001)
+        #expect(abs((merged?.boundingBox.maxX ?? 0) - 0.56) < 0.0001)
+        #expect(abs((merged?.boundingBox.width ?? 0) - 0.36) < 0.0001)
+        #expect(merged?.score == 0.92)
+    }
+
     @Test func twoShoesThatDontPairAreBothKept() {
         // One in the upper-left (probably a shoe in someone's hand),
         // one at the feet. Different bands → keep both.

@@ -129,6 +129,32 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
     /// floor below still rejects non-clothing patterns at 0.85.
     static let defaultConfidenceThreshold: Float = 0.35
 
+    /// Build 47 — recall tiers below the base floor for high-value
+    /// classes. TestFlight users still reported missed t-shirts/jerseys
+    /// (and a missed held handbag) at the 0.35 base. The cost asymmetry
+    /// is steep — a missed garment becomes a whole-person Vision cutout
+    /// (TF45 fallthrough), while a false positive is a deselectable grid
+    /// card — so the big apparel classes get a lower 0.25 floor. The
+    /// ambiguous-class 0.85 floor still guards non-clothing, so noise
+    /// risk stays bounded.
+    static let highRecallApparelFloor: Float = 0.25
+    static let highRecallApparelClasses: Set<String> = [
+        "top_t-shirt_sweatshirt", "shirt_blouse", "sweater", "cardigan", "vest",
+        "dress", "jumpsuit",
+        "jacket", "coat", "cape",
+        "pants", "shorts", "skirt", "tights_stockings"
+    ]
+
+    /// Held / occluded handbags are a known model-recall weak spot
+    /// ("failed to see handbag while someone is holding it"). A modest
+    /// 0.30 floor for the bag class gives a partially-detected bag its
+    /// best shot without dropping the accessory floor generally — bags
+    /// have a distinctive silhouette, so false-positive bags are rarer
+    /// than false-positive "tops" on fabric patterns. This is a bounded
+    /// recall nudge, NOT a fix; held-bag recall is fundamentally limited
+    /// until the detection model is retrained.
+    static let bagRecallFloor: Float = 0.30
+
     /// IoU threshold for Non-Max Suppression over overlapping proposals
     /// of the same class. DETR architectures don't technically need NMS
     /// (queries are already unique-ish) but we still run one defensive
@@ -323,11 +349,21 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
         // ambiguous-class floor. This is what drops rugs / wallpaper
         // patterns / phones-in-mirror without touching real garments.
         let thresholded = rawDetections.filter { raw in
-            guard raw.score >= confidenceThreshold else { return false }
+            // Build 47 — tiered recall floors:
+            //   * core apparel (tops/dresses/outerwear/bottoms): 0.25
+            //   * handbag: 0.30
+            //   * other mapped classes (shoes, other accessories): 0.35
+            //   * ambiguous / non-clothing: 0.85 (noise guard)
+            if Self.highRecallApparelClasses.contains(raw.rawClass) {
+                return raw.score >= Self.highRecallApparelFloor
+            }
+            if raw.rawClass == "bag_wallet" {
+                return raw.score >= Self.bagRecallFloor
+            }
             if ClothingCategory.fromFashionpediaClass(raw.rawClass) == nil {
                 return raw.score >= Self.ambiguousClassConfidenceFloor
             }
-            return true
+            return raw.score >= confidenceThreshold
         }
 
         guard !thresholded.isEmpty else {
@@ -481,6 +517,14 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
         let score: Float             // 0…1 objectness
         let rawClass: String         // Fashionpedia label or "unknown"
         let mask: CVPixelBuffer?     // source-res reconstruction (nil when mask head absent)
+        /// Build 47 — second instance mask for a merged shoe pair. When
+        /// `collapseShoePairs` fuses a left+right pair into one proposal,
+        /// the loser's mask rides here so `compositeMaskedItem` can OR
+        /// the two silhouettes and show BOTH shoes in the single cutout
+        /// (the "shoe pair should show both shoes" request). Nil for
+        /// every normal single-instance detection. Defaulted so the
+        /// decode-path constructor and tests are unchanged.
+        var secondaryMask: CVPixelBuffer? = nil
     }
 
     /// Best-effort decode of DETR-style outputs. RF-DETR's export names
@@ -1047,11 +1091,14 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
     }
 
     /// Greedy walk over `shoes` looking for same-`rawClass` pairs that
-    /// satisfy `looksLikeShoePair`. The higher-scored member of each
-    /// confirmed pair wins; the partner is dropped. Used by
-    /// `collapseShoePairs` so the post-walk hard cap operates on a
-    /// list where each remaining detection is either a confirmed
-    /// single shoe or the representative of a confirmed pair.
+    /// satisfy `looksLikeShoePair`. Build 47: a confirmed pair is FUSED
+    /// into one detection whose bbox is the union of both boxes and which
+    /// carries both instance masks (winner's `mask` + partner's
+    /// `secondaryMask`) so `compositeMaskedItem` renders BOTH shoes in
+    /// the single cutout — the "shoe pair should show both shoes"
+    /// request. Earlier builds kept only the higher-scored single
+    /// detection, so the saved item was a lone shoe. Unpaired shoes pass
+    /// through unchanged.
     private static func collapseSameClassPairs(_ shoes: [RawDetection]) -> [RawDetection] {
         guard shoes.count >= 2 else { return shoes }
         let sorted = shoes.sorted { $0.score > $1.score }
@@ -1071,12 +1118,22 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
                 }
             }
             if let j = partnerIndex {
-                // Pair confirmed — anchor wins (higher score per the
-                // pre-sort), partner is consumed.
+                // Pair confirmed — fuse into one union detection. Anchor
+                // (higher score) drives class/score; partner's mask rides
+                // along so both shoes appear in the cutout.
+                let partner = sorted[j]
                 consumed.insert(j)
+                result.append(RawDetection(
+                    boundingBox: anchor.boundingBox.union(partner.boundingBox),
+                    score: anchor.score,
+                    rawClass: anchor.rawClass,
+                    mask: anchor.mask,
+                    secondaryMask: partner.mask
+                ))
+            } else {
+                result.append(anchor)
             }
             consumed.insert(i)
-            result.append(anchor)
         }
         return result
     }
@@ -1131,7 +1188,8 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
         guard let cropped = compositeMaskedItem(
             sourceImage: sourceImage,
             mask: raw.mask,
-            bbox: raw.boundingBox
+            bbox: raw.boundingBox,
+            secondaryMask: raw.secondaryMask
         ) else {
             staticLogger.notice("makeProposal.dropped reason=cropFailed rawClass=\(raw.rawClass, privacy: .public)")
             return nil
@@ -1375,7 +1433,8 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
     static func compositeMaskedItem(
         sourceImage: UIImage,
         mask: CVPixelBuffer?,
-        bbox normalizedBox: CGRect
+        bbox normalizedBox: CGRect,
+        secondaryMask: CVPixelBuffer? = nil
     ) -> UIImage? {
         guard let cg = sourceImage.cgImage else { return sourceImage }
 
@@ -1407,7 +1466,26 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
         // working-image downscale).
         let sx = sourceCI.extent.width / max(maskCI.extent.width, 1)
         let sy = sourceCI.extent.height / max(maskCI.extent.height, 1)
-        let scaledMask = maskCI.transformed(by: CGAffineTransform(scaleX: sx, y: sy))
+        var scaledMask = maskCI.transformed(by: CGAffineTransform(scaleX: sx, y: sy))
+
+        // Build 47 — shoe-pair union. When a second instance mask is
+        // present (a fused left+right shoe pair), scale it to source
+        // extent the same way and OR the two alpha masks via
+        // CIMaximumCompositing so the resulting cutout contains BOTH
+        // shoes. Per-foot masks don't overlap, so max == union here.
+        if let secondaryMask {
+            let secondaryCI = CIImage(cvPixelBuffer: secondaryMask)
+            let ssx = sourceCI.extent.width / max(secondaryCI.extent.width, 1)
+            let ssy = sourceCI.extent.height / max(secondaryCI.extent.height, 1)
+            let scaledSecondary = secondaryCI.transformed(by: CGAffineTransform(scaleX: ssx, y: ssy))
+            if let union = CIFilter(name: "CIMaximumCompositing") {
+                union.setValue(scaledMask, forKey: kCIInputImageKey)
+                union.setValue(scaledSecondary, forKey: kCIInputBackgroundImageKey)
+                if let combined = union.outputImage {
+                    scaledMask = combined
+                }
+            }
+        }
 
         // Drop the soft fringe. If cleaning fails for any reason, fall
         // back to the un-cleaned scaled mask rather than the rect crop —

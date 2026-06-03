@@ -16,7 +16,20 @@ import Foundation
 enum AttributePrefill {
     /// Minimum softmax confidence required for a prediction to pre-fill
     /// a user-facing picker. Applied per-field, independently.
-    static let minConfidence: Float = 0.80
+    ///
+    /// Build 47 — raised 0.80 → 0.90. The 0.80 bar was calibrated on the
+    /// Fashionpedia validation set, but TestFlight users report frequent
+    /// wrong auto-assignments on real-world mirror selfies (t-shirts,
+    /// dresses, coats mis-categorized) — the held-out accuracy doesn't
+    /// transfer to phone-camera photos. Per the user's explicit choice
+    /// ("don't auto-assign unless very high confidence"), this raises the
+    /// bar so only genuinely-confident predictions pre-fill. The trade-
+    /// off is intentional: below 0.90 the app now leaves the category
+    /// UNSET and asks the user to pick (see `categoryConfirmed` in
+    /// AddItemViewModel) rather than committing a likely-wrong guess.
+    /// Tune this single constant if 0.90 proves too strict once the
+    /// classifier improves.
+    static let minConfidence: Float = 0.90
 
     /// True when `confidence` passes the pre-fill bar. 0.0 is the
     /// "no prediction" sentinel used by `MaskProposal` fields that

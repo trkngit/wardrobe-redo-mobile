@@ -61,6 +61,9 @@ private struct ItemFormSnapshotHost: View {
             fitAttribute: $fitAttribute,
             selectedSeasons: $selectedSeasons,
             selectedOccasions: $selectedOccasions,
+            // Build 47 — snapshot the confirmed-category state (the
+            // default segmented control), matching prior baseline.
+            categoryConfirmed: .constant(true),
             availableSubcategories: ClothingSubcategory.subcategories(for: category)
         )
         .padding()

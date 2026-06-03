@@ -281,7 +281,9 @@ struct AddItemViewModelPrefillTests {
         let vm = AddItemViewModel()
         let proposal = MaskProposalFixture.make(
             predictedTexture: .leather,
-            predictedTextureConfidence: 0.85
+            // Build 47 — bar raised to 0.90; "above threshold" fixture
+            // bumped to 0.95 to stay above it.
+            predictedTextureConfidence: 0.95
         )
         vm.proposals = [proposal]
         vm.selectedProposalIDs = [proposal.id]
@@ -420,7 +422,9 @@ struct AddItemViewModelPrefillTests {
             predictedTexture: .leather,
             predictedTextureConfidence: 0.90,
             predictedFit: .oversized,
-            predictedFitConfidence: 0.85,
+            // Build 47 — bar raised to 0.90; full-snapshot fixture bumped
+            // so the fit field clears it (test asserts fit is recorded).
+            predictedFitConfidence: 0.95,
             predictedSeasons: [.fall, .winter],
             predictedOccasions: [.casual, .date]
         )

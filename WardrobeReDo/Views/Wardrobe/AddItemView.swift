@@ -572,6 +572,7 @@ struct AddItemView: View {
                 fitAttribute: $viewModel.fitAttribute,
                 selectedSeasons: $viewModel.selectedSeasons,
                 selectedOccasions: $viewModel.selectedOccasions,
+                categoryConfirmed: $viewModel.categoryConfirmed,
                 availableSubcategories: viewModel.availableSubcategories,
                 onCategoryChanged: viewModel.onCategoryChanged,
                 isSectionAutoDetected: { section in

@@ -38,6 +38,9 @@ struct EditItemView: View {
                     fitAttribute: $viewModel.fitAttribute,
                     selectedSeasons: $viewModel.selectedSeasons,
                     selectedOccasions: $viewModel.selectedOccasions,
+                    // Build 47 — Edit always has a known category, so the
+                    // confirmed-state segmented control always shows.
+                    categoryConfirmed: .constant(true),
                     availableSubcategories: viewModel.availableSubcategories,
                     onCategoryChanged: viewModel.onCategoryChanged
                 )

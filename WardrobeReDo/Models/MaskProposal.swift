@@ -136,6 +136,27 @@ struct MaskProposal: Identifiable, Hashable, @unchecked Sendable {
         self.modelClassRaw = modelClassRaw
     }
 
+    // MARK: - Confidence-gated category (Build 47)
+
+    /// Category to surface ONLY when the classifier clears the prefill
+    /// confidence bar (`AttributePrefill.shouldPrefill`); `nil` otherwise.
+    ///
+    /// Build 47 — single source of truth shared by BOTH the multi-pick
+    /// grid label (`MultiGarmentGridView`) and the details prefill
+    /// (`AddItemViewModel.applyPrefill`). Before this, the grid showed
+    /// the raw `predictedCategory` while details silently fell back to
+    /// `.top` when confidence was below the bar — so an item shown as a
+    /// shoe in the grid "transformed" into a top on the details screen
+    /// (the TestFlight report). Routing both reads through this property
+    /// guarantees the two screens can never disagree, and that nothing
+    /// is auto-assigned unless the model is genuinely confident.
+    var confidentCategory: ClothingCategory? {
+        guard let predictedCategory,
+              AttributePrefill.shouldPrefill(predictedCategoryConfidence)
+        else { return nil }
+        return predictedCategory
+    }
+
     // MARK: - Hashable / Equatable
 
     func hash(into hasher: inout Hasher) {

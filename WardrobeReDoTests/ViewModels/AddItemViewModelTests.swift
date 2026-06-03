@@ -89,6 +89,10 @@ import UIKit
         extractionMethod: nil,
         dominantColors: []
     )
+    // Build 47 — canSave now also requires a confirmed category (the
+    // user picked, or a high-confidence ML prefill set it). Simulate the
+    // user having chosen a category.
+    vm.categoryConfirmed = true
     #expect(vm.canSave == true)
 }
 
@@ -231,7 +235,7 @@ private func makeProcessedImage(
     // touchup is now reachable only via the explicit "Refine with brush"
     // detour. See `unified-mapping-honey.md` Part 2.
     #expect(vm.isShowingCamera == false)
-    #expect(vm.isShowingTapToSelect == true)
+    #expect(vm.isShowingPreview == true)
     #expect(vm.isShowingTouchup == false)
     #expect(vm.processedImage != nil)
     #expect(vm.processedImage?.maskedData != nil)
@@ -254,7 +258,7 @@ private func makeProcessedImage(
     // strictly better than the old "skip straight to details with no
     // crop" path.
     #expect(vm.isShowingCamera == false)
-    #expect(vm.isShowingTapToSelect == true)
+    #expect(vm.isShowingPreview == true)
     #expect(vm.isShowingTouchup == false)
 }
 
@@ -387,7 +391,7 @@ private func makeProcessedImage(
     // rather than MaskTouchupView. Tap-to-select is the new
     // post-processing surface.
     #expect(vm.isAutoCropped == true)
-    #expect(vm.isShowingTapToSelect == true)
+    #expect(vm.isShowingPreview == true)
 }
 
 @Test @MainActor func addItemOnCameraPhotoClearsAutoCroppedWhenVisionUsed() async {
@@ -995,7 +999,7 @@ struct AddItemMultiGarmentTests {
         await vm.onCameraPhotoCaptured(makePixelImage())
 
         #expect(vm.isShowingMultiPick == false)
-        #expect(vm.isShowingTapToSelect == true)
+        #expect(vm.isShowingPreview == true)
     }
 
     @Test func addItemNoProposalsFallsThroughToExistingFlow() async {
@@ -1016,7 +1020,7 @@ struct AddItemMultiGarmentTests {
         await vm.onCameraPhotoCaptured(makePixelImage())
 
         #expect(vm.isShowingMultiPick == false)
-        #expect(vm.isShowingTapToSelect == true)
+        #expect(vm.isShowingPreview == true)
     }
 
     @Test func addItemFeatureFlagOffSkipsMultiPickEntirely() async {
@@ -1040,7 +1044,7 @@ struct AddItemMultiGarmentTests {
         await vm.onCameraPhotoCaptured(makePixelImage())
 
         #expect(vm.isShowingMultiPick == false)
-        #expect(vm.isShowingTapToSelect == true, "flag off → single-item flow even if proposals attached")
+        #expect(vm.isShowingPreview == true, "flag off → single-item flow even if proposals attached")
         #expect(vm.proposals == nil, "routing gate drops proposals when flag is off")
     }
 
@@ -1401,6 +1405,6 @@ struct AddItemMultiGarmentTests {
         #expect(vm.proposals == nil)
         #expect(vm.selectedProposalIDs.isEmpty)
         #expect(vm.isShowingMultiPick == false)
-        #expect(vm.isShowingTapToSelect == true)
+        #expect(vm.isShowingPreview == true)
     }
 }

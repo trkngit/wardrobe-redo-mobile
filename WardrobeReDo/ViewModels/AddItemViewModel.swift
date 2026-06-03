@@ -35,6 +35,17 @@ final class AddItemViewModel {
     // Item metadata
     var category: ClothingCategory = .top
     var subcategory: ClothingSubcategory = .tshirt
+
+    /// Build 47 — whether `category` reflects a genuine choice (either a
+    /// high-confidence ML prefill OR an explicit user tap) vs. an
+    /// internal placeholder default. When false, the Add details screen
+    /// shows a "Choose a category" prompt instead of a pre-highlighted
+    /// segment, and `canSave` stays false until the user picks — so the
+    /// app never silently saves an item under a guessed category. Edit
+    /// flows always have a known category, so `ItemFormView` defaults
+    /// its binding to a constant `true` and is unaffected.
+    var categoryConfirmed: Bool = false
+
     var texture: TextureType?
     var fitAttribute: FitAttribute?
     var selectedSeasons: Set<Season> = Set(Season.allCases)
@@ -242,7 +253,11 @@ final class AddItemViewModel {
     }
 
     var canSave: Bool {
-        processedImage != nil && !isSaving
+        // Build 47 — also require an explicitly-chosen category. When the
+        // classifier wasn't confident enough to prefill, the user must
+        // pick a category before saving, so we never persist an item
+        // under a placeholder guess.
+        processedImage != nil && !isSaving && categoryConfirmed
     }
 
     // MARK: - Actions
@@ -371,6 +386,11 @@ final class AddItemViewModel {
     }
 
     func onCategoryChanged() {
+        // Build 47 — any user interaction with the category control is an
+        // explicit choice, so the item becomes saveable. Covers both the
+        // confirmed-state segmented picker (onChange) and is reinforced by
+        // the unconfirmed-state chips (which set the binding directly).
+        categoryConfirmed = true
         let subs = availableSubcategories
         if !subs.contains(subcategory), let first = subs.first {
             subcategory = first
@@ -762,6 +782,12 @@ final class AddItemViewModel {
         // the per-batch progress bar hides when no batch is in flight.
         batchTotalCount = 0
         batchSkippedCount = 0
+        // Build 47 — a fresh capture has no confirmed category yet. The
+        // multi-pick path flips this true via applyPrefill only when the
+        // classifier is confident; single-item captures (no ML category)
+        // leave it false so the user picks. Reset here so a prior
+        // capture's confirmation doesn't leak into the next item.
+        categoryConfirmed = false
     }
 
     /// User cancelled out of the camera view without capturing anything.
@@ -1161,19 +1187,31 @@ final class AddItemViewModel {
             selectedSeasons = Set(Season.allCases)
             selectedOccasions = [.casual]
             detectedAttributes = [:]
+            // Flag-off is a classifier kill-switch; preserve the legacy
+            // "saveable with defaults" behaviour so disabling the model
+            // remotely doesn't strand users on an unconfirmed category.
+            categoryConfirmed = true
             return
         }
 
         var snapshot: [String: String] = [:]
 
-        if let cat = proposal.predictedCategory,
-           AttributePrefill.shouldPrefill(proposal.predictedCategoryConfidence) {
-            category = cat
-            snapshot["category"] = cat.rawValue
-        } else {
-            category = .top
-        }
+        // Build 47 — CATEGORY is gated STRICTLY via `confidentCategory`
+        // (the SAME gate the multi-pick grid uses, so the grid label and
+        // the details category can never disagree — the "shoe became a
+        // t-shirt between screens" report). When the classifier isn't
+        // confident, category/subcategory are NOT auto-assigned and the
+        // user must pick (`categoryConfirmed = false` gates Save + drives
+        // the "Choose a category" prompt). texture / fit / seasons /
+        // occasions below keep their OWN independent per-field gates, so
+        // a separately-confident signal still pre-fills even when the
+        // category itself was uncertain.
+        let confident = proposal.confidentCategory
+        categoryConfirmed = (confident != nil)
+        category = confident ?? .top  // .top is an internal placeholder; UI shows the prompt when unconfirmed
+        if let confident { snapshot["category"] = confident.rawValue }
 
+        if categoryConfirmed {
         // Subcategory prediction is already a conservative commit (nil
         // for ambiguous Fashionpedia classes, see
         // `ClothingSubcategory.fromFashionpediaClass`), so it doesn't
@@ -1255,6 +1293,13 @@ final class AddItemViewModel {
         logger.info(
             "applyPrefill.subcategory branch=\(subcategoryBranch, privacy: .public) rawClass=\(proposal.modelClassRaw, privacy: .public) category=\(self.category.rawValue, privacy: .public) subcategory=\(self.subcategory.rawValue, privacy: .public)"
         )
+        } else {
+            // Build 47 — unconfident category: neutral subcategory
+            // placeholder, not stamped as ML-detected. `onCategoryChanged`
+            // re-clamps it into the valid set when the user picks.
+            subcategory = .tshirt
+            logger.info("applyPrefill.unconfident: category/subcategory not auto-assigned (categoryConfidence=\(proposal.predictedCategoryConfidence, privacy: .public), rawClass=\(proposal.modelClassRaw, privacy: .public)) — user must choose")
+        }
 
         if let tex = proposal.predictedTexture,
            AttributePrefill.shouldPrefill(proposal.predictedTextureConfidence) {
@@ -1622,6 +1667,9 @@ final class AddItemViewModel {
     private func resetKeepingSource() {
         category = .top
         subcategory = .tshirt
+        // Build 47 — next garment in the "Save & add another" loop is a
+        // fresh item; require an explicit category choice for it too.
+        categoryConfirmed = false
         texture = nil
         fitAttribute = nil
         selectedSeasons = Set(Season.allCases)
@@ -1668,6 +1716,7 @@ final class AddItemViewModel {
         processedImage = nil
         category = .top
         subcategory = .tshirt
+        categoryConfirmed = false // Build 47 — clean slate; user reconfirms category on the next item
         texture = nil
         fitAttribute = nil
         selectedSeasons = Set(Season.allCases)

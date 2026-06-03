@@ -687,6 +687,17 @@
         }
       }
     },
+    "Choose a category": {
+      "comment": "ItemFormView prompt shown when the ML wasn't confident enough to auto-assign a category; user must tap to choose (Build 47)",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir kategori seç"
+          }
+        }
+      }
+    },
     "Choose from Library": {
       "comment": "AddItemView source-picker — photo library option title",
       "localizations": {

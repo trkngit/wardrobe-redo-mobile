@@ -23,15 +23,16 @@ import Foundation
 /// docs/plans/2026-04-19-auto-attribute-detection/RULES_TABLE.md for the
 /// reviewable rules source.
 enum AttributeRulesEngine {
-    /// Confidence stamped on rules-derived textures. Sits just above
-    /// the 0.80 pre-fill gate in `AttributePrefill.minConfidence` so
-    /// the form will pre-fill, while staying clearly distinguishable
-    /// from a real ML score in the `detected_attributes` JSONB
-    /// telemetry. When the v1.1 classifier ships a real texture head,
-    /// any prediction with confidence ≥ 0.80 will win because the
-    /// pipeline (`MultiGarmentProposalService.applyAttributesAndRules`)
-    /// only consults `deriveTexture` when the ML prediction is nil.
-    static let rulesTextureConfidence: Float = 0.85
+    /// Confidence stamped on rules-derived textures. Build 47 — bumped
+    /// 0.85 → 0.95 to stay above the raised `AttributePrefill.minConfidence`
+    /// (now 0.90). This is a DETERMINISTIC mapping (jeans → denim,
+    /// sweater → knit), not a probabilistic guess, so it legitimately
+    /// belongs above the gate — the bar was raised to suppress unreliable
+    /// ML category guesses, not to suppress reliable rules. The 0.95
+    /// sentinel keeps rules textures pre-filling while staying clearly
+    /// distinguishable from a real ML score in the `detected_attributes`
+    /// JSONB telemetry.
+    static let rulesTextureConfidence: Float = 0.95
 
     /// Derive season + occasion pre-fills from a predicted triple.
     ///
