@@ -53,7 +53,18 @@ enum ImageDownsampler {
             width: size.width * ratio,
             height: size.height * ratio
         )
-        let renderer = UIGraphicsImageRenderer(size: newSize)
+        // Build 46 — pin renderer scale to 1. The default format
+        // inherits the device display scale (2-3×), so a
+        // `downsampled(_:maxDimension: 2048)` call was producing a
+        // 2048 × deviceScale = up to 6144 PIXEL bitmap (~113 MB at 3×)
+        // — the opposite of the memory cap this helper exists to
+        // enforce. The docstring's "stays under 50 MB" was only ever
+        // true at scale 1. Camera captures feed straight into SAM2 /
+        // Vision which resample to ≤1024 px internally, so pixel-exact
+        // `maxDimension` output is correct and loses no fidelity.
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
         return renderer.image { _ in
             image.draw(in: CGRect(origin: .zero, size: newSize))
         }

@@ -238,6 +238,21 @@ final class MockImageService: ImageServiceProtocol {
         lastUpdateMaskedEditedMask = editedMask
         return updateMaskedResult
     }
+
+    // Build 46 — batch-restore reconstruction. Returns the canned
+    // `processImageResult` so restore-path tests can assert the VM
+    // ends up with a savable `ProcessedImage`. Tests that need a
+    // specific reconstructed value can set `processImageResult`.
+    var reconstructCallCount = 0
+    func reconstructProcessedImage(
+        source: UIImage,
+        maskedImage: UIImage,
+        confidence: ExtractionConfidence,
+        method: ExtractionMethod
+    ) async -> ProcessedImage? {
+        reconstructCallCount += 1
+        return processImageResult
+    }
 }
 
 // MARK: - Mock ClothingExtractionService

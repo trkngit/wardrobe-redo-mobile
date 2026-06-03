@@ -204,6 +204,54 @@ final class ImageService: ImageServiceProtocol {
         )
     }
 
+    /// Build 46 — reconstruct a `ProcessedImage` from a known source
+    /// photo + a chosen masked cutout WITHOUT re-running extraction.
+    ///
+    /// Used by the batch-restore path. A persisted multi-pick batch
+    /// stores the source photo PNG and each proposal's masked cutout,
+    /// but NOT the encoded `ProcessedImage` (original/thumbnail/masked
+    /// data). Before this method, restoring a batch left
+    /// `AddItemViewModel.processedImage == nil`, which:
+    ///   * made `canSave` return false → the Save button was disabled, and
+    ///   * made `save()` early-return on its `guard let processed` —
+    /// so the user saw their selection restored but **could not save it**
+    /// (the exact TestFlight report: "en sonki seçim tekrar geliyor
+    /// fakat ürünü kaydedemiyorsun").
+    ///
+    /// Mirrors the encoding `processImage` performs so a restored save
+    /// is byte-identical to a fresh one.
+    func reconstructProcessedImage(
+        source: UIImage,
+        maskedImage: UIImage,
+        confidence: ExtractionConfidence,
+        method: ExtractionMethod
+    ) async -> ProcessedImage? {
+        guard let originalResized = resize(source, maxDimension: maxOriginalDimension),
+              let thumbnailResized = resize(source, maxDimension: thumbnailDimension),
+              let originalData = originalResized.jpegData(compressionQuality: compressionQuality),
+              let thumbnailData = thumbnailResized.jpegData(compressionQuality: compressionQuality)
+        else { return nil }
+
+        let maskedData: Data?
+        if method != .none, let maskedResized = resize(maskedImage, maxDimension: maxOriginalDimension) {
+            maskedData = maskedResized.pngData()
+        } else {
+            maskedData = nil
+        }
+
+        let colors = await colorExtractor.extractColors(from: maskedImage)
+
+        return ProcessedImage(
+            originalData: originalData,
+            thumbnailData: thumbnailData,
+            maskedData: maskedData,
+            extractionConfidence: confidence,
+            extractionMethod: method,
+            dominantColors: colors,
+            proposals: nil
+        )
+    }
+
     /// Build 45 — returns ALL proposals (or nil when the feature flag
     /// is off / model missing / inference threw). The previous
     /// `detectProposalsIfEnabled` collapsed counts < 2 to nil so the
@@ -419,7 +467,21 @@ final class ImageService: ImageServiceProtocol {
         if ratio >= 1.0 { return image }
 
         let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
-        let renderer = UIGraphicsImageRenderer(size: newSize)
+        // Build 46 — pin the renderer scale to 1. The default
+        // `UIGraphicsImageRenderer(size:)` format inherits the device
+        // display scale (2× or 3×), so `resize(maxDimension: 1200)` was
+        // silently producing a 3600×3600 PIXEL bitmap on a 3× iPhone.
+        // The masked PNG (`pngData()` of that bitmap) ballooned to
+        // ~30 MB and the transient encode held ~38 MB — the dominant
+        // contributor to the "crashes when uploading" WatchdogTermination
+        // (OOM) reports. These artifacts are encoded straight to file
+        // data (JPEG / PNG) where points-vs-pixels is meaningless: we
+        // want exactly `maxDimension` PIXELS. Display targets cap at
+        // ~1200 px (full-screen item detail on a 3× phone), so there is
+        // zero visible quality loss — only the wasted 9× memory goes.
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
         return renderer.image { _ in
             image.draw(in: CGRect(origin: .zero, size: newSize))
         }

@@ -90,7 +90,12 @@ struct AddItemView: View {
                 // `BatchPersistenceService` for storage details.
                 viewModel.setCurrentUserIdForPersistence(appState.currentUser?.id)
                 if let userId = appState.currentUser?.id {
-                    _ = viewModel.restorePersistedBatchIfNeeded(currentUserId: userId)
+                    // Build 46 — restore is now async (it reconstructs
+                    // the ProcessedImage so the resumed batch is
+                    // actually savable). Wrap in a Task; the state
+                    // restore + toast happen synchronously inside,
+                    // and processedImage fills in right after.
+                    Task { await viewModel.restorePersistedBatchIfNeeded(currentUserId: userId) }
                 }
             }
             .fullScreenCover(isPresented: $viewModel.isShowingCamera) {

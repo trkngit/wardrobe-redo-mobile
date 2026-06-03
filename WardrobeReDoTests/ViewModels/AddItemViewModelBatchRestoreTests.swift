@@ -60,7 +60,7 @@ struct AddItemViewModelBatchRestoreTests {
         BatchPersistenceService.save(snapshot)
 
         let vm = AddItemViewModel()
-        let restored = vm.restorePersistedBatchIfNeeded(currentUserId: userId)
+        let restored = await vm.restorePersistedBatchIfNeeded(currentUserId: userId)
 
         #expect(restored == true)
         #expect(vm.currentStep == .details)
@@ -98,7 +98,7 @@ struct AddItemViewModelBatchRestoreTests {
         BatchPersistenceService.save(snapshot)
 
         let vm = AddItemViewModel()
-        let restored = vm.restorePersistedBatchIfNeeded(currentUserId: differentUserId)
+        let restored = await vm.restorePersistedBatchIfNeeded(currentUserId: differentUserId)
 
         #expect(restored == false)
         #expect(vm.currentStep == .photo, "VM stays at photo step on mismatch")
@@ -115,7 +115,7 @@ struct AddItemViewModelBatchRestoreTests {
         cleanSlate()
 
         let vm = AddItemViewModel()
-        let restored = vm.restorePersistedBatchIfNeeded(currentUserId: UUID())
+        let restored = await vm.restorePersistedBatchIfNeeded(currentUserId: UUID())
 
         #expect(restored == false)
         #expect(vm.didJustRestoreBatch == false)
@@ -143,7 +143,7 @@ struct AddItemViewModelBatchRestoreTests {
         BatchPersistenceService.save(snapshot)
 
         let vm = AddItemViewModel()
-        let restored = vm.restorePersistedBatchIfNeeded(currentUserId: userId)
+        let restored = await vm.restorePersistedBatchIfNeeded(currentUserId: userId)
 
         #expect(restored == false)
         // Corrupt snapshot is cleared so a future load is clean.

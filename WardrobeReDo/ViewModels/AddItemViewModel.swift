@@ -616,7 +616,8 @@ final class AddItemViewModel {
     /// restored so the view can show the "Resumed your batch" toast.
     /// Idempotent — calling twice in a row finds nothing the second
     /// time because the first call consumes (or clears) the snapshot.
-    func restorePersistedBatchIfNeeded(currentUserId: UUID) -> Bool {
+    @discardableResult
+    func restorePersistedBatchIfNeeded(currentUserId: UUID) async -> Bool {
         guard let snapshot = BatchPersistenceService.load() else { return false }
         guard snapshot.userId == currentUserId else {
             logger.info("batch.restore.skipped: signed-in user mismatch")
@@ -653,6 +654,27 @@ final class AddItemViewModel {
             selectedImage = img
         }
 
+        // Build 46 — reconstruct `processedImage` from the restored
+        // source + the current proposal's cutout. Without this,
+        // `processedImage` stays nil after a restore, which made
+        // `canSave` false (Save button disabled) and `save()`
+        // early-return — the user saw their selection come back but
+        // couldn't save it (the TestFlight report). The persisted
+        // snapshot deliberately doesn't store the encoded
+        // ProcessedImage (it would bloat the JSON), so we rebuild it
+        // here from the images it does store.
+        if let source = selectedImage {
+            processedImage = await imageService.reconstructProcessedImage(
+                source: source,
+                maskedImage: current.maskedImage,
+                confidence: current.confidence,
+                method: .multiGarmentRFDETR
+            )
+            if processedImage == nil {
+                logger.warning("batch.restore.reconstructFailed: could not rebuild ProcessedImage")
+            }
+        }
+
         // Pre-fill the form from the restored proposal — same path
         // a fresh batch follows.
         applyPrefill(from: current)
@@ -665,7 +687,7 @@ final class AddItemViewModel {
         isShowingPreview = false
         didJustRestoreBatch = true
 
-        logger.info("batch.restore.success: \(queue.count, privacy: .public) pending, \(snapshot.savedCount, privacy: .public) already saved")
+        logger.info("batch.restore.success: \(queue.count, privacy: .public) pending, \(snapshot.savedCount, privacy: .public) already saved, processedImage=\(self.processedImage != nil ? "rebuilt" : "nil", privacy: .public)")
         return true
     }
 

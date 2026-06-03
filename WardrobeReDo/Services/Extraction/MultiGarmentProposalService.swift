@@ -112,10 +112,22 @@ final class MultiGarmentProposalService: MultiGarmentExtracting, @unchecked Send
     /// real garments.
     static let ambiguousClassConfidenceFloor: Float = 0.85
 
-    /// Drop any raw detection below this objectness score before the
-    /// per-category argmax. Conservative on purpose — false positives
-    /// are worse than false negatives for the multi-pick UX.
-    static let defaultConfidenceThreshold: Float = 0.5
+    /// Confidence floor for detections whose Fashionpedia class maps to
+    /// a real `ClothingCategory` (shirt, pants, jacket, …).
+    ///
+    /// Build 46 — lowered 0.5 → 0.35. TestFlight users reported
+    /// "fails to detect tshirts": a patterned t-shirt / sports jersey
+    /// worn in a mirror selfie scored ~0.35-0.45, below the old 0.5
+    /// floor, so RF-DETR emitted no proposal. With the TF45 RF-DETR-
+    /// first pipeline that miss now falls through to Vision, which
+    /// returns the WHOLE PERSON as the cutout — the exact failure the
+    /// user saw. The cost asymmetry is stark: a false-negative garment
+    /// becomes a person-shaped wardrobe item, while a false-positive
+    /// garment is one extra deselectable card in the multi-pick grid
+    /// (or a "Refine if needed" tap on the single-item preview). 0.35
+    /// rescues under-confident real garments; the ambiguous-class
+    /// floor below still rejects non-clothing patterns at 0.85.
+    static let defaultConfidenceThreshold: Float = 0.35
 
     /// IoU threshold for Non-Max Suppression over overlapping proposals
     /// of the same class. DETR architectures don't technically need NMS

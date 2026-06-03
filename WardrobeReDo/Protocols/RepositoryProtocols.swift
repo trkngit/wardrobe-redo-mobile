@@ -93,6 +93,17 @@ protocol ImageServiceProtocol: Sendable {
     /// re-run color extraction. Used by the MaskTouchupView flow to fold
     /// brush strokes into the saved palette without re-running Vision.
     func updateMasked(processed: ProcessedImage, editedMask: UIImage) async -> ProcessedImage?
+    /// Build 46 — rebuild a `ProcessedImage` from a known source +
+    /// masked cutout without re-running extraction. Used by the batch-
+    /// restore path so a resumed multi-pick batch can actually be
+    /// saved (the persisted snapshot carries images, not the encoded
+    /// `ProcessedImage`).
+    func reconstructProcessedImage(
+        source: UIImage,
+        maskedImage: UIImage,
+        confidence: ExtractionConfidence,
+        method: ExtractionMethod
+    ) async -> ProcessedImage?
 }
 
 extension ImageServiceProtocol {
