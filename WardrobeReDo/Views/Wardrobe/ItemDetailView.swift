@@ -183,6 +183,14 @@ struct ItemDetailView: View {
     private var imageContent: some View {
         GeometryReader { geo in
             ZStack {
+                // Build 48 — fixed eggshell behind the hero cutout so the
+                // showcase backdrop stays the same stable off-white in
+                // both light and dark mode (matches the grid cards + the
+                // capture preview). Without this the cutout's transparent
+                // area showed the adaptive screen background and flipped
+                // with the system theme.
+                Theme.Colors.showcase
+
                 KFImage(imageURL)
                     .placeholder {
                         Rectangle()

@@ -76,8 +76,12 @@ struct PreviewAndConfirmView: View {
 
     private var cutoutCanvas: some View {
         ZStack {
-            CheckerboardBackground()
-                .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+            // Build 48 — fixed eggshell showcase backdrop (theme-stable),
+            // replacing the checkerboard. This is a final preview of the
+            // saved item, not an editing surface, so the cutout reads as
+            // a clean catalog shot rather than "transparency to edit."
+            RoundedRectangle(cornerRadius: Theme.Radius.card)
+                .fill(Theme.Colors.showcase)
 
             Image(uiImage: cutoutImage)
                 .resizable()

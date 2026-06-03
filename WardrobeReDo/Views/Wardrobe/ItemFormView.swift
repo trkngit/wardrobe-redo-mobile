@@ -99,17 +99,23 @@ struct ItemFormView: View {
             sectionHeader("Category", auto: isSectionAutoDetected(.category))
 
             if categoryConfirmed {
-                // Confirmed: standard segmented control + subcategory.
-                // Build 17 — Picker label is a catalog key; per-row
-                // Text uses the enum's localizedName.
-                Picker("Category", selection: $category) {
+                // Build 48 — category as a wrapping chip grid instead of
+                // a segmented control. The segmented control truncated
+                // the longer localized labels ("Outer…", "Acces…", and
+                // Turkish equivalents are longer still), making it hard to
+                // see all six options (the "make categories easier to
+                // find" request). Chips wrap, never truncate, and match
+                // the texture/fit/seasons/occasions controls below — so
+                // Dress and every category are always fully legible. The
+                // selected category is highlighted; tapping another sets
+                // it (and reconfirms via onCategoryChanged).
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 90))], spacing: Theme.Spacing.sm) {
                     ForEach(ClothingCategory.allCases, id: \.self) { cat in
-                        Text(cat.localizedName).tag(cat)
+                        chipButton(cat.localizedName, isSelected: category == cat) {
+                            category = cat
+                            onCategoryChanged()
+                        }
                     }
-                }
-                .pickerStyle(.segmented)
-                .onChange(of: category) {
-                    onCategoryChanged()
                 }
 
                 Picker("Subcategory", selection: $subcategory) {

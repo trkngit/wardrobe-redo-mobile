@@ -193,7 +193,15 @@ struct LoginView: View {
                 text: $viewModel.email,
                 validationMessage: viewModel.emailValidationMessage,
                 keyboardType: .emailAddress,
-                textContentType: .emailAddress
+                // Build 48 — `.username` (not `.emailAddress`) on the
+                // sign-UP email field. Paired with the password field's
+                // `.newPassword`, this is the iOS-recognized new-account
+                // credential combo that makes Passwords / iCloud Keychain
+                // offer to autofill AND save the new login. With
+                // `.emailAddress` iOS treated it as a generic email field
+                // and skipped the credential-save prompt entirely
+                // (the "autofill on mail fails while signing up" report).
+                textContentType: .username
             )
             .textInputAutocapitalization(.never)
 

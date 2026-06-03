@@ -173,7 +173,13 @@ struct ItemThumbnailView: View {
     }
 
     private var cardBackground: Color {
-        Color(uiColor: .systemBackground)
+        // Build 48 — fixed eggshell, theme-stable (was the adaptive
+        // `.systemBackground`, which flipped to ~#1C1C1E in dark mode).
+        // The user wants every cutout showcased on a stable off-white
+        // bone backdrop regardless of system theme, so a wardrobe of
+        // cutouts shot against wildly different sources unifies into one
+        // consistent product surface that doesn't darken at night.
+        Theme.Colors.showcase
     }
 
     private var placeholder: some View {

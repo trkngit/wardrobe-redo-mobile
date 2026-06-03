@@ -37,6 +37,18 @@ enum Theme {
         static let charcoal = "Charcoal"
         static let gold = "Gold"
         static let accentSage = "AccentSage"
+
+        // Build 48 — fixed eggshell/bone backdrop for showcasing a
+        // garment cutout. Unlike every entry above (adaptive light/dark
+        // xcassets colors referenced by name), this is a HARD-CODED
+        // `Color` with NO dark variant, so the cutout's background never
+        // flips when the user toggles dark mode — the
+        // "item showcase background shouldn't change with theme, should
+        // be a stable slightly off-white eggshell/bone" request. Used
+        // behind cutouts on the preview, item-detail, and grid-card
+        // surfaces. (The brush touch-up editor keeps its checkerboard,
+        // which is a functional transparency affordance, not a showcase.)
+        static let showcase = Color(red: 0.957, green: 0.945, blue: 0.918) // ~#F4F1EA
     }
 
     // MARK: - Typography
