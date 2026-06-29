@@ -98,14 +98,24 @@ final class AuthService {
     }
 }
 
-enum AuthError: LocalizedError {
+enum AuthError: LocalizedError, Equatable {
     case noSession
     case invalidCredentials
     case weakPassword
     case emailTaken
     case emailNotConfirmed
+    /// The `handle_new_user` Postgres trigger rolled back ("Database error
+    /// saving new user"). A genuinely signup-only failure — never the cause
+    /// of a failed sign-in. See `AuthErrorMapper`.
     case databaseSignupFailure
+    /// Backend unreachable: no network, DNS/TLS failure, an origin 5xx, or a
+    /// Cloudflare edge error (e.g. 521 "web server is down" while the Supabase
+    /// project is paused/restoring). Transient — the user should just retry.
+    case serverUnreachable
     case rateLimited
+    /// Mapped error of last resort. In DEBUG the caller surfaces the raw
+    /// underlying error instead of this generic message.
+    case unknown
 
     var errorDescription: String? {
         // Build 40 — `String(localized:)` resolves each case against
@@ -116,12 +126,14 @@ enum AuthError: LocalizedError {
         // localizer / next migration has to ship.
         switch self {
         case .noSession: String(localized: "Unable to create session. Please try again.")
-        case .invalidCredentials: String(localized: "Invalid email or password.")
+        case .invalidCredentials: String(localized: "Incorrect email or password.")
         case .weakPassword: String(localized: "Password must be at least 8 characters with uppercase, lowercase, and a number.")
         case .emailTaken: String(localized: "An account with this email already exists.")
         case .emailNotConfirmed: String(localized: "Please confirm your email before signing in. Check your inbox.")
         case .databaseSignupFailure: String(localized: "Account creation is currently unavailable. The team has been notified.")
+        case .serverUnreachable: String(localized: "Can't reach the server. Please try again in a moment.")
         case .rateLimited: String(localized: "Too many attempts. Please wait a minute and try again.")
+        case .unknown: String(localized: "Something went wrong. Please try again.")
         }
     }
 }

@@ -21,6 +21,7 @@ enum FeatureFlags {
     private enum Key {
         static let multiGarmentEnabled = "feature.multiGarment.enabled"
         static let attributeDetectionEnabled = "feature.attributeDetection.enabled"
+        static let fastAddEnabled = "feature.fastAdd.enabled"
         static let mlTelemetryEnabled = "feature.mlTelemetry.enabled"
         // Build 6 — engine-feature kill switches
         static let coverageAwareScoringEnabled = "feature.coverageAwareScoring.enabled"
@@ -69,6 +70,28 @@ enum FeatureFlags {
         set {
             defaults.set(newValue, forKey: Key.attributeDetectionEnabled)
             logger.info("attributeDetection toggled -> \(newValue, privacy: .public)")
+        }
+    }
+
+    /// Master switch for the Build 52 "Fast Add" flow — best-guess
+    /// auto-fill (always commit the model's top category / subcategory /
+    /// fit guess instead of gating on 0.90 confidence) plus the collapsed
+    /// Fast Confirm card, where Occasion is the only surfaced input and
+    /// everything else is auto-derived and tucked behind "Edit details".
+    /// Reverses the TF47 strict-prefill behavior in favor of speed: the
+    /// user fixes a wrong category in one tap, and `detectedAttributes`
+    /// provenance still records AI vs user.
+    ///
+    /// Default: `true` (the new flow is the point of the build). Toggling
+    /// off in the Developer menu restores the TF47 strict gate + full form.
+    static var isFastAddEnabled: Bool {
+        get {
+            if defaults.object(forKey: Key.fastAddEnabled) == nil { return true }
+            return defaults.bool(forKey: Key.fastAddEnabled)
+        }
+        set {
+            defaults.set(newValue, forKey: Key.fastAddEnabled)
+            logger.info("fastAdd toggled -> \(newValue, privacy: .public)")
         }
     }
 
@@ -153,6 +176,7 @@ enum FeatureFlags {
     static func resetAll() {
         defaults.removeObject(forKey: Key.multiGarmentEnabled)
         defaults.removeObject(forKey: Key.attributeDetectionEnabled)
+        defaults.removeObject(forKey: Key.fastAddEnabled)
         defaults.removeObject(forKey: Key.mlTelemetryEnabled)
         defaults.removeObject(forKey: Key.coverageAwareScoringEnabled)
         defaults.removeObject(forKey: Key.noveltyBonusEnabled)

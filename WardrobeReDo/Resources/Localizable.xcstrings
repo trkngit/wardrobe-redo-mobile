@@ -584,6 +584,17 @@
         }
       }
     },
+    "Can't reach the server. Please try again in a moment.": {
+      "comment": "AuthError.serverUnreachable",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunucuya ulaşılamıyor. Lütfen birkaç dakika sonra tekrar deneyin."
+          }
+        }
+      }
+    },
     "Cancel": {
       "localizations": {
         "tr": {
@@ -1466,13 +1477,13 @@
         }
       }
     },
-    "Invalid email or password.": {
+    "Incorrect email or password.": {
       "comment": "AuthError.invalidCredentials",
       "localizations": {
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Geçersiz e-posta veya parola."
+            "value": "E-posta veya parola hatalı."
           }
         }
       }

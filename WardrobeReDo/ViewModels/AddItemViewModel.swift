@@ -253,11 +253,13 @@ final class AddItemViewModel {
     }
 
     var canSave: Bool {
-        // Build 47 — also require an explicitly-chosen category. When the
-        // classifier wasn't confident enough to prefill, the user must
-        // pick a category before saving, so we never persist an item
-        // under a placeholder guess.
-        processedImage != nil && !isSaving && categoryConfirmed
+        // Build 52 — Fast Add commits a best-guess category every time, so
+        // Save is enabled immediately (the user fixes a wrong guess in one
+        // tap on the confirm card). When Fast Add is off, fall back to the
+        // TF47 rule: require an explicitly-chosen category so we never
+        // persist an item under a placeholder guess.
+        guard processedImage != nil, !isSaving else { return false }
+        return FeatureFlags.isFastAddEnabled || categoryConfirmed
     }
 
     // MARK: - Actions
@@ -1206,8 +1208,21 @@ final class AddItemViewModel {
         // occasions below keep their OWN independent per-field gates, so
         // a separately-confident signal still pre-fills even when the
         // category itself was uncertain.
-        let confident = proposal.confidentCategory
-        categoryConfirmed = (confident != nil)
+        // Build 52 — Fast Add commits the model's TOP category guess
+        // regardless of confidence (the user corrects it in one tap on the
+        // Fast Confirm card, and `canSave` no longer requires confirmation).
+        // When Fast Add is off, fall back to the TF47 strict gate via
+        // `confidentCategory`, which leaves the category UNSET below 0.90 so
+        // the user must pick. Either way the committed value is snapshotted
+        // for provenance.
+        let confident: ClothingCategory?
+        if FeatureFlags.isFastAddEnabled {
+            confident = proposal.predictedCategory
+            categoryConfirmed = true
+        } else {
+            confident = proposal.confidentCategory
+            categoryConfirmed = (confident != nil)
+        }
         category = confident ?? .top  // .top is an internal placeholder; UI shows the prompt when unconfirmed
         if let confident { snapshot["category"] = confident.rawValue }
 
@@ -1302,7 +1317,7 @@ final class AddItemViewModel {
         }
 
         if let tex = proposal.predictedTexture,
-           AttributePrefill.shouldPrefill(proposal.predictedTextureConfidence) {
+           FeatureFlags.isFastAddEnabled || AttributePrefill.shouldPrefill(proposal.predictedTextureConfidence) {
             texture = tex
             snapshot["texture"] = tex.rawValue
             // Build 6: texture is exclusively rules-derived (ML
@@ -1316,9 +1331,15 @@ final class AddItemViewModel {
         }
 
         if let fit = proposal.predictedFit,
-           AttributePrefill.shouldPrefill(proposal.predictedFitConfidence) {
+           FeatureFlags.isFastAddEnabled || AttributePrefill.shouldPrefill(proposal.predictedFitConfidence) {
             fitAttribute = fit
             snapshot["fit"] = fit.rawValue
+        } else if FeatureFlags.isFastAddEnabled {
+            // Build 52 — default to a neutral fit (not nil) so
+            // ProportionBalance keeps full coverage instead of dropping the
+            // dimension. Not snapshotted as ML-detected: it's a default, and
+            // low-confidence fit becomes a later enrichment prompt.
+            fitAttribute = .regular
         } else {
             fitAttribute = nil
         }

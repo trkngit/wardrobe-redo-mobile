@@ -42,6 +42,11 @@ struct AddItemViewModelPrefillTests {
         await FeatureFlagTestIsolation.shared.acquire()
         FeatureFlags.resetAll()
         FeatureFlags.isAttributeDetectionEnabled = true
+        // Build 52 — this suite validates the TF47 strict, confidence-gated
+        // prefill path. Fast Add (default on) best-guesses regardless of
+        // confidence and is covered by its own tests; pin it OFF here so
+        // these threshold assertions keep testing what they're named for.
+        FeatureFlags.isFastAddEnabled = false
         return FlagContext {
             FeatureFlags.resetAll()
             Task { await FeatureFlagTestIsolation.shared.release() }

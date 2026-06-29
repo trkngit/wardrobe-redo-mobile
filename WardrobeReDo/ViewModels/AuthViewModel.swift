@@ -2,6 +2,10 @@ import AuthenticationServices
 import Foundation
 import Observation
 import os
+// `Auth` (Supabase's GoTrue module) is imported explicitly so its `AuthError`
+// can be referenced as `Auth.AuthError` — the app declares its own top-level
+// `AuthError`, and same-module names shadow re-exported ones.
+import Auth
 
 @MainActor
 @Observable
@@ -96,7 +100,7 @@ final class AuthViewModel {
             // attempted email / a session token in some error
             // shapes) leaking into Console / Sentry.
             LogPrivacy.error(logger, category: "signIn", reason: error)
-            errorMessage = mapError(error)
+            errorMessage = mapError(error, flow: .signIn)
         }
 
         isLoading = false
@@ -133,7 +137,7 @@ final class AuthViewModel {
             // Build 20 — same privacy split as signIn. signUp errors
             // can carry the display name + email; treat as private.
             LogPrivacy.error(logger, category: "signUp", reason: error)
-            errorMessage = mapError(error)
+            errorMessage = mapError(error, flow: .signUp)
         }
 
         isLoading = false
@@ -182,7 +186,7 @@ final class AuthViewModel {
             logger.info("appleSignIn.cancelled")
         } catch {
             LogPrivacy.error(logger, category: "appleSignIn", reason: error)
-            errorMessage = mapError(error)
+            errorMessage = mapError(error, flow: .apple)
         }
         isLoading = false
     }
@@ -217,35 +221,176 @@ final class AuthViewModel {
         infoMessage = nil
     }
 
-    private func mapError(_ error: Error) -> String {
-        // Inspect the full error for codes/payloads, not just localizedDescription
-        let raw = String(describing: error).lowercased()
-        let msg = error.localizedDescription.lowercased()
-        let combined = raw + " " + msg
-
-        if combined.contains("email_not_confirmed") || combined.contains("email not confirmed") {
-            return AuthError.emailNotConfirmed.localizedDescription
-        }
-        if combined.contains("invalid_credentials") || combined.contains("invalid login") || combined.contains("invalid credentials") {
-            return AuthError.invalidCredentials.localizedDescription
-        }
-        if combined.contains("user_already_exists") || combined.contains("already registered") || combined.contains("already exists") {
-            return AuthError.emailTaken.localizedDescription
-        }
-        if combined.contains("weak_password") || combined.contains("password should be") {
-            return AuthError.weakPassword.localizedDescription
-        }
-        if combined.contains("over_email_send_rate_limit") || combined.contains("rate limit") || combined.contains("too many requests") {
-            return AuthError.rateLimited.localizedDescription
-        }
-        if combined.contains("database error saving new user") || combined.contains("unexpected_failure") {
-            return AuthError.databaseSignupFailure.localizedDescription
-        }
-        // Surface the real error in development so the issue is visible
+    private func mapError(_ error: Error, flow: AuthFlow) -> String {
+        let mapped = AuthErrorMapper.classify(AuthErrorMapper.failure(from: error), flow: flow)
         #if DEBUG
-        return "Auth error: \(error.localizedDescription)"
-        #else
-        return String(localized: "Something went wrong. Please try again.")
+        // Surface the exact unmapped error in development so a new failure
+        // shape is visible instead of swallowed by the generic fallback.
+        if mapped == .unknown {
+            return "Auth error: \(error.localizedDescription)"
+        }
         #endif
+        return mapped.errorDescription ?? AuthError.unknown.errorDescription ?? ""
+    }
+}
+
+/// Which auth flow produced a failure. Signup-specific outcomes (email taken,
+/// weak password, the signup-trigger DB failure) are only meaningful when
+/// *creating* an account — never when signing in.
+///
+/// Build 52 — before this split, a single shared mapper attributed a
+/// login-time backend outage (an HTTP 521 / 5xx while the Supabase project was
+/// paused or restoring) to "Account creation is currently unavailable", which
+/// was wrong on both counts: it named account creation on the sign-in path,
+/// and it pinned a transient infra outage on a signup problem
+/// (Sentry WARDROBE-IOS-4).
+enum AuthFlow {
+    case signIn
+    case signUp
+    case apple
+}
+
+/// Pure, SDK-agnostic classifier for auth failures. Kept apart from the
+/// SwiftUI/Supabase plumbing so it unit-tests without constructing real
+/// network errors: `failure(from:)` does the impure extraction, `classify`
+/// is a pure function of its normalized inputs.
+///
+/// Design follows the project debugging rule — surface the *exact* cause and
+/// never let a generic wrapper hide it. The HTTP status code and GoTrue error
+/// code drive the decision; the lowercased string is only a fallback haystack.
+enum AuthErrorMapper {
+    /// Normalized view of a failure. `errorCode`/`statusCode` are populated
+    /// when the SDK surfaces a typed `Auth.AuthError.api`; `isConnectivityFailure`
+    /// flags transport-level `URLError`s; `description` is a lowercased fallback.
+    struct Failure: Equatable {
+        var errorCode: String?
+        var statusCode: Int?
+        var isConnectivityFailure: Bool
+        var description: String
+
+        init(
+            errorCode: String? = nil,
+            statusCode: Int? = nil,
+            isConnectivityFailure: Bool = false,
+            description: String = ""
+        ) {
+            self.errorCode = errorCode
+            self.statusCode = statusCode
+            self.isConnectivityFailure = isConnectivityFailure
+            self.description = description.lowercased()
+        }
+    }
+
+    static func classify(_ failure: Failure, flow: AuthFlow) -> AuthError {
+        let code = (failure.errorCode ?? "").lowercased()
+        let haystack = failure.description
+        let status = failure.statusCode
+
+        // 1. Transport-level failure (offline / DNS / TLS / timeout). Never a
+        //    credential or signup problem — the backend was simply not reached.
+        if failure.isConnectivityFailure { return .serverUnreachable }
+
+        // 2. The one genuinely signup-only server failure: the
+        //    `handle_new_user` trigger rolling back with the precise text
+        //    "Database error saving new user". Checked before the generic 5xx
+        //    rule below because it also arrives as a 500 — but it only makes
+        //    sense while *creating* an account. Deliberately NOT keyed off the
+        //    broad `unexpected_failure` code, which also fires on the login
+        //    path during a pause/restore (the WARDROBE-IOS-4 misfire).
+        if flow == .signUp, haystack.contains("database error saving new user") {
+            return .databaseSignupFailure
+        }
+
+        // 3. Origin 5xx or a Cloudflare edge error (e.g. 521 "web server is
+        //    down" while the project is paused/restoring) → backend down.
+        if let status, status >= 500 { return .serverUnreachable }
+        if haystack.contains("web server is down")
+            || haystack.contains("bad gateway")
+            || haystack.contains("service unavailable")
+            || haystack.contains("gateway timeout")
+            || haystack.contains("cloudflare") {
+            return .serverUnreachable
+        }
+
+        // 4. Invalid credentials (400 / 401 / invalid_grant).
+        if code == "invalid_credentials"
+            || haystack.contains("invalid_credentials")
+            || haystack.contains("invalid_grant")
+            || haystack.contains("invalid login")
+            || haystack.contains("invalid credentials") {
+            return .invalidCredentials
+        }
+
+        // 5. Email not yet confirmed.
+        if code == "email_not_confirmed" || haystack.contains("email not confirmed") {
+            return .emailNotConfirmed
+        }
+
+        // 6. Rate limited (429).
+        if status == 429
+            || code.contains("rate_limit")
+            || haystack.contains("rate limit")
+            || haystack.contains("too many requests") {
+            return .rateLimited
+        }
+
+        // 7. Sign-up-only outcomes.
+        if flow == .signUp {
+            if code == "user_already_exists" || code == "email_exists"
+                || haystack.contains("already registered") || haystack.contains("already exists") {
+                return .emailTaken
+            }
+            if code == "weak_password"
+                || haystack.contains("weak_password") || haystack.contains("password should be") {
+                return .weakPassword
+            }
+        }
+
+        // 8. A bare `unexpected_failure` with no 5xx status surfaced is still
+        //    almost always a transient backend hiccup — prefer "try again"
+        //    over a dead-end generic message.
+        if code == "unexpected_failure" || haystack.contains("unexpected_failure") {
+            return .serverUnreachable
+        }
+
+        return .unknown
+    }
+
+    /// Impure extraction of a `Failure` from a real error: pulls the typed
+    /// HTTP status + GoTrue code out of `Auth.AuthError.api`, flags
+    /// transport-level `URLError`s, and keeps a lowercased string fallback.
+    static func failure(from error: Error) -> Failure {
+        var errorCode: String?
+        var statusCode: Int?
+        var connectivity = false
+
+        // A non-cancelled URLError is unambiguously "couldn't reach the server".
+        if let urlError = error as? URLError, urlError.code != .cancelled {
+            connectivity = true
+        }
+
+        // `Auth.AuthError` is qualified to disambiguate from the app's own
+        // `AuthError` declared in AuthService.swift.
+        if let authError = error as? Auth.AuthError {
+            switch authError {
+            case let .api(_, code, _, response):
+                errorCode = code.rawValue
+                statusCode = response.statusCode
+            case .weakPassword:
+                errorCode = "weak_password"
+            case .sessionMissing:
+                errorCode = "session_not_found"
+            default:
+                break
+            }
+        }
+
+        let description = String(describing: error) + " " + error.localizedDescription
+        return Failure(
+            errorCode: errorCode,
+            statusCode: statusCode,
+            isConnectivityFailure: connectivity,
+            description: description
+        )
     }
 }
