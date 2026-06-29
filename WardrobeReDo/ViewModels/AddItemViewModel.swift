@@ -1461,6 +1461,20 @@ final class AddItemViewModel {
         let seasons = Array(selectedSeasons).map(\.rawValue)
         let occasions = Array(selectedOccasions).map(\.rawValue)
 
+        // TF52 — compute effective formality once, on the app's canonical
+        // [0,1] scale, and persist it so `FormalityCoherenceScorer` trusts
+        // it at full coverage instead of recomputing. `FormalityFormula`
+        // is the single source of truth shared by the scorer and the add
+        // flow, so the stored value can never drift from how it's scored.
+        let formality = FormalityFormula.compute(
+            category: category,
+            texture: texture,
+            dominantColors: colors,
+            fitAttribute: fitAttribute
+        )
+        let formalityValue = formality.value
+        let formalityComponents = formality.components
+
         // Diff the `applyPrefill` snapshot against the final form values.
         // Produces a {field: "ai" | "user" | "user_changed_from_ai"} map
         // that lands in `wardrobe_items.detected_attributes` for
@@ -1559,7 +1573,13 @@ final class AddItemViewModel {
                         // actual visual mass. Nil on extraction
                         // failure; the scorer falls back to the
                         // category default alone.
-                        silhouetteArea: processed.silhouetteArea
+                        silhouetteArea: processed.silhouetteArea,
+                        // TF52 — persist client-computed formality so the
+                        // scorer trusts it at full coverage. Migration
+                        // 00018 retires the DB's 0–10 compute trigger so
+                        // these [0,1] values aren't overwritten server-side.
+                        formalityComputed: formalityValue,
+                        formalityComponents: formalityComponents
                     )
 
                     // Primary path: hit the repo synchronously so the UX

@@ -84,6 +84,7 @@
 		3A7134AC738990875901186E /* OutfitGenerationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0688E82B35A527869065DFD9 /* OutfitGenerationService.swift */; };
 		3AA674651906FB44C9619BDA /* on_person_10.png in Resources */ = {isa = PBXBuildFile; fileRef = 68BBCC0EEF618425D0DF0599 /* on_person_10.png */; };
 		3BD6FFAC9936178F9A3A6CAB /* TabRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C9571A55D9A18682F09E9F /* TabRootView.swift */; };
+		3C00708DFE61D25A43906E7A /* FormalityFormula.swift in Sources */ = {isa = PBXBuildFile; fileRef = F250CF8712A7E9E84291DA96 /* FormalityFormula.swift */; };
 		3C0F59C7990F0EB33CA66D97 /* LogPrivacyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2393BAC0DF129E3D59B17D5 /* LogPrivacyTests.swift */; };
 		3DEA9E6DFA642833DF3705B1 /* clean_bg_03.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 2C9E21DD9F4CB54772F22E4B /* clean_bg_03.jpg */; };
 		3E8DE6CEC7AB8FC6D84B653D /* OutfitCardViewSnapshotTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C311132BB23183964901A63 /* OutfitCardViewSnapshotTests.swift */; };
@@ -681,6 +682,7 @@
 		F08E100E4D24438011D36A4D /* AnimationModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationModifiers.swift; sourceTree = "<group>"; };
 		F17ECBF77827412B73E10EB1 /* ProportionBalanceScorerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProportionBalanceScorerTests.swift; sourceTree = "<group>"; };
 		F2393BAC0DF129E3D59B17D5 /* LogPrivacyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogPrivacyTests.swift; sourceTree = "<group>"; };
+		F250CF8712A7E9E84291DA96 /* FormalityFormula.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormalityFormula.swift; sourceTree = "<group>"; };
 		F285D443CD7B740422826C0E /* cluttered_10.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = cluttered_10.png; sourceTree = "<group>"; };
 		F2ABA92ABCACBB6A6A319017 /* LocalCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalCacheTests.swift; sourceTree = "<group>"; };
 		F381D237F7047964D9DBE996 /* SAM2ExtractorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SAM2ExtractorTests.swift; sourceTree = "<group>"; };
@@ -1301,6 +1303,7 @@
 			children = (
 				666F4C71E6D91FF7DED0FFEA /* ColorHarmonyScorer.swift */,
 				2FB218A3E5982759A27575EF /* FormalityCoherenceScorer.swift */,
+				F250CF8712A7E9E84291DA96 /* FormalityFormula.swift */,
 				57E477D0C7D4CDAE664051D3 /* OccasionContextScorer.swift */,
 				E2278C97AC59114AF18355C8 /* OutfitFormulaScorer.swift */,
 				DD2E419D226826217136FE80 /* OutfitScorer.swift */,
@@ -1856,6 +1859,7 @@
 				89D967DBC1C5B7C5AA3DB451 /* FirstRunTutorialView.swift in Sources */,
 				F417BA46C8F55A1A56446735 /* FlowLayout.swift in Sources */,
 				6C3E3E0ED0852C70D5A28AC5 /* FormalityCoherenceScorer.swift in Sources */,
+				3C00708DFE61D25A43906E7A /* FormalityFormula.swift in Sources */,
 				7AE53CA7A0D9A90CB46F1C7F /* FullScreenImageViewer.swift in Sources */,
 				4F2C9B67C331599177762C77 /* GenerationFailure.swift in Sources */,
 				82B139FEDA1B0C6D0B72518A /* HapticManager.swift in Sources */,

@@ -225,6 +225,18 @@ struct NewWardrobeItem: Codable, Sendable {
     let dominantColors: [ColorProfile]
     let texture: String?
     let fitAttribute: String?
+    /// Effective formality on the app's canonical [0, 1] scale, computed
+    /// at save time by `FormalityFormula` (TF52) and persisted so the
+    /// scorer trusts it at full coverage instead of recomputing. Omitted
+    /// from the encoded payload when nil. The database's legacy 0–10
+    /// `compute_formality` trigger is retired in migration 00018, so this
+    /// client value is authoritative end to end.
+    let formalityComputed: Double?
+    /// Normalized [0, 1] per-component formality breakdown (color
+    /// brightness, texture smoothness, pattern scale, structural score)
+    /// for explainability. Round-trips to the `formality_components`
+    /// JSONB column; not read back by scoring.
+    let formalityComponents: FormalityComponents?
     let seasons: [String]
     let occasions: [String]
     /// Per-field provenance map produced by the pre-fill diff in
@@ -268,6 +280,8 @@ struct NewWardrobeItem: Codable, Sendable {
         case dominantColors = "dominant_colors"
         case texture
         case fitAttribute = "fit_attribute"
+        case formalityComputed = "formality_computed"
+        case formalityComponents = "formality_components"
         case seasons, occasions
         case detectedAttributes = "detected_attributes"
         case idempotencyKey = "idempotency_key"
@@ -293,7 +307,9 @@ struct NewWardrobeItem: Codable, Sendable {
         detectedAttributes: [String: String]?,
         idempotencyKey: UUID?,
         boundingBox: BoundingBoxCodable? = nil,
-        silhouetteArea: Double? = nil
+        silhouetteArea: Double? = nil,
+        formalityComputed: Double? = nil,
+        formalityComponents: FormalityComponents? = nil
     ) {
         self.userId = userId
         self.imagePath = imagePath
@@ -313,6 +329,8 @@ struct NewWardrobeItem: Codable, Sendable {
         self.idempotencyKey = idempotencyKey
         self.boundingBox = boundingBox
         self.silhouetteArea = silhouetteArea
+        self.formalityComputed = formalityComputed
+        self.formalityComponents = formalityComponents
     }
 }
 
