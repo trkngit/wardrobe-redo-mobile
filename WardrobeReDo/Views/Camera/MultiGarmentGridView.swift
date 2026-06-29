@@ -1,7 +1,7 @@
 import SwiftUI
 import UIKit
 
-/// Multi-garment proposal picker — **grid layout**.
+/// Multi-garment proposal picker — **grid layout** + Build 52 approval gallery.
 ///
 /// Replaces the earlier overlay-on-photo design (`MultiGarmentTapToSelectView`)
 /// which stacked translucent tinted cutouts on top of the source photo and
@@ -15,20 +15,31 @@ import UIKit
 ///   user sees each detected garment individually instead of guessing
 ///   which colored blob is which.
 /// - Cards scroll vertically — no overflow sheet, no "+N more" affordance.
-/// - The card's whole surface is the tap target. A checkmark + tinted
-///   border indicate selection. Category label sits below the image.
+/// - Tapping a card's image toggles selection (checkmark + tinted border).
+///   Each card carries a compact **category menu** so a wrong best-guess is
+///   corrected in one tap without leaving the gallery.
 ///
-/// Interaction rules (unchanged from the old view, so the ViewModel
-/// surface stays identical):
-/// - All proposals start selected.
-/// - "Use full photo" remains the escape hatch back to the single-item
-///   flow.
-/// - "Save N items" confirms the selection and pops the queue.
+/// Build 52 — approval gallery: a single shared **Occasion** control sits
+/// above the grid (the whole batch inherits it), and the bottom bar's
+/// "Save N items" button commits every selected item in ONE pass via the
+/// view model's Save-all loop — no per-item form. Per-card category
+/// corrections and the shared occasion are applied to each item as it saves.
 struct MultiGarmentGridView: View {
     let proposals: [MaskProposal]
     @Binding var selectedIDs: Set<MaskProposal.ID>
 
-    var onConfirmed: () -> Void
+    /// Build 52 — per-card category corrections, keyed by proposal id.
+    /// `MaskProposal` is immutable, so a card's 1-tap fix is recorded here
+    /// and applied to that item when the batch saves.
+    @Binding var categoryOverrides: [MaskProposal.ID: ClothingCategory]
+
+    /// Build 52 — the single occasion the whole batch inherits (single-
+    /// select: a tap replaces the set).
+    @Binding var sharedOccasions: Set<Occasion>
+
+    /// Commit every selected item in one pass. Async because it drives the
+    /// view model's sequential save loop; the caller wraps it in a `Task`.
+    var onSaveAll: () async -> Void
     var onUseFullPhoto: () -> Void
     var onCancel: () -> Void
 
@@ -50,6 +61,7 @@ struct MultiGarmentGridView: View {
                     if shouldShowLayeredLookHint {
                         layeredLookHint
                     }
+                    occasionHeader
                     grid
                     bottomBar
                 }
@@ -141,6 +153,31 @@ struct MultiGarmentGridView: View {
         .accessibilityIdentifier("MultiGarmentGrid.LayeredLookHint")
     }
 
+    // MARK: - Shared occasion (Build 52)
+
+    /// One occasion control above the grid — the whole batch inherits it.
+    /// Single-select (tap replaces the set), mirroring the Fast Confirm
+    /// card's occasion quick-pick. Per-item occasion edits remain available
+    /// in the full Edit screen after saving.
+    private var occasionHeader: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            Text("When will you wear these?")
+                .font(Theme.Fonts.h3)
+                .foregroundStyle(Color(Theme.Colors.textPrimary))
+            FlowLayout(spacing: Theme.Spacing.sm) {
+                ForEach(Occasion.allCases, id: \.self) { occasion in
+                    Chip(occasion.localizedName, isSelected: sharedOccasions.contains(occasion)) {
+                        sharedOccasions = [occasion]
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, Theme.Spacing.md)
+        .padding(.top, Theme.Spacing.sm)
+        .accessibilityIdentifier("MultiGarmentGrid.OccasionHeader")
+    }
+
     // MARK: - Grid
 
     private var grid: some View {
@@ -150,7 +187,9 @@ struct MultiGarmentGridView: View {
                     GridCard(
                         proposal: proposal,
                         isSelected: selectedIDs.contains(proposal.id),
-                        onTap: { toggleSelection(proposal.id) }
+                        categoryOverride: categoryOverrides[proposal.id],
+                        onTap: { toggleSelection(proposal.id) },
+                        onCategoryChange: { categoryOverrides[proposal.id] = $0 }
                     )
                 }
             }
@@ -168,7 +207,7 @@ struct MultiGarmentGridView: View {
                 .accessibilityIdentifier("MultiGarmentGrid.SelectionSummary")
             Spacer()
             PrimaryButton(confirmButtonTitle) {
-                onConfirmed()
+                Task { await onSaveAll() }
             }
             .frame(maxWidth: 220)
             .opacity(selectedIDs.isEmpty ? 0.5 : 1)
@@ -196,38 +235,51 @@ struct MultiGarmentGridView: View {
 private struct GridCard: View {
     let proposal: MaskProposal
     let isSelected: Bool
+    /// Build 52 — the user's per-card category correction (nil = use the
+    /// model's confident guess).
+    let categoryOverride: ClothingCategory?
     let onTap: () -> Void
+    let onCategoryChange: (ClothingCategory) -> Void
+
+    /// The category the card displays + would save: a user correction wins
+    /// over the model's confidence-gated guess.
+    private var effectiveCategory: ClothingCategory? {
+        categoryOverride ?? proposal.confidentCategory
+    }
 
     var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+        VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+            // Build 52 — selection toggle is the IMAGE (which carries the
+            // checkmark badge); the category menu below is a SIBLING control,
+            // so neither swallows the other's taps (the old whole-card Button
+            // would have eaten the menu's tap). A plain Button keeps the
+            // VoiceOver "selected/button" semantics.
+            Button(action: onTap) {
                 imageThumbnail
-                label
             }
-            .padding(Theme.Spacing.sm)
-            .background(
-                RoundedRectangle(cornerRadius: Theme.Radius.card)
-                    .fill(Color(Theme.Colors.surface))
+            .buttonStyle(.plain)
+            .accessibilityLabel(
+                "\(effectiveCategory?.displayName ?? "Item"), " +
+                (isSelected ? "selected" : "not selected")
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: Theme.Radius.card)
-                    .stroke(
-                        isSelected
-                            ? Color(Theme.Colors.primary)
-                            : Color(Theme.Colors.muted).opacity(0.3),
-                        lineWidth: isSelected ? 2 : 1
-                    )
-            )
+            .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+
+            label
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(
-            // Build 47 — use the confidence-gated category so the grid's
-            // spoken label matches what details will commit; "Item" when
-            // the model isn't confident enough to claim a category.
-            "\(proposal.confidentCategory?.displayName ?? "Item"), " +
-            (isSelected ? "selected" : "not selected")
+        .padding(Theme.Spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: Theme.Radius.card)
+                .fill(Color(Theme.Colors.surface))
         )
-        .accessibilityAddTraits(.isButton)
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.card)
+                .stroke(
+                    isSelected
+                        ? Color(Theme.Colors.primary)
+                        : Color(Theme.Colors.muted).opacity(0.3),
+                    lineWidth: isSelected ? 2 : 1
+                )
+        )
     }
 
     private var imageThumbnail: some View {
@@ -275,21 +327,45 @@ private struct GridCard: View {
 
     private var label: some View {
         HStack(spacing: 4) {
-            // Build 17 — pull localized category name when known,
-            // fall back to a translated "Item" otherwise.
-            // Build 47 — gate on `confidentCategory` so the grid never
-            // shows a category the details screen won't commit (the
-            // "shoe became a t-shirt between screens" report).
-            Text(proposal.confidentCategory?.localizedName ?? LocalizedStringResource("Item"))
-                .font(Theme.Fonts.bodySmall.weight(.medium))
-                .foregroundStyle(Color(Theme.Colors.textPrimary))
-                .lineLimit(1)
+            categoryMenu
             Spacer(minLength: 0)
             Text("\(Int(proposal.detectionScore * 100))%")
                 .font(Theme.Fonts.caption)
                 .foregroundStyle(Color(Theme.Colors.textSecondary))
                 .monospacedDigit()
         }
+    }
+
+    /// Build 52 — compact 1-tap category correction. Tapping opens a menu of
+    /// the six categories; the choice writes a per-proposal override that the
+    /// batch save applies. A menu (vs a 6-chip row) keeps the 2-column grid
+    /// scannable and gives the cutout room.
+    private var categoryMenu: some View {
+        Menu {
+            ForEach(ClothingCategory.allCases, id: \.self) { cat in
+                Button {
+                    onCategoryChange(cat)
+                } label: {
+                    if effectiveCategory == cat {
+                        Label(cat.localizedName, systemImage: "checkmark")
+                    } else {
+                        Text(cat.localizedName)
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 2) {
+                Text(effectiveCategory?.localizedName ?? LocalizedStringResource("Item"))
+                    .font(Theme.Fonts.bodySmall.weight(.medium))
+                    .foregroundStyle(Color(Theme.Colors.textPrimary))
+                    .lineLimit(1)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(Color(Theme.Colors.textSecondary))
+            }
+        }
+        .accessibilityLabel("Category: \(effectiveCategory?.displayName ?? "not set")")
+        .accessibilityHint("Double-tap to change the category for this item")
     }
 }
 
@@ -309,6 +385,8 @@ private struct GridCard: View {
 private struct MultiGarmentGridViewPreviewHost: View {
     let proposalCount: Int
     @State private var selectedIDs: Set<UUID> = []
+    @State private var categoryOverrides: [UUID: ClothingCategory] = [:]
+    @State private var sharedOccasions: Set<Occasion> = [.casual]
 
     private var proposals: [MaskProposal] {
         (0..<proposalCount).map { makePreviewProposal(index: $0) }
@@ -333,7 +411,9 @@ private struct MultiGarmentGridViewPreviewHost: View {
         MultiGarmentGridView(
             proposals: proposals,
             selectedIDs: $selectedIDs,
-            onConfirmed: {},
+            categoryOverrides: $categoryOverrides,
+            sharedOccasions: $sharedOccasions,
+            onSaveAll: {},
             onUseFullPhoto: {},
             onCancel: {}
         )

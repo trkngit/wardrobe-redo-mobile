@@ -405,7 +405,28 @@ struct AddItemView: View {
                     get: { viewModel.selectedProposalIDs },
                     set: { viewModel.selectedProposalIDs = $0 }
                 ),
-                onConfirmed: { Task { await viewModel.onMultiPickConfirmed() } },
+                categoryOverrides: Binding(
+                    get: { viewModel.proposalCategoryOverrides },
+                    set: { viewModel.proposalCategoryOverrides = $0 }
+                ),
+                sharedOccasions: Binding(
+                    get: { viewModel.sharedBatchOccasions },
+                    set: { viewModel.sharedBatchOccasions = $0 }
+                ),
+                onSaveAll: {
+                    // Build 52 — Fast Add: save every selected item in one pass
+                    // (no per-item form). Flag-off keeps the legacy per-item
+                    // walk to the details step as the reversible fallback.
+                    if FeatureFlags.isFastAddEnabled {
+                        guard let userId = appState.currentUser?.id else {
+                            viewModel.errorMessage = String(localized: "Not signed in. Please restart the app and try again.")
+                            return
+                        }
+                        await viewModel.onSaveAllConfirmed(userId: userId)
+                    } else {
+                        await viewModel.onMultiPickConfirmed()
+                    }
+                },
                 onUseFullPhoto: { viewModel.onMultiPickUseFullPhoto() },
                 onCancel: { viewModel.onMultiPickCancelled() }
             )

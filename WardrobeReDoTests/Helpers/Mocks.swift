@@ -30,6 +30,9 @@ final class MockWardrobeRepository: WardrobeRepositoryProtocol {
     var insertItemCallCount = 0
     var updateItemCallCount = 0
     var lastInsertedItem: NewWardrobeItem?
+    /// Every item inserted, in order — lets batch tests assert per-item
+    /// attributes across a multi-save pass (not just the last).
+    var insertedItems: [NewWardrobeItem] = []
     var lastUpdatedId: UUID?
     var lastUpdate: WardrobeItemUpdate?
 
@@ -55,6 +58,7 @@ final class MockWardrobeRepository: WardrobeRepositoryProtocol {
     func insertItem(_ item: NewWardrobeItem) async throws -> WardrobeItem {
         insertItemCallCount += 1
         lastInsertedItem = item
+        insertedItems.append(item)
         return try insertItemResult.get()
     }
 

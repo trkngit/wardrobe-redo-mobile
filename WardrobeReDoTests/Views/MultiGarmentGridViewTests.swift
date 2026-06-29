@@ -170,13 +170,23 @@ struct MultiGarmentGridViewTests {
         selectedIDs: Set<MaskProposal.ID>
     ) -> MultiGarmentGridView {
         let box = SelectionBox(value: selectedIDs)
+        let overrides = OverridesBox()
+        let occasions = OccasionsBox()
         return MultiGarmentGridView(
             proposals: proposals,
             selectedIDs: Binding(
                 get: { box.value },
                 set: { box.value = $0 }
             ),
-            onConfirmed: {},
+            categoryOverrides: Binding(
+                get: { overrides.value },
+                set: { overrides.value = $0 }
+            ),
+            sharedOccasions: Binding(
+                get: { occasions.value },
+                set: { occasions.value = $0 }
+            ),
+            onSaveAll: {},
             onUseFullPhoto: {},
             onCancel: {}
         )
@@ -188,5 +198,14 @@ struct MultiGarmentGridViewTests {
     private final class SelectionBox {
         var value: Set<MaskProposal.ID>
         init(value: Set<MaskProposal.ID>) { self.value = value }
+    }
+
+    /// Backing stores for the Build 52 approval-gallery bindings.
+    private final class OverridesBox {
+        var value: [MaskProposal.ID: ClothingCategory] = [:]
+    }
+
+    private final class OccasionsBox {
+        var value: Set<Occasion> = [.casual]
     }
 }

@@ -202,6 +202,31 @@ final class AddItemViewModel {
     /// lowered by confirm / escape / cancel / start-next.
     var isShowingMultiPick: Bool = false
 
+    // MARK: Phase 2 — approval-gallery "Save all" state
+
+    /// Per-proposal category corrections from the approval gallery, keyed
+    /// by proposal id. `MaskProposal` is an immutable value type, so a
+    /// user's 1-tap category fix on a card lives here and is applied on top
+    /// of `applyPrefill`'s ML seed in `startNextProposal`. Cleared when the
+    /// batch ends or a fresh capture starts (`resetFastSaveAllState`).
+    var proposalCategoryOverrides: [MaskProposal.ID: ClothingCategory] = [:]
+
+    /// The single occasion the whole batch inherits — the gallery's one
+    /// shared control. Applied to every item in the Save-all pass AFTER
+    /// `applyPrefill`, so the user's batch choice wins over the ML seed.
+    /// Defaults to the same `[.casual]` as the single-item flow.
+    var sharedBatchOccasions: Set<Occasion> = [.casual]
+
+    /// True while a "Save all N" pass is running: tells `startNextProposal`
+    /// to commit each item via `save()` instead of stopping on the Fast
+    /// Confirm card. Reset when the queue drains or the batch is abandoned.
+    var isFastSaveAll: Bool = false
+
+    /// The user id threaded through the Save-all loop so the recursive
+    /// `save → startNextProposal → save` chain can call `save(userId:)`
+    /// without re-plumbing the existing post-save loop anchor.
+    var fastSaveUserId: UUID?
+
     // MARK: - Dependencies
 
     private let imageService: any ImageServiceProtocol
@@ -817,6 +842,9 @@ final class AddItemViewModel {
         // leave it false so the user picks. Reset here so a prior
         // capture's confirmation doesn't leak into the next item.
         categoryConfirmed = false
+        // Phase 2 — clear any prior batch's gallery overrides / shared
+        // occasion so a fresh capture starts clean.
+        resetFastSaveAllState()
     }
 
     /// User cancelled out of the camera view without capturing anything.
@@ -1044,6 +1072,38 @@ final class AddItemViewModel {
         await startNextProposal()
     }
 
+    /// Phase 2 — the approval-gallery "Save all N" path. Same queue seed as
+    /// `onMultiPickConfirmed`, but flips `isFastSaveAll` so the shared
+    /// `startNextProposal` loop commits each item via `save()` WITHOUT the
+    /// per-item Fast Confirm card stop. The whole selected batch saves in
+    /// one pass; source-photo upload dedup, idempotency, per-item formality
+    /// (1B) and the progress bar are all reused unchanged. A mid-batch save
+    /// failure halts the loop on `.details` for the failed item (save()'s
+    /// success branch is the only thing that pops the next proposal).
+    func onSaveAllConfirmed(userId: UUID) async {
+        guard let proposals else { return }
+        pendingProposalQueue = proposals
+            .filter { selectedProposalIDs.contains($0.id) }
+            .sorted { $0.detectionScore > $1.detectionScore }
+        guard !pendingProposalQueue.isEmpty else { return }
+        batchTotalCount = pendingProposalQueue.count
+        batchSkippedCount = 0
+        isFastSaveAll = true
+        fastSaveUserId = userId
+        logger.info("multiGarment.saveAll: \(self.pendingProposalQueue.count) items queued (fast-save)")
+        await startNextProposal()
+    }
+
+    /// Clear all Phase 2 Save-all state. Called wherever a batch ends or a
+    /// fresh capture begins so a stale override/occasion can't leak into the
+    /// next batch. The occasion resets to the single-item default.
+    private func resetFastSaveAllState() {
+        isFastSaveAll = false
+        fastSaveUserId = nil
+        proposalCategoryOverrides = [:]
+        sharedBatchOccasions = [.casual]
+    }
+
     /// Escape hatch. User tapped "Use full photo" on the multi-pick
     /// screen — drops all proposals and routes to the existing single-
     /// item tap-to-select flow. Telemetry-logged so we can measure how
@@ -1056,6 +1116,7 @@ final class AddItemViewModel {
         currentProposal = nil
         isShowingMultiPick = false
         isShowingTapToSelect = true
+        resetFastSaveAllState()
     }
 
     /// User tapped Cancel on the multi-pick toolbar. Unlike "Use full
@@ -1073,6 +1134,7 @@ final class AddItemViewModel {
         batchSkippedCount = 0
         // Discard any persisted batch — user explicitly bailed.
         BatchPersistenceService.clear()
+        resetFastSaveAllState()
         currentStep = .photo
     }
 
@@ -1121,6 +1183,7 @@ final class AddItemViewModel {
             // either fully consumed (every item saved or skipped) or
             // the user is bouncing back to the photo step.
             BatchPersistenceService.clear()
+            resetFastSaveAllState()
             if savedItemsFromSource > 0 {
                 // At least one garment landed — treat the batch as done
                 // and dismiss the sheet like any normal save flow.
@@ -1184,7 +1247,33 @@ final class AddItemViewModel {
         isShowingTouchup = false
         isShowingTapToSelect = false
         isShowingMultiPick = false
-        currentStep = .details
+
+        // Phase 2 — apply the user's gallery choices ON TOP of applyPrefill's
+        // ML seed so they win: a per-card category correction (clamped into a
+        // valid subcategory via onCategoryChanged) and, on the Save-all path,
+        // the one shared batch occasion.
+        if let override = proposalCategoryOverrides[next.id] {
+            category = override
+            categoryConfirmed = true
+            onCategoryChanged()
+        }
+        if isFastSaveAll {
+            if !sharedBatchOccasions.isEmpty {
+                selectedOccasions = sharedBatchOccasions
+            }
+            // Commit this item with its auto attributes; save()'s success
+            // branch pops the next proposal, so the whole selected batch
+            // saves in one pass with no per-item form stop. A save FAILURE
+            // sets currentStep = .details and does NOT recurse, halting the
+            // loop on the failed item for the user to retry.
+            if let uid = fastSaveUserId {
+                await save(userId: uid)
+            } else {
+                currentStep = .details
+            }
+        } else {
+            currentStep = .details
+        }
     }
 
     /// Pre-fill category / subcategory / texture / fit / seasons /
@@ -1814,6 +1903,7 @@ final class AddItemViewModel {
         pendingProposalQueue = []
         currentProposal = nil
         isShowingMultiPick = false
+        resetFastSaveAllState()
         // Cancel any in-flight session load so a sheet dismissal mid-
         // processing doesn't leak the MLModel load into the background.
         sessionLoadTask?.cancel()
