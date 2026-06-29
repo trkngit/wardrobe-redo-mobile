@@ -135,6 +135,65 @@ final class OutfitViewModel {
     var isEmpty: Bool { dailyOutfits.isEmpty && !isLoading && !isGenerating }
     var todayDateString: String { OutfitRepository.todayDateString() }
 
+    // MARK: - Fit enrichment (Build 52, Phase 3)
+
+    /// An item whose fit was auto-defaulted to `.regular` during Fast Add and
+    /// never confirmed (no `"fit"` provenance) — surfaced as a one-tap prompt
+    /// in the Outfits feed so the user can enrich it. Nil = no prompt.
+    var fitEnrichmentCandidate: WardrobeItem?
+
+    /// Items answered or dismissed this session, so the same one isn't
+    /// re-prompted. Session-scoped (a deliberate v1 minimum): confirming an
+    /// item as `.regular` can't be persisted via `WardrobeItemUpdate` today,
+    /// so such an item may resurface on a later launch.
+    private var enrichedOrDismissedItemIds: Set<UUID> = []
+
+    /// Find the next fit-enrichment candidate from the user's wardrobe.
+    /// Called from the Outfits feed after outfits load. Gated on Fast Add so
+    /// enrichment ships and reverts with the feature.
+    func refreshFitEnrichment(userId: UUID) async {
+        guard FeatureFlags.isFastAddEnabled else {
+            fitEnrichmentCandidate = nil
+            return
+        }
+        do {
+            let items = try await wardrobeRepository.fetchItems(userId: userId)
+            fitEnrichmentCandidate = items.first { item in
+                item.fitAttribute == .regular
+                    && item.detectedAttributes["fit"] == nil
+                    && !enrichedOrDismissedItemIds.contains(item.id)
+            }
+        } catch {
+            fitEnrichmentCandidate = nil
+        }
+    }
+
+    /// Persist the user's chosen fit to the candidate, then clear the prompt.
+    /// Fire-and-forget on failure — a missed enrichment write isn't worth
+    /// interrupting the feed.
+    func applyFitEnrichment(_ fit: FitAttribute) async {
+        guard let item = fitEnrichmentCandidate else { return }
+        enrichedOrDismissedItemIds.insert(item.id)
+        fitEnrichmentCandidate = nil
+        do {
+            _ = try await wardrobeRepository.updateItem(
+                id: item.id,
+                updates: WardrobeItemUpdate(fitAttribute: fit.rawValue)
+            )
+        } catch {
+            // Swallowed: enrichment is best-effort.
+        }
+    }
+
+    /// User dismissed the prompt without answering — don't re-prompt this
+    /// item this session.
+    func dismissFitEnrichment() {
+        if let id = fitEnrichmentCandidate?.id {
+            enrichedOrDismissedItemIds.insert(id)
+        }
+        fitEnrichmentCandidate = nil
+    }
+
     // MARK: - Load Today's Outfits
 
     /// Fetch previously generated outfits for today, resolving item references.

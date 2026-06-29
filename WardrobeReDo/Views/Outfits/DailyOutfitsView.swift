@@ -42,6 +42,9 @@ struct DailyOutfitsView: View {
             // putting hourly-changing state in Postgres.
             viewModel.selectedOccasion = OccasionMemory.outfitsLastOccasion()
             await viewModel.loadOutfits(userId: user.id)
+            // Build 52 (Phase 3) — surface a one-tap fit-enrichment prompt
+            // for an item whose fit was auto-defaulted during Fast Add.
+            await viewModel.refreshFitEnrichment(userId: user.id)
         }
         // Build 27 — `.refreshable` removed. It was attaching to
         // the horizontal occasion-chip ScrollView (the only
@@ -68,10 +71,57 @@ struct DailyOutfitsView: View {
 
     // MARK: - Outfit Content
 
+    /// Build 52 (Phase 3) — compact, dismissible prompt asking the user to
+    /// confirm the fit of an item whose fit Fast Add auto-defaulted to
+    /// `.regular`. One tap writes the attribute and improves future matching.
+    private func fitEnrichmentPrompt(_ item: WardrobeItem) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            HStack(alignment: .top) {
+                Text("How does this \(String(localized: item.subcategory.localizedName)) fit?")
+                    .font(Theme.Fonts.bodySmall.weight(.medium))
+                    .foregroundStyle(Color(Theme.Colors.textPrimary))
+                Spacer(minLength: Theme.Spacing.sm)
+                Button {
+                    viewModel.dismissFitEnrichment()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Color(Theme.Colors.textSecondary))
+                }
+                .accessibilityLabel("Dismiss")
+            }
+            FlowLayout(spacing: Theme.Spacing.sm) {
+                ForEach([FitAttribute.slim, .regular, .relaxed], id: \.self) { fit in
+                    Chip(fit.localizedName, isSelected: false) {
+                        Task { await viewModel.applyFitEnrichment(fit) }
+                    }
+                }
+            }
+        }
+        .padding(Theme.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: Theme.Radius.card)
+                .fill(Color(Theme.Colors.surface))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.Radius.card)
+                .stroke(Color(Theme.Colors.border), lineWidth: 1)
+        )
+        .padding(.horizontal, Theme.Spacing.lg)
+        .padding(.bottom, Theme.Spacing.sm)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("Outfits.FitEnrichmentPrompt")
+    }
+
     private var outfitContent: some View {
         VStack(spacing: 0) {
             // Date header
             dateHeader
+
+            // Build 52 (Phase 3) — dismissible one-tap fit-enrichment prompt.
+            if let candidate = viewModel.fitEnrichmentCandidate {
+                fitEnrichmentPrompt(candidate)
+            }
 
             // Paged carousel
             TabView(selection: $selectedPage) {

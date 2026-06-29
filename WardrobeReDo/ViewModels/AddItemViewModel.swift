@@ -227,6 +227,14 @@ final class AddItemViewModel {
     /// without re-plumbing the existing post-save loop anchor.
     var fastSaveUserId: UUID?
 
+    // MARK: Phase 3 — add-flow speed metric
+
+    /// Wall-clock start for the `addflow.interaction_ms` breadcrumb: stamped
+    /// when processing completes (the user lands on an interactive surface)
+    /// and read when the flow finishes (`didSave`). nil = no add-flow timing
+    /// in progress. Stamped fresh per capture in `routeAfterProcessing`.
+    var addFlowStartedAt: Date?
+
     // MARK: - Dependencies
 
     private let imageService: any ImageServiceProtocol
@@ -768,6 +776,11 @@ final class AddItemViewModel {
     /// pre-populated) shouldn't be able to route past the gate at this
     /// later stage either.
     private func routeAfterProcessing(processed: ProcessedImage) {
+        // Phase 3 — start the add-speed metric clock. Processing is done and
+        // the user is about to interact (the Fast Confirm card, the multi-pick
+        // gallery, or the legacy preview); `logAddFlowInteractionMetric` reads
+        // this when the flow finishes at `didSave`.
+        addFlowStartedAt = Date()
         if FeatureFlags.isMultiGarmentEnabled,
            let props = processed.proposals,
            props.count >= 2 {
@@ -813,6 +826,19 @@ final class AddItemViewModel {
             logger.info("routing.decision dest=previewAndConfirm method=\(processed.extractionMethod?.rawValue ?? "nil", privacy: .public) confidence=\(processed.extractionConfidence?.rawValue ?? "nil", privacy: .public)")
             isShowingPreview = true
         }
+    }
+
+    /// Phase 3 — emit the primary add-speed metric: wall-clock from
+    /// processing-complete (`routeAfterProcessing`) to the flow finishing
+    /// (`didSave`), plus how many items the capture produced (1 for a single
+    /// add, N for a Save-all batch). Logged via the existing os_log / Sentry
+    /// breadcrumb channel. Target: p90 ≤ 10,000 ms. No-op if the clock was
+    /// never started (e.g. a restored batch that skipped routing).
+    private func logAddFlowInteractionMetric() {
+        guard let start = addFlowStartedAt else { return }
+        let ms = Int(Date().timeIntervalSince(start) * 1000)
+        logger.info("addflow.interaction_ms=\(ms, privacy: .public) items=\(self.savedItemsFromSource, privacy: .public)")
+        addFlowStartedAt = nil
     }
 
     /// Reset the per-capture provenance state so the next photo gets
@@ -1187,6 +1213,7 @@ final class AddItemViewModel {
             if savedItemsFromSource > 0 {
                 // At least one garment landed — treat the batch as done
                 // and dismiss the sheet like any normal save flow.
+                logAddFlowInteractionMetric()
                 didSave = true
             } else {
                 // Batch ended without saving anything (user skipped
@@ -1786,6 +1813,7 @@ final class AddItemViewModel {
                 resetKeepingSource()
                 isShowingTapToSelect = true
             } else {
+                logAddFlowInteractionMetric()
                 didSave = true
             }
         } else {
