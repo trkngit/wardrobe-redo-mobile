@@ -753,6 +753,33 @@ final class AddItemViewModel {
             selectedProposalIDs = Set(props.map(\.id))
             logger.info("routing.decision dest=multiGarmentGrid proposals=\(props.count, privacy: .public)")
             isShowingMultiPick = true
+        } else if FeatureFlags.isFastAddEnabled {
+            // Build 52 (Fast Add) — fold Preview & Confirm into the inline
+            // Fast Confirm card: land directly on `.details` instead of the
+            // full-screen cover, so the happy path is one screen, not two.
+            //
+            // A single-garment photo still produces exactly ONE MaskProposal
+            // (multi-garment detection runs regardless of count and only the
+            // `count >= 2` gate above routes to the grid), whose
+            // `predictedCategory` this else-branch would otherwise discard.
+            // Seed the card's best-guess attributes from it via the SAME
+            // `applyPrefill` the multi-pick path uses, so single-item adds get
+            // a real ML category + rules-derived texture / seasons / occasions
+            // instead of the bare `.top` placeholder. When multi-garment
+            // detection is off there's no proposal, so commit a confirmed
+            // neutral default the user corrects in one tap (keeps `canSave`
+            // honest and ProportionBalance covered via `.regular` fit).
+            //
+            // Do NOT also raise `isShowingPreview` here — the inline card and
+            // the full-screen cover would both present (double UI).
+            if let proposal = processed.proposals?.first {
+                applyPrefill(from: proposal)
+            } else {
+                categoryConfirmed = true
+                fitAttribute = .regular
+            }
+            logger.info("routing.decision dest=fastConfirmCard hasProposal=\(processed.proposals?.first != nil, privacy: .public) method=\(processed.extractionMethod?.rawValue ?? "nil", privacy: .public)")
+            currentStep = .details
         } else {
             // Build 45 — auto-extraction completed; land on the new
             // Preview & Confirm screen instead of TapToSelectView. The

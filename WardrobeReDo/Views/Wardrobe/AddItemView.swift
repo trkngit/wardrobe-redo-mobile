@@ -46,7 +46,14 @@ struct AddItemView: View {
                             // existing tests + future surfaces.
                             photoStep
                         case .details:
-                            detailsStep
+                            // Build 52 — Fast Add collapses the full details
+                            // form into the compact Fast Confirm card. The
+                            // full `detailsStep` stays as the flag-off path.
+                            if FeatureFlags.isFastAddEnabled {
+                                fastConfirmCard
+                            } else {
+                                detailsStep
+                            }
                         case .saving:
                             savingStep
                         }
@@ -575,27 +582,7 @@ struct AddItemView: View {
                 categoryConfirmed: $viewModel.categoryConfirmed,
                 availableSubcategories: viewModel.availableSubcategories,
                 onCategoryChanged: viewModel.onCategoryChanged,
-                isSectionAutoDetected: { section in
-                    switch section {
-                    case .category:
-                        return isAutoDetected("category", matching: viewModel.category.rawValue)
-                            || isAutoDetected("subcategory", matching: viewModel.subcategory.rawValue)
-                    case .texture:
-                        return isAutoDetected("texture", matching: viewModel.texture?.rawValue)
-                    case .fit:
-                        return isAutoDetected("fit", matching: viewModel.fitAttribute?.rawValue)
-                    case .seasons:
-                        return isAutoDetected(
-                            "seasons",
-                            matchingSortedJoined: viewModel.selectedSeasons.map { $0.rawValue }
-                        )
-                    case .occasions:
-                        return isAutoDetected(
-                            "occasions",
-                            matchingSortedJoined: viewModel.selectedOccasions.map { $0.rawValue }
-                        )
-                    }
-                }
+                isSectionAutoDetected: formSectionAutoDetected
             )
 
             if let error = viewModel.errorMessage {
@@ -610,6 +597,179 @@ struct AddItemView: View {
             saveActions
                 .padding(.top, Theme.Spacing.sm)
                 .padding(.bottom, Theme.Spacing.xl)
+        }
+    }
+
+    // MARK: - Step 3 (Fast Add): Fast Confirm card
+    //
+    // Build 52 — compact replacement for `detailsStep` when
+    // `FeatureFlags.isFastAddEnabled`. Collapses the always-expanded
+    // 6-field form into: the extracted cutout (+ a non-blocking "Refine
+    // cutout" affordance folded in from the old Preview & Confirm cover),
+    // the auto-assigned Category as a 1-tap-correct chip row, the single
+    // kept manual input (Occasion), and Save — with subcategory / texture /
+    // fit / seasons demoted behind a collapsed "Edit details" disclosure
+    // that embeds the full shared `ItemFormView` unchanged. Target: ≤10s,
+    // ~0–2 taps. `detailsStep` stays as the flag-off fallback and
+    // `EditItemView` is untouched.
+    @ViewBuilder
+    private var fastConfirmCard: some View {
+        VStack(spacing: Theme.Spacing.lg) {
+            fastConfirmCutout
+            fastConfirmCategory
+            fastConfirmOccasion
+            fastConfirmEditDetails
+
+            if let error = viewModel.errorMessage {
+                errorBanner(error)
+            }
+
+            saveActions
+                .padding(.top, Theme.Spacing.sm)
+                .padding(.bottom, Theme.Spacing.xl)
+        }
+    }
+
+    /// The extracted garment cutout on the stable showcase backdrop, with a
+    /// small "Refine cutout" affordance that reopens tap-to-select (folded
+    /// in from the old Preview & Confirm cover). Prefers the masked cutout
+    /// (multi-pick proposal, then the single-item extraction); falls back to
+    /// the source photo when extraction produced no mask.
+    @ViewBuilder
+    private var fastConfirmCutout: some View {
+        let cutout = viewModel.currentProposal?.maskedImage
+            ?? viewModel.processedImage?.maskedData.flatMap { UIImage(data: $0) }
+            ?? viewModel.selectedImage
+        if let cutout {
+            VStack(spacing: Theme.Spacing.sm) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: Theme.Radius.card)
+                        .fill(Theme.Colors.showcase)
+                    Image(uiImage: cutout)
+                        .resizable()
+                        .scaledToFit()
+                        .padding(Theme.Spacing.md)
+                }
+                .frame(maxHeight: 280)
+
+                // "Refine cutout" folds in the old single-item Preview &
+                // Confirm refine path (tap-to-select on the source photo).
+                // Only meaningful for a single capture — a multi-pick batch
+                // item has no single source to re-select, so it keeps the
+                // pre-52 behaviour of no refine affordance here.
+                if viewModel.currentProposal == nil {
+                    GhostButton(LocalizedStringResource("Refine cutout")) {
+                        viewModel.onPreviewRefine()
+                    }
+                }
+            }
+        }
+    }
+
+    /// Auto-assigned Category as a 1-tap-correct chip row. Mirrors the
+    /// confirmed branch of `ItemFormView.categorySection`; `onCategoryChanged`
+    /// re-clamps the (hidden) subcategory into the new category's subset.
+    private var fastConfirmCategory: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            fastCardSectionLabel("Category", auto: formSectionAutoDetected(.category))
+            FlowLayout(spacing: Theme.Spacing.sm) {
+                ForEach(ClothingCategory.allCases, id: \.self) { cat in
+                    Chip(cat.localizedName, isSelected: viewModel.category == cat) {
+                        viewModel.category = cat
+                        viewModel.onCategoryChanged()
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// The ONE manual input kept on the card. Single-select: a tap REPLACES
+    /// the set with that one occasion. The set may arrive pre-seeded with the
+    /// rules-derived occasions from `applyPrefill` (preserved on save for
+    /// richer matching when the user doesn't touch it); the first tap narrows
+    /// it to the user's explicit choice. Multi-select stays available inside
+    /// "Edit details".
+    private var fastConfirmOccasion: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+            fastCardSectionLabel("When will you wear it?", auto: formSectionAutoDetected(.occasions))
+            FlowLayout(spacing: Theme.Spacing.sm) {
+                ForEach(Occasion.allCases, id: \.self) { occasion in
+                    Chip(occasion.localizedName, isSelected: viewModel.selectedOccasions.contains(occasion)) {
+                        viewModel.selectedOccasions = [occasion]
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// Everything the card demotes — subcategory, texture, fit, seasons (and,
+    /// because the whole shared form is reused verbatim, Category + Occasions
+    /// again, kept in sync via the same bindings). Collapsed by default so the
+    /// card stays a fast confirm; one tap reveals the complete form. The Edit
+    /// screen and `ItemFormView` itself are unchanged.
+    private var fastConfirmEditDetails: some View {
+        DisclosureGroup {
+            ItemFormView(
+                category: $viewModel.category,
+                subcategory: $viewModel.subcategory,
+                texture: $viewModel.texture,
+                fitAttribute: $viewModel.fitAttribute,
+                selectedSeasons: $viewModel.selectedSeasons,
+                selectedOccasions: $viewModel.selectedOccasions,
+                categoryConfirmed: $viewModel.categoryConfirmed,
+                availableSubcategories: viewModel.availableSubcategories,
+                onCategoryChanged: viewModel.onCategoryChanged,
+                isSectionAutoDetected: formSectionAutoDetected
+            )
+            .padding(.top, Theme.Spacing.sm)
+        } label: {
+            Text("Edit details")
+                .font(Theme.Fonts.h3)
+                .foregroundStyle(Color(Theme.Colors.textPrimary))
+        }
+        .tint(Color(Theme.Colors.primary))
+    }
+
+    /// Card section label, matching `ItemFormView`'s section header (title +
+    /// optional auto-detected sparkle).
+    private func fastCardSectionLabel(_ title: LocalizedStringResource, auto: Bool) -> some View {
+        HStack(spacing: Theme.Spacing.xs) {
+            Text(title)
+                .font(Theme.Fonts.h3)
+                .foregroundStyle(Color(Theme.Colors.textPrimary))
+            if auto {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color(Theme.Colors.primary))
+                    .accessibilityLabel("Auto-detected")
+            }
+        }
+    }
+
+    /// Whether a form section's value still matches the ML-prefill snapshot —
+    /// drives the sparkle badge in both `detailsStep` and the Fast Confirm
+    /// card. Extracted so the two surfaces can't drift.
+    private func formSectionAutoDetected(_ section: ItemFormView.Section) -> Bool {
+        switch section {
+        case .category:
+            return isAutoDetected("category", matching: viewModel.category.rawValue)
+                || isAutoDetected("subcategory", matching: viewModel.subcategory.rawValue)
+        case .texture:
+            return isAutoDetected("texture", matching: viewModel.texture?.rawValue)
+        case .fit:
+            return isAutoDetected("fit", matching: viewModel.fitAttribute?.rawValue)
+        case .seasons:
+            return isAutoDetected(
+                "seasons",
+                matchingSortedJoined: viewModel.selectedSeasons.map { $0.rawValue }
+            )
+        case .occasions:
+            return isAutoDetected(
+                "occasions",
+                matchingSortedJoined: viewModel.selectedOccasions.map { $0.rawValue }
+            )
         }
     }
 

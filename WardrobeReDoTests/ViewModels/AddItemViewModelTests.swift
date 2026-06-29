@@ -218,7 +218,14 @@ private func makeProcessedImage(
     #expect(vm.captureMethod == .library)
 }
 
-@Test @MainActor func addItemOnCameraPhotoCapturedWithMaskOpensTapToSelect() async {
+@Test @MainActor func addItemOnCameraPhotoCapturedWithMaskRoutesToFastConfirmCard() async {
+    // Build 52 — single-item routing now depends on `isFastAddEnabled`; pin
+    // it to the default (on) and serialize against other flag-mutating tests.
+    await FeatureFlagTestIsolation.shared.acquire()
+    defer { Task { await FeatureFlagTestIsolation.shared.release() } }
+    FeatureFlags.resetAll()
+    defer { FeatureFlags.resetAll() }
+
     let mockImage = MockImageService()
     mockImage.processImageResult = makeProcessedImage(maskedData: Data([0xAB]))
     let vm = AddItemViewModel(
@@ -230,19 +237,28 @@ private func makeProcessedImage(
 
     await vm.onCameraPhotoCaptured(makePixelImage())
 
-    // After the tap-to-select-first redesign, every successful capture
-    // routes into TapToSelectView pre-populated with the auto mask —
-    // touchup is now reachable only via the explicit "Refine with brush"
-    // detour. See `unified-mapping-honey.md` Part 2.
+    // Fast Add folds the old Preview & Confirm cover into the inline Fast
+    // Confirm card, so a successful single-item capture lands directly on
+    // `.details` instead of raising `isShowingPreview`.
     #expect(vm.isShowingCamera == false)
-    #expect(vm.isShowingPreview == true)
+    #expect(vm.currentStep == .details)
+    #expect(vm.isShowingPreview == false)
     #expect(vm.isShowingTouchup == false)
     #expect(vm.processedImage != nil)
     #expect(vm.processedImage?.maskedData != nil)
     #expect(mockImage.processImageCallCount == 1)
 }
 
-@Test @MainActor func addItemOnCameraPhotoCapturedWithoutMaskAlsoOpensTapToSelect() async {
+@Test @MainActor func addItemOnCameraPhotoCapturedFlagOffRoutesToPreview() async {
+    // Build 52 — the Fast Add kill-switch path. With `isFastAddEnabled` off,
+    // single-item captures keep landing on the full-screen Preview & Confirm
+    // cover (the pre-52 behaviour), so this guards the reversible fallback.
+    await FeatureFlagTestIsolation.shared.acquire()
+    defer { Task { await FeatureFlagTestIsolation.shared.release() } }
+    FeatureFlags.resetAll()
+    FeatureFlags.isFastAddEnabled = false
+    defer { FeatureFlags.resetAll() }
+
     let mockImage = MockImageService()
     mockImage.processImageResult = makeProcessedImage(maskedData: nil)
     let vm = AddItemViewModel(
@@ -253,10 +269,8 @@ private func makeProcessedImage(
 
     await vm.onCameraPhotoCaptured(makePixelImage())
 
-    // Tap-to-select opens regardless of mask quality. With no upstream
-    // mask, the user gets an empty canvas to tap their way through —
-    // strictly better than the old "skip straight to details with no
-    // crop" path.
+    // Routing proceeds regardless of mask quality; flag-off keeps the
+    // Preview & Confirm cover rather than the inline card.
     #expect(vm.isShowingCamera == false)
     #expect(vm.isShowingPreview == true)
     #expect(vm.isShowingTouchup == false)
@@ -373,6 +387,11 @@ private func makeProcessedImage(
 // MARK: - Phase 3: auto-cropped badge + tap-to-select flow
 
 @Test @MainActor func addItemOnCameraPhotoSetsAutoCroppedWhenSam2AutoUsed() async {
+    await FeatureFlagTestIsolation.shared.acquire()
+    defer { Task { await FeatureFlagTestIsolation.shared.release() } }
+    FeatureFlags.resetAll()
+    defer { FeatureFlags.resetAll() }
+
     let mockImage = MockImageService()
     mockImage.processImageResult = makeProcessedImage(
         maskedData: Data([0xAB]),
@@ -386,12 +405,10 @@ private func makeProcessedImage(
 
     await vm.onCameraPhotoCaptured(makePixelImage())
 
-    // The badge state still tracks the upstream method even though it's
-    // now consumed inside TapToSelectView (the "Auto-detected" hint)
-    // rather than MaskTouchupView. Tap-to-select is the new
-    // post-processing surface.
+    // The auto-cropped badge tracks the upstream extraction method. Build
+    // 52 — under Fast Add the capture lands on the inline `.details` card.
     #expect(vm.isAutoCropped == true)
-    #expect(vm.isShowingPreview == true)
+    #expect(vm.currentStep == .details)
 }
 
 @Test @MainActor func addItemOnCameraPhotoClearsAutoCroppedWhenVisionUsed() async {
@@ -999,7 +1016,60 @@ struct AddItemMultiGarmentTests {
         await vm.onCameraPhotoCaptured(makePixelImage())
 
         #expect(vm.isShowingMultiPick == false)
-        #expect(vm.isShowingPreview == true)
+        // Build 52 — a single proposal isn't a multi-garment batch, so it
+        // falls through to the single-item flow, which under Fast Add (the
+        // default) is the inline Fast Confirm card (`.details`), not the
+        // full-screen Preview cover.
+        #expect(vm.isShowingPreview == false)
+        #expect(vm.currentStep == .details)
+    }
+
+    /// Build 52 — the core Fast Add wiring: a single-garment photo still
+    /// yields exactly one proposal, and routing folds it into the Fast
+    /// Confirm card, seeding the card's best guesses from that proposal's
+    /// prediction — the category the pre-52 routing else-branch discarded.
+    @Test func addItemSingleProposalSeedsFastConfirmCardFromPrediction() async {
+        await FeatureFlagTestIsolation.shared.acquire()
+        defer { Task { await FeatureFlagTestIsolation.shared.release() } }
+        FeatureFlags.resetAll()   // Fast Add + multi-garment both default on
+        defer { FeatureFlags.resetAll() }
+
+        // A top prediction for a non-default category (below the 0.90 gate
+        // on purpose) so the assertions distinguish "seeded from the
+        // proposal" from the `.top` init placeholder.
+        let proposal = MaskProposalFixture.make(
+            predictedCategory: .shoe,
+            predictedCategoryConfidence: 0.55,
+            predictedFit: .slim,
+            predictedOccasions: [.athletic],
+            modelClassRaw: "shoe"
+        )
+        let processed = ProcessedImage(
+            originalData: Data([0xFF]),
+            thumbnailData: Data([0xFF]),
+            maskedData: Data([0xAB]),
+            extractionConfidence: .high,
+            extractionMethod: .multiGarmentRFDETR,
+            dominantColors: [],
+            proposals: [proposal]
+        )
+        let mockImage = MockImageService()
+        mockImage.processImageResult = processed
+        let vm = AddItemViewModel(
+            imageService: mockImage,
+            wardrobeRepository: MockWardrobeRepository()
+        )
+        vm.isShowingCamera = true
+
+        await vm.onCameraPhotoCaptured(makePixelImage())
+
+        #expect(vm.isShowingMultiPick == false)
+        #expect(vm.isShowingPreview == false)
+        #expect(vm.currentStep == .details)
+        #expect(vm.categoryConfirmed == true)
+        #expect(vm.category == .shoe, "card seeds the proposal's TOP prediction even below the 0.90 gate (Fast Add), not the .top placeholder")
+        #expect(vm.fitAttribute == .slim, "best-guess fit seeded from the proposal")
+        #expect(vm.selectedOccasions == [.athletic], "rules occasions seeded from the proposal")
     }
 
     @Test func addItemNoProposalsFallsThroughToExistingFlow() async {
@@ -1020,7 +1090,10 @@ struct AddItemMultiGarmentTests {
         await vm.onCameraPhotoCaptured(makePixelImage())
 
         #expect(vm.isShowingMultiPick == false)
-        #expect(vm.isShowingPreview == true)
+        // Build 52 — no proposals → single-item flow → inline Fast Confirm
+        // card under the default Fast Add flag.
+        #expect(vm.isShowingPreview == false)
+        #expect(vm.currentStep == .details)
     }
 
     @Test func addItemFeatureFlagOffSkipsMultiPickEntirely() async {
@@ -1044,7 +1117,9 @@ struct AddItemMultiGarmentTests {
         await vm.onCameraPhotoCaptured(makePixelImage())
 
         #expect(vm.isShowingMultiPick == false)
-        #expect(vm.isShowingPreview == true, "flag off → single-item flow even if proposals attached")
+        // Build 52 — multi-garment off → single-item flow. Fast Add is still
+        // on (default), so it lands on the inline Fast Confirm card.
+        #expect(vm.currentStep == .details, "flag off → single-item flow even if proposals attached")
         #expect(vm.proposals == nil, "routing gate drops proposals when flag is off")
     }
 
@@ -1405,6 +1480,8 @@ struct AddItemMultiGarmentTests {
         #expect(vm.proposals == nil)
         #expect(vm.selectedProposalIDs.isEmpty)
         #expect(vm.isShowingMultiPick == false)
-        #expect(vm.isShowingPreview == true)
+        // Build 52 — second capture has no proposals → single-item flow →
+        // inline Fast Confirm card (`.details`) under the default Fast Add.
+        #expect(vm.currentStep == .details)
     }
 }
