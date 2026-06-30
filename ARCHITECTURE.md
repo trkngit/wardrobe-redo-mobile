@@ -45,7 +45,7 @@ Adding *"mark an item as a favorite"* touches one file per layer, top to bottom:
 WardrobeReDo/
 ├── App/            Entry point, AppState, ContentView (auth/onboarding gate)
 ├── Config/         Flags, theme tokens, pre-fill thresholds — configuration ONLY
-├── Models/         Codable structs (top level) + Enums/
+├── Models/         Codable structs (top level) + Enums/ + CoreML/ (model bundles)
 ├── ViewModels/     @Observable, @MainActor UI state
 ├── Views/          SwiftUI, grouped by feature (Auth/ Camera/ Outfits/ Wardrobe/ …) + Components/
 ├── Services/       Domain logic — flat single-file services + module subfolders:
@@ -57,8 +57,13 @@ WardrobeReDo/
 ├── Repositories/   Remote data access (Supabase)
 ├── Utilities/      Image/processing helpers
 ├── Protocols/      Cross-layer interfaces
-└── Extensions/     Swift/SwiftUI extensions
+├── Extensions/     Swift/SwiftUI extensions
+├── ML/             AttributeClassifier.mlpackage (Core ML)
+├── Models/CoreML/  RFDETRSegFashion.mlpackage + SAM2Tiny.mlmodelc (Core ML)
+└── Resources/      Assets.xcassets, Fonts, Localizable.xcstrings, SeedData (bundled; see project.yml)
 ```
+
+> **Note (known inconsistency):** the on-device Core ML model bundles live in **two** places — `ML/` and `Models/CoreML/`. Consolidating them into one is a worthwhile but careful follow-up (they're loaded by bundle resource *name*, not path, so a move is safe but should be device-verified).
 
 ## Concurrency & data
 

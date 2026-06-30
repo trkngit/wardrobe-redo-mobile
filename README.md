@@ -98,11 +98,13 @@ Weights are not magic numbers — see [`docs/ENGINE.md`](docs/ENGINE.md) §3 for
 WardrobeReDo/
 ├── App/             # Entry point, AppState, ContentView
 ├── Config/          # Theme tokens, feature flags, attribute pre-fill thresholds
-├── Models/          # Codable structs + Enums/
+├── Models/          # Codable structs + Enums/ + CoreML/ (RF-DETR-Seg + SAM2 bundles)
+├── ML/              # AttributeClassifier.mlpackage (Core ML)
 ├── Services/        # Domain logic: style engine, extraction, telemetry, infra (see ARCHITECTURE.md)
 ├── Repositories/    # Remote data access (Supabase PostgREST + Storage)
 ├── Utilities/       # Image/processing helpers (downsampling, orientation, memory)
-└── Views/           # SwiftUI views grouped by feature domain
+├── Views/           # SwiftUI views grouped by feature domain
+└── Resources/       # Assets.xcassets, Fonts, Localizable.xcstrings, SeedData
 
 supabase/
 ├── migrations/      # Database schema migrations (timestamp-prefixed)
