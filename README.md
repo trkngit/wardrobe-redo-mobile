@@ -4,9 +4,11 @@ iOS-native wardrobe decision engine — generates daily styled outfit suggestion
 
 ![Architecture overview](docs/diagrams/01-architecture.png)
 
-[![Platform](https://img.shields.io/badge/platform-iOS%2017%2B-blue)](https://developer.apple.com/ios/) [![Swift](https://img.shields.io/badge/Swift-5.9-orange)](https://swift.org) [![Tests](https://img.shields.io/badge/tests-598%2F598%20green-brightgreen)](#tests) [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-iOS%2017%2B-blue)](https://developer.apple.com/ios/) [![Swift](https://img.shields.io/badge/Swift-5.9-orange)](https://swift.org) [![Tests](https://img.shields.io/badge/tests-961%20green-brightgreen)](#tests) [![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
 
-> **Status:** Solo project, TestFlight Build 8 shipped. 598/598 tests green (595 unit + 3 integration).
+> **Status:** Solo project, built in public. TestFlight Build 51 shipped; the **TF52 "Fast Add" (≤10s tagging)** work is on `main` behind the `isFastAddEnabled` flag. 961 tests green (Fast plan).
+>
+> **Repo model:** single public repo, built in the open. **`main` is the latest development line** (the newest code — not an old release snapshot); released builds are tagged. New work lands via short-lived `feat/*` / `fix/*` / `chore/*` PRs. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the layering + where new code goes, and [`CONTRIBUTING.md`](CONTRIBUTING.md) for conventions and the dev loop.
 
 ---
 
@@ -95,10 +97,11 @@ Weights are not magic numbers — see [`docs/ENGINE.md`](docs/ENGINE.md) §3 for
 ```
 WardrobeReDo/
 ├── App/             # Entry point, AppState, ContentView
-├── Config/          # Theme tokens, feature flags, Supabase manager
-├── Models/          # Codable structs, enums, Core ML wrappers
-├── Services/        # Style engine (7 scorers + OutfitGenerator), image processing
-├── Repositories/    # Supabase data access (PostgREST, Storage, local cache)
+├── Config/          # Theme tokens, feature flags, attribute pre-fill thresholds
+├── Models/          # Codable structs + Enums/
+├── Services/        # Domain logic: style engine, extraction, telemetry, infra (see ARCHITECTURE.md)
+├── Repositories/    # Remote data access (Supabase PostgREST + Storage)
+├── Utilities/       # Image/processing helpers (downsampling, orientation, memory)
 └── Views/           # SwiftUI views grouped by feature domain
 
 supabase/
